@@ -46,8 +46,10 @@ def governance_open(
     """Mint only for an active registered agent with an approved current lane."""
     from .mcp_serving import get_request_principal
     principal = get_request_principal()
-    if principal is None or principal.get("rung") != "proxy-verified":
-        raise CapabilityError("proxy-verified principal required")
+    if principal is None or principal.get("rung") not in {
+        "proxy-verified", "loopback-session",
+    }:
+        raise CapabilityError("verified request principal required")
     if principal.get("party") != party:
         raise CapabilityError("principal does not match requested party")
     folder = _folder(folder_context)

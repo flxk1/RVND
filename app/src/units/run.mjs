@@ -93,11 +93,10 @@ export function createRun(store, call, doc) {
   // operate() now requires a live session capability (workspace_workflow
   // operations.py, session_admission.py): open one for this agent first,
   // then run. Opening needs the agent's currently-approved governance lane
-  // (governance_lane_register — a separate approval step this console
-  // doesn't author yet) and, outside the identity-proxy deployment, a
-  // proxy-verified principal governance_open itself requires — so in plain
-  // local dev (no WORKSPACE_PRINCIPAL_HEADER configured) this refuses by
-  // design, honestly, rather than pretending to run.
+  // (governance_lane_register — an explicit approval step in Build). In a
+  // proxy deployment the request principal must match that agent; the
+  // loopback-only app binds the agent to its authenticated bridge session for
+  // this one mint operation. The capability is still re-checked by operate().
   async function runUC(ucNodeId) {
     const n = byId(ucNodeId); if (!n) return;
     const agent = allowedFor(g.edges, ucNodeId)[0]; if (!agent) return;
