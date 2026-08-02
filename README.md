@@ -13,8 +13,10 @@ entirely.
 
 ## What it does
 
-Rvnd sits between your agents and the things they act on (files, tools, the
-network) and governs the flow:
+Rvnd governs actions that are routed through its MCP server or governed
+`operate()` path. It does not automatically intercept an agent's other files,
+tools or network calls; host integration must route those calls through RVND,
+and host-wide network containment requires the optional OS-level egress lock:
 
 - **Privacy Lock** — inspects text leaving the local boundary for secrets and
   personal data (a fast pattern pass plus an optional local‑model semantic pass)
@@ -25,7 +27,8 @@ network) and governs the flow:
 - **Oversight** — each action is checked against the lowest autonomy limit set
   by the applicable rules and against a time-based stop. A task reserved for a
   person cannot run automatically.
-- **Tamper‑evident audit** — every decision is appended to a per‑folder,
+- **Tamper‑evident audit** — decisions and runs routed through RVND's
+  journalled paths are appended to a per‑folder,
   Ed25519‑signed hash chain, and erasure is performed with signed tombstones
   rather than silent deletes. Against an adversary who can also write the key
   directory, the tamper‑evidence holds only with the opt‑in key protections
@@ -78,6 +81,11 @@ explicitly labelled `legacy-pair-overlay` until their data is migrated, rather t
 silently pretending that overlay is Versum. Loomground vocabulary, schemas and
 conformance vectors are loaded from the published
 `loomground-governance` package rather than copied into RVND.
+
+Policy ingestion uses the independent `loomground-ingest` framework and the
+published `loomground-deontic` and `loomground-governance` languages. RVND owns
+the host-side admission, confirmation, policy projection and audit behavior;
+the ingest package does not enforce those host decisions.
 
 ## Policy model
 
@@ -211,8 +219,8 @@ Backends, a lighter GGUF path, hosted‑model notes, and verification:
 
 ```
 rvnd/
-  server/   # the MCP server + governance runtime; consumes Loomground,
-            # Solver and Versum as packages
+  server/   # the MCP server + governance runtime; consumes Solver, Versum,
+            # Governance, Deontic and Ingest as packages
   app/      # the Patchbay web application and its local development server
 ```
 
@@ -220,9 +228,11 @@ rvnd/
 
 Rvnd is beta software under active development. Interfaces and file formats may
 change. The governance runtime and Loomground conformance suite pass the
-project's current tests. Some Patchbay panels and deployment controls,
-including identity, access and proxy-trust handling, remain incomplete. See
-[`CHANGELOG.md`](CHANGELOG.md) and the concept docs under [`docs/`](docs/).
+project's current tests. The local application is loopback-only. A multi-user
+deployment requires the documented verified-identity proxy; governance-session
+admission then binds the proxy principal to an active agent, its approved lane
+and the lane's current policy fingerprint. See [`CHANGELOG.md`](CHANGELOG.md)
+and the concept docs under [`docs/`](docs/).
 
 ## Installation notes
 
