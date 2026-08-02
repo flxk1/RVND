@@ -1,0 +1,39 @@
+{
+  "name": "rvnd-governance",
+  "version": "0.5.1",
+  "description": "Drive RVND's typed governance cycle, grounded policy workflow, oversight, audit verification, and incident response.",
+  "author": {
+    "name": "Loomground Contributors"
+  },
+  "repository": "https://github.com/flxk1/RVND",
+  "license": "AGPL-3.0-only",
+  "keywords": [
+    "governance",
+    "loomground",
+    "mcp",
+    "oversight",
+    "rvnd"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "RVND Governance",
+    "shortDescription": "Drive the RVND governance MCP server safely",
+    "longDescription": "Nine composable skills drive RVND's typed governance cycle, policy extraction and validation, governed decisions, oversight, signed audit verification, incident response, and surface linting.",
+    "developerName": "Loomground Contributors",
+    "category": "Productivity",
+    "capabilities": [
+      "Governance cycle",
+      "Policy validation",
+      "Human oversight",
+      "Signed audit",
+      "Incident response",
+      "Local-first fail-closed runtime"
+    ],
+    "defaultPrompt": [
+      "Run this action through RVND's governance cycle.",
+      "Extract and validate the rules in this policy.",
+      "Verify this receipt against the signed audit chain."
+    ]
+  }
+}

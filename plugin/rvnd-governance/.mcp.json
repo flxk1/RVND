@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "rvnd-governance": {
+      "command": "python3",
+      "args": [
+        "-m",
+        "workspaces.mcp_server"
+      ],
+      "env": {
+        "RVND_GOVERNANCE_LAYER": "on"
+      },
+      "transport": "stdio",
+      "description": "Local RVND governance server provided by the installed AGPL-3.0-only RVND package."
+    }
+  }
+}
