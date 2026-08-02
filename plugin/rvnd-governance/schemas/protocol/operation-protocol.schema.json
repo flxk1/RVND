@@ -1,0 +1,237 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://loomground.local/schemas/rvnd-operation-protocol.schema.json",
+  "title": "RVND typed operation protocol (layer 2)",
+  "description": "The small typed protocol AROUND Loomground, not new grammar. Loomground (layer 1) defines governance meaning and the canonical observation; this protocol (layer 2) defines the objects a host and RVND exchange; RVND (layer 3) resolves identities, evaluates, applies, and signs; skills/UI (layer 4) use compact host verbs mapped to these objects and exact workspace_* MCP ops. Canonical verbs like 'revoke' resolve to a GovernanceDelta or a RuntimeAction; they are not Loomground constructs.",
+  "$defs": {
+    "constructType": {
+      "enum": ["actor", "human", "gate", "master", "authority", "pipe", "egress",
+               "grant", "reservation", "quorum", "prohibition", "temporal",
+               "egress-obligation", "redress", "party", "delegation", "autonomy-grade"]
+    },
+    "node": {
+      "type": "object",
+      "required": ["type", "id", "class"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {"const": "node"},
+        "id": {"type": "string"},
+        "class": {"enum": ["actor", "human", "gate", "master"]},
+        "role": {"type": "string"},
+        "party": {"type": "string"},
+        "risk_floor": {"enum": ["low", "medium", "high", "critical"]},
+        "on_behalf_of": {"type": "string"},
+        "grade": {"type": "string"},
+        "grade_required": {"type": "string"}
+      }
+    },
+    "cord": {
+      "type": "object",
+      "required": ["type", "from", "to", "cord_type"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {"const": "cord"},
+        "from": {"type": "string"},
+        "to": {"type": "string"},
+        "cord_type": {"enum": ["authority", "pipe", "egress"]}
+      }
+    },
+    "reservation": {
+      "type": "object",
+      "required": ["type", "kind", "by"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {"const": "reservation"},
+        "kind": {"type": "string"},
+        "by": {"type": "string", "description": "role, conjunction, or m-of-n target (quorum)"},
+        "when": {"$ref": "#/$defs/guard"},
+        "duration": {"type": "string"},
+        "on_elapse": {"enum": ["halt", "proceed"]}
+      }
+    },
+    "prohibition": {
+      "type": "object",
+      "required": ["type", "kind"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {"const": "prohibition"},
+        "kind": {"type": "string"},
+        "when": {"$ref": "#/$defs/guard"}
+      }
+    },
+    "obligation": {
+      "type": "object",
+      "required": ["type", "obligation", "on"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {"const": "egress-obligation"},
+        "obligation": {"type": "string"},
+        "on": {"type": "string", "description": "the gate the obligation attaches to on egress"}
+      }
+    },
+    "redress": {
+      "type": "object",
+      "required": ["type", "kind", "by"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {"const": "redress"},
+        "kind": {"type": "string"},
+        "by": {"type": "string"},
+        "overturn": {"type": "boolean"},
+        "within": {"type": ["string", "null"]}
+      }
+    },
+    "grant": {
+      "type": "object",
+      "required": ["type", "gate", "actor"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {"const": "grant"},
+        "gate": {"type": "string"},
+        "actor": {"type": "string"},
+        "kinds": {"type": "array", "items": {"type": "string"}},
+        "risks": {"type": "array", "items": {"enum": ["low", "medium", "high", "critical"]}}
+      }
+    },
+    "guard": {
+      "description": "A when-clause over the guard domain only. Never id, provenance, grade, or a computed value.",
+      "type": "object",
+      "required": ["field", "op", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "field": {"enum": ["kind", "risk", "party", "tags"]},
+        "op": {"enum": ["=", ">=", "contains"]},
+        "value": {"type": "string"}
+      }
+    },
+    "typedConstruct": {
+      "description": "One fully typed Loomground construct. additionalProperties:false on each variant, so {type:reservation, invented:x} fails.",
+      "oneOf": [
+        {"$ref": "#/$defs/node"},
+        {"$ref": "#/$defs/cord"},
+        {"$ref": "#/$defs/reservation"},
+        {"$ref": "#/$defs/prohibition"},
+        {"$ref": "#/$defs/obligation"},
+        {"$ref": "#/$defs/redress"},
+        {"$ref": "#/$defs/grant"}
+      ]
+    },
+
+    "GovernanceObservation": {
+      "description": "The current projected graph state, as the official Loomground observation, plus context.",
+      "type": "object",
+      "required": ["observation", "folder_context"],
+      "additionalProperties": false,
+      "properties": {
+        "observation": {"$ref": "urn:loomground:0.7:observation"},
+        "folder_context": {"type": "string"},
+        "policy_fingerprint": {"type": "string"},
+        "lane": {"type": "object"}
+      }
+    },
+    "GovernanceDelta": {
+      "description": "One graph mutation: an operation naming its graph op and carrying one fully typed construct. A host verb (e.g. revoke) resolves to this; it is not itself a construct.",
+      "type": "object",
+      "required": ["operation", "construct"],
+      "additionalProperties": false,
+      "properties": {
+        "operation": {"enum": ["add", "remove", "replace"]},
+        "construct": {"$ref": "#/$defs/typedConstruct"},
+        "replaces": {"$ref": "#/$defs/typedConstruct"}
+      }
+    },
+    "ValidationResult": {
+      "description": "RVND's validation of a proposed delta/patch. The host presents it; it does not compute it. well_formed:false must never be applyable.",
+      "type": "object",
+      "required": ["well_formed", "applyable"],
+      "additionalProperties": false,
+      "properties": {
+        "well_formed": {"type": "boolean"},
+        "applyable": {"type": "boolean"},
+        "conformance_vector_set": {"type": "string"},
+        "canonical_observation": {"$ref": "urn:loomground:0.7:observation"},
+        "verdict_preview": {"enum": ["auto", "human", "refused", "reserved", "prohibited"]},
+        "warnings": {"type": "array", "items": {"type": "string"}},
+        "unavailable_fields": {"type": "array", "items": {"type": "string"}}
+      },
+      "allOf": [
+        {"if": {"properties": {"well_formed": {"const": false}}},
+         "then": {"properties": {"applyable": {"const": false}}}}
+      ]
+    },
+    "AuthorizationDecision": {
+      "description": "The human decision surface. Two modes, never collapsed: ratification of a determinate result (approve/deny), or origination of a residual decision (>=2 unranked real alternatives, no default).",
+      "type": "object",
+      "required": ["mode"],
+      "additionalProperties": false,
+      "properties": {
+        "mode": {"enum": ["ratification", "residual-origination"]},
+        "underlying_verdict": {"enum": ["human", "reserved", "refused", "prohibited"]},
+        "ratification": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "approver"],
+          "properties": {
+            "decision": {"enum": ["approve", "deny"]},
+            "approver": {"type": "string"},
+            "rationale": {"type": "string"},
+            "counts": {"type": "boolean", "description": "whether the decision COUNTS is the projection's call, not the card's"}
+          }
+        },
+        "residual_origination": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["alternatives"],
+          "properties": {
+            "alternatives": {
+              "type": "array",
+              "minItems": 2,
+              "description": "real, unranked alternatives; no default; must not render as approve/reject",
+              "items": {"type": "object", "required": ["id", "text"],
+                        "additionalProperties": false,
+                        "properties": {"id": {"type": "string"}, "text": {"type": "string"}}}
+            },
+            "chosen": {"type": "string"},
+            "chooser": {"type": "string"},
+            "rationale": {"type": "string"}
+          }
+        }
+      },
+      "allOf": [
+        {"if": {"properties": {"mode": {"const": "ratification"}}},
+         "then": {"required": ["ratification"]}},
+        {"if": {"properties": {"mode": {"const": "residual-origination"}}},
+         "then": {"required": ["residual_origination"]}}
+      ]
+    },
+    "CommitReceipt": {
+      "description": "The signed outcome after RVND applied. Rendered as what happened, attributed, verified against the chain.",
+      "type": "object",
+      "required": ["applied", "outcome"],
+      "additionalProperties": false,
+      "properties": {
+        "applied": {"type": "boolean"},
+        "outcome": {"enum": ["applied", "held", "denied", "revoked", "transferred", "prohibited"]},
+        "op": {"type": "string", "description": "the exact workspace_workflow op that ran"},
+        "rule": {"type": "string"},
+        "signing_key": {"type": "string"},
+        "chain_position": {"type": "string"},
+        "resulting_observation": {"$ref": "urn:loomground:0.7:observation"},
+        "verified": {"type": "boolean"}
+      }
+    },
+    "RuntimeAction": {
+      "description": "An RVND runtime action OUTSIDE Loomground syntax (hold/suspend/seal/transfer). It is not a construct and must never be presented as a policy declaration. A real policy change uses a GovernanceDelta instead.",
+      "type": "object",
+      "required": ["action", "outside_loomground"],
+      "additionalProperties": false,
+      "properties": {
+        "action": {"enum": ["hold", "suspend", "seal-air-gap", "transfer-custody"]},
+        "outside_loomground": {"const": true},
+        "target": {"type": "string"},
+        "op": {"type": "string", "description": "the exact workspace_* op that effects it"},
+        "records_principals_and_signed_handoff": {"type": "boolean", "description": "for transfer-custody: must be true to be called a custody transfer"}
+      }
+    }
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "edges": [
+    "host:lock_wiring -> lock",
+    "host:mcp_impl -> lock.mcp_server",
+    "lock:lock.host_deps -> lock_wiring"
+  ]
+}

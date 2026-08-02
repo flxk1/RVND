@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rvnd — Sign-off</title>
+<!-- The sign-off widget: the one console unit that leaves the machine, so it
+     carries the smallest surface — render what waits on one person, post one
+     signature. The action-link token in the URL is the working credential:
+     the server resolves it to (party, decision) and refuses anything else.
+     Same local-first posture as the console: self-hosted fonts, no external
+     origin ever contacted. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; connect-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'">
+<style>
+  @font-face{font-family:"Space Grotesk";font-style:normal;font-weight:400 700;font-display:swap;
+    src:url("/fonts/space-grotesk-latin.woff2") format("woff2")}
+  @font-face{font-family:"IBM Plex Mono";font-style:normal;font-weight:400;font-display:swap;
+    src:url("/fonts/ibm-plex-mono-400-latin.woff2") format("woff2")}
+  @font-face{font-family:"IBM Plex Mono";font-style:normal;font-weight:600;font-display:swap;
+    src:url("/fonts/ibm-plex-mono-600-latin.woff2") format("woff2")}
+  :root{
+    --bg:#14161b; --panel:#1b1e26; --panel-2:#21252e; --line:#454b58;
+    --txt:#cdd2dc; --txt-dim:#959db0; --ok:#5aa886; --hot:#df8b46; --bad:#e2554a;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%;background:var(--bg);color:var(--txt);
+    font-family:"IBM Plex Mono",monospace;-webkit-font-smoothing:antialiased}
+  #wrap{max-width:560px;margin:0 auto;padding:22px 16px 40px}
+  h1{font-family:"Space Grotesk",sans-serif;font-weight:600;font-size:17px;margin:0;color:#f3f1ea}
+  .sub{font-size:10.5px;color:var(--txt-dim);margin:4px 0 18px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px}
+  .who{font-size:10.5px;color:#9fd8c0;margin-bottom:12px}
+  .q{font-family:"Space Grotesk",sans-serif;font-size:14.5px;color:#f3f1ea;line-height:1.45;margin-bottom:6px}
+  .esc{font-size:10.5px;color:var(--txt-dim);line-height:1.5;margin-bottom:14px}
+  .meta{display:flex;flex-direction:column;gap:5px;font-size:10.5px;color:var(--txt-dim);
+    border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:9px 0;margin-bottom:14px}
+  .meta b{color:var(--txt);font-weight:600}
+  .opt{display:flex;gap:9px;align-items:flex-start;background:var(--panel-2);border:1px solid var(--line);
+    border-radius:8px;padding:10px;margin-bottom:8px;cursor:pointer}
+  .opt input{margin-top:2px}
+  .opt .ol{font-size:12px;color:var(--txt)}
+  .opt .oc{font-size:9.5px;color:var(--txt-dim);line-height:1.45;margin-top:3px}
+  textarea{width:100%;font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--txt);
+    background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:9px;min-height:64px;resize:vertical}
+  .lbl{font-size:9px;text-transform:uppercase;letter-spacing:.09em;color:var(--txt-dim);margin:12px 0 5px}
+  .row{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+  button{font-family:"IBM Plex Mono",monospace;font-size:12px;border-radius:8px;padding:10px 14px;cursor:pointer;transition:.12s}
+  #approve{color:#0f1a15;background:var(--ok);border:1px solid var(--ok);font-weight:600}
+  #approve:hover{filter:brightness(1.08)}
+  #refuse{color:var(--txt);background:var(--panel-2);border:1px solid var(--bad)}
+  #refuse:hover{color:#fff}
+  #codebtn{color:var(--txt);background:var(--panel-2);border:1px solid var(--line);font-size:10.5px;padding:8px 10px}
+  input#code{font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.2em;width:110px;color:var(--txt);
+    background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:9px}
+  #coderow{display:none;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap}
+  #coderow .hint{font-size:9.5px;color:var(--txt-dim);flex-basis:100%}
+  #status{font-size:10.5px;color:var(--hot);margin-top:12px;line-height:1.5;min-height:1em}
+  .refusal{border-color:var(--bad)}
+  .refusal .rt{font-size:12.5px;color:var(--bad);line-height:1.55}
+  .refusal .rh{font-size:10px;color:var(--txt-dim);margin-top:10px;line-height:1.5}
+  .outcome .ot{font-size:13px;color:var(--ok);line-height:1.55}
+  .outcome .od{font-size:10.5px;color:var(--txt-dim);margin-top:10px;line-height:1.6}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <h1>Rvnd — Sign-off</h1>
+  <div class="sub">what waits on you, and nothing else — the link in this page's address is the credential: one party, one decision, expiring</div>
+  <div id="card" class="card"><div style="font-size:11px;color:var(--txt-dim)">verifying the link…</div></div>
+</div>
+<script>
+"use strict";
+/* Transport: the same /tool bridge the console uses. Everything that governs
+   is server-side — the link token resolves to its bound party and decision on
+   the server, the claim leases it there, and the write is recorded there.
+   This page only draws what the server returned for that one token. */
+async function tool(name, args){
+  const r = await fetch(window.__WORKSPACES_HTTP__ || "/tool", {
+    method: "POST",
+    headers: {"Content-Type": "application/json",
+              "X-Workspaces-Token": window.__WORKSPACES_TOKEN__ || ""},
+    body: JSON.stringify({tool: name, args: args})});
+  if (!r.ok) throw new Error("http " + r.status);
+  return r.json();
+}
+function esc(s){ return String(s == null ? "" : s)
+  .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+  .replace(/"/g,"&quot;"); }
+
+const qs = new URLSearchParams(window.location.search);
+const TOKEN = (qs.get("token") || "").trim();
+const FOLDER = (qs.get("folder") || "").trim();
+const card = document.getElementById("card");
+let CLAIM = null;          // the server's claim response — the only data shown
+
+function refuse(words, hint){
+  card.className = "card refusal";
+  card.innerHTML = '<div class="rt">' + esc(words) + '</div>'
+    + '<div class="rh">' + esc(hint || "Nothing is listed without a working link"
+    + " — ask the person who escalated for a fresh one.") + '</div>';
+  window._ready = true;
+}
+
+function quorumLine(panel){
+  if (!panel) return "signed 0 of 1 — your signature resolves it";
+  const needed = panel.rule === "unanimous" ? panel.seats : panel.m;
+  return "signed " + panel.recorded + " of " + needed
+       + " (rule " + panel.rule + ", " + panel.seats + " seats)";
+}
+
+function deadlineLine(c){
+  if (!c.decide_by) return "no deadline declared — waits until decided";
+  return "decide by " + String(c.decide_by).slice(0, 19)
+       + " → " + (c.on_elapse || "");
+}
+
+function declineOption(options){
+  const rx = /refus|declin|reject|deny|keep|halt|stop|no[-_ ]?go/i;
+  return (options || []).find(o => rx.test(String(o.id || ""))
+    || rx.test(String(o.conclusion || "")) || rx.test(String(o.label || "")));
+}
+
+function render(c){
+  CLAIM = c;
+  const opts = (c.surface && c.surface.options) || [];
+  let h = '<div class="who">acting as <b>' + esc(c.claimed_by)
+        + '</b> — authenticated by link (single-use; the record will say so)</div>'
+        + '<div class="q">' + esc((c.surface || {}).query || "") + '</div>';
+  if ((c.surface || {}).esc_reason)
+    h += '<div class="esc">' + esc(c.surface.esc_reason) + '</div>';
+  h += '<div class="meta">'
+     + '<span>quorum · <b>' + esc(quorumLine(c.panel)) + '</b></span>'
+     + '<span>deadline · <b>' + esc(deadlineLine(c)) + '</b></span>'
+     + '<span>lease · held by you until ' + esc(String(c.claim_expires_at || "").slice(0, 19)) + '</span>'
+     + '</div>';
+  h += '<div class="lbl">The defensible readings — choose one</div>';
+  opts.forEach((o, i) => {
+    h += '<label class="opt"><input type="radio" name="opt" value="' + esc(o.id) + '"'
+       + (i === 0 ? ' checked' : '') + '><span><span class="ol">' + esc(o.label || o.id)
+       + '</span><div class="oc">' + esc((o.consequences || []).join(" · "))
+       + (o.grounding_band ? ' · grounding ' + esc(o.grounding_band) : '')
+       + '</div></span></label>';
+  });
+  h += '<div class="lbl">Why — the rationale that will be recorded</div>'
+     + '<textarea id="rat" placeholder="your reasoning, in your words"></textarea>'
+     + '<div class="row">'
+     + '<button id="approve">Approve and sign</button>'
+     + '<button id="refuse">Refuse</button>'
+     + '</div>'
+     + '<div id="coderow"><span class="hint">This decision guards its write with a'
+     + ' channel code: have it sent to your own registered channels, then enter it.</span>'
+     + '<input id="code" placeholder="6 digits" maxlength="6">'
+     + '<button id="codebtn">send the code to my channels</button></div>'
+     + '<div id="status"></div>';
+  card.className = "card";
+  card.innerHTML = h;
+  document.getElementById("approve").addEventListener("click", () => act(chosen()));
+  document.getElementById("refuse").addEventListener("click", refuseAction);
+  document.getElementById("codebtn").addEventListener("click", requestCode);
+  window._ready = true;
+}
+
+function chosen(){
+  const el = document.querySelector('input[name="opt"]:checked');
+  return el ? el.value : "";
+}
+
+function refuseAction(){
+  const d = declineOption((CLAIM.surface || {}).options);
+  if (!d){
+    document.getElementById("status").textContent =
+      "This surface carries no declining option — refusing here means choosing"
+      + " the reading that declines, and none is offered. Pick a listed option,"
+      + " or reply on the channel that sent you this link.";
+    return;
+  }
+  const r = document.querySelector('input[name="opt"][value="' + d.id.replace(/"/g, '\\"') + '"]');
+  if (r) r.checked = true;
+  act(d.id);
+}
+
+async function act(optionId){
+  const status = document.getElementById("status");
+  const rationale = (document.getElementById("rat").value || "").trim();
+  if (!optionId){ status.textContent = "Choose one of the readings first."; return; }
+  const params = {folder_context: FOLDER, chosen_option_id: optionId,
+                  rationale: rationale, link_token: TOKEN};
+  const code = (document.getElementById("code") || {value: ""}).value.trim();
+  if (code) params.reconfirm_code = code;
+  let r;
+  try { r = await tool("workspace_dispatch", {op: "decision_record", params: params}); }
+  catch (e) { r = {ok: false, error: (e && e.message) || "the bridge did not answer"}; }
+  if (!r.ok){
+    status.textContent = r.error || "refused";
+    if (/confirmation code/i.test(r.error || ""))
+      document.getElementById("coderow").style.display = "flex";
+    return;
+  }
+  outcome(r, optionId);
+}
+
+function outcome(r, optionId){
+  const opts = (CLAIM.surface || {}).options || [];
+  const label = (opts.find(o => o.id === optionId) || {}).label || optionId;
+  card.className = "card outcome";
+  if (r.resolved === false && r.panel){
+    // a panel seat: this signature is in; the decision closes when the rule is met
+    card.innerHTML = '<div class="ot">Your seat is recorded, signed — '
+      + esc(quorumLine(r.panel)) + '.</div>'
+      + '<div class="od">Choice and rationale stay sealed until the panel resolves.'
+      + ' This link is spent; you can close this page.</div>';
+    return;
+  }
+  card.innerHTML = '<div class="ot">Recorded, signed — “' + esc(label)
+    + '” is on the workspace’s chain.</div>'
+    + '<div class="od">decision ' + esc(r.decision_id || CLAIM.decision_id || "")
+    + (r.audit_id ? ' · audit ' + esc(r.audit_id) : '')
+    + '<br>This link is spent — it authorised one party for one decision,'
+    + ' once. You can close this page.</div>';
+}
+
+async function requestCode(){
+  const status = document.getElementById("status");
+  let r;
+  try { r = await tool("workspace_dispatch", {op: "decision_reconfirm_request",
+        params: {folder_context: FOLDER, link_token: TOKEN}}); }
+  catch (e) { r = {ok: false, error: (e && e.message) || "the bridge did not answer"}; }
+  status.textContent = r.ok
+    ? "Sent to your registered channels — enter the 6 digits above."
+    : (r.error || "refused");
+}
+
+async function boot(){
+  if (!TOKEN) return refuse("This page opens from an action link — the"
+    + " address carries no token, so there is nothing to show.");
+  if (!FOLDER) return refuse("The link names no workspace folder — without"
+    + " it the decision cannot be found.");
+  let c;
+  try { c = await tool("workspace_dispatch", {op: "decision_claim",
+        params: {folder_context: FOLDER, link_token: TOKEN}}); }
+  catch (e) { c = {ok: false, error: (e && e.message) || "the bridge did not answer"}; }
+  if (!c.ok) return refuse(c.error || "the link did not verify");
+  render(c);
+}
+boot();
+</script>
+</body>
+</html>

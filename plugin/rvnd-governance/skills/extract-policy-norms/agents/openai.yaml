@@ -1,0 +1,4 @@
+interface:
+  display_name: "Extract Policy Norms"
+  short_description: "Extract grounded policy requirements through RVND"
+  default_prompt: "Use $extract-policy-norms to turn this policy into grounded RVND governance input without applying it."

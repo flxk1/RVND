@@ -1,0 +1,20 @@
+{
+ "schema": "ui-walk-matrix-1",
+ "ui_supported": 1,
+ "covered": 1,
+ "gaps": 0,
+ "render_gates_run": 66,
+ "render_gates_broken": [],
+ "rows": [
+  {
+   "facade": "server_info",
+   "op": null,
+   "covered_by": [
+    "about_render_test",
+    "slice_e_render_test",
+    "toolbar_render_test"
+   ],
+   "gap_reason": null
+  }
+ ]
+}

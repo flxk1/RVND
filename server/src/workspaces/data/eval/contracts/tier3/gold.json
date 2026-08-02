@@ -1,0 +1,116 @@
+{
+  "_comment": "Tier 3 — hostile input: OCR damage (hyphenation breaks, page headers mid-text, shattered dates), conflicting governing-law clauses, an undated effective-date clause, a mixed-language amendment. The correct behaviour is mostly ABSTENTION: expect_abstain lists scalar fields where extracting ANY value is a failure (silently wrong), and a low obligation recall is acceptable — a wrong value is not. No floors on recall; the silently_wrong count must be zero. Labels pending expert review.",
+  "contracts": {
+    "scanned_msa_en.txt": {
+      "contract_type": "msa",
+      "language": "en",
+      "parties": [
+        {
+          "role": "supplier",
+          "name_kw": "brandgaard"
+        },
+        {
+          "role": "customer",
+          "name_kw": "weichsel"
+        }
+      ],
+      "effective_date": "2026-08-15",
+      "expect_abstain": [
+        "effective_date"
+      ],
+      "governing_law": "DE",
+      "obligations": [
+        {
+          "subject_kw": "supplier",
+          "modal": "obligation",
+          "action_kw": "release"
+        },
+        {
+          "subject_kw": "supplier",
+          "modal": "obligation",
+          "action_kw": "support"
+        },
+        {
+          "subject_kw": "customer",
+          "modal": "obligation",
+          "action_kw": "acceptance testing"
+        },
+        {
+          "subject_kw": "customer",
+          "modal": "obligation",
+          "action_kw": "pay"
+        }
+      ],
+      "predicates": [
+        {
+          "action_kw": "acceptance",
+          "offset": "P21D"
+        },
+        {
+          "action_kw": "pay",
+          "offset": "P30D"
+        }
+      ],
+      "_note": "deliver-obligation + both deadline predicates survive the OCR damage — verified extractor output, credited in gold"
+    },
+    "conflict_nda_en.txt": {
+      "contract_type": "nda",
+      "language": "en",
+      "parties": [
+        {
+          "role": "discloser",
+          "name_kw": "helix"
+        },
+        {
+          "role": "counterparty",
+          "name_kw": "counterparty"
+        }
+      ],
+      "effective_date": null,
+      "expect_abstain": [
+        "effective_date",
+        "governing_law"
+      ],
+      "governing_law": null,
+      "obligations": [
+        {
+          "subject_kw": "counterparty",
+          "modal": "obligation",
+          "action_kw": "strict confidence"
+        },
+        {
+          "subject_kw": "counterparty",
+          "modal": "prohibition",
+          "action_kw": "disclose"
+        },
+        {
+          "subject_kw": "counterparty",
+          "modal": "obligation",
+          "action_kw": "destroy"
+        }
+      ],
+      "predicates": [
+        {
+          "action_kw": "destroy",
+          "offset": "P10D"
+        }
+      ]
+    },
+    "amendment_mixed.txt": {
+      "contract_type": "amendment",
+      "language": "de",
+      "parties": [],
+      "effective_date": "2027-04-01",
+      "expect_abstain": [],
+      "governing_law": null,
+      "obligations": [
+        {
+          "subject_kw": "licensee",
+          "modal": "obligation",
+          "action_kw": "report net revenue"
+        }
+      ],
+      "predicates": []
+    }
+  }
+}

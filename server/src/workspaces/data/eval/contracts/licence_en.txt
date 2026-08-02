@@ -1,0 +1,31 @@
+SOFTWARE LICENSE AGREEMENT
+
+This License Agreement is made between Fennel Audio UG (the "Licensor") and
+Studio Nordlicht GmbH (the "Licensee") and sets out the grant of license for
+the Fennel DSP toolkit.
+
+This Agreement is effective as of 2026-10-01.
+
+1. Definitions. "Software" means the Fennel DSP toolkit in object code form.
+"Territory" means the member states of the European Economic Area.
+
+2. Grant. The Licensor shall provide the Licensee with the Software and a
+licence key within 5 days of the effective date.
+
+3. Scope. The Licensee may use the Software for its own productions within
+the Territory.
+
+4. Restrictions. The Licensee must not distribute the Software to any third
+party.
+
+5. Royalties. The Licensee shall report net revenue from licensed productions
+within 30 days of each calendar quarter.
+
+6. Royalty floor. Where the annual net revenue exceeds EUR 100,000, the
+Licensee shall pay an additional royalty of two percent.
+
+7. Updates. The Licensor shall provide maintenance updates during the licence
+term.
+
+8. Governing law. This Agreement shall be governed by the laws of the Federal
+Republic of Germany.

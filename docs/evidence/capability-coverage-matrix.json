@@ -1,0 +1,2249 @@
+{
+ "schema": "coverage-matrix-1",
+ "obligations": 280,
+ "deferred_leaks": [],
+ "rows": [
+  {
+   "facade": "cross_workspace_read",
+   "op": null,
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": false,
+   "reason": "invalid not refused: {'target': '<COVERAGE_WORKSPACE>/ws', 'role': 'source', 'links': [{'source': '<COVERAGE_WORKSPACE>/ws', 'role': 'source"
+  },
+  {
+   "facade": "cross_workspace_read",
+   "op": null,
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "server_info",
+   "op": null,
+   "channel": "gateway",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "server_info",
+   "op": null,
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "server_info",
+   "op": null,
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_ask",
+   "op": null,
+   "channel": "ui",
+   "valid_ok": false,
+   "invalid_ok": true,
+   "reason": "valid not success: {'error': \"TypeError: workspace_ask() got an unexpected keyword argument 'actor'\"}"
+  },
+  {
+   "facade": "workspace_audit",
+   "op": "discipline",
+   "channel": "gateway",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_audit",
+   "op": "discipline",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_audit",
+   "op": "get_event",
+   "channel": "gateway",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_audit",
+   "op": "get_event",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_audit",
+   "op": "override_recurrence",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_audit",
+   "op": "override_recurrence",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_audit",
+   "op": "record_override",
+   "channel": "ui",
+   "valid_ok": false,
+   "invalid_ok": true,
+   "reason": "valid not success: {'error': \"op 'record_override' missing params: ['card', 'field', 'new_value', 'rationale']\"}"
+  },
+  {
+   "facade": "workspace_audit",
+   "op": "shadow_scan",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_audit",
+   "op": "shadow_scan",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_audit",
+   "op": "verify_chain",
+   "channel": "gateway",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_audit",
+   "op": "verify_chain",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_audit",
+   "op": "verify_chain",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_capture",
+   "op": "llm",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_capture",
+   "op": "read",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_capture",
+   "op": "web",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_conformity",
+   "op": "drift_report",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_conformity",
+   "op": "evidence_pack",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_conformity",
+   "op": "oversight_attestation",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_conformity",
+   "op": "risk_register",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_conformity",
+   "op": "threat_model",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": false,
+   "reason": "invalid not refused: {'op': 'threat_model', 'tests_dir': '<REPO>/server/tests', 'categories': [{'category': 'memory / context poisoning', 't"
+  },
+  {
+   "facade": "workspace_conformity",
+   "op": "threat_model",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_conformity",
+   "op": "trigger_map",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_contract",
+   "op": "apply",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_contract",
+   "op": "ingest",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_contract",
+   "op": "list_approvals",
+   "channel": "gateway",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_contract",
+   "op": "list_approvals",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_contract",
+   "op": "list_approvals",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_contract",
+   "op": "list_reviews",
+   "channel": "gateway",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_contract",
+   "op": "list_reviews",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_contract",
+   "op": "list_reviews",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_contract",
+   "op": "obligations",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_contract",
+   "op": "record_approval",
+   "channel": "gateway",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_contract",
+   "op": "record_approval",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_contract",
+   "op": "record_approval",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_contract",
+   "op": "request_approval",
+   "channel": "gateway",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_contract",
+   "op": "request_approval",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_contract",
+   "op": "request_approval",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_contract",
+   "op": "resolve",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_contract",
+   "op": "review",
+   "channel": "gateway",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_contract",
+   "op": "review",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_contract",
+   "op": "state",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_contract",
+   "op": "tick",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_dispatch",
+   "op": "decision_claim",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_dispatch",
+   "op": "decision_claim",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_dispatch",
+   "op": "decision_pending",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_dispatch",
+   "op": "decision_pending",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_dispatch",
+   "op": "decision_record",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_dispatch",
+   "op": "decision_record",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_dispatch",
+   "op": "decision_release",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_dispatch",
+   "op": "decision_release",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_dispatch",
+   "op": "list_pinned",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_dispatch",
+   "op": "list_pinned",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_dispatch",
+   "op": "pin_many",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_dispatch",
+   "op": "pin_many",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_erase",
+   "op": "request",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_erase",
+   "op": "status",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_erase",
+   "op": "subject",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_erase",
+   "op": "sweep",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_folder",
+   "op": "create",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_folder",
+   "op": "ingest",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_folder",
+   "op": "list",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_folder",
+   "op": "reextract",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_folder",
+   "op": "scan",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_folder",
+   "op": "write_file",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_folder",
+   "op": "write_file",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_grounder",
+   "op": "bibliography",
+   "channel": "gateway",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_grounder",
+   "op": "bibliography",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_grounder",
+   "op": "claim.status",
+   "channel": "gateway",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_grounder",
+   "op": "claim.status",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_grounder",
+   "op": "coverage",
+   "channel": "gateway",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_grounder",
+   "op": "coverage",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_grounder",
+   "op": "entities.link",
+   "channel": "gateway",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_grounder",
+   "op": "entities.link",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_grounder",
+   "op": "ground",
+   "channel": "gateway",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_grounder",
+   "op": "ground",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_grounder",
+   "op": "oversight.feed",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_grounder",
+   "op": "provenance.add",
+   "channel": "gateway",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_grounder",
+   "op": "provenance.add",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_grounder",
+   "op": "provenance.trace",
+   "channel": "gateway",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_grounder",
+   "op": "provenance.trace",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_grounder",
+   "op": "source.ingest",
+   "channel": "mcp",
+   "valid_ok": "work:2476c9debd382dc9f24af3e8",
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_grounder",
+   "op": "subject.forget",
+   "channel": "mcp",
+   "valid_ok": [
+    "work:d61c00ef96b2807e135c9c16"
+   ],
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_grounder",
+   "op": "swarm.frontier",
+   "channel": "gateway",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_grounder",
+   "op": "swarm.frontier",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_grounder",
+   "op": "work.register",
+   "channel": "gateway",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_grounder",
+   "op": "work.register",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_ingest",
+   "op": "assemble_work",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_ingest",
+   "op": "import_plugin",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_ingest",
+   "op": "list_urls",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_ingest",
+   "op": "path",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_ingest",
+   "op": "skill",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_ingest",
+   "op": "stem",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_legal",
+   "op": "card.list",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_legal",
+   "op": "card.load",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_legal",
+   "op": "card.save",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_legal",
+   "op": "facts.form",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_legal",
+   "op": "facts.record",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_legal",
+   "op": "pipeline.run_class_c",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": false,
+   "reason": "no invalid fixture and no reviewed no_invalid_domain statement"
+  },
+  {
+   "facade": "workspace_legal",
+   "op": "select.context",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_legal",
+   "op": "select.context_step",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_legal",
+   "op": "subsumption.validate",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_lens",
+   "op": "budget",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_lens",
+   "op": "budget_cap_get",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_lens",
+   "op": "budget_cap_set",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_lens",
+   "op": "budget_cap_set",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_lens",
+   "op": "classify",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": false,
+   "reason": "invalid raised ValueError (not a controlled refusal): could not convert string to float: 'not-a-number'"
+  },
+  {
+   "facade": "workspace_lens",
+   "op": "log",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_lens",
+   "op": "precedent_declare",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_lens",
+   "op": "precedent_declare",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_lens",
+   "op": "precedent_list",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": false,
+   "reason": "invalid not refused: {'folder': '<COVERAGE_WORKSPACE>/ws', 'count': 1, 'precedents': [{'id': 'prec-1', 'query_features': {}, 'chosen_option'"
+  },
+  {
+   "facade": "workspace_lens",
+   "op": "precedent_list",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_lens",
+   "op": "precedent_revoke",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_lens",
+   "op": "precedent_revoke",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_lens",
+   "op": "select_precedent",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": false,
+   "reason": "invalid raised ValueError (not a controlled refusal): could not convert string to float: 'not-a-number'"
+  },
+  {
+   "facade": "workspace_lock",
+   "op": "audit_query",
+   "channel": "gateway",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_lock",
+   "op": "audit_query",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_lock",
+   "op": "audit_query",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_lock",
+   "op": "classify",
+   "channel": "gateway",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_lock",
+   "op": "classify",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_lock",
+   "op": "egress_check",
+   "channel": "gateway",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_lock",
+   "op": "egress_check",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_lock",
+   "op": "ingress_check",
+   "channel": "gateway",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_lock",
+   "op": "ingress_check",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_lock",
+   "op": "reclassify",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_lock",
+   "op": "seal",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_lock",
+   "op": "setup",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_lock",
+   "op": "setup_status",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": false,
+   "reason": "no invalid fixture and no reviewed no_invalid_domain statement"
+  },
+  {
+   "facade": "workspace_lock",
+   "op": "setup_status",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": false,
+   "reason": "no invalid fixture and no reviewed no_invalid_domain statement"
+  },
+  {
+   "facade": "workspace_lock",
+   "op": "threshold_get",
+   "channel": "gateway",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_lock",
+   "op": "threshold_get",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_lock",
+   "op": "threshold_get",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_lock",
+   "op": "threshold_set",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_lock",
+   "op": "threshold_set",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_lock",
+   "op": "unseal",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_matrix",
+   "op": "explain",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_matrix",
+   "op": "reset",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_matrix",
+   "op": "set",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_matrix",
+   "op": "set_all",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_matrix",
+   "op": "set_all",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_matrix",
+   "op": "set_col",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_matrix",
+   "op": "set_row",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_matrix",
+   "op": "show",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_mirror",
+   "op": "approve",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_mirror",
+   "op": "diff",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_mirror",
+   "op": "discard",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_mirror",
+   "op": "edit",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_mirror",
+   "op": "generate",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_mirror",
+   "op": "history",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_mirror",
+   "op": "list",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_mirror",
+   "op": "lock_acquire",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_mirror",
+   "op": "lock_release",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_mirror",
+   "op": "un_redact",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_mirror",
+   "op": "un_redact",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_model",
+   "op": "attest_admit",
+   "channel": "ui",
+   "valid_ok": false,
+   "invalid_ok": true,
+   "reason": "valid not success: {'error': \"op 'attest_admit' missing params: ['model_id', 'note']\"}"
+  },
+  {
+   "facade": "workspace_model",
+   "op": "attest_baseline",
+   "channel": "ui",
+   "valid_ok": false,
+   "invalid_ok": true,
+   "reason": "valid not success: {'error': \"op 'attest_baseline' missing params: ['model_id', 'probes']\"}"
+  },
+  {
+   "facade": "workspace_model",
+   "op": "attest_run",
+   "channel": "ui",
+   "valid_ok": false,
+   "invalid_ok": true,
+   "reason": "valid not success: {'error': \"op 'attest_run' missing params: ['model_id']\"}"
+  },
+  {
+   "facade": "workspace_model",
+   "op": "attest_status",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_model",
+   "op": "attest_status",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_model",
+   "op": "classify",
+   "channel": "gateway",
+   "valid_ok": false,
+   "invalid_ok": true,
+   "reason": "valid not success: {'error': \"op 'classify' missing params: ['text', 'categories']\", 'gateway_meta': {'gateway_version': '0.1.0', 'host_labe"
+  },
+  {
+   "facade": "workspace_model",
+   "op": "complete",
+   "channel": "gateway",
+   "valid_ok": false,
+   "invalid_ok": true,
+   "reason": "valid not success: {'error': \"op 'complete' missing params: ['prompt']\", 'gateway_meta': {'gateway_version': '0.1.0', 'host_label': 'local',"
+  },
+  {
+   "facade": "workspace_model",
+   "op": "list",
+   "channel": "gateway",
+   "valid_ok": false,
+   "invalid_ok": true,
+   "reason": "valid not success: {'ok': False, 'error': 'no local-LLM endpoint configured (WORKSPACE_LOCAL_LLM_URL)', 'reachable': False, 'gateway_meta': "
+  },
+  {
+   "facade": "workspace_model",
+   "op": "status",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": false,
+   "reason": "no invalid fixture and no reviewed no_invalid_domain statement"
+  },
+  {
+   "facade": "workspace_orchestrate",
+   "op": null,
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": false,
+   "reason": "invalid raised TypeError (not a controlled refusal): workspace_orchestrate() missing 2 required positional arguments: 'folder_cont"
+  },
+  {
+   "facade": "workspace_orchestrate",
+   "op": null,
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_policy",
+   "op": "actor_stamps",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_policy",
+   "op": "delegate_signing",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_policy",
+   "op": "delegate_signing",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_policy",
+   "op": "disable",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_policy",
+   "op": "enable",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_policy",
+   "op": "juris_packs",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": false,
+   "reason": "vacuous unmapped refusal: valid and invalid both empty successes, principal not distinguished: {'ok': True, 'folder': '<COVERAGE_WORKSPACE>/"
+  },
+  {
+   "facade": "workspace_policy",
+   "op": "juris_packs",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_policy",
+   "op": "party_list",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": false,
+   "reason": "invalid not refused: {'ok': True, 'count': 2, 'parties': [{'party_id': 'svc-bot', 'party_kind': 'agent', 'name': '', 'role': '', 'competence"
+  },
+  {
+   "facade": "workspace_policy",
+   "op": "party_list",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_policy",
+   "op": "party_register",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_policy",
+   "op": "party_register",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_policy",
+   "op": "party_route",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_policy",
+   "op": "party_route",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_policy",
+   "op": "party_status",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_policy",
+   "op": "party_status",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_policy",
+   "op": "set_access_control",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_policy",
+   "op": "set_lock_mode",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_policy",
+   "op": "set_lock_mode",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_policy",
+   "op": "set_oversight_level",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_policy",
+   "op": "set_oversight_level",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_policy",
+   "op": "snapshot",
+   "channel": "gateway",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_policy",
+   "op": "snapshot",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_policy",
+   "op": "tdm_declare",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_policy",
+   "op": "tdm_declare",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_policy",
+   "op": "tdm_optout",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_policy",
+   "op": "tdm_optout",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_session",
+   "op": "adopt",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_session",
+   "op": "build",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_session",
+   "op": "draft_discard",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_session",
+   "op": "draft_discard",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_session",
+   "op": "draft_load",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_session",
+   "op": "draft_load",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_session",
+   "op": "draft_save",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_session",
+   "op": "draft_save",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_session",
+   "op": "export",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_session",
+   "op": "forensic",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_session",
+   "op": "import",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_session",
+   "op": "restore",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_session",
+   "op": "restore_bytes",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_session",
+   "op": "save",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_session",
+   "op": "template_list",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": false,
+   "reason": "no invalid fixture and no reviewed no_invalid_domain statement"
+  },
+  {
+   "facade": "workspace_session",
+   "op": "template_new",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_session",
+   "op": "verify",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_session",
+   "op": "verify_bytes",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_session",
+   "op": "verify_bytes",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "approval_decide",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "approval_decide",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "approval_list",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "approval_list",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "approval_request",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "approval_request",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "authority_revoke",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "authority_revoke",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "cancel",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "connector_list",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": false,
+   "reason": "invalid not refused: {'connectors': [{'connector_id': 'c1', 'role': 'egress', 'channel': 'email', 'use_cases': [], 'name': 'c1', 'tags': [],"
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "connector_list",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "connector_register",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "connector_register",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "console_snapshot",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "console_snapshot",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "coverage_matrix",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": false,
+   "reason": "invalid not refused: {'preset': 'kind_risk', 'title': 'Kind \u00d7 Risk', 'editable': False, 'row_axis': 'kind', 'col_axis': 'risk', 'rows': ['li"
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "coverage_matrix",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "egress_board",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": false,
+   "reason": "invalid not refused: {'folder_context': '<COVERAGE_WORKSPACE>/ws', 'tracks': [{'connector_id': 'c1', 'name': 'c1', 'channel': 'email', 'floo"
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "egress_board",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "federated_decision",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "federated_decision",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "governance_chat",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": false,
+   "reason": "invalid not refused: {'intent': 'ask', 'echo': 'inferred: ask', 'why': 'question-shaped', 'kind': 'map', 'result': {'version': 'governance_m"
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "governance_chat",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "governance_graph",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": false,
+   "reason": "invalid not refused: {'folder_context': '<COVERAGE_WORKSPACE>/ws', 'nodes': [{'id': 'party:svc-bot', 'kind': 'agent', 'agent_uid': '31af9290"
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "governance_graph",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "governance_lane_list",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "governance_map",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": false,
+   "reason": "vacuous unmapped refusal: valid and invalid both empty successes, principal not distinguished: {'version': 'governance_map/v1', 'grouped_by'"
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "governance_map",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "governance_netlist",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": false,
+   "reason": "invalid not refused: {'folder_context': '<COVERAGE_WORKSPACE>/ws', 'netlist': 'actor svc-bot\\nhuman operator\\ngate uc1 risk low\\ncord svc-bo"
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "governance_netlist",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "governance_open",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "governance_query",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "governance_query",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "governance_register",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": false,
+   "reason": "invalid not refused: {'folder_context': '<COVERAGE_WORKSPACE>/ws', 'rows': [{'type': 'agent', 'id': 'party:svc-bot', 'label': 'svc-bot', 'st"
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "governance_register",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "group_floor",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "group_floor",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "group_revoke",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "group_revoke",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "inspect_stuck",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": false,
+   "reason": "vacuous unmapped refusal: valid and invalid both empty successes, principal not distinguished: {'ok': True, 'stuck': []}"
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "inspect_stuck",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "operate",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "patch_apply",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "patch_apply",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "patch_validate",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "patch_validate",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "policy_ingest",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "policy_ingest",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "queue",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "take_next",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "tool_revoke",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "tool_revoke",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "track_strip",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "track_strip",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "transport_audit",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": false,
+   "reason": "vacuous unmapped refusal: valid and invalid both empty successes, principal not distinguished: {'folder_context': '<COVERAGE_WORKSPACE>/ws',"
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "transport_audit",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "use_case_get",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "use_case_get",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "use_case_register",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "use_case_register",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workspace",
+   "op": "add",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workspace",
+   "op": "bootstrap",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workspace",
+   "op": "list",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workspace",
+   "op": "remove",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workspace",
+   "op": "route",
+   "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  }
+ ]
+}

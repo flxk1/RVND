@@ -1,0 +1,23 @@
+{
+  "_comment": "REFERENCE PACK DATA, not substrate. Mandatory-content checklist for processor agreements under EU law (Art. 28(3)(a)-(h) GDPR). Shipped as the worked example of pack-supplied jurisdiction content; the substrate engine applies NO checklist unless a caller/pack provides one.",
+  "name": "Art. 28(3) GDPR",
+  "contract_type": "dpa",
+  "items": [
+    {"item": "28(3)(a) documented instructions",
+     "cues": ["documented instructions", "dokumentierte weisung", "auf weisung"]},
+    {"item": "28(3)(b) confidentiality commitment",
+     "cues": ["confidentiality", "vertraulichkeit", "verschwiegenheit"]},
+    {"item": "28(3)(c) security measures (Art. 32 / TOMs)",
+     "cues": ["article 32", "art. 32", "security measures", "technical and organisational", "technischen und organisatorischen", "sicherheit der verarbeitung"]},
+    {"item": "28(3)(d) sub-processor conditions",
+     "cues": ["sub-processor", "subprocessor", "another processor", "weiteren auftragsverarbeiter", "unterauftrag"]},
+    {"item": "28(3)(e) data-subject-rights assistance",
+     "cues": ["data subject", "betroffenenrechte", "rechte der betroffenen"]},
+    {"item": "28(3)(f) breach/DPIA assistance",
+     "cues": ["personal data breach", "verletzung des schutzes", "data protection impact", "datenschutz-folgenabschätzung"]},
+    {"item": "28(3)(g) deletion or return after services end",
+     "cues": ["delete", "deletion", "return", "löschen", "löschung", "zurückgeben", "herausgabe"]},
+    {"item": "28(3)(h) audits and compliance demonstration",
+     "cues": ["audit", "inspections", "nachweis", "überprüfung"]}
+  ]
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "RVND Build Surface"
+  short_description: "Compose and lint an RVND governance surface"
+  default_prompt: "Use $rvnd-build-surface to compose the cards and skills for this governed flow and lint the manifest so it cannot show a request as a grant."

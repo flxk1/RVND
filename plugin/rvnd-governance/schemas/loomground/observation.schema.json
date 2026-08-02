@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:loomground:0.7:observation",
+  "title": "Loomground observation (patch projection)",
+  "description": "The externally visible result of projecting a policy graph (specification, Conformance). Matches a conformance vector's expected.json. Canonical form: nodes, cords, and reservations are always present (reservations is [] when empty); redress appears only when at least one redress declaration exists; prohibitions and obligations are not projected (additionalProperties: false). See specification, Conformance.",
+  "type": "object",
+  "required": ["nodes", "cords", "reservations"],
+  "additionalProperties": false,
+  "properties": {
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "class"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {"type": "string"},
+          "class": {"enum": ["actor", "human", "gate", "master"]},
+          "role": {"type": "string"},
+          "risk_floor": {"enum": ["low", "medium", "high", "critical"]},
+          "grade": {"type": "string", "description": "granted autonomy grade on an actor; membership is checked against the active ladder at apply"},
+          "grade_required": {"type": "string", "description": "required autonomy grade threshold on a source gate; membership is checked against the active ladder at apply"},
+          "on_behalf_of": {"type": "string", "description": "the actor's delegator (an actor or a human) — one link of the principal chain, projected on the delegate's node"},
+          "party": {"type": "string", "description": "the party currently responsible, projected as a node attribute on an actor or gate; for a partyless delegate, the party resolved along the principal chain"}
+        }
+      }
+    },
+    "cords": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["from", "to", "type"],
+        "additionalProperties": false,
+        "properties": {
+          "from": {"type": "string"},
+          "to": {"type": "string"},
+          "type": {"enum": ["authority", "pipe", "egress"]}
+        }
+      }
+    },
+    "reservations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind", "by"],
+        "additionalProperties": false,
+        "properties": {
+          "kind": {"type": "string"},
+          "by": {"type": "string"},
+          "when": {"type": "string"},
+          "duration": {"type": "string", "description": "temporal window on a reserved action (present only when declared)"},
+          "on_elapse": {"enum": ["halt", "proceed"], "description": "resolution when the duration elapses; halt = deny (safe default), proceed = fail-open"}
+        }
+      }
+    },
+    "redress": {
+      "type": "array",
+      "description": "Canonical projection: each redress materializes `overturn` (false when absent) and `within` (null when absent), unlike the patch surface where both are optional.",
+      "items": {
+        "type": "object",
+        "required": ["kind", "by", "overturn", "within"],
+        "additionalProperties": false,
+        "properties": {
+          "kind": {"type": "string"},
+          "by": {"type": "string"},
+          "overturn": {"type": "boolean"},
+          "within": {"type": ["string", "null"]}
+        }
+      }
+    }
+  }
+}

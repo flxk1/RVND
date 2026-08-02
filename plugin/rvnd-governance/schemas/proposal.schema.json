@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://loomground.local/schemas/rvnd-proposal.schema.json",
+  "title": "RVND governance proposal envelope",
+  "description": "The typed object a governance-producing skill works with. The skill assembles intent, scope, and runtime bindings and asks RVND to generate/validate the Loomground patch; it never writes .lg and assumes it correct. Governance meaning is a real, structurally-typed Loomground construct (patch elements and typed deltas) or a visible residual. Constructs and observation reference the official loomground-governance 0.8.2 schemas (see schemas/loomground/).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["proposal_id", "intent", "scope", "loomground", "residual", "validation", "versions", "confirmation"],
+  "properties": {
+    "proposal_id": { "type": "string", "minLength": 1 },
+    "intent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text", "actor", "host"],
+      "properties": {
+        "text": { "type": "string", "minLength": 1 },
+        "actor": { "type": "string", "minLength": 1 },
+        "host": { "type": "string" },
+        "context": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["boundary_id", "members"],
+      "properties": {
+        "boundary_id": { "type": "string", "minLength": 1 },
+        "members": { "type": "array", "items": { "type": "string" } },
+        "membership_mode": { "enum": ["static", "dynamic"] }
+      }
+    },
+    "loomground": {
+      "description": "The Loomground meaning as structured data. Either a full patch (the proposed graph) and/or a set of typed deltas; both restricted to the real vocabulary. The skill does not author .lg - RVND emits/validates it.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["language_version"],
+      "anyOf": [
+        {"required": ["patch"]},
+        {"required": ["deltas"]}
+      ],
+      "properties": {
+        "language_version": { "type": "string" },
+        "vocabulary_version": { "type": "string" },
+        "source": { "type": "string", "description": "the .lg text RVND generated (skill does not author it)" },
+        "patch": { "$ref": "urn:loomground:0.8:patch" },
+        "deltas": {
+          "type": "array",
+          "items": { "$ref": "https://loomground.local/schemas/rvnd-operation-protocol.schema.json#/$defs/GovernanceDelta" }
+        }
+      }
+    },
+    "runtime_bindings": {
+      "type": "object",
+      "additionalProperties": {
+        "oneOf": [ { "type": "string" }, { "type": "array", "items": { "type": "string" } } ]
+      }
+    },
+    "residual": {
+      "description": "The residual ledger: meaning NOT expressible in a real construct, kept visibly unresolved. May be empty, never omitted.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["text", "reason"],
+        "properties": {
+          "text": { "type": "string", "minLength": 1 },
+          "reason": { "type": "string", "minLength": 1 },
+          "question": { "type": "string" }
+        }
+      }
+    },
+    "validation": {
+      "description": "RVND's validation result. Presented, never computed by the skill. well_formed:false must never be applyable.",
+      "allOf": [ { "$ref": "https://loomground.local/schemas/rvnd-operation-protocol.schema.json#/$defs/ValidationResult" } ]
+    },
+    "impact": { "type": "object" },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["declaration"],
+        "properties": {
+          "declaration": { "type": "string" },
+          "source_fingerprint": { "type": "string" },
+          "span": { "type": "string" },
+          "claim": { "type": "string" },
+          "legal_grounding": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "versions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["loomground_governance"],
+      "properties": {
+        "loomground_governance": { "type": "string" },
+        "vocabulary": { "type": "string" },
+        "solver": { "type": "string" },
+        "rvnd_command_contract": { "type": "string" },
+        "policy_revision": { "type": "string" },
+        "source_fingerprints": { "type": "array", "items": { "type": "string" } },
+        "boundary_revision": { "type": "string" },
+        "runtime_catalogue": { "type": "string" }
+      }
+    },
+    "confirmation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required"],
+      "properties": {
+        "required": { "type": "boolean" },
+        "approver": { "type": "string" },
+        "rationale": { "type": "string" }
+      }
+    }
+  }
+}

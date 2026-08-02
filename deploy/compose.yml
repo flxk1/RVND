@@ -1,0 +1,75 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+# Copyright 2026 flxk1
+# One command stands up Rvnd behind a verified-identity proxy:
+#   cd deploy && docker compose up
+# Fill the three OAUTH2_PROXY_* secrets first (see quickstart-company.md).
+# Only the proxy publishes a port; Rvnd itself stays on the compose network.
+# Optional local model: docker compose --profile ollama up
+
+services:
+  rvnd:
+    build: { context: .., dockerfile: deploy/Dockerfile }
+    user: rvnd-broker
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    environment:
+      WORKSPACE_L0_LOG_ROOT: /data/logs
+      WORKSPACE_KEY_DIR: /data/keys
+      WORKSPACE_PRINCIPAL_HEADER: X-Auth-Request-Email
+      WORKSPACE_PRINCIPAL_GROUPS_HEADER: X-Auth-Request-Groups
+      WORKSPACE_PROXY_SHARED_SECRET: ${RVND_PROXY_SHARED_SECRET:?set in .env}
+      WORKSPACE_IDENTITY_MAP: /data/identity-map.yml
+      WORKSPACE_CONSOLE_URL: ${RVND_PUBLIC_URL:-http://localhost:4180}
+    volumes:
+      - rvnd-data:/data
+      - ./workspaces:/workspaces
+    expose: ["8799"]
+    networks: [rvnd-backend, model]
+
+  auth:
+    image: quay.io/oauth2-proxy/oauth2-proxy:v7.6.0@sha256:dcb6ff8dd21bf3058f6a22c6fa385fa5b897a9cd3914c88a2cc2bb0a85f8065d
+    environment:
+      OAUTH2_PROXY_PROVIDER: ${OAUTH2_PROXY_PROVIDER:-google}
+      OAUTH2_PROXY_CLIENT_ID: ${OAUTH2_PROXY_CLIENT_ID:?set in .env}
+      OAUTH2_PROXY_CLIENT_SECRET: ${OAUTH2_PROXY_CLIENT_SECRET:?set in .env}
+      OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH2_PROXY_COOKIE_SECRET:?set in .env}
+      OAUTH2_PROXY_EMAIL_DOMAINS: ${OAUTH2_PROXY_EMAIL_DOMAINS:-*}
+      OAUTH2_PROXY_UPSTREAMS: http://proxy-proof:8080
+      OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4180
+      OAUTH2_PROXY_SET_XAUTHREQUEST: "true"
+      OAUTH2_PROXY_PASS_USER_HEADERS: "true"
+      # Teams/Slack post-backs carry no IdP session; on this one route the
+      # single-use action-link token inside the body is the credential
+      OAUTH2_PROXY_SKIP_AUTH_ROUTES: POST=^/decision/respond$
+    ports: ["4180:4180"]
+    depends_on: [proxy-proof]
+    networks: [default, auth-proof]
+
+  proxy-proof:
+    image: nginx:1.27-alpine@sha256:65645c7bb6a0661892a8b03b89d0743208a18dd2f3f17a54ef4b76fb8e2f2a10
+    environment:
+      RVND_PROXY_SHARED_SECRET: ${RVND_PROXY_SHARED_SECRET:?set in .env}
+    volumes:
+      - ./proxy-proof.conf.template:/etc/nginx/templates/default.conf.template:ro
+    expose: ["8080"]
+    depends_on: [rvnd]
+    networks: [auth-proof, rvnd-backend]
+
+  ollama:
+    image: ollama/ollama:latest@sha256:10c13eb515db310990527d36ca14a136da4bcc0fbf2bf3b15e9c1f111e9d3cd4
+    profiles: [ollama]
+    volumes: [ollama-models:/root/.ollama]
+    expose: ["11434"]
+    networks: [model]
+
+volumes:
+  rvnd-data:
+  ollama-models:
+
+networks:
+  auth-proof:
+    internal: true
+  rvnd-backend:
+    internal: true
+  model:
+    internal: true

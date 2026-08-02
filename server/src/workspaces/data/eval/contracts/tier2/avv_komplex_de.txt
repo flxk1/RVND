@@ -1,0 +1,39 @@
+VEREINBARUNG ÜBER DIE VERARBEITUNG PERSONENBEZOGENER DATEN IM AUFTRAG
+
+Diese Vereinbarung über die Auftragsverarbeitung wird geschlossen zwischen
+der Beispiel Cloud GmbH (nachfolgend „Auftragnehmerin“) und der Volkmann
+Handels AG (nachfolgend „Auftraggeberin“); sie konkretisiert die Pflichten
+der Parteien aus Art. 28 DSGVO.
+
+Dieser Vertrag tritt mit Wirkung zum 15. Januar 2027 in Kraft.
+
+§ 1 Begriffsbestimmungen
+
+„Weisung“ bezeichnet die auf einen bestimmten datenschutzmäßigen Umgang
+gerichtete schriftliche Anordnung der Auftraggeberin.
+
+§ 2 Pflichten der Auftragnehmerin
+
+(1) Die Auftragnehmerin muss personenbezogene Daten, die sie im Rahmen
+dieser Vereinbarung erhält, ausschließlich entsprechend der dokumentierten
+Weisung verarbeiten, soweit nicht eine Verarbeitung durch das Recht der
+Union oder der Mitgliedstaaten vorgeschrieben ist.
+
+(2) Die Auftragnehmerin muss der Auftraggeberin jede Verletzung des
+Schutzes personenbezogener Daten, von der sie Kenntnis erlangt, binnen
+48 Stunden nach der Kenntniserlangung melden; die Meldung muss die in
+Art. 33 Abs. 3 DSGVO genannten Angaben enthalten.
+
+(3) Die Auftragnehmerin darf nicht ohne vorherige gesonderte schriftliche
+Genehmigung der Auftraggeberin weitere Auftragsverarbeiter hinzuziehen,
+es sei denn, es handelt sich um die in Anlage 2 bereits genehmigten
+Unterauftragnehmer.
+
+(4) Die Auftragnehmerin muss sämtliche personenbezogenen Daten innerhalb
+von 60 Tagen nach Beendigung der Leistungserbringung löschen oder
+zurückgeben, es sei denn, gesetzliche Aufbewahrungspflichten stehen
+entgegen.
+
+§ 3 Schlussbestimmungen
+
+Diese Vereinbarung unterliegt dem Recht der Bundesrepublik Deutschland.
