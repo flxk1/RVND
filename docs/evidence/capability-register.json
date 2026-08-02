@@ -2610,14 +2610,18 @@
   {
    "facade": "workspace_workflow",
    "op": "governance_open",
-   "status": "deferred",
+   "status": "ui-supported",
    "gateway": false,
    "mutates": true,
    "surface_state": "surfaced",
-   "route_tested": false,
+   "route_tested": true,
    "callable": true,
-   "transport_proven": null,
-   "basis": "deferred: console binding, signed mint/operate admission, and in-process UI-route success/refusal evidence are recorded; public proxy-transport success and refusal evidence is not recorded."
+   "transport_proven": {
+    "channel": "ui",
+    "success": "server/tests/test_proxy_identity.py::test_local_console_can_open_governed_agent_session",
+    "refusal": "server/tests/test_proxy_identity.py::test_local_console_refuses_governed_session_with_wrong_policy"
+   },
+   "basis": "ui-supported: authenticated loopback HTTP /tool tests prove both a successful signed session mint and fail-closed refusal when the requested policy fingerprint does not bind to the agent lane."
   },
   {
    "facade": "workspace_workflow",

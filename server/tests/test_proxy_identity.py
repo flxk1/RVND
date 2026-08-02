@@ -61,6 +61,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent / "app"))
 import serve  # noqa: E402
 
 import workspaces.mcp_server as S
+from workspaces.governance_lane import GovernanceLane, register_lane
 from workspaces.parties import list_parties, register_party, set_party_status
 
 SURFACE = {
@@ -124,6 +125,63 @@ def test_no_declared_header_ignores_identity(env):               # X1
                headers={"X-Auth-Request-Email": "spoof\x40example.com"})
     assert out["ok"] is True and out["claimed_by"] == "mallory", \
         "without a declared header the bridge must ignore identity headers"
+
+
+def test_local_console_can_open_governed_agent_session(env):
+    """The documented loopback app can execute its Build -> Run path."""
+    register_party(env["folder"], party_id="bot", kind="agent", grade="L2",
+                   log_root=env["log"])
+    register_lane(env["folder"], GovernanceLane(
+        lane_id="lane-bot",
+        agent="bot",
+        max_grade="L2",
+        action_classes=("text.generate",),
+        folder=env["folder"],
+        policy_fingerprint="console-policy-v1",
+        approved_by="local-operator",
+        rationale="local console gate",
+    ), log_root=env["log"])
+
+    out = call(env["port"], "workspace_workflow", {
+        "op": "governance_open",
+        "params": {
+            "folder_context": env["folder"],
+            "party": "bot",
+            "policy_fingerprint": "console-policy-v1",
+        },
+    })
+
+    assert out["ok"] is True
+    assert out["claims"]["party"] == "bot"
+    assert out["capability_token"].startswith("RVSC1.")
+
+
+def test_local_console_refuses_governed_session_with_wrong_policy(env):
+    """The loopback transport fails closed when policy does not bind."""
+    register_party(env["folder"], party_id="bot", kind="agent", grade="L2",
+                   log_root=env["log"])
+    register_lane(env["folder"], GovernanceLane(
+        lane_id="lane-bot",
+        agent="bot",
+        max_grade="L2",
+        action_classes=("text.generate",),
+        folder=env["folder"],
+        policy_fingerprint="console-policy-v1",
+        approved_by="local-operator",
+        rationale="local console gate",
+    ), log_root=env["log"])
+
+    out = call(env["port"], "workspace_workflow", {
+        "op": "governance_open",
+        "params": {
+            "folder_context": env["folder"],
+            "party": "bot",
+            "policy_fingerprint": "wrong-policy",
+        },
+    })
+
+    assert "error" in out
+    assert "policy fingerprint" in out["error"]
 
 
 def test_resolved_party_overrides_client_actor(env):             # X2

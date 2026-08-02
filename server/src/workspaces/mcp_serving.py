@@ -39,10 +39,12 @@ def _log_root() -> Path | None:
 
 
 # ---------------------------------------------------------------------------
-# Request principal (identity rung 2: a trusted fronting proxy verified who is
-# calling). Set per request by the HTTP bridge, cleared in its finally block;
-# the MCP-native path never sets it, so nothing changes there. contextvars are
-# per-thread, matching the bridge's thread-per-request model.
+# Request principal. In a deployment, identity rung 2 means a trusted fronting
+# proxy verified who is calling. The loopback-only app may instead bind the
+# agent for one governance_open call to its authenticated local bridge session.
+# Both are set inside the request thread and cleared in its finally block; the
+# MCP-native path never sets either. contextvars are per-thread, matching the
+# bridge's thread-per-request model.
 # ---------------------------------------------------------------------------
 import contextvars as _contextvars
 
