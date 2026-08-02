@@ -239,6 +239,53 @@ def test_package_metadata_matches_release_contract():
             "humanConfirmation": True,
         }
 
+
+def test_multi_host_plugin_manifests_are_coherent():
+    package_root = Path(__file__).resolve().parents[1] / "rvnd-governance"
+    package = json.loads((package_root / "package.json").read_text(encoding="utf-8"))
+    codex = json.loads(
+        (package_root / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8")
+    )
+    claude = json.loads(
+        (package_root / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8")
+    )
+    root_mcp = json.loads((package_root / ".mcp.json").read_text(encoding="utf-8"))
+    generic_mcp = json.loads(
+        (package_root / "mcp" / "rvnd.mcp.json").read_text(encoding="utf-8")
+    )
+
+    for manifest in (codex, claude):
+        assert manifest["name"] == package["name"]
+        assert manifest["version"] == package["version"]
+        assert manifest["license"] == package["license"]
+    assert codex["skills"] == "./skills/"
+    assert codex["mcpServers"] == "./.mcp.json"
+
+    root_server = root_mcp["mcpServers"]["rvnd-governance"]
+    generic_server = generic_mcp["mcpServers"]["rvnd-governance"]
+    for field in ("command", "args", "env", "transport"):
+        assert root_server[field] == generic_server[field]
+
+    marketplace = json.loads(
+        (package_root.parents[1] / ".claude-plugin" / "marketplace.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    repository_plugin = json.loads(
+        (package_root.parents[1] / ".claude-plugin" / "plugin.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    entry = marketplace["plugins"][0]
+    assert marketplace["name"] == "rvnd"
+    assert entry["name"] == package["name"]
+    assert entry["version"] == package["version"]
+    assert entry["source"] == "./plugin/rvnd-governance"
+    assert repository_plugin["name"] == package["name"]
+    assert repository_plugin["version"] == package["version"]
+    assert repository_plugin["skills"] == "./plugin/rvnd-governance/skills/"
+    assert repository_plugin["mcpServers"] == "./plugin/rvnd-governance/.mcp.json"
+
     descriptor = json.loads(
         (package_root / "mcp" / "rvnd.mcp.json").read_text(encoding="utf-8")
     )["mcpServers"]["rvnd-governance"]

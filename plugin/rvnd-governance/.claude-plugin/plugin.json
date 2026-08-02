@@ -1,0 +1,17 @@
+{
+  "name": "rvnd-governance",
+  "version": "0.5.1",
+  "description": "Drive RVND's typed governance cycle, grounded policy workflow, oversight, audit verification, and incident response.",
+  "author": {
+    "name": "Loomground Contributors"
+  },
+  "repository": "https://github.com/flxk1/RVND",
+  "license": "AGPL-3.0-only",
+  "keywords": [
+    "governance",
+    "loomground",
+    "mcp",
+    "oversight",
+    "rvnd"
+  ]
+}
