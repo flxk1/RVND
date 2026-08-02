@@ -5,6 +5,13 @@ dates are ISO.
 
 ## [Unreleased]
 
+## [0.6.8.8] - 2026-08-02
+
+### Dependencies
+
+- Refreshed all five immutable Loomground dependency pins to their approved
+  public repository heads, including Solver runtime 0.2.0 and Deontic 0.1.3.
+
 ## [0.6.8.7] - 2026-08-02
 
 ### Documentation

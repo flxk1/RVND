@@ -2,7 +2,7 @@
 <!-- Copyright 2026 flxk1 -->
 # Release dependency resolution
 
-As of 2026-07-26, RVND installs the five Loomground plane packages from exact
+As of 2026-08-02, RVND installs the five Loomground plane packages from exact
 Git commits. RVND also consumes a pinned, hash-verified subset of Patchbay's
 presentation contract. Each commit is the target of the release tag named in
 `pyproject.toml`; using the commit prevents a moved tag from changing an RVND
@@ -19,11 +19,11 @@ Current tag-to-commit mapping:
 
 | Package | Release tag | Pinned commit |
 |---|---|---|
-| `loomground-solver` | `v0.1.3` | `3d234142324cb497607e4402e7a429c68d772764` |
-| `loomground-versum` | `loomground-versum-v0.7.0` | `a98e568cafde9b32a196bbf5925d1024f7e32073` |
-| `loomground-governance` | `v0.8.2` | `7e7bddde54f2bd8b72149896546a66820f2617e0` |
-| `loomground-deontic` | `v0.1.2` | `fd103e422f09a9e9613b50268372bba58787e295` |
-| `loomground-ingest` | `v0.1.1` | `1c4120f2752a6c2783e47a52c4564c0c349dacf7` |
+| `loomground-solver` | `solver-v0.2.0` | `910468f5f0415946b2236f569f3c7890cc91e5ae` |
+| `loomground-versum` | `loomground-versum-v0.7.0` | `0ba5325048e7da7fdd947c955a7515723d8148e6` |
+| `loomground-governance` | `v0.8.2` | `b69e0e17b8ab313f9ec0303523deeffdfe7ff115` |
+| `loomground-deontic` | `v0.1.3` | `85e7c6d3c8a6e64cf06e333573cacfa6c671d0b2` |
+| `loomground-ingest` | `v0.1.1` | `236fa8510b47a7978b152f5d07f84cd78c71229a` |
 | `loomground-patchbay` | `v0.1.0` | `36e70ada8d51583b7071a51edf12e6d65b1a0cc5` |
 
 Patchbay is consumed by vendoring the shared presentation contract rather than
