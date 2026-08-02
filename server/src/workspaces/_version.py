@@ -8,4 +8,4 @@ label, nothing to drift.
 Internal by design: a version constant, not a surface.
 """
 
-__version__ = "0.6.8.7"
+__version__ = "0.6.8.8"
