@@ -175,19 +175,24 @@ inspection.
 
 ## Quick start
 
-The following commands create a virtual environment, install Rvnd from the
-working tree and start the local Patchbay web application on macOS or Linux.
+The following commands clone Rvnd, create an isolated virtual environment,
+install it and start the local Patchbay web application on macOS or Linux.
+Run them from the directory where you want the `RVND` folder to be created.
 They need Python 3.10 or newer and `git` available on the PATH: five of Rvnd's
 runtime dependencies — the Loomground packages — are fetched directly from Git
 rather than from PyPI, so the install step clones them.
 
 ```bash
-cd rvnd
-python3 -m venv .venv
-.venv/bin/python -m pip install -e .
+git clone https://github.com/flxk1/RVND.git
+cd RVND
+./server/install.sh
 .venv/bin/python app/serve.py
-# → http://127.0.0.1:8799   (loopback only)
 ```
+
+The server opens the application in your browser at
+`http://127.0.0.1:8799/` and remains loopback-only. If you already cloned the
+repository, start with `cd` into that existing `RVND` directory and omit the
+`git clone` command.
 
 The application is plain HTML and requires no frontend build or desktop shell.
 It binds to the local machine only; it is not a production or multi-user
@@ -236,7 +241,7 @@ and the concept docs under [`docs/`](docs/).
 
 ## Installation notes
 
-The quick-start procedure installs the package in editable mode. A normal
+The quick-start installer installs the package in editable mode. A normal
 non-editable installation from the repository root is also possible:
 
 ```bash
