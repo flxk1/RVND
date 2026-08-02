@@ -103,14 +103,25 @@ def test_verifier_rejects_wrong_folder_uid_and_revoked_nonce(authority):
         verifier.verify(opened["capability_token"])
 
 
-def test_open_requires_matching_proxy_verified_principal(authority):
+def test_open_requires_verified_request_principal(authority):
     folder, log = authority
     clear_request_principal()
-    with pytest.raises(CapabilityError, match="proxy-verified"):
+    with pytest.raises(CapabilityError, match="verified request principal"):
         governance_open(
             folder, party="bot", policy_fingerprint="sha256:approved",
             log_root=log,
         )
+
+
+def test_open_accepts_authenticated_loopback_session(authority):
+    folder, log = authority
+    set_request_principal("bot", "bot", rung="loopback-session")
+    opened = governance_open(
+        folder, party="bot", policy_fingerprint="sha256:approved",
+        log_root=log,
+    )
+    assert opened["ok"] is True
+    assert opened["claims"]["party"] == "bot"
 
 
 def test_operate_requires_and_accepts_real_session(authority):
