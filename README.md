@@ -87,6 +87,14 @@ published `loomground-deontic` and `loomground-governance` languages. RVND owns
 the host-side admission, confirmation, policy projection and audit behavior;
 the ingest package does not enforce those host decisions.
 
+These pieces form one fixed, one-way pipeline —
+**Language → Ingest → Versum → Solver → Patchbay → RVND** — whose single
+persistent knowledge plane is Versum: a policy written in a registered grammar
+is ingested into span-grounded Versum knowledge, reasoned over by the Solver,
+rendered by the Patchbay, and enforced by RVND. Reasoning reads Versum only and
+fails closed on an unindexed workspace. See
+[docs/concepts/knowledge-pipeline.md](docs/concepts/knowledge-pipeline.md).
+
 ## Policy model
 
 Policy is the source of authority. Rvnd evaluates agents and their proposed
