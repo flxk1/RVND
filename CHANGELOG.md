@@ -5,6 +5,19 @@ dates are ISO.
 
 ## [Unreleased]
 
+## [0.6.8.6] - 2026-08-02
+
+### Distribution
+
+- Added native Claude and Codex manifests for the bundled `rvnd-governance`
+  plugin while retaining the generic package and MCP descriptor.
+- Made RVND itself the Claude marketplace so the bundled plugin resolves from
+  its valid repository-local path without duplicating its AGPL source.
+- Kept compatibility with external Claude catalogs through a repository-root
+  plugin manifest that delegates to the same nested skills and MCP descriptor.
+- Added a regression gate that keeps every host manifest and MCP launch
+  contract aligned with the canonical plugin package.
+
 ## [0.6.8.5] - 2026-08-02
 
 ### Security
