@@ -2,7 +2,7 @@
   "$schema": "../schemas/loomground-package.schema.json",
   "schemaVersion": 1,
   "name": "rvnd-governance",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "license": "AGPL-3.0-only",
   "description": "The RVND governance skill layer: drive the typed MCP governance cycle, extract and validate grounded policy constructs, obtain server decisions for governed actions, surface rule conflicts without choosing a host-side winner, and verify signed receipts.",
   "author": {
