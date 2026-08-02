@@ -1,0 +1,33 @@
+VEREINBARUNG ZUR AUFTRAGSVERARBEITUNG
+
+Diese Vereinbarung zur Auftragsverarbeitung nach Art. 28 DSGVO wird
+geschlossen zwischen der Datendienst Nord GmbH (nachfolgend
+„Auftragsverarbeiter“) und der Musterhandel AG (nachfolgend
+„Verantwortlicher“).
+
+Diese Vereinbarung tritt am 01.11.2026 in Kraft.
+
+1. Begriffsbestimmungen. „Leistungen“ bezeichnet die in Anlage 1
+beschriebenen Hosting-Dienste.
+
+2. Weisungen. Der Auftragsverarbeiter muss personenbezogene Daten
+ausschließlich auf dokumentierte Weisung des Verantwortlichen verarbeiten.
+
+3. Vertraulichkeit. Der Auftragsverarbeiter muss sicherstellen, dass die zur
+Verarbeitung befugten Personen zur Vertraulichkeit verpflichtet wurden.
+
+4. Meldung. Der Auftragsverarbeiter muss den Verantwortlichen über eine
+Verletzung des Schutzes personenbezogener Daten spätestens 72 Stunden nach
+der Kenntnisnahme unterrichten.
+
+5. Unterauftragsverarbeiter. Der Auftragsverarbeiter darf nicht ohne
+vorherige schriftliche Genehmigung des Verantwortlichen einen weiteren
+Auftragsverarbeiter beauftragen.
+
+6. Löschung. Der Auftragsverarbeiter muss alle personenbezogenen Daten
+innerhalb von 30 Tagen nach Vertragsende löschen.
+
+7. Nachweise. Der Verantwortliche darf einmal pro Kalenderjahr eine
+Überprüfung der Verarbeitungstätigkeiten durchführen.
+
+8. Anwendbares Recht. Diese Vereinbarung unterliegt deutschem Recht.

@@ -1,0 +1,162 @@
+{
+  "$schema": "../schemas/loomground-package.schema.json",
+  "schemaVersion": 1,
+  "name": "rvnd-governance",
+  "version": "0.5.0",
+  "license": "AGPL-3.0-only",
+  "description": "The RVND governance skill layer: drive the typed MCP governance cycle, extract and validate grounded policy constructs, obtain server decisions for governed actions, surface rule conflicts without choosing a host-side winner, and verify signed receipts.",
+  "author": {
+    "name": "flxk1"
+  },
+  "keywords": [
+    "governance",
+    "policy",
+    "rvnd",
+    "loomground",
+    "mcp",
+    "oversight",
+    "audit",
+    "fail-closed",
+    "commercial"
+  ],
+  "skills": [
+    {
+      "name": "rvnd-govern",
+      "path": "skills/rvnd-govern",
+      "provides": [
+        "rvnd.govern"
+      ]
+    },
+    {
+      "name": "rvnd-decide",
+      "path": "skills/rvnd-decide",
+      "provides": [
+        "rvnd.decide"
+      ]
+    },
+    {
+      "name": "rvnd-audit",
+      "path": "skills/rvnd-audit",
+      "provides": [
+        "rvnd.audit"
+      ]
+    },
+    {
+      "name": "rvnd-incident",
+      "path": "skills/rvnd-incident",
+      "provides": [
+        "rvnd.incident"
+      ]
+    },
+    {
+      "name": "rvnd-build-surface",
+      "path": "skills/rvnd-build-surface",
+      "provides": [
+        "rvnd.build-surface"
+      ]
+    },
+    {
+      "name": "extract-policy-norms",
+      "path": "skills/extract-policy-norms",
+      "provides": [
+        "governance.extract-norms"
+      ]
+    },
+    {
+      "name": "compile-loomground-policy",
+      "path": "skills/compile-loomground-policy",
+      "provides": [
+        "governance.compile-policy"
+      ]
+    },
+    {
+      "name": "reason-governance-rules",
+      "path": "skills/reason-governance-rules",
+      "provides": [
+        "governance.reason"
+      ]
+    },
+    {
+      "name": "resolve-rule-conflicts",
+      "path": "skills/resolve-rule-conflicts",
+      "provides": [
+        "governance.resolve-conflicts"
+      ]
+    }
+  ],
+  "capabilities": {
+    "rvnd.govern": {
+      "mode": "read-write",
+      "humanConfirmation": true
+    },
+    "rvnd.decide": {
+      "mode": "read-write",
+      "humanConfirmation": true
+    },
+    "rvnd.audit": {
+      "mode": "read-write",
+      "humanConfirmation": true
+    },
+    "rvnd.incident": {
+      "mode": "read-write",
+      "humanConfirmation": true
+    },
+    "rvnd.build-surface": {
+      "mode": "read",
+      "humanConfirmation": false
+    },
+    "governance.extract-norms": {
+      "mode": "read-write",
+      "humanConfirmation": true
+    },
+    "governance.compile-policy": {
+      "mode": "read",
+      "humanConfirmation": false
+    },
+    "governance.reason": {
+      "mode": "read-write",
+      "humanConfirmation": true
+    },
+    "governance.resolve-conflicts": {
+      "mode": "read-write",
+      "humanConfirmation": true
+    }
+  },
+  "runtime": {
+    "python": ">=3.10",
+    "network": false,
+    "config": [],
+    "requires": [
+      "rvnd>=0.6.8.4,<0.7"
+    ]
+  },
+  "adapters": {
+    "claude": {},
+    "codex": {
+      "interface": {
+        "displayName": "RVND Governance",
+        "shortDescription": "Drive the RVND governance MCP server safely",
+        "longDescription": "Nine composable skills drive RVND's typed governance cycle, policy extraction and validation, governed action decisions, conflict handling, oversight, audit verification, incident response, and surface linting. The server decides and the host renders, so a request is never shown as a grant.",
+        "developerName": "Flxk1",
+        "category": "Productivity",
+        "capabilities": [
+          "Governance cycle",
+          "Policy extraction and validation",
+          "Governed rule decisions",
+          "Human oversight",
+          "Signed audit",
+          "Incident response",
+          "Local-first, fail-closed"
+        ],
+        "defaultPrompt": [
+          "Run this action through RVND's governance cycle.",
+          "Extract and validate the rules in this policy.",
+          "Resolve this governance conflict without inventing a winner.",
+          "Put this to a person for approve/hold/deny.",
+          "Verify this receipt against the signed chain."
+        ]
+      }
+    },
+    "generic": {}
+  }
+}

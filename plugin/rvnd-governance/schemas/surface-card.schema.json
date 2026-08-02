@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://loomground.local/schemas/rvnd-surface-card.schema.json",
+  "title": "RVND MCP App surface card",
+  "description": "One rendered surface in the RVND governance flow. A card renders server state; it never computes a verdict.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["card", "step", "reads", "renders"],
+  "properties": {
+    "card": {
+      "enum": ["context", "proposal", "patch", "decision", "receipt"]
+    },
+    "step": {
+      "description": "Which cycle step this card owns.",
+      "enum": ["query", "propose", "validate", "preview", "confirm", "apply", "display"]
+    },
+    "reads": {
+      "description": "The RVND operations (canonical verbs or live op names) this card reads from. A card computes no verdict of its own.",
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "renders": {
+      "description": "What the card puts on screen.",
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "status_vocabulary": {
+      "description": "Allowed status words for this card. The proposal card must exclude granted/enabled/active/in-effect.",
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "mode": {
+      "description": "Decision-card mode. ratification renders approve/deny for a determinate verdict; residual-origination renders unranked alternatives and must never render as approve/reject.",
+      "enum": ["ratification", "residual-origination"]
+    },
+    "decision_vocabulary": {
+      "description": "Allowed decision words for a decision card. A residual-origination card must exclude approve/deny/reject.",
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "alternatives_min": {
+      "description": "For a residual-origination card: the minimum number of real, unranked alternatives (>= 2).",
+      "type": "integer",
+      "minimum": 2
+    },
+    "lamps": {
+      "description": "Discrete verdict/state lamps. No numeric scores or dials are permitted.",
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "forbids_scores": {
+      "description": "Must be true: RVND surfaces render discrete lamps, never dials or scores.",
+      "const": true
+    },
+    "attributed": {
+      "description": "Must be true: every outcome shown carries its rule, key, and (for loosening) approver.",
+      "const": true
+    }
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://loomground.local/schemas/rvnd-composition.schema.json",
+  "title": "RVND surface composition manifest",
+  "description": "Composes RVND skills and cards into one governed surface. A composition must cover the write path fail-closed: any surface that can propose a change must also route validate, confirm, and display.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name", "skills", "cards", "fail_closed"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "maxLength": 64
+    },
+    "description": { "type": "string", "minLength": 1 },
+    "skills": {
+      "description": "Which plugin skills this surface composes.",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "enum": ["rvnd-govern", "rvnd-decide", "rvnd-audit", "rvnd-incident", "rvnd-build-surface"]
+      },
+      "uniqueItems": true
+    },
+    "cards": {
+      "description": "Which surface cards this composition renders, in cycle order.",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "enum": ["context", "proposal", "patch", "decision", "receipt"]
+      },
+      "uniqueItems": true
+    },
+    "server": {
+      "description": "The RVND MCP server this surface drives.",
+      "type": "string",
+      "const": "rvnd-governance"
+    },
+    "fail_closed": {
+      "description": "Must be true. If the server is unreachable or a principal is unresolved, the surface stops.",
+      "const": true
+    },
+    "human_confirmation": {
+      "description": "True when the surface can loosen (widen authority, raise a grade, import policy) and therefore must route a named approver.",
+      "type": "boolean"
+    }
+  },
+  "allOf": [
+    {
+      "$comment": "A surface that renders a proposal must also render patch (validate/preview) and receipt (display), so a request is never shown as an outcome.",
+      "if": { "properties": { "cards": { "contains": { "const": "proposal" } } } },
+      "then": {
+        "properties": {
+          "cards": {
+            "allOf": [
+              { "contains": { "const": "patch" } },
+              { "contains": { "const": "receipt" } }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

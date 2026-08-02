@@ -1,0 +1,15 @@
+name: reason-governance-rules
+loomground_governance: 0.8.2
+loomground:
+  reads: [actor, human, gate, authority, reservation, quorum, prohibition, temporal, redress, party, delegation, autonomy-grade]
+  proposes: []
+  never_applies_directly: true
+rvnd:
+  discovery: workspace_workflow(op="help")
+  tools:
+    - tool: workspace_workflow
+      ops: [governance_lane_list, governance_graph, operate]
+    - tool: workspace_audit
+      ops: [verify_chain]
+confirmation:
+  mutations: server-governed

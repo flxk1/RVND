@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rvnd — Console</title>
+<!-- The five-widget front door: say (chat) · build (patchbay) · run (mixdesk) ·
+     read (screen) · sign (the widget, its own page at /sign). The header
+     rollup, the workspace picker, the Read screen (Allowed / Waiting /
+     Happened) and All-Stop all read live governance state through the /tool
+     bridge. They render from one shared store (units/state.mjs): any surface
+     mutates it, all re-render from it in the same tick, and a workspace switch
+     re-projects the outside before the next paint. The store holds view state
+     and triggers refetches; it never decides governance. Build (units/
+     patchbay.mjs) and Run (units/run.mjs) mount into #centre-body keyed off
+     the store's centreView; Say flips centreView to 'build' after a governed
+     write lands, so the graph is what's on screen right after you talk to it.
+     The classic console is preserved at /classic. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; connect-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'">
+<style>
+  @font-face{font-family:"Space Grotesk";font-style:normal;font-weight:400 700;font-display:swap;
+    src:url("/fonts/space-grotesk-latin.woff2") format("woff2")}
+  @font-face{font-family:"IBM Plex Mono";font-style:normal;font-weight:400;font-display:swap;
+    src:url("/fonts/ibm-plex-mono-400-latin.woff2") format("woff2")}
+  @font-face{font-family:"IBM Plex Mono";font-style:normal;font-weight:600;font-display:swap;
+    src:url("/fonts/ibm-plex-mono-600-latin.woff2") format("woff2")}
+  :root{
+    --bg:#14161b; --panel:#1b1e26; --panel-2:#21252e; --line:#2a2e37;
+    --txt:#cdd2dc; --txt-dim:#8a92a4; --hot:#df8b46; --bad:#e2554a; --ok:#5aa886;
+    --ask:#d9a13d; --r:5px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);
+    font-family:"IBM Plex Mono",monospace;-webkit-font-smoothing:antialiased;overflow:hidden}
+  #app{display:flex;flex-direction:column;height:100vh}
+  /* one calm header row */
+  header{display:flex;flex-wrap:wrap;align-items:center;gap:14px;padding:9px 16px;border-bottom:1px solid var(--line);background:var(--panel)}
+  header>*{white-space:nowrap}
+  .wm{font-family:"Space Grotesk",sans-serif;font-weight:600;font-size:15px;color:#f3f1ea}
+  select#ws{font-family:inherit;font-size:12px;color:var(--txt);background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r);padding:5px 8px;max-width:200px}
+  .toggle{display:flex;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+  .toggle button{font-family:inherit;font-size:12px;letter-spacing:.06em;color:var(--txt-dim);background:transparent;border:0;padding:5px 13px;cursor:pointer}
+  .toggle button.on{background:var(--line);color:var(--txt);font-weight:600}
+  .env{font-size:12px;color:var(--txt-dim)}
+  .env b{color:var(--txt);font-weight:600}
+  .env .att{color:var(--ask)}
+  .rec{font:12px var(--mono);color:var(--txt);text-decoration:none;border:1px solid transparent;border-radius:var(--r);padding:4px 6px;background:transparent;cursor:pointer}
+  .rec:hover{border-color:var(--line)}
+  .rec::before{content:"● ";color:var(--bad)}
+  .spacer{margin-left:auto}
+  /* frame body: centre + right screen */
+  .body{flex:1;display:flex;min-height:0;overflow:auto}
+  /* below this width the centre+screen row no longer fits side by side —
+     stack instead of letting the screen panel run off-screen with no way
+     to reach it (html,body has overflow:hidden; there is no scrollbar) */
+  @media (max-width:860px){
+    .body{flex-direction:column}
+    .screen{width:auto;flex:0 0 260px}
+  }
+  .frame{position:relative;display:flex;flex-direction:column;border-right:1px solid var(--line);min-height:0}
+  .frame:last-child{border-right:0}
+  .tag{position:absolute;top:9px;left:12px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--hot)}
+  .centre{flex:1;background:var(--bg)}
+  .screen{width:320px;flex:0 0 auto;background:var(--panel);overflow:auto}
+  .hollow{flex:1;display:flex;align-items:center;justify-content:center;color:var(--txt-dim);font-size:12.5px;text-align:center;padding:24px}
+  #centre-body{flex:1;display:flex;flex-direction:column;min-height:0;overflow:auto;padding-top:34px}
+  /* Build — the patchbay (units/patchbay.mjs) */
+  .pb-toolbar{display:flex;align-items:center;gap:8px;padding:0 12px 8px;flex:0 0 auto}
+  .pb-add{font-family:inherit;font-size:11px;color:var(--txt-dim);background:transparent;border:1px solid var(--line);border-radius:var(--r);padding:4px 10px;cursor:pointer}
+  .pb-add:hover{color:var(--txt)}
+  .pb-hint{font-size:11px;color:var(--txt-dim);margin-left:4px}
+  .pb-form{display:flex;align-items:center;gap:8px;padding:0 12px 10px;flex:0 0 auto}
+  .pb-form-h{font-size:11px;color:var(--txt-dim)}
+  .pb-form input,.pb-form select{font-family:inherit;font-size:11.5px;background:var(--panel-2);border:1px solid var(--line);color:var(--txt);border-radius:var(--r);padding:4px 8px}
+  .pb-form-ok{font-family:inherit;font-size:11px;border:1px solid #2f4a3a;color:#8fd1ad;background:transparent;border-radius:var(--r);padding:4px 10px;cursor:pointer}
+  .pb-form-cancel{font-family:inherit;font-size:11px;border:1px solid var(--line);color:var(--txt-dim);background:transparent;border-radius:var(--r);padding:4px 10px;cursor:pointer}
+  .pb-stage{position:relative;flex:0 0 auto;margin:0 12px}
+  .pb-cords{position:absolute;left:0;top:0;pointer-events:none}
+  .pb-node{position:absolute;border:1px solid var(--line);border-radius:var(--r);background:var(--panel-2);padding:6px 9px;cursor:pointer;font-size:11px}
+  .pb-node.sel{border-color:var(--hot)}
+  .pb-node.pb-master{background:var(--panel)}
+  .pb-nk{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--txt-dim)}
+  .pb-nl{font-size:12px;color:var(--txt);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pb-nm{font-size:10.5px;color:var(--txt-dim)}
+  .pb-inspect{flex:0 0 auto;border-top:1px solid var(--line);padding:10px 14px;font-size:11.5px;min-height:64px}
+  .pb-empty{color:var(--txt-dim);padding:12px}
+  .pb-i-h{font-family:"Space Grotesk",sans-serif;font-weight:600;font-size:13px;color:#f3f1ea;margin-bottom:4px}
+  .pb-i-row{color:var(--txt);margin:3px 0}
+  .pb-i-sub{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--txt-dim);margin-top:8px}
+  .pb-i-warn{color:var(--ask)}
+  .pb-i-dim{color:var(--txt-dim)}
+  .pb-kill,.pb-grant,.pb-revoke,.pb-lane-open{font-family:inherit;font-size:10.5px;border:1px solid var(--line);color:var(--txt-dim);background:transparent;border-radius:var(--r);padding:3px 9px;cursor:pointer;margin-left:6px}
+  .pb-lane-open{margin-left:0;margin-top:4px}
+  .pb-kill:hover,.pb-grant:hover,.pb-revoke:hover{color:var(--txt)}
+  /* Run — the mixdesk (units/run.mjs) */
+  .rn-empty{color:var(--txt-dim);padding:24px;text-align:center}
+  .rn-strip{border-bottom:1px solid var(--line);padding:10px 14px}
+  .rn-top{display:flex;justify-content:space-between;font-size:12.5px}
+  .rn-label{color:var(--txt);font-weight:600}
+  .rn-v{font-size:11px}
+  .rn-meta{font-size:10.5px;color:var(--txt-dim);margin:3px 0 6px}
+  .rn-run{font-family:inherit;font-size:11px;border:1px solid #2f4a3a;color:#8fd1ad;background:transparent;border-radius:var(--r);padding:4px 10px;cursor:pointer}
+  .rn-dim{font-size:10.5px;color:var(--txt-dim)}
+  .rn-runh{font-size:10.5px;color:var(--txt-dim);margin-top:8px}
+  .rn-step{display:flex;align-items:center;gap:6px;margin:5px 0;font-size:11px;color:var(--txt)}
+  .rn-step-dot{width:8px;height:8px;border-radius:2px;flex:0 0 auto}
+  .rn-step-lbl{flex:1}
+  .rn-ov{font-family:inherit;font-size:10px;border:1px solid var(--line);background:var(--panel-2);color:var(--txt);border-radius:var(--r);padding:2px 7px;cursor:pointer}
+  .rn-ov-r{font-size:10px;color:var(--txt-dim)}
+  /* Matrix — the coverage lens (units/matrix.mjs) */
+  .mx-empty{color:var(--txt-dim);padding:24px;text-align:center}
+  .mx-toolbar{display:flex;align-items:center;gap:10px;padding:0 14px 6px;flex:0 0 auto}
+  .mx-toolbar select{font-family:inherit;font-size:11.5px;background:var(--panel-2);border:1px solid var(--line);color:var(--txt);border-radius:var(--r);padding:4px 8px}
+  .mx-gaps{font-size:11px;color:var(--txt-dim);display:flex;align-items:center;gap:4px}
+  .mx-hint{font-size:11px;color:var(--ask);margin-left:auto}
+  .mx-q{font-size:10.5px;color:var(--txt-dim);padding:0 14px 10px}
+  .mx-grid-wrap{overflow:auto;padding:0 14px;flex:0 0 auto}
+  .mx-tbl{border-collapse:collapse;font-size:11px}
+  .mx-tbl th{color:var(--txt-dim);font-weight:500;padding:4px 6px;text-align:center;white-space:nowrap}
+  .mx-row-h{text-align:right!important;color:var(--txt)!important}
+  .mx-cell{width:34px;height:26px;text-align:center;color:#fff;font-weight:600;cursor:pointer;border:1px solid var(--bg);position:relative}
+  .mx-cell.sel{outline:2px solid var(--hot);outline-offset:-2px}
+  .mx-cell.mx-finding{box-shadow:inset 0 0 0 2px var(--bad)}
+  .mx-count{position:absolute;bottom:1px;right:2px;font-size:8px;opacity:.8}
+  .mx-inspect{flex:0 0 auto;border-top:1px solid var(--line);padding:10px 14px;font-size:11.5px;min-height:60px;margin-top:10px}
+  .mx-i-h{font-family:"Space Grotesk",sans-serif;font-weight:600;font-size:13px;color:#f3f1ea;margin-bottom:4px}
+  .mx-i-row{color:var(--txt);margin:3px 0}
+  .mx-i-warn{color:var(--ask)}
+  .mx-revoke{font-family:inherit;font-size:10.5px;border:1px solid var(--line);color:var(--txt-dim);background:transparent;border-radius:var(--r);padding:3px 9px;cursor:pointer;margin-top:6px}
+  .mx-revoke:hover{color:var(--txt)}
+  /* the Read screen: Allowed / Waiting / Happened */
+  .rd{padding:34px 16px 16px;display:flex;flex-direction:column;gap:18px}
+  .q{display:flex;flex-direction:column;gap:5px}
+  .q .k{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--txt-dim)}
+  .q .v{font-size:13px;color:var(--txt)}
+  .q .v b{font-weight:600}
+  .q .v .att{color:var(--ask)}
+  .ev{font-size:12px;color:var(--txt-dim);display:flex;gap:8px;font-variant-numeric:tabular-nums}
+  .ev .t{color:#6b7280}
+  /* chat = permanent bottom bar */
+  .chat{display:flex;align-items:center;gap:12px;padding:9px 16px;border-top:1px solid var(--line);background:var(--panel)}
+  .chat .tag2{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--hot)}
+  /* one shared pill: the "+" sits inside the same box as the input, not
+     beside it as a second, separately-bordered control */
+  .chat-intake{flex:1;display:flex;align-items:center;background:var(--bg);border:1px solid var(--line);border-radius:var(--r)}
+  .chat-intake:focus-within{border-color:var(--txt-dim)}
+  .chat-intake input{flex:1;background:transparent;border:0;color:var(--txt);font-family:inherit;font-size:12.5px;padding:7px 10px 7px 0}
+  .chat-intake input:focus{outline:none}
+  .chat-icon{flex:0 0 auto;width:28px;height:28px;line-height:1;font-size:15px;color:var(--txt-dim);background:transparent;border:0;border-right:1px solid var(--line);margin-right:6px;cursor:pointer;font-family:inherit}
+  .chat-icon:hover{color:var(--txt)}
+  .allstop{border:1px solid var(--bad);color:var(--bad);border-radius:var(--r);padding:5px 13px;font-size:12px;letter-spacing:.1em;font-weight:600;background:transparent;font-family:inherit;cursor:pointer}
+  .allstop:hover{background:rgba(226,85,74,.12)}
+  .ws-dialog{position:fixed;z-index:20;inset:50% auto auto 50%;transform:translate(-50%,-50%);border:1px solid var(--line);border-radius:9px;background:var(--panel);color:var(--txt);padding:16px;min-width:min(440px,calc(100vw - 40px));box-shadow:0 20px 60px #0009}
+  .ws-dialog[hidden]{display:none}
+  .ws-dialog label{display:block;margin:10px 0 4px;color:var(--txt-dim);font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+  .ws-dialog input{box-sizing:border-box;width:100%;background:var(--panel-2);border:1px solid var(--line);color:var(--txt);border-radius:6px;padding:8px}
+  .ws-dialog menu{display:flex;justify-content:flex-end;gap:8px;margin:14px 0 0;padding:0}
+  .ws-dialog button{border:1px solid var(--line);background:var(--panel-2);color:var(--txt);border-radius:6px;padding:7px 11px;cursor:pointer}
+  .ws-dialog .primary{border-color:#5f9088;color:#8fc6ba}
+  .ws-dialog .error{min-height:16px;margin-top:8px;color:#e8836e;font-size:11px}
+  .record-setting{display:flex;gap:10px;align-items:flex-start;margin:14px 0}
+  .record-setting input{width:auto;margin-top:2px}
+  .record-copy{font-size:11px;color:var(--txt-dim);line-height:1.5}
+  .record-copy b{display:block;color:var(--txt);font-size:12px}
+  .skel{font-size:11px;color:var(--txt-dim);border:1px dashed var(--line);border-radius:var(--r);padding:2px 8px}
+  /* Say's output: the driver's result / confirm-card and the grower's ledger,
+     floating above the chat bar, one live surface */
+  #say-out{position:absolute;left:16px;right:16px;bottom:52px;max-height:66vh;overflow:auto;
+    display:none;z-index:20;background:var(--panel);border:1px solid var(--line);border-radius:8px;
+    box-shadow:0 12px 40px rgba(0,0,0,.5)}
+  .say-card{padding:12px 14px;font-size:12px;color:var(--txt);display:flex;flex-direction:column;gap:6px}
+  .say-h{font-family:"Space Grotesk",sans-serif;font-weight:600;font-size:13px;color:#f3f1ea}
+  .say-sub{font-size:11.5px;color:var(--txt-dim)}
+  .say-sub code{color:var(--txt);background:var(--panel-2);border-radius:3px;padding:1px 4px}
+  .say-err{padding:12px 14px;font-size:12px;color:var(--bad)}
+  .say-kv{display:flex;gap:10px;font-size:11.5px}
+  .say-kv .k{color:var(--txt-dim);min-width:120px}
+  .say-kv .v{color:var(--txt);word-break:break-all}
+  .say-scroll{overflow-x:auto}
+  .say-tbl{border-collapse:collapse;font-size:11px;width:100%}
+  .say-tbl th{text-align:left;color:var(--txt-dim);font-weight:600;padding:3px 10px 3px 0;border-bottom:1px solid var(--line)}
+  .say-tbl td{padding:3px 10px 3px 0;color:var(--txt);white-space:nowrap}
+  .say-actions{display:flex;gap:8px;margin-top:6px}
+  .say-btn{font-family:inherit;font-size:11.5px;color:var(--txt-dim);background:transparent;border:1px solid var(--line);border-radius:var(--r);padding:5px 12px;cursor:pointer}
+  .say-btn:hover{color:var(--txt)}
+  .say-btn[disabled]{opacity:.5;cursor:not-allowed}
+  .say-go{border-color:#2f4a3a;color:#8fd1ad}
+  .say-reserved{color:var(--ask)}
+  .say-ul{margin:3px 0 8px 16px;padding:0;font-size:11px}
+  .say-ul.express li{color:var(--ok)}
+  .say-ul .none{color:var(--txt-dim);list-style:none;margin-left:-16px}
+  .say-led-grp label{display:block;font-size:11px;color:var(--txt-dim);margin-top:4px}
+  .say-handback{font-size:11px;color:var(--hot);margin:6px 0 2px}
+  .say-patch{color:var(--txt)}
+  .say-lg summary{cursor:pointer;font-size:11px;color:var(--txt-dim)}
+  .say-lg pre{white-space:pre-wrap;font-size:10.5px;color:var(--txt);background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:8px;max-height:180px;overflow:auto}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <span class="wm">Rvnd</span>
+    <select id="ws" aria-label="active workspace"><option>loading…</option></select>
+    <button class="chat-icon" id="ws-add" type="button" title="Create or open a workspace" aria-label="Create or open a workspace">+</button>
+    <div class="toggle" role="radiogroup" aria-label="centre view">
+      <button class="on" data-centre="build" role="radio" aria-checked="true">2 · Build</button>
+      <button data-centre="run" role="radio" aria-checked="false">3 · Run</button>
+      <button data-centre="matrix" role="radio" aria-checked="false">Matrix</button>
+    </div>
+    <span class="env" id="env" aria-live="polite" title="every workspace you can see — console_snapshot">—</span>
+    <span class="spacer"></span>
+    <button class="rec" id="record-settings" type="button" title="Recording detail and activity display">Record · Minimal</button>
+    <a class="rec" href="/sign" title="open the human sign-off page">5 · Sign</a>
+    <span class="skel">Phase 1</span>
+  </header>
+
+  <div class="body">
+    <section class="frame centre" aria-label="build and run">
+      <span class="tag" id="centre-tag">2 · Build — the patchbay</span>
+      <div class="hollow" id="centre-body">the patchbay composes here (Phase 2)</div>
+    </section>
+    <section class="frame screen" aria-label="read">
+      <span class="tag">4 · Read — the screen</span>
+      <div class="rd">
+        <div class="q"><span class="k">Allowed</span><span class="v" id="rd-allowed">—</span></div>
+        <div class="q"><span class="k">Waiting</span><span class="v" id="rd-waiting">—</span></div>
+        <div class="q"><span class="k">Happened</span><span class="v" id="rd-happened" style="display:flex;flex-direction:column;gap:4px">—</span></div>
+      </div>
+    </section>
+  </div>
+
+  <div id="say-out" role="status" aria-live="polite" aria-label="Search/Chat — result, confirm-card, or the drafted control patch"></div>
+  <div class="chat">
+    <span class="tag2">1 · Search/Chat</span>
+    <div class="chat-intake">
+      <button class="chat-icon" id="say-plus" type="button" title="Add — a file, a web page, or an LLM connection" aria-label="Add intake or a connection">+</button>
+      <input type="file" id="say-file" accept=".txt,.md,.markdown,.csv,.tsv,.json,.lg,text/plain,text/markdown,text/csv" style="display:none">
+      <input id="say" aria-label="search or chat — one input" placeholder="search the policy · ask a question · or a command (? for ops)">
+    </div>
+    <button class="allstop" id="allstop" aria-label="All-Stop — hold every active agent across every workspace you can see">ALL-STOP</button>
+  </div>
+</div>
+<div class="ws-dialog" id="record-dialog" role="dialog" aria-modal="true" aria-labelledby="record-dialog-title" hidden>
+  <div id="record-dialog-title" style="font-weight:700">Record settings</div>
+  <label class="record-setting" style="text-transform:none">
+    <input type="checkbox" id="record-show-activity" checked>
+    <span class="record-copy"><b>Show activity in Read</b>Display recent events in the console. Turning this off hides them; it does not stop integrity recording.</span>
+  </label>
+  <div class="record-copy"><b>Integrity record · Minimal</b>Required for durable agents, lanes, authority and policy state. It cannot be disabled in a governed workspace.</div>
+  <div class="record-copy" style="margin-top:10px"><b>Diagnostic log · Optional</b>Privacy Lock’s separate diagnostic JSONL log is off unless the server operator configures it.</div>
+  <menu>
+    <button type="button" class="primary" id="record-close">Done</button>
+  </menu>
+</div>
+<div class="ws-dialog" id="ws-dialog" role="dialog" aria-modal="true" aria-labelledby="ws-dialog-title" hidden>
+  <form id="ws-form">
+    <div id="ws-dialog-title" style="font-weight:700">Create or open a workspace</div>
+    <label for="ws-path">Full folder path</label>
+    <input id="ws-path" required placeholder="/Users/you/Projects/my-workspace">
+    <label for="ws-label">Workspace name <span style="text-transform:none;font-weight:400">(optional)</span></label>
+    <input id="ws-label" placeholder="My workspace">
+    <div class="error" id="ws-error" role="alert"></div>
+    <menu>
+      <button type="button" id="ws-cancel">Cancel</button>
+      <button type="submit" class="primary" id="ws-create">Create &amp; open</button>
+    </menu>
+  </form>
+</div>
+<!-- The shared store is an ES module, so it loads through the module pipeline;
+     this shim hands the factory to the classic boot below (which runs during
+     parse and cannot import). A render harness may instead pre-set the factory
+     on window, so the same boot path drives under test. -->
+<script type="module">
+  import { createStore } from '/units/state.mjs';
+  import { createSay } from '/units/say.mjs';
+  import { createPatchbay } from '/units/patchbay.mjs';
+  import { createRun } from '/units/run.mjs';
+  import { createMatrix } from '/units/matrix.mjs';
+  window.__RVND_createStore = createStore;
+  window.__RVND_createSay = createSay;
+  window.__RVND_createPatchbay = createPatchbay;
+  window.__RVND_createRun = createRun;
+  window.__RVND_createMatrix = createMatrix;
+  window.dispatchEvent(new Event('rvnd-store-ready'));
+</script>
+<script>
+(function(){
+  var HTTP=window.__WORKSPACES_HTTP__, TOK=window.__WORKSPACES_TOKEN__;
+  var showActivity=true;
+  try{ showActivity=localStorage.getItem('rvnd.showActivity')!=='false'; }catch(_){}
+  function call(tool,args){
+    if(!HTTP) return Promise.resolve(null);
+    return fetch(HTTP,{method:'POST',headers:{'Content-Type':'application/json','X-Workspaces-Token':TOK||''},
+      body:JSON.stringify({tool:tool,args:args})}).then(function(r){return r.json();}).catch(function(){return null;});
+  }
+  function esc(s){var d=document.createElement('div');d.textContent=String(s==null?'':s);return d.innerHTML;}
+  function base(p){return String(p||'').split('/').pop()||p;}
+
+  // centre toggle: Build and Run mount real widget units (units/patchbay.mjs,
+  // units/run.mjs) keyed off the store's centreView; Matrix has no unit yet.
+  var TAGS={build:"2 · Build — the patchbay",run:"3 · Run — the mixdesk",matrix:"Matrix — the coverage lens"};
+  var btns=document.querySelectorAll('.toggle button');
+  var lastCentre=null;
+  function showCentre(view,patchbay,run,matrix){
+    if(view===lastCentre) return;
+    lastCentre=view;
+    var body=document.getElementById('centre-body');
+    body.classList.remove('hollow');
+    if(patchbay) patchbay.unmount();
+    if(run) run.unmount();
+    if(matrix) matrix.unmount();
+    document.getElementById('centre-tag').textContent=TAGS[view]||TAGS.build;
+    btns.forEach(function(x){ var on=x.dataset.centre===view; x.classList.toggle('on',on); x.setAttribute('aria-checked',String(on)); });
+    if(view==='build'){ if(patchbay) patchbay.mount(body); }
+    else if(view==='run'){ if(run) run.mount(body); }
+    else if(view==='matrix'){ if(matrix) matrix.mount(body); }
+  }
+  btns.forEach(function(b){ b.addEventListener('click',function(){ window.__RVND.store.setState({centreView:b.dataset.centre}); }); });
+
+  // the environment rollup + the workspace picker, both from the store's
+  // console_snapshot rollup (state.outside carries it for the current focus)
+  function renderEnv(state){
+    var env=document.getElementById('env'), sel=document.getElementById('ws');
+    var out=state.outside;
+    if(!out||!Array.isArray(out.buses)){ env.textContent='(no workspaces)'; return; }
+    var att=(out.attention||[]).length, over=out.attention_overflow||0;
+    env.innerHTML='<b>'+out.count+'</b> workspace'+(out.count===1?'':'s')+
+      (att?' · <span class="att">'+att+' need'+(att===1?'s':'')+' a person</span>':' · all clear')+
+      (over?' (+'+over+')':'');
+    sel.innerHTML=out.buses.map(function(b){return '<option value="'+esc(b.path)+'">'+esc(base(b.name||b.path))+'</option>';}).join('')||'<option>—</option>';
+    if(state.activeWorkspace) sel.value=state.activeWorkspace;
+  }
+
+  var WORST={prohibited:'not allowed',reserved:'reserved · a person must sign off',human:'needs a person',
+             refused:'refused',ask:'a person signs off',auto:'runs on its own',clear:'clear'};
+  // the Read screen (the outside): Allowed / Waiting / Happened, all from the
+  // store's projection for the focused workspace — no fetch here, the store
+  // re-projects before it notifies so this never paints stale
+  function renderScreen(state){
+    var out=state.outside; if(!out) return;
+    var bus=out.bus||{};
+    var active=(bus.agents_total||0)-(bus.agents_held||0);
+    document.getElementById('rd-allowed').innerHTML=
+      '<b>'+active+'</b> of '+(bus.agents_total||0)+' agent'+((bus.agents_total===1)?'':'s')+' active'+
+      (bus.worst&&bus.worst!=='clear'?' · <span class="att">'+esc(WORST[bus.worst]||bus.worst)+'</span>':'');
+    var pend=bus.pending||0;
+    document.getElementById('rd-waiting').innerHTML= pend
+      ? '<b class="att">'+pend+'</b> sign-off'+(pend===1?'':'s')+' waiting'
+      : 'nothing waits on you';
+    var box=document.getElementById('rd-happened');
+    if(!showActivity){ box.textContent='activity hidden · recording continues'; return; }
+    var evs=out.happened||[];
+    if(!evs.length){ box.textContent=state.activeWorkspace?'no events yet':'—'; return; }
+    box.innerHTML=evs.slice().reverse().map(function(e){
+      var t=(e.ts||'').slice(11,16); var what=e.kind||e.op||e.summary||e.action||'event';
+      return '<span class="ev"><span class="t">'+esc(t)+'</span><span>'+esc(what)+'</span></span>';
+    }).join('');
+  }
+
+  // one subscriber: every surface re-renders from the one store, same tick
+  function render(state){
+    renderEnv(state); renderScreen(state);
+    showCentre(state.centreView||'build', window.__RVND.patchbay, window.__RVND.run, window.__RVND.matrix);
+  }
+
+  function boot(){
+    var store=window.__RVND_createStore(call);
+    // Say — the driver and the grower — over the same store: a command resolves
+    // against the help registry (mutates → confirm-card), a policy grows the
+    // governor and shows the variety ledger. After a governed write it re-reads,
+    // so Read re-projects in the same tick.
+    var say=window.__RVND_createSay?window.__RVND_createSay(store,call,document):null;
+    // Build and Run — the patchbay and the mixdesk, over the same store and the
+    // same /tool bridge Say and Read use. Each subscribes to the store itself,
+    // so a workspace switch or a Say-driven write re-projects them in the same
+    // tick, same as Read.
+    var patchbay=window.__RVND_createPatchbay?window.__RVND_createPatchbay(store,call,document):null;
+    var run=window.__RVND_createRun?window.__RVND_createRun(store,call,document):null;
+    var matrix=window.__RVND_createMatrix?window.__RVND_createMatrix(store,call,document):null;
+    window.__RVND={store:store, call:call, say:say, patchbay:patchbay, run:run, matrix:matrix};
+
+    // the one input drives Say on Enter; Escape dismisses its output surface
+    var sayIn=document.getElementById('say');
+    if(sayIn && say){
+      sayIn.addEventListener('keydown',function(ev){
+        if(ev.key==='Enter'){ ev.preventDefault(); var t=sayIn.value; sayIn.value=''; say.submit(t); }
+        else if(ev.key==='Escape'){ say.clear(); }
+      });
+    }
+
+    // switching the workspace mutates the store; the store re-projects the
+    // outside and notifies, and render() repaints env + screen from it
+    document.getElementById('ws').addEventListener('change',function(){ store.setActiveWorkspace(this.value); });
+    // Both dialogs declare aria-modal; give keyboard users the behaviour that
+    // implies — Escape closes, and Tab is trapped inside the open dialog so
+    // focus cannot fall to the page behind it. Closing returns focus to the
+    // control that opened it.
+    function focusable(dialog){
+      return [].slice.call(dialog.querySelectorAll(
+        'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'));
+    }
+    function wireModal(dialog,close){
+      dialog.addEventListener('keydown',function(ev){
+        if(ev.key==='Escape'){ ev.preventDefault(); close(); return; }
+        if(ev.key!=='Tab') return;
+        var f=focusable(dialog); if(!f.length) return;
+        var first=f[0],last=f[f.length-1],active=dialog.ownerDocument.activeElement;
+        if(ev.shiftKey&&active===first){ ev.preventDefault(); last.focus(); }
+        else if(!ev.shiftKey&&active===last){ ev.preventDefault(); first.focus(); }
+      });
+    }
+    var recordDialog=document.getElementById('record-dialog'),showActivityBox=document.getElementById('record-show-activity');
+    var recordOpen=document.getElementById('record-settings');
+    showActivityBox.checked=showActivity;
+    function closeRecord(){ recordDialog.hidden=true; recordOpen.focus(); }
+    recordOpen.addEventListener('click',function(){ recordDialog.hidden=false; showActivityBox.focus(); });
+    document.getElementById('record-close').addEventListener('click',closeRecord);
+    wireModal(recordDialog,closeRecord);
+    showActivityBox.addEventListener('change',function(){
+      showActivity=this.checked;
+      try{ localStorage.setItem('rvnd.showActivity',String(showActivity)); }catch(_){}
+      renderScreen(store.getState());
+    });
+    var wsDialog=document.getElementById('ws-dialog'),wsForm=document.getElementById('ws-form');
+    var wsOpen=document.getElementById('ws-add');
+    function closeWs(){ wsDialog.hidden=true; wsForm.reset(); wsOpen.focus(); }
+    wsOpen.addEventListener('click',function(){
+      document.getElementById('ws-error').textContent='';
+      wsDialog.hidden=false;
+      document.getElementById('ws-path').focus();
+    });
+    document.getElementById('ws-cancel').addEventListener('click',closeWs);
+    wireModal(wsDialog,closeWs);
+    wsForm.addEventListener('submit',async function(ev){
+      ev.preventDefault();
+      var requested=(document.getElementById('ws-path').value||'').trim();
+      if(!requested){ document.getElementById('ws-error').textContent='Enter a full folder path.'; return; }
+      var label=(document.getElementById('ws-label').value||'').trim()||base(requested);
+      var err=document.getElementById('ws-error');
+      err.textContent='Creating…';
+      var created=await call('workspace_folder',{op:'create',params:{path:requested}});
+      if(!created||created.error||created.ok===false){
+        err.textContent='Workspace could not be created: '+((created&&(created.error||created.message))||'the server did not accept the request.');
+        return;
+      }
+      var resolved=created.path||requested;
+      var added=await call('workspace_workspace',{op:'add',params:{folder_context:resolved,label:label}});
+      if(!added||added.error||added.ok===false){
+        err.textContent='Workspace could not be opened: '+((added&&(added.error||added.message))||'the server did not accept the request.');
+        return;
+      }
+      await store.hydrate();
+      await store.setActiveWorkspace((added&&added.path)||resolved);
+      wsDialog.hidden=true;
+      wsForm.reset();
+    });
+
+    // intake: "+" opens one menu (local file / web page / LLM connection);
+    // each choice hands off to Say, same output surface, same ingest pipeline
+    // a pasted policy uses. The file input itself stays in the DOM Say
+    // doesn't own, so Say's menu triggers it by id.
+    var fileIn=document.getElementById('say-file');
+    if(say){
+      var plusBtn=document.getElementById('say-plus');
+      if(plusBtn) plusBtn.addEventListener('click',function(){ say.openIntakeMenu(); });
+      if(fileIn) fileIn.addEventListener('change',function(){ if(this.files&&this.files[0]) say.uploadFile(this.files[0]); this.value=''; });
+    }
+
+    // All-Stop: the real kill switch — confirm, then hold every active agent in
+    // every workspace the caller can see (the safe direction; each suspend is the
+    // existing governed party_status write, recorded). Honest partial-failure.
+    // The buses come from the store's rollup; on completion the store re-reads.
+    document.getElementById('allstop').addEventListener('click',function(){
+      var out=store.getState().outside;
+      var buses=(out&&out.buses)||[];
+      if(!buses.length){ return; }
+      if(!confirm('All-Stop — hold every active agent across '+buses.length+' workspace(s)? This suspends them (the safe direction) and is recorded.')) return;
+      var held=0, failed=0, pending=buses.length;
+      buses.forEach(function(b){
+        call('workspace_policy',{op:'party_list',params:{folder_context:b.path}}).then(function(r){
+          var parties=(r&&(r.parties||r.rows))||(Array.isArray(r)?r:[]);
+          var agents=parties.filter(function(p){return (p.party_kind||p.kind)==='agent' && (p.status||'active')==='active';});
+          return Promise.all(agents.map(function(p){
+            return call('workspace_policy',{op:'party_status',params:{folder_context:b.path,party_id:(p.party_id||p.id),status:'suspended',actor:'app-user',reason:'All-Stop'}})
+              .then(function(x){ if(x&&x.error){failed++;} else {held++;} });
+          }));
+        }).catch(function(){failed++;}).then(function(){
+          if(--pending===0){
+            alert('All-Stop: held '+held+' agent'+(held===1?'':'s')+(failed?', '+failed+' could not be reached':'')+' (recorded).');
+            store.hydrate();
+          }
+        });
+      });
+    });
+
+    // the one subscriber repaints every surface from the store on each publish
+    store.subscribe(render);
+    store.hydrate().then(function(){ window._ready=true; });
+  }
+
+  if(window.__RVND_createStore) boot();
+  else window.addEventListener('rvnd-store-ready', boot);
+})();
+</script>
+</body>
+</html>

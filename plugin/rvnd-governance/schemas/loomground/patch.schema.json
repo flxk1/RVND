@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:loomground:0.8:patch",
+  "title": "Loomground patch (abstract policy graph as data)",
+  "description": "A canonical JSON serialization of a policy graph: an interchange form of the .lg netlist and an emission target for tools and agents.",
+  "type": "object",
+  "required": ["nodes", "cords"],
+  "additionalProperties": false,
+  "properties": {
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "class"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {"type": "string"},
+          "class": {"enum": ["actor", "human", "gate", "master"]},
+          "role": {"type": "string"},
+          "party": {"type": "string"},
+          "name": {"type": "string", "description": "free-text label; authored metadata, not part of the observation"},
+          "risk_floor": {"enum": ["low", "medium", "high", "critical"]},
+          "on_behalf_of": {"type": "string", "description": "delegation: this actor (delegate) acts for the named delegator, a declared actor or human; the on-behalf-of relation must be acyclic"},
+          "grade": {"type": "string", "description": "granted autonomy grade on an actor; membership is checked against the active ladder at apply"},
+          "grade_required": {"type": "string", "description": "required autonomy grade threshold on a source gate; membership is checked against the active ladder at apply"}
+        }
+      }
+    },
+    "grants": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["gate", "actor"],
+        "additionalProperties": false,
+        "properties": {
+          "gate": {"type": "string"},
+          "actor": {"type": "string"},
+          "kinds": {"type": "array", "items": {"type": "string"}},
+          "risks": {"type": "array", "items": {"enum": ["low", "medium", "high", "critical"]}}
+        }
+      }
+    },
+    "cords": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["from", "to", "type"],
+        "additionalProperties": false,
+        "properties": {
+          "from": {"type": "string"},
+          "to": {"type": "string"},
+          "type": {"enum": ["authority", "pipe", "egress"]}
+        }
+      }
+    },
+    "reservations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind", "by"],
+        "additionalProperties": false,
+        "properties": {
+          "kind": {"type": "string"},
+          "by": {"type": "string", "description": "role, conjunction, or m-of-n target"},
+          "when": {"type": "string", "description": "guard over {kind,risk,party,tags}; never id/provenance"},
+          "duration": {"type": "string"},
+          "on_elapse": {"enum": ["halt", "proceed"]}
+        }
+      }
+    },
+    "prohibitions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind"],
+        "additionalProperties": false,
+        "properties": {
+          "kind": {"type": "string"},
+          "when": {"type": "string", "description": "guard over {kind,risk,party,tags}; never id/provenance"}
+        }
+      }
+    },
+    "obligations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["obligation", "on"],
+        "additionalProperties": false,
+        "properties": {
+          "obligation": {"type": "string"},
+          "on": {"type": "string", "description": "the gate the obligation attaches to on egress"}
+        }
+      }
+    },
+    "redress": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind", "by"],
+        "additionalProperties": false,
+        "properties": {
+          "kind": {"type": "string"},
+          "by": {"type": "string", "description": "the role owed a fresh re-examination"},
+          "overturn": {"type": "boolean", "description": "empowered to reverse, not merely review"},
+          "within": {"type": ["string", "null"], "description": "appeal/recall window"}
+        }
+      }
+    }
+  }
+}

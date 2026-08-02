@@ -1,0 +1,15 @@
+{
+  "_comment": "Reference jurisdiction pack: EU governance posture, BASE layer. Data the operator opts into. Describes a control-form posture for risky action classes; it is NOT a compliance claim for any regulation (locked decision: 'designed to support', controller's call). Tags are the action-gate footprint vocabulary; forms are the section-1.5 control-form algebra. Overlays compose strictest-wins and can only add guarantees.",
+  "pack_id": "eu-base",
+  "version": "0.1.0",
+  "jurisdiction": "EU",
+  "extends": "",
+  "effective_from": "",
+  "controls": {
+    "personal-data": "single_approver",
+    "financial": "four_eyes",
+    "irreversible": "four_eyes",
+    "external-publish": "single_approver",
+    "security-control": "expert_review"
+  }
+}

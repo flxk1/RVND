@@ -1,0 +1,29 @@
+# Loomground manifest for rvnd-decide.
+# Conducts a human decision for a withheld activation. It reads the constructs
+# that produce a withhold and never proposes policy of its own - it does not
+# change the original Loomground verdict; a release becomes a fresh activation
+# with its own token and trace.
+name: rvnd-decide
+loomground_governance: 0.8.2
+loomground:
+  reads:
+    - reservation
+    - quorum
+    - redress
+    - autonomy-grade
+    - party
+    - human
+    - gate
+    - egress-obligation
+  proposes: []                    # conducts a decision; proposes no constructs
+  never_applies_directly: true
+# Real MCP surface (verified). Two decision modes preserved: ratification (approve/deny)
+# vs residual origination (>=2 unranked alternatives). Whether a decision COUNTS is the
+# projection's call. See ../../references/catalogue.md.
+rvnd:
+  discovery: workspace_workflow(op="help")
+  tools:
+    - tool: workspace_workflow
+      ops: [approval_request, approval_decide, approval_resolve, approval_delegate, approval_list, governance_query]
+confirmation:
+  mutations: required

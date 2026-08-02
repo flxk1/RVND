@@ -1,0 +1,95 @@
+{
+ "schema": "cli-channel-matrix-1",
+ "cli_reachable_supported_ops": 8,
+ "proven": 8,
+ "rows": [
+  {
+   "facade": "cross_workspace_read",
+   "op": null,
+   "cli": "cross-workspace",
+   "impl": "cross_workspace.cross_workspace_read",
+   "status": "deferred",
+   "valid_ok": true,
+   "valid_reason": "",
+   "invalid_ok": true,
+   "invalid_reason": ""
+  },
+  {
+   "facade": "workspace_audit",
+   "op": "shadow_scan",
+   "cli": "shadow-scan",
+   "impl": "shadow_workflow.classify_shadow_workflows",
+   "status": "deferred",
+   "valid_ok": true,
+   "valid_reason": "",
+   "invalid_ok": true,
+   "invalid_reason": ""
+  },
+  {
+   "facade": "workspace_audit",
+   "op": "verify_chain",
+   "cli": "status",
+   "impl": "mutation_log.MutationLog.verify_chain",
+   "status": "deferred",
+   "valid_ok": true,
+   "valid_reason": "",
+   "invalid_ok": true,
+   "invalid_reason": ""
+  },
+  {
+   "facade": "workspace_dispatch",
+   "op": "list_pinned",
+   "cli": "list-pins",
+   "impl": "pinned_skills.list_pinned",
+   "status": "deferred",
+   "valid_ok": true,
+   "valid_reason": "",
+   "invalid_ok": true,
+   "invalid_reason": ""
+  },
+  {
+   "facade": "workspace_lens",
+   "op": "budget_cap_set",
+   "cli": "lens cap --set",
+   "impl": "lens_service.budget_cap_set",
+   "status": "deferred",
+   "valid_ok": true,
+   "valid_reason": "",
+   "invalid_ok": true,
+   "invalid_reason": ""
+  },
+  {
+   "facade": "workspace_lens",
+   "op": "precedent_declare",
+   "cli": "lens precedent-declare",
+   "impl": "lens_service.precedent_declare",
+   "status": "deferred",
+   "valid_ok": true,
+   "valid_reason": "",
+   "invalid_ok": true,
+   "invalid_reason": ""
+  },
+  {
+   "facade": "workspace_lens",
+   "op": "precedent_list",
+   "cli": "lens precedents",
+   "impl": "lens_service.precedent_list",
+   "status": "deferred",
+   "valid_ok": true,
+   "valid_reason": "",
+   "invalid_ok": true,
+   "invalid_reason": ""
+  },
+  {
+   "facade": "workspace_lens",
+   "op": "precedent_revoke",
+   "cli": "lens precedent-revoke",
+   "impl": "lens_service.precedent_revoke",
+   "status": "deferred",
+   "valid_ok": true,
+   "valid_reason": "",
+   "invalid_ok": true,
+   "invalid_reason": ""
+  }
+ ]
+}

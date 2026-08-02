@@ -1,0 +1,33 @@
+# Loomground manifest for rvnd-incident.
+# Tightens or recalls authority during an incident. A policy change proposes a
+# real construct (remove an authority cord, add a
+#    prohibition, lower a grade), which flows through the normal propose/validate
+#    /confirm/apply cycle.
+name: rvnd-incident
+loomground_governance: 0.8.2
+loomground:
+  reads:
+    - actor
+    - party
+    - authority
+    - delegation
+    - gate
+    - pipe
+    - egress
+    - autonomy-grade
+    - prohibition
+  proposes:                       # only when the incident is an actual policy change
+    - prohibition
+    - authority                   # removal of an authority cord (attenuation)
+    - autonomy-grade              # lowering a grade ceiling
+  never_applies_directly: true
+# Real MCP surface (verified). Revoke is several distinct ops, not one.
+rvnd:
+  discovery: workspace_workflow(op="help")
+  tools:
+    - tool: workspace_workflow
+      ops: [authority_revoke, tool_revoke, group_revoke, patch_apply, governance_graph]  # patch_apply = add a prohibition (a GovernanceDelta)
+    - tool: workspace_erase
+      ops: [request, status, subject, sweep]        # erasure = signed tombstone
+confirmation:
+  mutations: required             # tightening applies immediately; loosening back needs approval

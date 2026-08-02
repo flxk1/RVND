@@ -1,0 +1,13 @@
+{
+  "_comment": "Reference jurisdiction pack: DE overlay on eu-base. Tightens where German operator practice typically demands competence-matched review (data-protection officer involvement on personal data) and a deny-by-default window on outbound publication. Posture data, not a compliance claim. Composing this overlay can only ADD guarantees to the base (tested: monotonicity).",
+  "pack_id": "de-overlay",
+  "version": "0.1.0",
+  "jurisdiction": "DE",
+  "extends": "eu-base",
+  "effective_from": "",
+  "controls": {
+    "personal-data": "expert_review",
+    "external-publish": "veto_window",
+    "irreversible": "four_eyes"
+  }
+}

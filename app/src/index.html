@@ -1,0 +1,1733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Loomground Rvnd — Governance Patchbay</title>
+<!-- Local-first also means the page itself: fonts are self-hosted (app/src/fonts,
+     OFL-1.1) and the policy below refuses every external origin, so opening the
+     console never builds a network request beyond 'self'. script-src keeps
+     'unsafe-inline' because the app is a single inline script with inline
+     handlers; the policy's contract here is no-external-origin, not XSS-proofing. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; connect-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'">
+<style>
+  @font-face{font-family:"Space Grotesk";font-style:normal;font-weight:400 700;font-display:swap;
+    src:url("/fonts/space-grotesk-latin.woff2") format("woff2")}
+  @font-face{font-family:"IBM Plex Mono";font-style:normal;font-weight:400;font-display:swap;
+    src:url("/fonts/ibm-plex-mono-400-latin.woff2") format("woff2")}
+  @font-face{font-family:"IBM Plex Mono";font-style:normal;font-weight:500;font-display:swap;
+    src:url("/fonts/ibm-plex-mono-500-latin.woff2") format("woff2")}
+  @font-face{font-family:"IBM Plex Mono";font-style:normal;font-weight:600;font-display:swap;
+    src:url("/fonts/ibm-plex-mono-600-latin.woff2") format("woff2")}
+  :root{
+    --bg:#14161b; --panel:#1b1e26; --panel-2:#21252e; --line:#454b58;
+    --face:#e9e7df; --face-ink:#1b1e26; --txt:#cdd2dc; --txt-dim:#959db0;
+    --human:#4f86c6; --ok:#5aa886; --hot:#df8b46; --bad:#e2554a;
+    --g0:#5b7a99; --g1:#5f9088; --g2:#c8a23f; --g3:#df8b46; --g4:#cf463c;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);
+    font-family:"IBM Plex Mono",monospace;-webkit-font-smoothing:antialiased;overflow:hidden}
+  #app{display:flex;flex-direction:column;height:100%}
+  header{display:flex;align-items:center;gap:18px;padding:11px 18px;border-bottom:1px solid var(--line);background:var(--panel);flex-wrap:wrap}
+  .brand{display:flex;flex-direction:column;line-height:1}
+  .brand h1{font-family:"Space Grotesk",sans-serif;font-weight:600;font-size:16px;margin:0;color:#f3f1ea}
+  .brand span{font-size:10.5px;color:var(--txt-dim);margin-top:4px}
+  .tools{display:flex;gap:7px;flex-wrap:wrap;margin-left:auto;align-items:center}
+  .tgroup{display:flex;gap:6px;align-items:center;padding-left:10px;border-left:1px solid var(--line)}
+  .tgroup:first-of-type{border-left:0;padding-left:0}
+  .glabel{font-size:9px;text-transform:uppercase;letter-spacing:.09em;color:var(--txt-dim);user-select:none}
+  select#folder{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--txt);background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:6px 9px}
+  button.tool{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--txt);background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:7px 11px;cursor:pointer;transition:.12s;white-space:nowrap}
+  button.tool:hover{border-color:#3c4453;color:#fff;background:#262b35}
+  button.tool .dot{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;vertical-align:middle;transform:translateY(-1px)}
+  #conn{font-size:10.5px;color:var(--txt-dim)}
+  /* 5 plain-language section menus (Build/Watch/Govern/Data/Run) — the console front door */
+  .sections{display:flex;gap:5px;align-items:center;padding-left:10px;border-left:1px solid var(--line)}
+  .sect{position:relative}
+  .sectbtn{font-family:"Space Grotesk",sans-serif;font-weight:600;font-size:12px;color:var(--txt);background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:7px 12px;cursor:pointer;transition:.12s;white-space:nowrap;display:flex;align-items:center;gap:6px}
+  .sectbtn:hover{border-color:#3c4453;color:#fff;background:#262b35}
+  .sect.open>.sectbtn{border-color:#5DCAA5;color:#fff;background:#1e2630}
+  .sectbtn .caret{font-size:9px;color:var(--txt-dim)}
+  .sectmenu{position:absolute;top:calc(100% + 5px);left:0;z-index:60;display:none;flex-direction:column;min-width:236px;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:6px;box-shadow:0 12px 30px rgba(0,0,0,.45)}
+  .sect.open>.sectmenu{display:flex}
+  .mi{display:flex;flex-direction:column;align-items:flex-start;gap:1px;text-align:left;font-family:"IBM Plex Mono",monospace;background:transparent;border:0;border-radius:6px;padding:7px 9px;cursor:pointer;width:100%}
+  .mi:hover,.mi:focus-visible{background:#222834;outline:none}
+  .mi .mil{font-size:12px;color:var(--txt);display:flex;align-items:center;gap:7px}
+  .mi .mid{font-size:9.5px;color:var(--txt-dim);line-height:1.35}
+  .mi .dot{display:inline-block;width:8px;height:8px;border-radius:2px;vertical-align:middle}
+  .midiv{height:1px;background:var(--line);margin:5px 4px}
+  .mihdr{font-size:9px;text-transform:uppercase;letter-spacing:.09em;color:var(--txt-dim);padding:5px 9px 2px}
+  .mi-sel{display:flex;align-items:center;gap:8px;padding:5px 9px}
+  .mi-sel label{font-size:11px;color:var(--txt-dim)}
+  .mi-sel select{flex:1;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--txt);background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:5px 7px}
+  .abtn{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--txt-dim);background:transparent;border:1px solid var(--line);border-radius:50%;width:26px;height:26px;cursor:pointer}
+  .abtn:hover{border-color:#3c4453;color:#fff}
+  /* transport — fast governance control: resume / hold / all-stop + always-on REC */
+  .trbtn{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--txt);background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:6px 9px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;line-height:1}
+  .trbtn:hover{border-color:#3c4453;color:#fff;background:#262b35}
+  .trbtn .trico{font-style:normal}
+  .trbtn.trstop:hover{border-color:#cf463c;color:#fff;background:#3a1d1b}
+  .trbtn.trplay.on{border-color:#3a6e57;color:#9fe0c4;background:#16271f}
+  .trbtn.trplay[disabled]{opacity:.5;cursor:default}
+  .trbtn.trrec{color:#e6b0aa;border-color:#5a2f2a}
+  .trbtn.trrec .trdot{width:8px;height:8px;border-radius:50%;background:#e0483c;display:inline-block}
+  .trbtn.trrec{cursor:pointer}
+  .trbtn.trrec .trlock{font-size:8px;opacity:.75;margin-left:4px;letter-spacing:.04em}
+  /* PATCH ⇄ ARRANGE view toggle + the arrange (lanes) view */
+  .viewtog{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+  .viewtog button{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.06em;color:var(--txt-dim);background:var(--panel-2);border:0;padding:6px 9px;cursor:pointer}
+  .viewtog button.on{background:#1e2630;color:#fff}
+  #arrange{position:absolute;inset:0;z-index:6;background:var(--bg);overflow:auto;padding:10px;display:none}
+  #arrange.show{display:block}
+  #matrixview{position:absolute;inset:0;z-index:6;background:var(--bg);overflow:auto;padding:14px;display:none}
+  #matrixview.show{display:block}
+  #deskview{position:absolute;inset:0;z-index:6;background:var(--bg);overflow:auto;padding:14px;display:none}
+  #deskview.show{display:block}
+  .arr-group{display:flex;align-items:baseline;gap:8px;margin-bottom:8px;border-bottom:1px solid #232a34;padding-bottom:6px}
+  .arr-gname{font-family:"Space Grotesk",sans-serif;font-size:13px;color:#fff}
+  .arr-ghint{font-size:10px;color:var(--txt-dim)}
+  .arr-row{display:flex;align-items:stretch;border-top:1px solid #1f2630}
+  .arr-lh{width:150px;flex:none;display:flex;align-items:center;gap:6px;padding:6px 8px;font-size:11px;color:#c7ccd6;font-family:"IBM Plex Mono",monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .arr-dot{width:8px;height:8px;border-radius:50%;flex:none}
+  .arr-lane{position:relative;flex:1;min-height:30px;border-left:1px solid #232a34;background:repeating-linear-gradient(90deg,#171c24 0,#171c24 47px,#1b2129 47px,#1b2129 48px)}
+  .arr-clip{position:absolute;top:5px;height:20px;border-radius:3px;display:flex;align-items:center;padding:0 5px;font-size:9px;color:#0c0f14;overflow:hidden;white-space:nowrap;cursor:default}
+  .arr-stripe{background-image:repeating-linear-gradient(45deg,rgba(0,0,0,.32) 0,rgba(0,0,0,.32) 3px,transparent 3px,transparent 6px)}
+  .arr-noev{font-size:9px;color:#586173;padding:8px}
+  .arr-empty{font-size:11px;color:var(--txt-dim);padding:16px}
+  .arr-legend{display:flex;flex-wrap:wrap;gap:11px;margin-top:11px;font-size:9.5px;color:var(--txt-dim)}
+  .arr-legend .arr-lg{width:9px;height:9px;border-radius:2px;display:inline-block;vertical-align:middle;margin-right:4px}
+  /* the arranger's mixer form — one channel strip per agent, a bus header per workspace */
+  .arr-bar{display:flex;gap:6px;margin-bottom:8px}
+  .arr-vt{font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;padding:3px 9px;border-radius:4px;border:1px solid var(--line);background:var(--panel-2);color:var(--txt-dim);cursor:pointer}
+  .arr-vt.on{background:#2b3442;color:#fff;border-color:#3d4a5c}
+  .mix-bus{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border:1px solid #2b3340;border-radius:6px;padding:7px 10px;margin-bottom:10px;background:#171c24}
+  .mix-busname{font-family:"Space Grotesk",sans-serif;font-size:12px;color:#fff}
+  .mix-buspend{font-size:10px;color:#c7ccd6;font-family:"IBM Plex Mono",monospace}
+  .mix-busenv{font-size:10px;color:var(--txt-dim);font-family:"IBM Plex Mono",monospace;margin-left:auto;padding-left:10px}
+  .mix-holdall{font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;padding:3px 9px;border-radius:4px;border:1px solid #5a4632;background:#2a2118;color:#e6b483;cursor:pointer}
+  .mix-inherit{flex-basis:100%;font-size:9.5px;color:var(--txt-dim)}
+  .mix-rack{display:flex;gap:8px;flex-wrap:wrap;align-items:stretch}
+  .mix-strip{width:158px;display:flex;flex-direction:column;gap:5px;border:1px solid #232a34;border-radius:6px;padding:8px;background:#151a21}
+  .mix-status{font-size:10px;color:#c7ccd6}
+  .mix-ladder{display:flex;gap:3px}
+  .mix-rung{flex:1;display:flex;flex-direction:column;gap:2px}
+  .mix-rung .fcell{flex:none}
+  .mix-rung .wsled{flex:none;height:4px}
+  .mix-read{font-size:10px;color:#e9e7df;font-family:"IBM Plex Mono",monospace}
+  .mix-lock{font-size:9.5px;color:#e2554a}
+  .mix-ov,.mix-pend{font-size:9.5px;color:var(--txt-dim)}
+  .mix-hold{font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;padding:4px 0;border-radius:4px;border:1px solid #5a4632;background:#2a2118;color:#e6b483;cursor:pointer}
+  .mix-held{font-size:9.5px;color:#c8a23f}
+  .mix-name{margin-top:auto;border-top:1px solid #232a34;padding-top:5px;font-family:"IBM Plex Mono",monospace;font-size:10px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  /* the strip screen — one global mode selector, every strip's screen follows it.
+     Fixed height and hidden overflow: a screen page never scrolls; depth lives in
+     the inspector. At most three value rows render per page. */
+  .mix-modes{display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap}
+  .mix-mt{font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;padding:3px 9px;border-radius:4px;border:1px solid var(--line);background:var(--panel-2);color:var(--txt-dim);cursor:pointer}
+  .mix-mt.on{background:#2b3442;color:#fff;border-color:#3d4a5c}
+  .mix-screen{height:76px;overflow:hidden;display:flex;flex-direction:column;gap:3px;border:1px solid #232a34;border-radius:4px;background:#10141a;padding:5px 6px}
+  .mix-srow{font-size:9.5px;color:#c7ccd6;font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mix-srow.mix-splate{color:#e2554a}
+  /* read-only honesty badge — drawers that only read the record carry it */
+  .robadge{display:inline-block;margin-left:8px;font-family:"IBM Plex Mono",monospace;font-size:8.5px;text-transform:uppercase;letter-spacing:.07em;color:#8fb9d6;background:#1b2632;border:1px solid #2f4358;border-radius:4px;padding:1px 6px;vertical-align:middle;transform:translateY(-1px)}
+  /* quiet per-panel draft chip — unsigned scratch state, never a chain event */
+  .draftchip{display:inline-block;margin-left:8px;font-family:"IBM Plex Mono",monospace;font-size:8.5px;letter-spacing:.05em;color:#8a93a6;background:#1d222b;border:1px solid #333a47;border-radius:4px;padding:1px 6px;vertical-align:middle;transform:translateY(-1px)}
+  .draftchip.stale{color:#e6b483;border-color:#5a4632;background:#241a0e}
+  /* Verdict Router node — a visualize-only routing block: verdict → handling */
+  .node.router{width:226px}
+  .vrtable{margin-top:6px;display:flex;flex-direction:column;gap:2px}
+  .vrow{display:flex;align-items:center;gap:6px;font-size:9px;color:var(--txt-dim);opacity:.5}
+  .vrow.live{opacity:1;color:var(--txt)}
+  .vrow .vlamp{width:7px;height:7px;border-radius:50%;flex:none}
+  .vrow .vn{min-width:62px;color:var(--txt)}
+  .vrow .vd{flex:1;color:var(--txt-dim)}
+  .vrow .vlive{font-size:7.5px;text-transform:uppercase;letter-spacing:.06em;color:#9fe0c4;border:1px solid #2f5346;border-radius:3px;padding:0 4px}
+  .vrow .vract{font-size:8px;color:#e6b483;border:1px solid #5a4a2d;border-radius:3px;padding:1px 5px;cursor:pointer;white-space:nowrap}
+  .vrow .vract:hover{border-color:#c8a23f;color:#fff;background:#2e2613}
+  .vrnote{margin-top:6px;font-size:8px;color:var(--txt-dim)}
+  main{flex:1;display:flex;min-height:0}
+  #wsrail{width:154px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;overflow:auto;padding:8px}
+  .wsrh{font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--txt-dim);margin-bottom:7px}
+  .wschan{border:1px solid var(--line);border-radius:7px;padding:7px;margin-bottom:6px;position:relative;background:var(--panel-2)}
+  .wschan.on{border-color:#5DCAA5;background:#1e2630}
+  .wstop{display:flex;align-items:center;gap:6px}
+  .wsname{flex:1;min-width:0;text-align:left;font-family:"IBM Plex Mono",monospace;font-size:11px;color:#fff;background:transparent;border:0;padding:0;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .wsname:focus-visible{outline:2px solid #5DCAA5;outline-offset:2px;border-radius:3px}
+  .wschan .wm{font-size:9.5px;color:var(--txt-dim);margin-top:4px;display:flex;align-items:center;gap:5px}
+  .wmute{flex:none;font-family:"IBM Plex Mono",monospace;font-size:8px;border:1px solid var(--line);border-radius:4px;padding:1px 6px;color:var(--txt);background:var(--panel-2);cursor:pointer}
+  .wmute:hover{border-color:#cf8a44;color:#fff}
+  .wmute:active{background:#3a2a1b}
+  .wmute[disabled]{opacity:.5;cursor:default}
+  /* solo — view-solo (focus this, dim others; no governance effect) */
+  .wsolo{flex:none;font-family:"IBM Plex Mono",monospace;font-size:8px;border:1px solid var(--line);border-radius:4px;padding:1px 6px;color:var(--txt);background:var(--panel-2);cursor:pointer}
+  .wsolo:hover{border-color:#c8a23f;color:#fff}
+  .wsolo.on{border-color:#c8a23f;background:#2e2613;color:#e8c570}
+  .wschan.solo{border-color:#c8a23f}
+  .wschan.dim{opacity:.4}
+  #wsisolate{margin-top:6px;font-family:"IBM Plex Mono",monospace;font-size:10px;border:1px solid #6b5a2a;color:#e8c570;background:#241f12;border-radius:6px;padding:6px;cursor:pointer;width:100%}
+  .wslamp{width:7px;height:7px;border-radius:50%;display:inline-block;flex:none}
+  /* discrete L0–L4 autonomy LEDs (server-clamped ceiling, never a fader) */
+  .wsleds{display:flex;gap:3px;margin-top:6px}
+  .wsled{flex:1;height:5px;border-radius:2px;background:#2b313c}
+  .wsled.go{background:#5aa886}
+  .wsled.ask{background:#c8a23f}
+  /* group bus (child inherits parent) + sends (parent publishes downward) */
+  .wsgroup,.wssend{font-size:8.5px;color:var(--txt-dim);margin-top:4px;display:flex;align-items:center;gap:4px}
+  .wssend{color:#6fa8d4}
+  /* meter bridge — the live ticker restyled as a DAW-style bridge along the bottom */
+  .mbcap{font-size:8px;text-transform:uppercase;letter-spacing:.1em;color:var(--txt-dim);white-space:nowrap;align-self:center}
+  .mbmeters{display:flex;align-items:center;gap:9px;padding:4px 10px;border-radius:7px;background:var(--panel-2);border:1px solid var(--line);white-space:nowrap;flex:none}
+  .mtr{display:inline-flex;align-items:center;gap:4px}
+  .mbsep{width:1px;align-self:stretch;background:var(--line);flex:none;margin:6px 2px}
+  #wsmaster{margin-top:auto;font-family:"IBM Plex Mono",monospace;font-size:11px;border:1px solid #cf463c;color:#fff;background:#3a1d1b;border-radius:6px;padding:8px;cursor:pointer}
+  .wsadd{width:100%;font-family:"IBM Plex Mono",monospace;font-size:11px;background:transparent;border:1px dashed var(--line);border-radius:6px;color:var(--txt-dim);padding:6px;cursor:pointer}
+  .wsadd:hover{border-color:#5DCAA5;color:#fff}
+  #stage{position:relative;flex:1;overflow:hidden;background-color:var(--bg);
+    background-image:radial-gradient(circle at center,#232732 1px,transparent 1.4px);background-size:26px 26px}
+  #cords{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+  .node.master.reserved{box-shadow:0 0 0 2px var(--bad),0 6px 18px rgba(0,0,0,.45)}
+  .node{position:absolute;width:172px;min-height:58px;background:var(--face);color:var(--face-ink);border-radius:8px;border:1px solid #cbc8be;box-shadow:0 6px 18px rgba(0,0,0,.38);user-select:none;cursor:grab;z-index:2;outline:2px solid transparent;outline-offset:2px;transition:outline-color .12s,box-shadow .12s}
+  .node:active{cursor:grabbing}
+  .node.sel{outline-color:#f3f1ea;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+  .node.bad{outline-color:var(--bad)}
+  .node.killed{opacity:.5;filter:grayscale(.6)}
+  .node .strip{height:5px;border-radius:7px 7px 0 0}
+  .node .body{padding:8px 11px 9px}
+  .node .kind{font-size:9px;letter-spacing:.7px;text-transform:uppercase;color:#4a4740;font-weight:600}
+  .node .lbl{font-size:13px;font-weight:600;line-height:1.18;margin-top:2px;font-family:"Space Grotesk",sans-serif;color:#1b1e26;word-break:break-word}
+  .node .meta{font-size:10px;margin-top:4px;color:#56534b;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .gradechip{font-weight:600;color:#1b1e26;border-radius:4px;padding:1px 6px;font-size:10px}
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+  :focus-visible{outline:2px solid #f3f1ea;outline-offset:2px}
+  .port:focus-visible{outline:2px solid #f3f1ea;outline-offset:3px}
+  .node.human{background:#dde8f4;border-color:#a8c2e0}
+  .node.human .lbl{color:#1c3047}
+  .node.master{background:#efe2e0;border-color:#dab9b4}
+  .node,.port{touch-action:none}
+  .port{position:absolute;width:13px;height:13px;border-radius:50%;background:#1b1e26;border:2px solid #aab0bd;top:50%;transform:translateY(-50%);cursor:crosshair;z-index:3;transition:.1s}
+  .port::after{content:"";position:absolute;left:50%;top:50%;width:40px;height:40px;transform:translate(-50%,-50%)}
+  .port:hover{background:var(--hot);border-color:var(--hot);transform:translateY(-50%) scale(1.25)}
+  .port.inlet{left:-7px}.port.outlet{right:-7px}
+  .port.pending{background:var(--hot);border-color:#fff;box-shadow:0 0 0 4px rgba(223,139,70,.25)}
+  #panel{width:308px;flex-shrink:0;background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+  .sec{border-bottom:1px solid var(--line);padding:14px 16px}
+  .sec h2{font-family:"Space Grotesk",sans-serif;font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--txt-dim);margin:0 0 10px;font-weight:600}
+  /* foldable key — the autonomy/verdict legend, collapsed by default (no text wall) */
+  details.keybox{padding-top:12px}
+  details.keybox>summary{font-family:"Space Grotesk",sans-serif;font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--txt-dim);font-weight:600;cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px;margin-bottom:2px}
+  details.keybox>summary::-webkit-details-marker{display:none}
+  details.keybox>summary::before{content:'▸';font-size:9px;color:var(--txt-dim)}
+  details.keybox[open]>summary::before{content:'▾'}
+  details.keybox[open]>summary{margin-bottom:10px}
+  #checkSec{flex:1;overflow-y:auto}
+  .empty{font-size:11.5px;color:var(--txt-dim);line-height:1.6}
+  .field{margin-bottom:11px}
+  .field label{display:block;font-size:10px;color:var(--txt-dim);margin-bottom:5px}
+  .field input[type=text]{width:100%;background:var(--panel-2);border:1px solid var(--line);color:#fff;font-family:"IBM Plex Mono",monospace;font-size:12px;border-radius:6px;padding:7px 9px}
+  .toggle{display:flex;gap:6px;flex-wrap:wrap}
+  .toggle .tb{flex:1;min-width:54px;text-align:center;font-size:11px;padding:7px 0;border-radius:6px;cursor:pointer;border:1px solid var(--line);color:var(--txt-dim)}
+  .toggle .tb.on{background:var(--panel-2);color:#fff;border-color:#3c4453}
+  .ro{font-size:11.5px;color:var(--txt);line-height:1.6}
+  .ro b{color:#fff}
+  .fader{display:flex;gap:3px;margin:4px 0 6px}
+  .fcell{flex:1;height:22px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:#cdd2dc;background:var(--panel-2);border:1px solid var(--line)}
+  .fcell.earned{color:#15171c}
+  .fcell.over{opacity:.45;background:repeating-linear-gradient(45deg,var(--panel-2),var(--panel-2) 3px,#2c313c 3px,#2c313c 6px)}
+  .fader.clamped{outline:2px solid var(--bad);outline-offset:2px;border-radius:6px}
+  .lamp{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--txt-dim);margin:5px 0}
+  .lamp .b{width:11px;height:11px;border-radius:50%;background:#2c313c;border:1px solid var(--line)}
+  .lamp.proh .b{border-radius:2px}
+  .mxtable{width:100%;border-collapse:separate;border-spacing:3px;margin:8px 0;table-layout:fixed}
+  .mxhdr{font-size:9px;color:var(--txt-dim);text-align:center;padding:3px 1px;letter-spacing:.3px;font-weight:600}
+  .mxrowh{font-size:10px;color:var(--txt);font-weight:600;text-align:right;padding-right:6px;white-space:nowrap}
+  .mxcell{width:100%;font-size:9px;font-weight:600;text-align:center;padding:6px 2px;border-radius:4px;cursor:pointer;border:1px solid transparent;color:#15171c}
+  .mxcell:hover:not(:disabled){border-color:#f3f1ea}
+  .mx-go{background:#5aa886}.mx-ask{background:#c8a23f}.mx-block{background:#cf463c;color:#fff}
+  .mxcell:disabled{cursor:default;opacity:.9}
+  .psrow{border:1px solid var(--line);border-radius:8px;padding:9px 11px;margin-bottom:8px}
+  .pson{color:#7fae97;font-weight:600}.psoff{color:var(--txt-dim)}
+  .psbtn{font-size:11px;padding:5px 10px;border-radius:6px;border:1px solid var(--line);background:var(--panel-2);color:var(--txt);cursor:pointer;font-family:inherit}
+  .psbtn:hover:not(:disabled){border-color:#3c4453;color:#fff}
+  .pslevels{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+  .pslevel{font-size:10px;padding:5px 8px;border-radius:6px;border:1px solid var(--line);color:var(--txt-dim);cursor:pointer;font-family:inherit}
+  .pslevel.on{background:var(--panel-2);color:#fff;border-color:#3c4453}
+  .lamp.on{color:#fff}
+  .pips{display:flex;gap:4px;margin:3px 0}
+  .pip{width:12px;height:8px;border-radius:2px;background:var(--panel-2);border:1px solid var(--line)}
+  .pip.used{background:var(--hot)}
+  .del{margin-top:4px;width:100%;background:transparent;border:1px solid #4a2f2d;color:#e0857d;font-family:inherit;font-size:11px;padding:7px;border-radius:6px;cursor:pointer}
+  .del:hover{background:#2a1f1e}
+  .finding{font-size:11.5px;line-height:1.5;padding:9px 10px;border-radius:7px;margin-bottom:8px;border:1px solid}
+  .finding.bad{background:rgba(226,85,74,.08);border-color:rgba(226,85,74,.35);color:#f0a89f}
+  .finding.warn{background:rgba(223,139,70,.07);border-color:rgba(223,139,70,.3);color:#e6b483}
+  .finding.ok{background:rgba(90,168,134,.07);border-color:rgba(90,168,134,.3);color:#92c4ac}
+  .finding.info{background:rgba(130,138,153,.08);border-color:rgba(130,138,153,.3);color:#aab0bd}
+  .finding .ttl{font-weight:600;color:#fff;display:block;margin-bottom:3px;font-size:11px}
+  .finding .path{font-size:10.5px;color:var(--txt-dim);margin-top:5px;word-break:break-word}
+  /* the stop card — every stop (hold | deny | reserved) renders through one component */
+  .stopcard .stopcard-bound{font-size:10.5px;color:var(--txt-dim);margin-top:3px}
+  .stopcard-act{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:9.5px;padding:2px 6px;margin-top:5px;border-radius:4px;border:1px solid #2f4358;background:#1b2632;color:#8fb9d6;cursor:pointer}
+  .mix-screen .stopcard{display:flex;flex-direction:column;gap:3px}
+  .mix-screen .stopcard .stopcard-bound{margin-top:0;font-size:9.5px}
+  .mix-screen .stopcard[data-stopcard="reserved"] .stopcard-phrase{color:#e2554a}
+  .mix-screen .stopcard .stopcard-act{align-self:flex-start;margin-top:2px;font-size:9px}
+  .ramp{display:flex;border-radius:6px;overflow:hidden;border:1px solid var(--line);margin:2px 0 7px}
+  .ramp div{flex:1;height:20px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:#15171c}
+  .legrow{display:flex;align-items:center;gap:8px;font-size:10.5px;color:var(--txt-dim);margin:5px 0}
+  .legrow .sw{width:22px;border-top-width:3px;border-top-style:solid;border-radius:2px}
+  .killbtn{width:100%;font-family:"Space Grotesk",sans-serif;font-weight:600;font-size:12px;padding:10px;border-radius:7px;cursor:pointer;border:1px solid #3a2421;background:#241a19;color:#e2877f;margin-top:10px}
+  .killbtn.armed{background:var(--bad);color:#fff;border-color:var(--bad)}
+  .foot{font-size:10px;color:#c5c9d7;padding:9px 16px;border-top:1px solid var(--line);line-height:1.5}
+  #stagehint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:1}
+  #stagehint .card{max-width:340px;text-align:center;font-size:12px;line-height:1.7;color:var(--txt-dim);background:rgba(27,30,38,.82);border:1px solid var(--line);border-radius:10px;padding:16px 20px}
+  #stagewm{position:absolute;left:12px;bottom:12px;z-index:1;pointer-events:none;font-size:10px;letter-spacing:.5px;color:#d8b15f;background:rgba(40,33,18,.7);border:1px solid #6a551f;border-radius:6px;padding:5px 9px}
+  .helpdot{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;border:1px solid var(--line);color:var(--txt-dim);font-size:9px;cursor:help;margin-left:6px;vertical-align:middle}
+  .cord-flow{stroke-dasharray:2 7;animation:march 1s linear infinite}
+  @keyframes march{to{stroke-dashoffset:-18}}
+  @media (prefers-reduced-motion:reduce){.cord-flow{animation:none}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="brand">
+      <h1>Loomground Rvnd · Governance Patchbay</h1>
+      <span>Wire agents to the tasks they’re allowed to do.</span>
+    </div>
+    <div class="tools">
+      <span id="conn" aria-live="polite">connecting…</span>
+      <div class="tgroup" role="group" aria-labelledby="lg-ws"><span class="glabel" id="lg-ws">Workspace</span>
+        <select id="folder" aria-label="Workspace — the governance space you're working in" title="the workspace you're working in; everything below applies to it" onchange="window._fi=this.selectedIndex;boot()"></select>
+      </div>
+      <div class="tgroup" role="group" aria-labelledby="lg-tr"><span class="glabel" id="lg-tr">Run state</span>
+        <button class="trbtn trplay" id="trplay" onclick="transportToggle()" aria-pressed="false" title="run state of the focused workspace — Running means its agents may act; click to hold. Held means suspended; click to resume (loosens, asks first)." aria-label="run state — open a workspace"><i class="trico">▶</i><span id="trplaylbl">Run</span></button>
+        <button class="trbtn trrec" onclick="toggleTicker()" title="Opens the signed audit trail. Recording is append-only, hash-chained, and cannot be disabled." aria-label="audit recording — always on, cannot be disabled; opens the live record"><span class="trdot"></span>REC<span class="trlock">always on</span></button>
+      </div>
+      <div class="tgroup" role="group" aria-labelledby="lg-vw"><span class="glabel" id="lg-vw">View</span>
+        <div class="viewtog" role="radiogroup" aria-label="canvas view">
+          <button data-view="patch" class="on" role="radio" aria-checked="true" onclick="setView('patch')" title="the patchbay — wire agents to tasks">PATCH</button>
+          <button data-view="arrange" role="radio" aria-checked="false" onclick="setView('arrange')" title="the arrange view — lanes of runs over time, or the mixer with per-agent Hold (a recorded write)">ARRANGE</button>
+          <button data-view="desk" role="radio" aria-checked="false" onclick="setView('desk')" title="the desk view — the same patch as a mixing desk; faders are read-only">DESK</button>
+          <button data-view="matrix" role="radio" aria-checked="false" onclick="setView('matrix')" title="the matrix view — coverage as a grid; a ringed cell is the finding">MATRIX</button>
+        </div>
+      </div>
+      <div class="tgroup" role="group" aria-labelledby="lg-se"><span class="glabel" id="lg-se">Session</span>
+        <button class="tool" id="seopenenv" onclick="openEnvironment()" title="Verifies a signed .rvnd file before replacing the active environment. Existing folders are not deleted.">Open</button>
+        <button class="tool" id="sesaveenv" onclick="saveEnvironment()" title="save the whole environment (every workspace in the rail) as one signed, self-contained .rvnd file">Save</button>
+      </div>
+      <nav class="sections" aria-label="Sections">
+        <div class="sect">
+          <button class="sectbtn" aria-haspopup="true" aria-expanded="false" onclick="toggleSection(this)" title="how do I set this up? — put agents, people and tasks on the canvas">Set up<span class="caret">▾</span></button>
+          <div class="sectmenu" role="menu" aria-label="Set up">
+            <button class="mi" role="menuitem" data-add="agent"><span class="mil"><span class="dot" style="background:var(--g2)"></span>Agent</span><span class="mid">an AI agent on the canvas</span></button>
+            <button class="mi" role="menuitem" data-add="human"><span class="mil"><span class="dot" style="background:var(--human)"></span>Person</span><span class="mid">a human in the loop</span></button>
+            <button class="mi" role="menuitem" data-add="use_case"><span class="mil"><span class="dot" style="background:#8a877d"></span>Task</span><span class="mid">a governed action</span></button>
+            <button class="mi" role="menuitem" onclick="addConnector('egress','email')"><span class="mil"><span class="dot" style="background:#378ADD"></span>Output</span><span class="mid">where results leave the boundary</span></button>
+            <button class="mi" role="menuitem" data-add="router"><span class="mil"><span class="dot" style="background:#7d6fb0"></span>Verdict router</span><span class="mid">show where each verdict is handled (view-only)</span></button>
+            <div class="midiv"></div>
+            <span data-manifest-menu-anchor="roles" style="display:none" aria-hidden="true"></span>
+            <button class="mi" role="menuitem" onclick="openPolicyPanel()"><span class="mil">Ingest a policy</span><span class="mid">turn an AI policy into a governance twin</span></button>
+            <button class="mi" role="menuitem" onclick="openChatPanel()"><span class="mil">Governance chat</span><span class="mid">single input — paste a policy, describe your use case, or ask</span></button>
+            <span data-manifest-menu-anchor="map" style="display:none" aria-hidden="true"></span>
+            <span data-manifest-menu-anchor="bringin" style="display:none" aria-hidden="true"></span>
+            <div class="midiv"></div>
+            <button class="mi" role="menuitem" onclick="openRegisterPanel()"><span class="mil">See all</span><span class="mid">register — inventory of agents + tasks</span></button>
+            <button class="mi" role="menuitem" onclick="openEditorPanel()"><span class="mil">As text (.lg)</span><span class="mid">edit the patch as text — writes the patch</span></button>
+          </div>
+        </div>
+        <div class="sect">
+          <button class="sectbtn" aria-haspopup="true" aria-expanded="false" onclick="toggleSection(this)" title="what may they do, and where's the edge?">Rules<span class="caret">▾</span></button>
+          <div class="sectmenu" role="menu" aria-label="Rules">
+            <button class="mi" role="menuitem" onclick="openMatrixPanel()"><span class="mil">Autonomy: go / ask / block</span><span class="mid">discrete states — tighten-only</span></button>
+            <span data-manifest-menu-anchor="protections" style="display:none" aria-hidden="true"></span>
+            <span data-manifest-menu-anchor="lock" style="display:none" aria-hidden="true"></span>
+            <span data-manifest-menu-anchor="erasure" style="display:none" aria-hidden="true"></span>
+            <span data-manifest-menu-anchor="federation" style="display:none" aria-hidden="true"></span>
+            <span data-manifest-menu-anchor="egress" style="display:none" aria-hidden="true"></span>
+            <span data-manifest-menu-anchor="contract" style="display:none" aria-hidden="true"></span>
+            <span data-manifest-menu-anchor="lens" style="display:none" aria-hidden="true"></span>
+            <div class="midiv"></div>
+            <div class="mihdr">advanced</div>
+            <button class="mi" role="menuitem" onclick="openControllerPanel()"><span class="mil">Knob bindings</span><span class="mid">bind a knob to a governance step; the server still decides</span></button>
+          </div>
+        </div>
+        <div class="sect">
+          <button class="sectbtn" aria-haspopup="true" aria-expanded="false" onclick="toggleSection(this)" title="what needs a person? — sign-offs, decisions, stuck runs">Pending<span class="caret">▾</span></button>
+          <div class="sectmenu" role="menu" aria-label="Pending">
+            <div class="mihdr">badges stay per-drawer — this shows read-context to decide</div>
+            <span data-manifest-menu-anchor="approvals" style="display:none" aria-hidden="true"></span>
+            <button class="mi" role="menuitem" onclick="openContractPanel('act')"><span class="mil">Decision queue</span><span class="mid">contract reviews waiting on a decision</span></button>
+            <button class="mi" role="menuitem" onclick="openWorkflowPanel('act')"><span class="mil">Stuck runs</span><span class="mid">runs waiting to resume or cancel</span></button>
+            <span data-manifest-menu-anchor="obligations" style="display:none" aria-hidden="true"></span>
+            <span data-manifest-menu-anchor="decision" style="display:none" aria-hidden="true"></span>
+          </div>
+        </div>
+        <div class="sect">
+          <button class="sectbtn" aria-haspopup="true" aria-expanded="false" onclick="toggleSection(this)" title="what happened? — the record, read-only">Record<span class="caret">▾</span></button>
+          <div class="sectmenu" role="menu" aria-label="Record">
+            <button class="mi" role="menuitem" onclick="toggleTicker()"><span class="mil">Live ticker</span><span class="mid">signed events as they land</span></button>
+            <div class="mi-sel" role="none"><label for="qsel">Ask</label><select id="qsel" onchange="closeAllSections();runQuery(this.value)" aria-label="Ask the patch a governance question"><option value="">a question…</option><option value="needs_human_no_human">needs a person · none wired</option><option value="auto_high_risk">auto on high-risk</option><option value="unfired">wired · never run</option><option value="unwired_use_cases">no agent · can’t run</option><option value="agent_reach">agent reach</option></select></div>
+            <div class="midiv"></div>
+            <span data-manifest-menu-anchor="legal" style="display:none" aria-hidden="true"></span>
+            <span data-manifest-menu-anchor="grounder" style="display:none" aria-hidden="true"></span>
+            <span data-manifest-menu-anchor="conformity" style="display:none" aria-hidden="true"></span>
+            <span data-manifest-menu-anchor="audit" style="display:none" aria-hidden="true"></span>
+            <span data-manifest-menu-anchor="workflow" style="display:none" aria-hidden="true"></span>
+            <span data-manifest-menu-anchor="ai" style="display:none" aria-hidden="true"></span>
+            <span data-manifest-menu-anchor="data" style="display:none" aria-hidden="true"></span>
+            <div class="midiv"></div>
+            <div class="mihdr">other views of this patch</div>
+            <button class="mi" role="menuitem" onclick="setView('desk')"><span class="mil">Desk view</span><span class="mid">the same patch as a desk — opens the DESK view</span></button>
+            <span data-manifest-menu-anchor="coverage" style="display:none" aria-hidden="true"></span>
+          </div>
+        </div>
+      </nav>
+      <button class="abtn" onclick="closeAllSections();openHelpPanel()" aria-label="Help — every operation this console can ask of the server" title="help — the live operation reference, grouped by goal; read-only">?</button>
+      <button class="abtn" onclick="closeAllSections();openAboutPanel()" aria-label="About this server" title="about — what this server is, version, the signing keys">ⓘ</button>
+    </div>
+  </header>
+  <main>
+    <aside id="wsrail" role="group" aria-label="Workspaces — a channel per workspace">
+      <div class="wsrh">Workspaces</div>
+      <div id="wschans"><div class="ro" style="font-size:10px;color:var(--txt-dim)">loading…</div></div>
+      <button id="wsisolate" onclick="wsIsolate()" style="display:none" title="govern-solo — suspend every active agent OUTSIDE the soloed workspace(s); asks first, recorded">⊘ isolate · suspend the rest</button>
+      <button id="wsmaster" onclick="allStopAll()" title="suspend every active agent across all workspaces (asks first; recorded)">■ All-Stop</button>
+    </aside>
+    <div id="stage" role="application" tabindex="-1" aria-label="Governance patchbay — drag an agent onto a task to grant authority"><svg id="cords" role="presentation"></svg><ul id="a11ylist" class="sr-only"></ul><span id="srlive" class="sr-only" aria-live="assertive"></span><div id="arrange" role="region" aria-label="Arrange — lanes of governed runs over time, and the mixer: one channel strip per agent with a mode-switched screen (Overview, Autonomy, Checks, Reach, Time); Hold and Hold-all suspend agents (writes, recorded)"></div><div id="deskview" role="region" aria-label="Desk — the same patch as a mixing desk; faders are read-only"></div><div id="matrixview" role="region" aria-label="Matrix — coverage as a grid; a ringed cell is the finding"></div></div>
+    <aside id="panel">
+      <div class="sec" id="inspect"><h2>Inspector</h2><div id="inspectBody" aria-live="polite"><div class="empty">Select a node or cord to edit it.</div></div></div>
+      <div class="sec" id="checkSec"><h2>Check · verdicts</h2><div id="findings" role="status" aria-live="polite"></div></div>
+      <details class="sec keybox" id="keybox">
+        <summary>Key · autonomy &amp; verdicts</summary>
+        <div class="ramp"><div style="background:var(--g0)" title="L0 · interactive">L0</div><div style="background:var(--g1)" title="L1 · assisted">L1</div><div style="background:var(--g2)" title="L2 · supervised">L2</div><div style="background:var(--g3)" title="L3 · autonomous">L3</div><div style="background:var(--g4)" title="L4 · silent">L4</div></div>
+        <div style="font-size:9.5px;color:var(--txt-dim);margin:0 0 8px;line-height:1.5">L0 interactive · L1 assisted · L2 supervised · L3 autonomous · L4 silent</div>
+        <div class="legrow"><span class="sw" style="border-color:var(--ok)"></span>auto · earned + within policy</div>
+        <div class="legrow"><span class="sw" style="border-color:var(--hot)"></span>needs a person</div>
+        <div class="legrow"><span class="sw" style="border-color:var(--bad)"></span>reserved · a person signs off, never auto<span class="helpdot" role="img" tabindex="0" aria-label="Reserved: a person CAN sign off and it may then proceed. Prohibited: severed — no one may run it, not even with sign-off." title="Reserved: a person CAN sign off and it may then proceed. Prohibited: severed — no one may run it, not even with sign-off.">?</span></div>
+        <div class="legrow"><span class="sw" style="border-color:#a8332b"></span>prohibited · severed (stop-bar on the cord), no sign-off</div>
+        <div class="legrow"><span class="sw" style="border-color:#d96a4a;border-top-style:dashed"></span>refused · server blocked this run</div>
+        <div class="legrow"><span class="sw" style="border-color:#5a616f;border-top-style:dotted"></span>unfired · wired, never run</div>
+      </details>
+    </aside>
+  </main>
+</div>
+<script>
+/* ---- bridge: Cowork / HTTP shim / mock ---- */
+/* The app is plain html/index served by serve.py over the HTTP /tool shim; Cowork
+   is supported when the page is hosted inside that plugin. (No Tauri/desktop shell:
+   the agreed runtime is html/index + serve.py.) */
+const COWORK=(window.cowork&&typeof window.cowork.callMcpTool==='function')?(n,a)=>window.cowork.callMcpTool(n,a):null;
+/* A stalled bridge must not hang the console forever: bound every /tool call
+   with a deadline (Promise.race against a timer) so a hang surfaces as a thrown
+   error (→ the fail-closed degraded state), not an infinite spinner. Overridable
+   via window.__WORKSPACES_TIMEOUT_MS__ (render gates drive a short deadline). A
+   timer race, not fetch AbortController, keeps this realm-agnostic under jsdom. */
+const HTTP=(typeof window.__WORKSPACES_HTTP__==='string')?(n,a)=>{const _ms=(typeof window.__WORKSPACES_TIMEOUT_MS__==='number')?window.__WORKSPACES_TIMEOUT_MS__:15000;const _call=(async()=>{const r=await fetch(window.__WORKSPACES_HTTP__,{method:'POST',headers:{'Content-Type':'application/json','X-Workspaces-Token':window.__WORKSPACES_TOKEN__||''},body:JSON.stringify({tool:n,args:a})});if(!r.ok)throw new Error('http '+r.status);return await r.json();})();let _t;const _deadline=new Promise((_,rej)=>{_t=setTimeout(()=>rej(new Error('bridge timeout after '+_ms+'ms')),_ms);});return Promise.race([_call,_deadline]).finally(()=>clearTimeout(_t));}:null;
+const BRIDGE=COWORK?COWORK:HTTP;
+const BARE=!!HTTP;
+let LIVE=!!BRIDGE;
+const PREFIX=['mcp__workspaces__','mcp__workspace__','mcp__circle__'];
+async function tool(short,args){ if(!BRIDGE) throw new Error('no-bridge'); if(BARE) return await BRIDGE(short,args); let e; for(const p of PREFIX){try{return await BRIDGE(p+short,args);}catch(x){e=x;}} throw e; }
+
+/* ---- autonomy ramp + verdict colors ---- */
+const G=['var(--g0)','var(--g1)','var(--g2)','var(--g3)','var(--g4)'];
+const GHEX=['#5b7a99','#5f9088','#c8a23f','#df8b46','#cf463c'];
+/* Multi-channel rendering (colour is confirmation, line-style + a midpoint
+   label carry the meaning; refused≠reserved≠prohibited, colour-blind safe)
+   for two distinct axes sharing one map: the 5-state execution-verdict
+   alphabet (auto/human/refused/reserved/prohibited — can this run
+   automatically) plus unfired (egress-wiring lifecycle: wired, never run —
+   see governance_graph.QUERIES['unfired']) and permitted (authority-edge /
+   deontic-permission state — see workspaces/deontic.py's OP_PERMISSION).
+   Only auto flows; only prohibited is severed from the boundary. */
+const VERDICT={
+  auto:      {col:'#5aa886',label:'auto',flow:true},
+  human:     {col:'#df8b46',label:'needs a person'},
+  refused:   {col:'#d96a4a',label:'refused now',dash:'6 4'},
+  reserved:  {col:'#e2554a',label:'reserved',dbl:true},
+  prohibited:{col:'#a8332b',label:'not allowed',dbl:true,sever:true},
+  unfired:   {col:'#5a616f',label:'',dash:'3 6'},
+  permitted: {col:'#5f6675',label:''}};
+const VINFO=v=>VERDICT[v]||VERDICT.permitted;
+/* The SERVER verdict is authoritative; the client renders, never decides.
+   The reserved-by-law floor may only TIGHTEN a more-permissive verdict up to
+   'reserved'; it must NEVER soften a stricter server verdict ('prohibited').
+   An unknown/missing verdict renders most-restrictively (fail-closed), never the
+   permissive default. Single source for both canvases (effVerdict + the desk). */
+function resolveEgressVerdict(verdict, reservedFloor){
+  if(!(verdict in VERDICT)) return 'prohibited';   // unknown → fail-closed
+  if(verdict==='prohibited') return 'prohibited';  // floor can't soften a refusal
+  return reservedFloor ? 'reserved' : verdict;     // floor lifts auto/human → reserved
+}
+const GRADE_NAME=['interactive','assisted','supervised','autonomous','silent'];
+const RISKS=['low','medium','high','critical'];
+// OFFLINE-ONLY mirror of the server's step_contract.risk_grade_cap. The
+// disconnected canvas (no S.path) has no server to compose grade_ceiling, so
+// offline node creation / risk edits stamp it here. ONLINE the server value
+// always wins — reload() re-sources the whole node. The RENDER path never calls
+// this; it only reads n.grade_ceiling (E3: client renders, never decides).
+const _OFFLINE_CEIL={low:4,medium:4,high:2,critical:1};
+function offlineCeil(risk){return (risk in _OFFLINE_CEIL)?_OFFLINE_CEIL[risk]:0;}
+
+const stage=document.getElementById('stage'), svg=document.getElementById('cords');
+let workspaces=[], S={g:null,path:null,sel:null,selEdge:null,pending:null,mouse:null,kill:false,bridgeFault:null};
+window.POS=window.POS||{};
+const NW=172,NH=58;
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const escA=s=>String(s==null?'':s).replace(/"/g,'&quot;');
+const bn=p=>(p||'').replace(/\/+$/,'').split('/').pop()||p;
+
+function SAMPLE(){return {nodes:[
+  {id:'party:bot7',kind:'agent',label:'bot7',grade:'L2',status:'active'},
+  {id:'party:alice',kind:'human',label:'alice',role:'reviewer',status:'active'},
+  {id:'uc:uc-draft',kind:'use_case',label:'Draft a summary',risk:'low',issue_type:'liability_cap',grade:3,grade_ceiling:4,reserved:[]},
+  {id:'uc:uc-decide',kind:'use_case',label:'Loan decision',risk:'high',issue_type:'automated_decision',grade:0,grade_ceiling:2,reserved:['review'],reservations:[{act_type:'review',reserved_to:'data-protection',basis_kind:'law',source:'GDPR Art. 22 — automated individual decisions / profiling',trigger:'automated_decision'}]},
+  {id:'master',kind:'master',label:'master'}],
+  edges:[{from:'party:bot7',to:'uc:uc-draft',kind:'authority'},
+    {from:'uc:uc-draft',to:'master',kind:'egress',verdict:'auto'},
+    {from:'uc:uc-decide',to:'master',kind:'egress',verdict:'reserved'}],
+  verdicts:{}, _sample:true};}
+
+function setConn(){const el=document.getElementById('conn'); if(!el)return;
+  // Fail-closed display: a bridge that answered with an error, refused, or never
+  // answered (500 / revoked token / timeout) must read as DEGRADED — never a calm
+  // "live" or an empty-looking "no workspace" that a down server is indistinguishable
+  // from. The operator must not mistake an unverified state for a clean one.
+  if(S.bridgeFault){el.style.color='#df8b46';el.setAttribute('data-conn','degraded');el.title=String(S.bridgeFault);el.textContent='⚠ bridge unreachable — governance state unverified';return;}
+  if(LIVE&&!(S.g&&S.g._sample)){el.style.color='#7fae97';el.setAttribute('data-conn','live');el.textContent='● live: workspaces-mcp';}
+  else if(LIVE){el.style.color='#828a99';el.setAttribute('data-conn','nows');el.textContent='○ no workspace — add one in the sidebar';}
+  else{el.style.color='#828a99';el.setAttribute('data-conn','offline');el.textContent='○ offline — run python3 app/serve.py';}}
+
+async function loadGraph(path){
+  // A REAL workspace shows its own graph — even when empty. Only the no-workspace
+  // case shows the demo. Retry briefly to ride out projection lag (a non-empty
+  // folder can momentarily read empty at boot), but a workspace that stays empty
+  // is shown EMPTY, never dressed in the demo (the canvas, Check and Inspector
+  // must all agree with the workspace's real state).
+  if(path){
+    let last={nodes:[],edges:[],verdicts:{}};
+    let good=false, err=null;   // good = the bridge returned a real graph shape (even if empty)
+    for(let i=0;i<3;i++){
+      try{ const g=await tool('workspace_workflow',{op:'governance_graph',params:{folder_context:path}});
+        if(g&&Array.isArray(g.nodes)){ good=true; if(g.nodes.length){ S.bridgeFault=null; return g; } last=g; }
+        else if(g&&(g.error||g.ok===false)){ err=g.error||'refused'; }   // the bridge answered, but with a fault
+        else { err='unreadable bridge response'; }
+      }catch(e){ err=(e&&e.message)||'bridge unreachable'; }
+      await new Promise(r=>setTimeout(r,120));
+    }
+    // An EMPTY-but-valid read is a real (empty) workspace, not a fault; a read that
+    // only ever threw / was refused / was unreadable is a fault the display must show.
+    S.bridgeFault = good ? null : err;
+    return last;   // a real workspace, persistently empty/unreadable → empty, not the demo
+  }
+  return SAMPLE();   // no folder selected → demo; leave any bridgeFault set by boot() untouched
+}
+async function boot(){
+  window._view=window._view||'patch';   // explicit default view state
+  // folder list
+  S.bridgeFault=null;   // re-evaluate the bridge each boot
+  if(LIVE){ try{ const r=await tool('workspace_workspace',{op:'list'}); if(r&&(r.error||r.ok===false)){ workspaces=[]; S.bridgeFault=r.error||'refused'; } else { workspaces=(r&&r.workspaces)||[]; } }catch(e){ workspaces=[]; S.bridgeFault=(e&&e.message)||'bridge unreachable'; } }
+  const fi=window._fi||0;
+  const opts=workspaces.length?workspaces.map((c,i)=>'<option'+(i===fi?' selected':'')+'>'+esc(bn(c.path||''))+'</option>').join(''):'<option disabled selected>— no workspace —</option>';
+  const _fsel=document.getElementById('folder'); if(_fsel) _fsel.innerHTML=opts;
+  S.path = (LIVE&&workspaces.length)?workspaces[fi].path:null;
+  S.g = await loadGraph(S.path);
+  if(S.g._sample && !S.path) S.path=null;   // keep a set folder even on a transient empty read
+  setConn(); render(); loadWsRail(); updateRunState();
+  if(LIVE&&!workspaces.length&&!S.path&&!_wizSeen()) openOnboardingWizard();
+  else{ const wz=document.getElementById('onboardwiz'); if(wz&&!wz._active&&(workspaces.length||S.path)) dismissOnboarding(); }
+  // a deep link from a holder's channel carries an action-link token: the
+  // session acts as the token's bound party for that one decision
+  try{ const lt=new URLSearchParams(window.location.search).get('token'); if(LIVE&&lt) applyActionLink(lt); }catch(_){}
+  // trust mode (a fronting proxy verifies who is calling): show who the
+  // server believes we are — governed actions carry that identity, not a
+  // client-side claim
+  if(LIVE){ try{
+    const base=(window.__WORKSPACES_HTTP__||'').replace(/\/tool$/,'');
+    const w=await (await fetch(base+'/whoami'+(S.path?('?folder='+encodeURIComponent(S.path)):''))).json();
+    if(w&&w.trust_mode){
+      const el=document.getElementById('conn');
+      if(el) el.insertAdjacentHTML('afterend', w.principal
+        ?'<span id="principal" style="font-family:IBM Plex Mono,monospace;font-size:9px;color:#9fd8c0;border:1px solid #2f4a3a;border-radius:10px;padding:2px 8px;margin-left:6px" title="verified by the fronting proxy; governed actions record this identity">signed in as '+esc(w.principal)+'</span>'
+        :'<span id="principal" style="font-family:IBM Plex Mono,monospace;font-size:9px;color:#e6b483;border:1px solid #5a4632;border-radius:10px;padding:2px 8px;margin-left:6px">no verified principal — reads only</span>');
+    }
+    if(w&&Array.isArray(w.units)) applyUnitChrome(w.units);
+  }catch(_){} }
+  // boot-tail rehydrate: drafts prefill the authoring panels on open; a failed
+  // load degrades to an empty prefill and never blocks boot
+  try{ await rehydrateDrafts(); }catch(_){}
+  window._ready=true;
+}
+async function reload(){ S.selEdge=null; S.g=await loadGraph(S.path); if(S.g._sample && !S.path)S.path=null; if(S.path){ const wz=document.getElementById('onboardwiz'); if(wz&&!wz._active) dismissOnboarding(); } setConn(); render(); markWsRail(); updateRunState(); draftChainTick(); if(window._view==='arrange') renderArrange(); if(window._view==='desk') renderDeskView(); if(window._view==='matrix') renderMatrixView(); }  // selEdge is an index into the OLD edges — a reload reorders them, so always clear it
+// PATCH ⇄ ARRANGE — two views of one workspace (mixer/arrange, DAW-style). PATCH is
+// the node graph; ARRANGE carries two forms behind a LANES | MIX sub-toggle. LANES
+// (the default) shows agents as lanes and the signed runs as verdict-coloured clips —
+// a read-only projection of the record. MIX renders one channel strip per agent (each
+// with a screen behind one global mode selector: Overview | Autonomy | Checks | Reach |
+// Time) and a bus header for the workspace, and carries writes: Hold suspends one
+// agent, Hold-all suspends the workspace — both the existing party-status suspend,
+// recorded — plus the Checks deep-link to Pending (a navigation). All displayed state
+// is server-decided (party_list, snapshot, matrix, track_strip); the client never
+// composes governance.
+function setView(v){
+  window._view=v;
+  document.querySelectorAll('.viewtog button').forEach(b=>{ const on=b.dataset.view===v; b.classList.toggle('on',on); b.setAttribute('aria-checked',String(on)); });
+  const arr=document.getElementById('arrange');
+  if(v==='arrange'){ if(arr) arr.classList.add('show'); renderArrange(); }
+  else if(arr){ arr.classList.remove('show'); }
+  const dsk=document.getElementById('deskview');
+  if(v==='desk'){ if(dsk) dsk.classList.add('show'); renderDeskView(); }
+  else if(dsk){ dsk.classList.remove('show'); }
+  const mxv=document.getElementById('matrixview');
+  if(v==='matrix'){ if(mxv) mxv.classList.add('show'); renderMatrixView(); }
+  else if(mxv){ mxv.classList.remove('show'); }
+}
+/* Unit chrome gating — /whoami names which of the five units (chat, patchbay,
+   mixdesk, screen, widget) the resolved party's role warrants; chrome outside
+   them does not render. This is presentation driven by a server answer, not
+   enforcement: the bridge scopes reads and gates writes server-side whatever
+   the page draws, so hiding a menu here protects nothing — it only declutters. */
+function applyUnitChrome(units){
+  const have=u=>units.includes(u);
+  const VIEW_UNIT={patch:'patchbay',arrange:'mixdesk',desk:'mixdesk',matrix:'screen'};
+  document.querySelectorAll('.viewtog button').forEach(b=>{ if(!have(VIEW_UNIT[b.dataset.view]||'')) b.style.display='none'; });
+  const MENU_UNIT={'Set up':'patchbay','Rules':'patchbay','Pending':'mixdesk','Record':'screen'};
+  document.querySelectorAll('.sections .sect').forEach(s=>{ const m=s.querySelector('.sectmenu'); const u=MENU_UNIT[(m&&m.getAttribute('aria-label'))||'']; if(u&&!have(u)) s.style.display='none'; });
+}
+// The ARRANGE view (renderArrange/renderArrangeLanes/renderArrangeMix) is
+// shell chrome (app/src/shell/arrange.js), loaded unconditionally by
+// compose_classic() — no panel-mount registration needed.
+/* ^ only forget the folder when none was set. A set folder that transiently
+   read empty (the projection can lag a write at boot) must KEEP S.path so the
+   next reload recovers — otherwise one empty read stranded the app on the
+   static SAMPLE for the whole session. */
+
+/* ---- geometry ---- */
+function pos(id){ const m=window.POS[S.path||'sample']=window.POS[S.path||'sample']||{}; return m[id]; }
+function setpos(id,x,y){ const m=window.POS[S.path||'sample']=window.POS[S.path||'sample']||{}; m[id]={x,y}; }
+function layout(){
+  const parties=S.g.nodes.filter(n=>n.kind==='agent'||n.kind==='human');
+  const ucs=S.g.nodes.filter(n=>n.kind==='use_case');
+  const W=stage.clientWidth||900,H=stage.clientHeight||600;
+  parties.forEach((n,i)=>{ if(!pos(n.id)) setpos(n.id,46,40+i*84); });
+  ucs.forEach((n,i)=>{ if(!pos(n.id)) setpos(n.id,330,40+i*84); });
+  if(!pos('master')) setpos('master',Math.max(560,W-196),H/2-NH/2);
+  // connectors (boundary ports): ingress low-left, oversight low-mid, egress low-right
+  let ig=0,ov=0,eg=0;
+  S.g.nodes.filter(n=>n.kind==='connector').forEach(n=>{ if(pos(n.id))return;
+    if(n.role==='ingress') setpos(n.id,30,H-150-(ig++)*72);
+    else if(n.role==='oversight') setpos(n.id,330,H-150-(ov++)*72);
+    else setpos(n.id,Math.max(560,W-196),H-150-(eg++)*72); });
+}
+function out(n){const p=pos(n.id);return{x:p.x+NW,y:p.y+NH/2};}
+function inn(n){const p=pos(n.id);return{x:p.x,y:p.y+NH/2};}
+function byId(id){return S.g.nodes.find(n=>n.id===id);}
+function allowedFor(ucId){return S.g.edges.filter(e=>e.kind==='authority'&&e.to===ucId).map(e=>e.from.replace(/^party:/,''));}
+/* effective egress verdict: reserved-by-law is a floor — it can never auto,
+   even before a run. Otherwise show the latest run's server verdict. */
+function effVerdict(e){ if(e.kind!=='egress') return e.verdict; const uc=byId(e.from); return resolveEgressVerdict(e.verdict, !!(uc&&uc.reserved&&uc.reserved.length)); }
+
+/* ---- render ---- */
+function cordPath(a,b){const dx=Math.max(38,Math.abs(b.x-a.x)*0.5);return 'M '+a.x+' '+a.y+' C '+(a.x+dx)+' '+a.y+', '+(b.x-dx)+' '+b.y+', '+b.x+' '+b.y;}
+function cordSeg(p,col,w,dash,flow){return '<path d="'+p+'" fill="none" stroke="'+col+'" stroke-width="'+w+'" stroke-linecap="round"'+(dash?' stroke-dasharray="'+dash+'"':'')+(flow?' class="cord-flow"':'')+'></path>';}
+function drawCords(extra){
+  let s='';
+  S.g.edges.forEach((e,i)=>{const a=byId(e.from),b=byId(e.to);if(!a||!b||!pos(a.id)||!pos(b.id))return;
+    const A=out(a),B=inn(b),p=cordPath(A,B),mx=(A.x+B.x)/2,my=(A.y+B.y)/2;
+    if(e.kind==='egress'){
+      const v=effVerdict(e),vi=VINFO(v);
+      if(vi.dbl){ s+=cordSeg(p,vi.col,5,vi.dash,false); s+=cordSeg(p,'#14161b',1.6,null,false); }  // double line = the law-floor verdicts
+      else s+=cordSeg(p,vi.col,3,vi.dash,!!vi.flow);                                                 // only auto flows
+      if(vi.sever){ const bx=A.x+(B.x-A.x)*0.62,by=A.y+(B.y-A.y)*0.62; s+='<line x1="'+bx+'" y1="'+(by-9)+'" x2="'+bx+'" y2="'+(by+9)+'" stroke="'+vi.col+'" stroke-width="3"></line>'; }  // prohibited: stop-bar past the midpoint — severed before the boundary, clear of the label
+      if(vi.label){ const w=vi.label.length*5.6+10; s+='<rect x="'+(mx-w/2)+'" y="'+(my-19)+'" width="'+w+'" height="13" rx="3" fill="#1b1e26" stroke="'+vi.col+'"></rect><text x="'+mx+'" y="'+(my-9.5)+'" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="9" font-weight="600" fill="#e9e7df">'+esc(vi.label)+'</text>'; }  // light ink: the label is the load-bearing text channel
+    } else if(e.kind==='authority'){
+      s+=cordSeg(p,'#7a8290',1.6,null,false);
+      s+='<circle cx="'+mx+'" cy="'+my+'" r="3.2" fill="none" stroke="#7a8290" stroke-width="1.4"></circle>';      // authority = key glyph, recedes
+    } else if(e.kind==='pipe'){
+      s+=cordSeg(p,'#9aa0ad',2.4,null,false);
+      s+='<path d="M'+(mx-4)+' '+(my-5)+' L'+(mx+4)+' '+my+' L'+(mx-4)+' '+(my+5)+'" fill="none" stroke="#9aa0ad" stroke-width="1.6"></path>';  // pipe = directional chevron
+    } else if(e.kind==='ingress') s+=cordSeg(p,'#5DCAA5',2,'4 5',false);
+    else if(e.kind==='notify') s+=cordSeg(p,'#df8b46',2,'4 5',false);
+    else if(e.kind==='deliver') s+=cordSeg(p,'#378ADD',2,'4 5',false);
+    else s+=cordSeg(p,'#5f6675',2,null,false);
+    s+='<path d="'+p+'" fill="none" stroke="transparent" stroke-width="14" data-edge="'+i+'" style="pointer-events:stroke;cursor:pointer"></path>';
+    if(i===S.selEdge) s+='<path d="'+p+'" fill="none" stroke="#f3f1ea" stroke-width="2" stroke-dasharray="2 3" opacity="0.85"></path>';   // selected-cord marker
+  });
+  if(extra)s+=extra;
+  svg.innerHTML=s;
+  svg.querySelectorAll('[data-edge]').forEach(el=>{ const i=+el.dataset.edge, e=S.g.edges[i];
+    el.addEventListener('click',ev=>{ev.stopPropagation();selectEdge(i);});
+    if(e){ const a=byId(e.from),b=byId(e.to);  // cords are selectable → inspect WHY. Mouse + (Chromium) keyboard; on WKWebView keyboard users reach the same verdict via the Findings panel + node inspector (info parity). Revoke moved to an explicit button.
+      el.setAttribute('tabindex','0'); el.setAttribute('role','button');
+      let al=(e.kind||'cord')+': '+((a&&a.label)||e.from)+' → '+((b&&b.label)||e.to);
+      if(e.kind==='egress'){ const vl=VINFO(effVerdict(e)).label; if(vl) al+=' · verdict '+vl; }   // verdict (and reserved≠prohibited) carried in the label, not colour
+      al+=(i===S.selEdge)?' — selected':' — press Enter to inspect';
+      el.setAttribute('aria-label',al);
+      if(i===S.selEdge) el.setAttribute('aria-pressed','true');
+      el.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();ev.stopPropagation();selectEdge(i);}}); }
+  });
+}
+// render is shell chrome (app/src/shell/canvas.js), loaded unconditionally
+// by compose_classic() — no panel-mount registration needed.
+/* The FEDERATED verdict in Check. The egress verdict above is LOCAL (this
+   patch alone). When external tool channels also weigh in, the boundary join is
+   strictest-wins across local + every tool — so Check shows that joined verdict
+   too, with the per-source breakdown and a ⚠ when they disagree. Async + additive:
+   it appends below the local findings and never blocks the synchronous render. */
+async function federatedCheck(){
+  const box=document.getElementById('findings'); if(!box) return;
+  let host=document.getElementById('fedcheck');
+  if(!S.path){ if(host) host.remove(); return; }
+  let conns=[]; try{ conns=((await tool('workspace_workflow',{op:'connector_list',params:{folder_context:S.path}})).connectors)||[]; }catch(_){ return; }
+  const ucs=[...new Set(conns.flatMap(c=>c.use_cases||[]))].sort();
+  if(!ucs.length){ if(host) host.remove(); return; }
+  let rows='';
+  for(const u of ucs){
+    let d; try{ d=await tool('workspace_workflow',{op:'federated_decision',params:{folder_context:S.path,use_case_id:u,local:'permit'}}); }catch(_){ continue; }
+    if(!d||!d.decision) continue;
+    const dis=d.disagreement?' <span class="feddis" style="color:#e6b483" title="local and a tool disagree — strictest wins">⚠ disagreement</span>':'';
+    const src=(d.sources||[]).map(s=>esc(s.connector_id)+' '+fedChip(s.verdict)).join(' · ');
+    rows+='<div class="finding" style="margin-bottom:6px"><span class="ttl">⇄ '+esc(u)+' · federated → '+fedChip(d.decision)+dis+'</span>'
+      +'<div style="font-size:10px;color:var(--txt-dim)">local '+fedChip(d.local||'permit')+(src?' · '+src:'')+' — strictest-wins at the boundary</div></div>';
+  }
+  if(!host){ host=document.createElement('div'); host.id='fedcheck'; box.appendChild(host); }
+  host.innerHTML=rows?('<div style="font-size:10.5px;color:var(--txt-dim);margin:8px 0 3px">Federated (local + tool channels → strictest)</div>'+rows):'';
+}
+/* The stop card — every stop, whatever its cause, renders through this one
+   component. Input {state, phrase, bound_by, action} plus presentation fields
+   (subject, note, trace, glyph, cls). state ∈ hold|deny|reserved decides what
+   a person can do here, and nothing else does:
+   - hold     → the Pending deep-link (open the sign-off queue — a navigation,
+                not a decision)
+   - deny     → the Rules deep-link, only when the caller opts in with
+                action:'rules' (loosening is the governed write and lives there)
+   - reserved → no control at all, whatever `action` says
+   phrase is the frozen register, verbatim ("needs a person", "not allowed",
+   "reserved · by law"); bound_by names the binding stage (rule + source);
+   note and trace only explain — reason never adds affordances. Returns HTML;
+   bind the deep-links with bindStopCards(scope) after insertion. lineCls is a
+   host row class (the strip screens pass mix-srow) so card lines count as the
+   page's value rows. */
+function stopCard(c,lineCls){
+  // fail-closed: only the three known states exist; anything else renders as
+  // a stop with no affordance rather than inheriting hold's sign-off action.
+  const state=(c.state==='hold'||c.state==='deny'||c.state==='reserved')?c.state:'unknown';
+  const act=state==='hold'?'sign_off':(state==='deny'&&c.action==='rules'?'rules':null);
+  const L=lineCls?(' '+lineCls):'';
+  const ttl=(c.glyph?c.glyph+' ':'')+(c.subject?c.subject+' — ':'')+c.phrase;
+  let h='<div class="stopcard'+(c.cls?' '+c.cls:'')+'" data-stopcard="'+state+'" role="group" aria-label="'+escA(esc(state+' — '+ttl+(c.bound_by?' · bound by '+c.bound_by:'')))+'">';
+  h+='<span class="ttl stopcard-phrase'+L+'">'+esc(ttl)+'</span>';
+  if(c.note) h+='<span class="stopcard-note'+L+'">'+esc(c.note)+'</span>';
+  if(c.bound_by) h+='<div class="stopcard-bound'+L+'">bound by '+esc(c.bound_by)+'</div>';
+  if(c.trace) h+='<div class="path stopcard-trace">'+esc(c.trace)+'</div>';
+  if(act==='sign_off') h+='<button class="stopcard-act" data-pending-link="1" aria-label="open Pending — the sign-off queue (a view, not a decision)" title="the sign-off queue — deciding happens there, not here">open Pending →</button>';
+  else if(act==='rules') h+='<button class="stopcard-act" data-rules-link="1" aria-label="open Rules — Autonomy: go / ask / block per cell (loosening is the governed write)" title="loosening lives in Rules — go / ask / block per cell">open Rules →</button>';
+  return h+'</div>';
+}
+// stop-card deep-links: Pending (the sign-off queue) and Rules → Autonomy.
+// Navigations, not decisions — the write paths stay in those drawers.
+function bindStopCards(scope){
+  scope.querySelectorAll('[data-pending-link]').forEach(b=>b.addEventListener('click',()=>openApprovalsPanel()));
+  scope.querySelectorAll('[data-rules-link]').forEach(b=>b.addEventListener('click',()=>openMatrixPanel()));
+}
+function findings(){
+  const box=document.getElementById('findings'); let h=''; let ok=0;
+  S.g.edges.filter(e=>e.kind==='egress').forEach(e=>{
+    const uc=byId(e.from); const lbl=uc?uc.label:e.from; const v=effVerdict(e);
+    const trace=lbl+' → boundary';
+    if(v==='prohibited') h+=stopCard({state:'deny',glyph:'⛔',subject:lbl,phrase:'not allowed',note:'Barred outright: no one may run it, person or agent.',trace:trace,cls:'finding bad'});
+    else if(v==='reserved') h+=stopCard({state:'reserved',glyph:'✗',subject:lbl,phrase:reservedPhrase(uc),note:'Never automatic, whatever the level. A person must sign off.',trace:trace,cls:'finding bad'});
+    else if(v==='refused') h+=stopCard({state:'deny',action:'rules',glyph:'✗',subject:lbl,phrase:'refused now',note:'The server blocked this run; conditions weren’t met. Fix them and re-run.',trace:trace,cls:'finding bad'});
+    else if(v==='human') h+=stopCard({state:'hold',glyph:'⚠',subject:lbl,phrase:'needs a person',note:'Autonomy not earned for this risk; routed to a person.',trace:trace,cls:'finding warn'});
+    else if(v==='unfired') h+='<div class="finding info"><span class="ttl">• '+esc(lbl)+' — wired, never run</span>Connected to the boundary but not started (nothing self-starts).</div>';
+    else ok++;
+  });
+  if(ok) h='<div class="finding ok"><span class="ttl">✓ '+ok+' cleared</span>'+ok+' task'+(ok===1?'':'s')+' run on their own, within policy.</div>'+h;
+  if(!h) h='<div class="empty">No tasks reach the boundary yet.</div>';
+  box.innerHTML=h; bindStopCards(box);
+}
+/* Provenance, attributed (the "by law" overclaim fix): a reservation is shown
+   WITH where it comes from — a shipped reference (required by law / professional
+   duty) or the user's OWN policy clause — never as Rvnd's own legal finding.
+   Rvnd does not know GDPR; it carries a curated source string. Falls back to bare
+   act names when the server supplied no provenance (offline / sample). */
+const BASIS={law:{t:'required by law',c:'#e2877f'},professional:{t:'professional duty',c:'#e2877f'},policy:{t:'your policy',c:'#e6b483'}};
+/* unknown / blank basis makes NO legal claim — neutral colour, the verdict only
+   (fail-safe: never default an unrecognised basis to the law treatment). */
+function basisOf(bk){return BASIS[bk]||{t:'reserved',c:'var(--txt-dim)'};}
+/* a short, attribution-honest phrase for a node's reservations — the SINGLE
+   source used by the findings panel, aria-labels and the desk so NO surface ever
+   defaults to "by law". One attributed basis -> "reserved · <basis>"; mixed or
+   unknown -> the verdict only ("reserved"). */
+function reservedPhrase(n){
+  const rs=(n&&n.reservations&&n.reservations.length)?n.reservations:null;
+  if(!rs) return 'reserved';
+  const ts=[...new Set(rs.map(r=>BASIS[r.basis_kind]?BASIS[r.basis_kind].t:null))];
+  return (ts.length===1&&ts[0])?'reserved · '+ts[0]:'reserved';
+}
+/* register table cell: yes/no + attributed basis from the projected reserved_bases. */
+function regBasisTag(u){
+  if(!u.reserved) return 'no';
+  const ts=[...new Set((u.reserved_bases||[]).map(k=>BASIS[k]&&BASIS[k].t).filter(Boolean))];
+  return '<b style="color:#e2877f">'+esc(ts.length?ts.join(', '):'reserved')+'</b>';
+}
+/* a `when` guard, read out in plain words. A tags-membership guard is the
+   sanctioned bridge to data-lineage (the only computed-ish predicate the language
+   allows): `tags contains <t>` -> "only when tagged <t>". Other 3-token guards
+   are shown verbatim. Returns '' for no guard (unconditional). */
+function guardPhrase(w){
+  if(!w) return '';
+  const p=(''+w).trim().split(/\s+/);
+  if(p.length===3 && p[0]==='tags' && p[1]==='contains') return 'only when tagged <b style="color:#7fae97">'+esc(p[2])+'</b>';
+  if(p.length===3) return 'only when <b>'+esc(p[0])+' '+esc(p[1])+' '+esc(p[2])+'</b>';
+  return 'when '+esc(w);
+}
+function reservationsHtml(n){
+  const rs=(n.reservations&&n.reservations.length)?n.reservations:null;
+  if(rs){
+    let out=rs.map(r=>{const bk=basisOf(r.basis_kind); const gp=guardPhrase(r.when);
+      return '<div class="ro" style="margin-top:3px">a person must <b>'+esc(r.act_type||'sign off')+'</b> · <b style="color:'+bk.c+'">'+bk.t+'</b>'+(r.source?' <span style="color:var(--txt-dim)">— '+esc(r.source)+'</span>':'')+(gp?' <span class="guard" style="color:var(--txt-dim);font-size:10px">· '+gp+'</span>':'')+'</div>';}).join('');
+    out+='<div class="ro" style="font-size:10px;color:var(--txt-dim);margin-top:4px">Attributed to its source — a shipped reference or your policy. Rvnd declares governance; it does not certify legal compliance.</div>';
+    return out;
+  }
+  if(n.reserved&&n.reserved.length) return '<div class="ro" style="margin-top:3px">a person must sign off ('+n.reserved.map(esc).join(', ')+')</div>';
+  return '';
+}
+/* Data-lineage tags on the act. Authored ∪ connector-derived (the run
+   path's tag lens). Neutral facts, attributed to WHERE they come from; the guards
+   that read them (`when tags contains <t>`) are authored policy, shown above. */
+function tagsHtml(n){
+  const auth=n.tags_authored||[], conn=n.tags_connector||[], all=n.tags||[];
+  if(!all.length) return '<div class="ro" style="font-size:10.5px;color:var(--txt-dim)">no data tags — no <code>tags contains</code> guard can fire here</div>';
+  const chip=(t,src)=>'<span class="tagchip" data-src="'+src+'" style="display:inline-block;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:1px 7px;margin:2px 3px 0 0;font-size:10.5px;color:#7fae97">'+esc(t)+(src==='connector'?' <span style="color:var(--txt-dim)">· from channel</span>':'')+'</span>';
+  let out='<div class="tags">'+auth.map(t=>chip(t,'authored')).join('')+conn.filter(t=>!auth.includes(t)).map(t=>chip(t,'connector')).join('')+'</div>';
+  out+='<div class="ro" style="font-size:10px;color:var(--txt-dim);margin-top:3px">authored on the act ∪ stamped by linked channels. A <code>tags contains</code> reservation fires only when its tag is present.</div>';
+  return out;
+}
+/* #40 — author declarations on a gate. The language already parses
+   reserve|prohibit|obligation|redress (+ when); the chain now persists them
+   (sticky reservations). Authoring emits one declaration line onto the current
+   netlist and applies it — the server enforces, the client requests. */
+function declRows(n){
+  let h='';
+  (n.obligations||[]).forEach(o=>h+='<div class="ro" style="font-size:10.5px;margin-top:2px"><b style="color:#7fae97">obligation</b> '+esc(o.obligation||'')+' <span style="color:var(--txt-dim)">— a duty borne with the act</span></div>');
+  (n.redress||[]).forEach(r=>h+='<div class="ro" style="font-size:10.5px;margin-top:2px"><b style="color:#e6b483">redress</b> by '+esc(r.by||'')+(r.overturn?' · can overturn':'')+(r.within?' · within '+esc(r.within):'')+' <span style="color:var(--txt-dim)">— an appeal route</span></div>');
+  return h||'<div class="ro" style="font-size:10px;color:var(--txt-dim)">no duties or remedies declared</div>';
+}
+function declAddHtml(){
+  const inp='style="width:100%;margin-top:4px;background:var(--panel-2);border:1px solid var(--line);color:#fff;border-radius:6px;padding:6px;font-family:inherit;font-size:11px"';
+  return '<details style="margin-top:6px"><summary style="cursor:pointer;font-size:11px;color:var(--txt-dim)">+ add a declaration</summary>'
+    +'<select id="dtype" aria-label="declaration type" '+inp+'><option value="reserve">reserve · a person signs off</option><option value="prohibit">prohibit · severed, no sign-off</option><option value="obligation">obligation · a duty (e.g. disclose-AI)</option><option value="redress">redress · an appeal route</option></select>'
+    +'<input type="text" id="dval" aria-label="role or duty name" placeholder="role (reserve/redress) · duty name (obligation)" '+inp+'>'
+    +'<button class="del" id="daddbtn" style="margin-top:5px;width:100%">Add to this gate</button>'
+    +'<div class="ro" style="font-size:10px;color:var(--txt-dim);margin-top:3px">written to the signed record via Loomground; the server enforces it. Single words only. (conditional “when” guards are authored in the .lg editor.)</div></details>';
+}
+async function addDeclaration(n){
+  if(!S.path){ announce('open a folder to author declarations'); return; }
+  const type=(document.getElementById('dtype')||{}).value, val=((document.getElementById('dval')||{}).value||'').trim();
+  const tok=/^[\w.-]+$/;   // netlist is token-based — single words only (no spaces / newlines / -> / {})
+  if(val && !tok.test(val)){ announce('role/name must be a single word (letters, digits, - _ .)'); return; }
+  const g=n.id.replace(/^uc:/,'');
+  if(!tok.test(g)){ announce('this gate’s id can’t be safely authored against'); return; }   // injection guard on the gate id too
+  let line;
+  if(type==='reserve'){ if(!val){announce('reserve needs a role'); return;} line='reserve '+g+' by '+val; }
+  else if(type==='prohibit'){ line='prohibit '+g; }
+  else if(type==='obligation'){ if(!val){announce('obligation needs a name'); return;} line='obligation '+val+' on '+g; }
+  else if(type==='redress'){ if(!val){announce('redress needs a role'); return;} line='redress '+g+' by '+val; }
+  else return;
+  const btn=document.getElementById('daddbtn'); if(btn) btn.disabled=true;
+  let msg;
+  try{
+    const nl=((await tool('workspace_workflow',{op:'governance_netlist',params:{folder_context:S.path}})).netlist||'').replace(/\s+$/,'');
+    const r=await tool('workspace_workflow',{op:'patch_apply',params:{folder_context:S.path,actor:'app-user',netlist:nl+'\n'+line+'\n'}});
+    // the patch_apply result is the source of truth for success; the reload is a
+    // best-effort view refresh that must not flip an applied result to "failed".
+    msg=(r&&r.ok===false) ? ('Could not add: '+(((r.errors)||['failed']).join('; '))) : (type+' added to '+(n.label||g)+', signed into the record.');
+  }catch(e){ msg='Could not add the declaration: '+((e&&e.message)||'failed'); }
+  try{ await reload(); }catch(_){}
+  if(btn) btn.disabled=false;   // re-enable on every path (success reloads to a fresh button; failure stays usable)
+  announce(msg);
+}
+function selectEdge(i){ S.selEdge=i; S.sel=null; S.pending=null; render(); }
+/* depth-in-place: a cord is a governance object. Selecting it shows WHY — the
+   server verdict, the law floor that tightened it, and the attributed basis +
+   source. Authority revoke lives here as an explicit button (not a stray click). */
+function inspectEdge(b, e){
+  const a=byId(e.from), z=byId(e.to); const nm=x=>x?esc(x.label||x.id):'?';
+  const back='<button class="del" id="cordclose" style="border-color:var(--line);color:var(--txt-dim);margin-top:8px">Close</button>';
+  if(e.kind==='authority'){
+    b.innerHTML='<div class="field"><label>Authority cord</label><div class="ro"><b>'+nm(a)+'</b> → <b>'+nm(z)+'</b><br><span style="color:var(--txt-dim);font-size:10.5px">a signed grant: '+nm(a)+' may do '+nm(z)+'.</span></div></div>'
+      +'<button class="del" id="cordrevoke">Revoke authority</button>'+back;
+  } else if(e.kind==='egress'){
+    const v=effVerdict(e), vi=VINFO(v), uc=a;
+    let h='<div class="field"><label>Egress cord</label><div class="ro"><b>'+nm(uc)+'</b> → the boundary</div></div>';
+    h+='<div class="field"><label>Verdict (server decides)</label><div class="ro"><b style="color:'+(vi.col||'#fff')+'">'+esc(vi.label||v)+'</b>';
+    if(e.verdict&&e.verdict!==v) h+=' <span style="color:var(--txt-dim);font-size:10px">· server said “'+esc(e.verdict)+'”, tightened to “'+esc(v)+'” by the law floor</span>';
+    else if(!e.verdict) h+=' <span style="color:var(--txt-dim);font-size:10px">· no server verdict yet — shown as “'+esc(vi.label||v)+'” by the fail-closed default</span>';
+    h+='</div></div>';
+    if(uc&&((uc.reservations&&uc.reservations.length)||(uc.reserved&&uc.reserved.length))) h+='<div class="field"><label>Why</label>'+reservationsHtml(uc)+'</div>';
+    b.innerHTML=h+back;
+  } else if(e.kind==='pipe'){
+    b.innerHTML='<div class="field"><label>Pipe cord</label><div class="ro"><b>'+nm(a)+'</b> → <b>'+nm(z)+'</b><br><span style="color:var(--txt-dim);font-size:10.5px">data flows gate→gate; downstream, the strictest verdict wins.</span></div></div>'+back;
+  } else {
+    b.innerHTML='<div class="field"><label>'+esc(e.kind||'cord')+' cord</label><div class="ro"><b>'+nm(a)+'</b> → <b>'+nm(z)+'</b><br><span style="color:var(--txt-dim);font-size:10.5px">a boundary connector — registered port; the concrete send is a separate, permissioned action.</span></div></div>'+back;
+  }
+  const rv=b.querySelector('#cordrevoke'); if(rv) rv.addEventListener('click',()=>{ const idx=S.selEdge; S.selEdge=null; unwire(idx); });
+  const cl=b.querySelector('#cordclose'); if(cl) cl.addEventListener('click',()=>{ S.selEdge=null; render(); try{stage.focus();}catch(_){} });
+}
+// inspect is shell chrome (app/src/shell/canvas.js), loaded unconditionally
+// by compose_classic() — no panel-mount registration needed.
+// fillTrackStrip is shell chrome (app/src/shell/track_strip.js), loaded
+// unconditionally by compose_classic() — no panel-mount registration needed.
+// _TS_STATUS and _tsGrade stay here: they're shared with the ARRANGE mix-view
+// channel-strip rendering (renderArrange's mix mode), not private to the
+// Inspector's track strip.
+const _TS_STATUS={active:'#5aa886',suspended:'#c8a23f',killed:'#cf463c'};
+function _tsGrade(g){ const m=/^L?(\d)$/.exec(String(g==null?'':g).trim()); return m?Math.max(0,Math.min(4,+m[1])):null; }
+/* the Inspector as operator: contract read-out + Run + step lane + per-step
+   override — all built on Loomground ops (use_case_get / operate / runs /
+   record_override). */
+async function fillUcOps(uc){
+  const box=document.getElementById('ucops'); if(!box) return;
+  let contract=null, runs=[];
+  let appr=null;
+  if(S.path){
+    try{ const r=await tool('workspace_workflow',{op:'use_case_get',params:{folder_context:S.path,use_case_id:uc.id.replace(/^uc:/,'')}}); contract=(r.use_case||{}).contract||null; }catch(e){}
+    try{ runs=((await tool('workspace_workflow',{op:'runs',params:{folder_context:S.path}})).runs)||[]; }catch(e){}
+    try{ const ar=await tool('workspace_contract',{op:'list_approvals',params:{folder_context:S.path}}); if(ar&&(ar.error||ar.ok===false)){ appr='__err'; } else { const slug=uc.id.replace(/^uc:/,''); appr=(((ar&&ar.approvals)||[]).filter(a=>a.contract_id===slug)).slice(-1)[0]||null; } }catch(e){ appr='__err'; }
+  }
+  const g=Math.max(0,Math.min(4,uc.grade||0));
+  // M8: the ceiling is the SERVER-composed value (grade_ceiling); the client
+  // renders it, never recomputes it from a risk→cap map. If the server didn't
+  // supply one, fall back to the earned grade (no invented headroom).
+  const cap=(typeof uc.grade_ceiling==='number')?uc.grade_ceiling:g;
+  const reserved=!!(uc.reserved&&uc.reserved.length);
+  let h='<label>Contract — risk vs autonomy</label><div class="ro">autonomy level <b>L'+g+'</b> · ceiling <b>L'+cap+'</b> for '+esc(uc.risk||'low')+' risk';
+  if(contract) h+='<br>hardening <b>'+esc(contract.hardening)+'</b> (earned by clean approvals)<br>debt <b>'+esc((contract.requirements||[]).join(', ')||'—')+'</b><br>on timeout <b>'+esc(contract.on_timeout||'')+'</b>'+(contract.on_timeout==='halt'?' (stops, fail-closed)':' (proceeds)');
+  h+='<br>'+(g>=3?'<b style="color:#7fae97">auto-eligible (L3+)</b>':'<b style="color:#e6b483">needs a person — level below L3</b>')+'</div>';
+  // clamped fader: earned level vs the risk-floored ceiling; clamped by law when reserved (discrete, no 0–1 dial)
+  h+='<label style="margin-top:10px">Autonomy level vs ceiling</label><div class="fader'+(reserved?' clamped':'')+'" role="group" aria-disabled="true" aria-label="read-only · autonomy level L'+g+', ceiling L'+cap+(reserved?', clamped, '+reservedPhrase(uc):'')+' — server-decided, read-only">';
+  for(let i=0;i<5;i++) h+='<div class="fcell'+(i===g?' earned':'')+(i>cap?' over':'')+'"'+(i===g?' style="background:'+GHEX[g]+'"':'')+' title="L'+i+' · '+GRADE_NAME[i]+'">L'+i+'</div>';
+  h+='</div><div class="ro">level <b>L'+g+'</b> · ceiling <b>L'+cap+'</b> for '+esc(uc.risk||'low')+' risk'+(reserved?' · <b style="color:var(--txt-dim)">clamped</b>':'')+' · <span style="color:var(--txt-dim)">server-decided, not editable here</span></div>';
+  // drift budget (discrete pips, declare-the-gap) + calibration (categorical) — never a score
+  h+='<label style="margin-top:8px">Lens drift budget</label><div class="pips">'+[0,1,2,3,4].map(()=>'<span class="pip"></span>').join('')+'</div><div class="ro" style="font-size:10px;color:var(--txt-dim)">not declared — no learning telemetry in this folder</div>';
+  h+='<label style="margin-top:8px">Oversight calibration</label><div class="ro">not assessed — no override history yet</div>';
+  const agent=allowedFor(uc.id)[0];
+  if(!S.path) h+='<div class="ro" style="margin-top:8px">offline — open a folder to run</div>';
+  else if(!agent) h+='<div class="ro" style="margin-top:8px">wire an agent to run this use-case</div>';
+  else h+='<button class="del" id="runuc" style="border-color:#2f4a3a;color:#8fd1ad;margin-top:8px">▶ Run · agent '+esc(agent)+'</button>';
+  // Human oversight — a traffic light at the point of action + the sign-off CTA.
+  // Shown when a person must sign off (reserved by law, or autonomy below L3).
+  if(S.path && (reserved || g<3)){
+    const comp=(uc.reservations&&uc.reservations[0]&&uc.reservations[0].reserved_to)||'';
+    const apprErr=(appr==='__err'); const apprObj=apprErr?null:appr; const st=apprObj&&apprObj.overall_state;
+    const tl=apprErr?'err':(!apprObj?'grey':(st==='approved'?'green':(st==='rejected'?'red':'amber')));
+    const tlc={green:'#92c4ac',amber:'#e6b483',red:'#d98b8b',grey:'#aab0bd',err:'#b58a5a'}[tl];
+    const tlw={green:'cleared — signed off',amber:'awaiting sign-off',red:'blocked — rejected',grey:'not requested yet',err:'sign-off state unavailable — couldn’t read the record'}[tl];
+    h+='<label style="margin-top:10px">Human oversight</label>';
+    h+='<div class="ro" role="status" aria-label="oversight traffic light: '+tlw+'"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:'+tlc+';margin-right:6px;vertical-align:middle"></span><b style="color:'+tlc+'">'+tlw+'</b> · '+(reserved?esc(reservedPhrase(uc)):'needs a person (below L3)')+'</div>';
+    if(apprErr || !apprObj || st==='rejected') h+='<button class="del" id="reqsign" data-comp="'+escA(comp)+'" style="border-color:#4a3a2d;color:#e6b483;margin-top:6px">Request sign-off'+(comp?(' · '+esc(comp)):'')+'</button>';
+    else h+='<div class="ro" style="font-size:10px;color:var(--txt-dim);margin-top:4px">in the sign-off inbox ('+esc(st)+') — open Govern → Sign-offs to decide.</div>';
+  }
+  h+='<label style="margin-top:10px">Connectors (boundary ports)</label><div style="display:flex;gap:6px"><button class="del cbtn" data-cr="ingress" data-ch="email" style="border-color:#2d4a44;color:#7fd1bd;flex:1;font-size:10px">+ ingress · email</button><button class="del cbtn" data-cr="oversight" data-ch="ticket" style="border-color:#4a3a2d;color:#e6b483;flex:1;font-size:10px">+ oversight · ticket</button></div>';
+  const mine=runs.filter(r=>r.use_case_id===uc.id.replace(/^uc:/,'')); const last=mine[mine.length-1];
+  if(last){ h+='<label style="margin-top:12px">Steps — run '+esc((last.run_id||'').slice(0,6))+' · '+esc(last.final||'')+'</label>';
+    (last.steps||[]).forEach(s=>{ const col=(VERDICT[s.disposition]||{}).col||'#888'; const needs=s.disposition==='human'||s.disposition==='reserved';
+      const sbtn='font-size:10px;padding:2px 7px;border:1px solid var(--line);background:var(--panel-2);color:var(--txt);border-radius:5px;cursor:pointer;margin-left:4px';
+      h+='<div style="display:flex;gap:6px;align-items:center;margin:5px 0;font-size:11px"><span style="width:8px;height:8px;border-radius:2px;background:'+col+'"></span><span style="flex:1">'+esc(s.issue_id)+' · '+esc(s.disposition)+(s.reserved_to?' → '+esc(s.reserved_to):'')+'</span>'+
+        (needs?'<button class="sov" data-i="'+esc(s.issue_id)+'" data-v="approved" style="'+sbtn+'">approve</button><button class="sov" data-i="'+esc(s.issue_id)+'" data-v="rejected" style="'+sbtn+'">reject</button>':'')+
+        '<span class="sovr" data-r="'+esc(s.issue_id)+'" style="font-size:10px;color:var(--txt-dim);margin-left:4px"></span></div>'; });
+    h+='<div class="ro" style="font-size:10px;color:var(--txt-dim);margin-top:4px">a per-step approve/reject is a signed override of the step’s default — single-governance over the global rule.</div>';
+  }
+  box.innerHTML=h;
+  const rb=box.querySelector('#runuc'); if(rb) rb.addEventListener('click',()=>runUC(uc));
+  const sg=box.querySelector('#reqsign'); if(sg) sg.addEventListener('click',()=>requestSignoff(uc, sg.dataset.comp||''));
+  box.querySelectorAll('.cbtn').forEach(b=>b.addEventListener('click',()=>addConnector(b.dataset.cr,b.dataset.ch,uc.id)));
+  box.querySelectorAll('.sov').forEach(b=>b.addEventListener('click',()=>overrideStep(uc,b.dataset.i,b.dataset.v)));
+}
+async function runUC(uc){
+  const agent=allowedFor(uc.id)[0]; if(!agent||!S.path) return;
+  try{
+    const listed=await tool('workspace_workflow',{op:'governance_lane_list',params:{folder_context:S.path}});
+    const lane=((listed&&listed.lanes)||[]).find(l=>l.agent===agent);
+    if(!lane){ announce('run refused · no approved governance lane for '+agent); return; }
+    const opened=await tool('workspace_workflow',{op:'governance_open',params:{folder_context:S.path,party:agent,policy_fingerprint:lane.policy_fingerprint}});
+    if(!opened||!opened.capability_token){ announce('run refused · governed session could not be opened'); return; }
+    await tool('workspace_workflow',{op:'operate',params:{folder_context:S.path,use_case_id:uc.id.replace(/^uc:/,''),agent_id:agent,capability_token:opened.capability_token,issues:[{issue_id:'i-'+(Date.now()%100000),issue_type:uc.issue_type||'',completeness:'high'}],now_epoch:Math.floor(Date.now()/1000)}});
+  }catch(e){ announce('run refused · '+((e&&e.message)||'governed session failed')); }
+  await reload(); S.sel=uc.id; inspect();
+}
+// Verdict → action: request a human sign-off for a task that needs a person,
+// routed to the competence the reservation names (party_route), else to any active
+// human. The server records it; the request then shows in Govern → Sign-offs and
+// the Inspector traffic light turns amber. Honest: surfaces failures, no fake grant.
+// Parse a Loomground reservation target (role-based, never identities):
+// "2 of {legal, finance}" | "legal and finance" | "legal" -> {m, roles}.
+function parseResvTarget(by){
+  by=(by||'').trim();
+  const q=by.match(/^(\d+)\s+of\s+\{(.+)\}$/);
+  if(q) return {m:parseInt(q[1],10), roles:q[2].split(',').map(s=>s.trim()).filter(Boolean)};
+  if(by.includes(' and ')){ const roles=by.split(' and ').map(s=>s.trim()).filter(Boolean); return {m:roles.length, roles:roles}; }
+  return {m:1, roles: by?[by]:[]};
+}
+// Loomground duration token -> seconds ("30d"|"2h"|"15m"); 0 if absent/unparseable.
+function durToSecs(d){ const m=((d||'')+'').trim().match(/^(\d+)([mhd])$/); return m?parseInt(m[1],10)*{m:60,h:3600,d:86400}[m[2]]:0; }
+async function requestSignoff(uc, competence, quiet){
+  if(!S.path){ announce('open a workspace first'); return false; }
+  // A role-QUORUM reservation ("m of {roles}" / "role and role") stays role-abstract:
+  // it opens a §1.5 quorum approval (any m qualified hands), NOT a named-signer review.
+  // Only a single-role reservation resolves to specific people (the contract path below).
+  const tgt=parseResvTarget(competence);
+  if(tgt.m>=2 && tgt.roles.length){
+    const slug=uc.id.replace(/^uc:/,'');
+    const resv=(uc.reservations||[]).find(x=>x&&x.reserved_to===competence)||(uc.reservations||[])[0]||{};
+    // #3: carry the policy's declared term + elapse mode through to the approval.
+    let onElapse=(resv.on_elapse==='proceed')?'proceed':'halt';
+    // #4: a reservation that exists BECAUSE the law requires a human can never time out
+    // INTO action — force halt no matter how it was authored (fail-closed).
+    if(resv.basis_kind==='law' && onElapse==='proceed') onElapse='halt';
+    const secs=durToSecs(resv.duration);
+    const params={folder_context:S.path,request_id:'resv:'+slug,form:'four_eyes',quorum:tgt.m,competences:tgt.roles,requester:'app-user',on_elapse:onElapse,now:Date.now()/1000};
+    if(secs) params.timeout_seconds=secs;
+    let r; try{ r=await tool('workspace_workflow',{op:'approval_request',params:params}); }catch(e){ announce('Could not open quorum approval: '+((e&&e.message)||'failed')); return false; }
+    if(r&&(r.error||r.ok===false)){ announce('Could not open quorum approval: '+esc(r.error||'failed')); return false; }
+    if(quiet) return true;
+    announce('Opened a '+tgt.m+'-of-'+tgt.roles.length+' role quorum for “'+(uc.label||slug)+'” (any of {'+tgt.roles.join(', ')+'}'+(secs?(' · '+esc(resv.duration)+' : '+onElapse):'')+'). See Govern → Sign-offs.');
+    S.sel=uc.id; inspect(); return true;
+  }
+  let signers=[];
+  // route to the competent people; a READ error must not be mistaken for 'nobody'
+  if(competence){ try{ const r=await tool('workspace_policy',{op:'party_route',params:{folder_context:S.path,competence:competence}}); if(!(r&&(r.error||r.ok===false))) signers=(((r&&r.approvers)||[]).map(p=>p.party_id||p.id)).filter(Boolean); }catch(_){ } }
+  if(!signers.length){ let r; try{ r=await tool('workspace_policy',{op:'party_list',params:{folder_context:S.path,kind:'human'}}); }catch(e){ announce('Could not read people in “'+bn(S.path)+'”: '+((e&&e.message)||'failed')); return false; }
+    if(r&&(r.error||r.ok===false)){ announce('Could not read people in “'+bn(S.path)+'”: '+esc(r.error||'failed')); return false; }
+    const a=Array.isArray(r)?r:((r&&(r.parties||r.rows))||[]); signers=a.filter(p=>(p.status||'active')==='active').map(p=>p.party_id||p.id).filter(Boolean); }
+  if(!signers.length){ announce('No active person'+(competence?(' holds “'+competence+'”'):'')+' — add one in Set up → Person, then request again.'); return false; }
+  const slug=uc.id.replace(/^uc:/,'');
+  let r; try{ r=await tool('workspace_contract',{op:'request_approval',params:{folder_context:S.path,contract_id:slug,signers:signers,action_summary:'Sign off: '+(uc.label||slug),reason:(competence?('reserved for '+competence):'needs a person — autonomy below L3'),requested_by:'app-user'}}); }catch(e){ announce('Could not request sign-off: '+((e&&e.message)||'failed')); return false; }
+  if(r&&(r.error||r.ok===false)){ announce('Could not request sign-off: '+esc(r.error||'failed')); return false; }
+  if(quiet) return true;
+  announce('Requested sign-off for “'+(uc.label||slug)+'” — routed to '+signers.length+' person'+(signers.length===1?'':'s')+(competence?(' for '+competence):'')+'. See Govern → Sign-offs.');
+  S.sel=uc.id; inspect(); return true;
+}
+// Verdict Router → action: request a sign-off for every task currently at a given
+// live verdict (human / reserved). Reuses requestSignoff (routes to the competent
+// person, records it). Confirmed once for the batch; the server still decides.
+async function routerRequestSignoffs(verdict){
+  if(verdict!=='human'&&verdict!=='reserved'){ return; }   // only human-oversight verdicts are actionable
+  if(!S.path){ announce('open a workspace to request sign-offs'); return; }
+  const ucs=(S.g.nodes||[]).filter(n=>{ if(n.kind!=='use_case') return false; const e=(S.g.edges||[]).find(ed=>ed.kind==='egress'&&ed.from===n.id); return !!(e&&effVerdict(e)===verdict); });
+  if(!ucs.length){ announce('no task at “'+verdict+'” in this patch'); return; }
+  if(!confirm('Request sign-off for '+ucs.length+' task'+(ucs.length===1?'':'s')+' at “'+verdict+'”? Each is routed to the competent person and recorded.')) return;
+  let ok=0; for(const uc of ucs){ const comp=(uc.reservations&&uc.reservations[0]&&uc.reservations[0].reserved_to)||''; if(await requestSignoff(uc, comp, true)) ok++; }
+  const bad=ucs.length-ok;
+  announce('Router — requested sign-off for '+ok+' of '+ucs.length+' task'+(ucs.length===1?'':'s')+' at '+verdict+(bad?(' · '+bad+' could not be routed/recorded'):''));
+}
+// overrideStep is shell chrome (app/src/shell/policy.js), loaded
+// unconditionally by compose_classic() — no panel-mount registration needed.
+
+/* ---- writes (build on Loomground) ---- */
+async function reReg(uc, allowed){
+  if(!S.path){ return; }
+  // The graph node carries no fingerprint (issue_type), so re-registering from
+  // the node alone would BLANK it — and a blanked fingerprint makes the
+  // re-registration a silent no-op (wiring an agent / changing risk / renaming
+  // never takes). Fetch the use case's real fingerprint from the chain and
+  // preserve it; name + risk come from the (possibly just-edited) node.
+  const ucid=uc.id.replace(/^uc:/,'');
+  let fingerprint=uc.issue_type?{issue_type:uc.issue_type}:{};
+  try{ const r=await tool('workspace_workflow',{op:'use_case_get',params:{folder_context:S.path,use_case_id:ucid}});
+    const got=(r&&r.use_case)||{};
+    if(got.fingerprint&&typeof got.fingerprint==='object'&&Object.keys(got.fingerprint).length) fingerprint=got.fingerprint;
+  }catch(e){}
+  await tool('workspace_workflow',{op:'use_case_register',params:{folder_context:S.path,use_case_id:ucid,name:uc.label,fingerprint:fingerprint,risk:uc.risk||'low',allowed_agents:allowed,actor:'app-user'}});
+}
+async function setRisk(uc,risk){
+  uc.risk=risk; uc.grade_ceiling=offlineCeil(risk);   // offline mirror; online reload() re-sources from the server
+  if(S.path){ await reReg(uc, allowedFor(uc.id)); await reload(); } else { render(); }
+}
+async function rename(n,val){
+  if(n.kind==='router') return;   // visualize-only display node — not editable, never written
+  n.label=val;
+  if(!S.path){ render(); return; }
+  if(n.kind==='use_case'){ await reReg(n, allowedFor(n.id)); }
+  else if(n.kind==='agent'||n.kind==='human'){ await tool('workspace_policy',{op:'party_register',params:{folder_context:S.path,party_id:n.id.replace(/^party:/,''),kind:n.kind,name:val,actor:'app-user'}}); }
+  await reload();
+}
+async function toggleKill(n){
+  const want=(n.status&&n.status!=='active')?'active':'killed';
+  if(S.path){ await tool('workspace_policy',{op:'party_status',params:{folder_context:S.path,party_id:n.id.replace(/^party:/,''),status:want,actor:'app-user'}}); await reload(); }
+  else { n.status=want; render(); }
+}
+// wire/unwire are shell chrome (app/src/shell/canvas.js), loaded
+// unconditionally by compose_classic() — no panel-mount registration needed.
+// promptCreate/addNode (the toolbar's node-creation flow) and the canvas
+// core they hand back into (render/inspect/wire/unwire) are shell chrome
+// (app/src/shell/canvas.js), loaded unconditionally by compose_classic() —
+// no panel-mount registration needed.
+
+/* ---- wiring interaction ---- */
+function announce(msg){ const el=document.getElementById('srlive'); if(el) el.textContent=msg; }
+function startWire(id){ S.pending=id; const a=byId(id); announce('Granting authority from '+((a&&a.label)||id)+'. Move to a task and press Enter to finish, or Escape to cancel.'); render(); }
+async function finishWire(id){ const from=S.pending; if(from&&from!==id){ const a=byId(from); const b=byId(id); if(a&&a.kind==='agent'&&b&&b.kind==='use_case'){ S.pending=null; try{ await wire(from,id); announce('Authority granted from '+(a.label||from)+' to '+(b.label||id)+', signed into the record.'); }catch(e){ announce('Could not grant authority: '+((e&&e.message)||'failed')); } if(S.g) render(); return; } } S.pending=null; if(S.g) render(); }
+
+/* ---- drag ---- */
+function drag(el,n){
+  el.addEventListener('pointerdown',ev=>{
+    if(ev.target.classList.contains('port'))return;
+    let sx=ev.clientX,sy=ev.clientY,p0=pos(n.id),moved=false;
+    el.setPointerCapture(ev.pointerId); el.style.cursor='grabbing';
+    function mv(e){const dx=e.clientX-sx,dy=e.clientY-sy; if(Math.abs(dx)+Math.abs(dy)>4)moved=true; setpos(n.id,Math.max(0,p0.x+dx),Math.max(0,p0.y+dy)); const pp=pos(n.id); el.style.left=pp.x+'px'; el.style.top=pp.y+'px'; drawCords();}
+    function up(e){el.releasePointerCapture(ev.pointerId);el.style.cursor='grab';el.removeEventListener('pointermove',mv);el.removeEventListener('pointerup',up); if(!moved){S.sel=n.id;S.selEdge=null;S.pending=null;} render();}
+    el.addEventListener('pointermove',mv); el.addEventListener('pointerup',up);
+  });
+}
+stage.addEventListener('pointermove',e=>{ if(!S.pending)return; const r=stage.getBoundingClientRect(); S.mouse={x:e.clientX-r.left,y:e.clientY-r.top}; const a=byId(S.pending); if(a&&pos(a.id)) drawCords('<path d="'+cordPath(out(a),S.mouse)+'" fill="none" stroke="#df8b46" stroke-width="2.4" stroke-dasharray="5 5"></path>'); });
+stage.addEventListener('click',e=>{ if(e.target===stage||e.target===svg){ S.sel=null;S.selEdge=null;S.pending=null;S.mouse=null; if(S.g)render(); } });
+document.querySelectorAll('[data-add]').forEach(b=>b.addEventListener('click',()=>addNode(b.dataset.add)));
+/* 5-section menus: one open at a time; click an item or outside, or Escape, closes. */
+function closeAllSections(){ document.querySelectorAll('.sect.open').forEach(s=>{ s.classList.remove('open'); const b=s.querySelector('.sectbtn'); if(b) b.setAttribute('aria-expanded','false'); }); }
+function toggleSection(btn){ const sect=btn.closest('.sect'); const wasOpen=sect.classList.contains('open'); closeAllSections(); if(!wasOpen){ sect.classList.add('open'); btn.setAttribute('aria-expanded','true'); } }
+document.querySelectorAll('.sectmenu .mi[role="menuitem"]').forEach(mi=>mi.addEventListener('click',closeAllSections));
+document.addEventListener('click',e=>{ if(!e.target.closest('.sect')) closeAllSections(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeAllSections(); });
+window.toggleSection=toggleSection;
+window.addEventListener('resize',()=>{ if(S.g)render(); });
+
+/* expose for tests */
+// runQuery and addConnector are shell chrome (app/src/shell/policy.js), loaded
+// unconditionally by compose_classic() — no panel-mount registration needed.
+/* a11y (WCAG 2.4.3 / 3.2.1): make a floating panel behave as a modal dialog —
+   aria-modal, autofocus the first control, TRAP Tab within it, and return focus
+   to the opener on close. Returns a restore() the caller's close path must call. */
+function modalize(panel, opener){
+  panel.setAttribute('aria-modal','true');
+  // backdrop scrim — covers the canvas behind the dialog so a click can't reach
+  // controls the user can't see; blocks click-through (close via ✕ or Esc only).
+  let scrim=null; const host=panel.parentNode;
+  if(host){
+    scrim=document.createElement('div'); scrim.className='modal-scrim';
+    scrim.style.cssText='position:absolute;inset:0;z-index:9;background:rgba(0,0,0,.28)';
+    scrim.addEventListener('mousedown',ev=>{ ev.preventDefault(); ev.stopPropagation(); });
+    host.insertBefore(scrim,panel);
+  }
+  const SEL='a[href],button,select,textarea,input,[role="button"],[tabindex]:not([tabindex="-1"])';
+  const focusables=()=>[...panel.querySelectorAll(SEL)].filter(el=>!el.disabled&&el.offsetParent!==null);
+  const f0=focusables()[0];
+  if(f0&&f0.focus){ try{f0.focus();}catch(_){} } else { panel.setAttribute('tabindex','-1'); try{panel.focus();}catch(_){} }
+  panel.addEventListener('keydown',ev=>{
+    if(ev.key!=='Tab') return;
+    const f=focusables(); if(!f.length){ ev.preventDefault(); return; }
+    const a=f[0], z=f[f.length-1];
+    // if focus somehow left the panel (or sits on a non-focusable child), pull it back in
+    if(!panel.contains(document.activeElement)){ ev.preventDefault(); (ev.shiftKey?z:a).focus(); return; }
+    if(ev.shiftKey && document.activeElement===a){ ev.preventDefault(); z.focus(); }
+    else if(!ev.shiftKey && document.activeElement===z){ ev.preventDefault(); a.focus(); }
+  });
+  return ()=>{ if(scrim&&scrim.parentNode){ scrim.remove(); } if(opener&&opener.focus&&document.contains(opener)){ try{opener.focus();}catch(_){} } };
+}
+/* Draft persistence — persist-on-edit + rehydrate for the authoring panels
+   (workspace_session draft_save / draft_load / draft_discard). Drafts are
+   unsigned scratch state beside the chain: saving writes NO chain event (the
+   commit act carries the audit). Surfaces wired here: policy_paste, map,
+   cards, chat. officers is enum-only — no roster editor exists yet. */
+const DRAFT_DEBOUNCE_MS=600;
+window._drafts={loaded:{},updated:{},pending:{},timers:{},inflight:{},savedAt:{},chips:{},chainTs:0,chatEntries:[]};
+function draftLoaded(surface){ const l=window._drafts.loaded; return (l&&l[surface])?l[surface]:null; }
+function draftQueue(surface,payloadFn){
+  const st=window._drafts; if(!LIVE||!S.path) return;
+  // the folder is captured at edit time — the debounce can span a workspace
+  // switch (rail/MIDI → boot), and a late flush must land in the workspace the
+  // edit was typed in, never the one focused when the timer fires
+  st.pending[surface]={fn:payloadFn,folder:S.path};
+  if(st.timers[surface]) clearTimeout(st.timers[surface]);
+  st.timers[surface]=setTimeout(()=>{ draftFlush(surface); },DRAFT_DEBOUNCE_MS);
+}
+async function draftFlush(surface){
+  const st=window._drafts;
+  if(st.timers[surface]){ clearTimeout(st.timers[surface]); delete st.timers[surface]; }
+  const ent=st.pending[surface]; if(!ent||!LIVE) return;
+  delete st.pending[surface];
+  let payload; try{ payload=ent.fn()||{}; }catch(_){ return; }
+  const p=tool('workspace_session',{op:'draft_save',params:{folder_context:ent.folder,surface:surface,payload:payload}});
+  st.inflight[surface]=p;
+  let r; try{ r=await p; }catch(_){ r=null; }
+  if(st.inflight[surface]===p) delete st.inflight[surface];
+  // chip/prefill state describes the FOCUSED workspace — a cross-folder late
+  // flush persists but must not bleed into the current one's state
+  if(r&&r.ok&&_samePath(ent.folder,S.path)){ st.savedAt[surface]=Date.now(); st.updated[surface]=r.updated||''; st.loaded[surface]=payload; }
+  draftChipTick(surface);
+}
+function draftFlushAll(){ Object.keys(window._drafts.pending).forEach(s=>{ draftFlush(s); }); }
+async function draftDiscard(surface){
+  const st=window._drafts;
+  if(st.timers[surface]){ clearTimeout(st.timers[surface]); delete st.timers[surface]; }
+  delete st.pending[surface];
+  try{ if(st.inflight[surface]) await st.inflight[surface]; }catch(_){}
+  delete st.loaded[surface]; delete st.updated[surface]; delete st.savedAt[surface];
+  if(surface==='chat'){ st.chatEntries=[]; window._chatPolicy=''; }  // the saved chat payload carries the policy buffer — a kept global would re-save it on the next turn
+  if(LIVE&&S.path){ try{ await tool('workspace_session',{op:'draft_discard',params:{folder_context:S.path,surface:surface}}); }catch(_){} }
+  draftChipTick(surface);
+}
+function draftChipHtml(surface){ return '<span class="draftchip" id="draftchip-'+surface+'" hidden></span>'; }
+function draftChipTick(surface){
+  const el=document.getElementById('draftchip-'+surface); if(!el) return;
+  const st=window._drafts;
+  const upd=st.updated[surface];
+  const savedMs=st.savedAt[surface]||(upd?(Date.parse(upd)||0):0);
+  if(!savedMs){ el.hidden=true; el.textContent=''; return; }
+  el.hidden=false;
+  if(st.chainTs&&savedMs<st.chainTs){ el.classList.add('stale'); el.textContent='draft · older than the patch'; }
+  else{ el.classList.remove('stale'); el.textContent='draft · saved '+Math.max(0,Math.round((Date.now()-savedMs)/1000))+'s ago'; }
+}
+function draftChipMount(surface){
+  const st=window._drafts;
+  draftChipTick(surface);
+  if(st.chips[surface]) clearInterval(st.chips[surface]);
+  st.chips[surface]=setInterval(()=>{
+    if(!document.getElementById('draftchip-'+surface)){ clearInterval(st.chips[surface]); delete st.chips[surface]; return; }
+    draftChipTick(surface);
+  },5000);
+}
+function draftPanelClosed(surface){
+  const st=window._drafts;
+  if(st.chips[surface]){ clearInterval(st.chips[surface]); delete st.chips[surface]; }
+  draftFlush(surface);
+}
+function draftChatPush(who,text){
+  const st=window._drafts;
+  (st.chatEntries=st.chatEntries||[]).push({who:who,text:String(text||'').slice(0,4000)});
+  draftQueue('chat',()=>({entries:window._drafts.chatEntries,policy:window._chatPolicy||''}));
+}
+async function draftChainTick(){
+  // the last applied change's timestamp — a rehydrated draft that predates it
+  // gets the stale ("older than the patch") chip, never a silent overwrite
+  if(!LIVE||!S.path) return;
+  try{
+    const t=await tool('workspace_audit',{op:'tail',params:{folder_context:S.path,limit:1}});
+    const ev=((t&&t.events)||[]).slice(-1)[0];
+    if(ev&&ev.ts){ window._drafts.chainTs=Date.parse(ev.ts)||0; ['policy_paste','map','cards','chat'].forEach(draftChipTick); }
+  }catch(_){}
+}
+async function rehydrateDrafts(){
+  // boot-tail rehydrate: a failed load degrades to an empty prefill and never
+  // blocks boot. Panels prefill from this state silently when opened.
+  // Pending edits flush first, each to its captured folder — a workspace
+  // switch drops no edit and misfiles none under the new path. savedAt resets
+  // with the rest or the new workspace's chips would report the old one's saves.
+  draftFlushAll();
+  const st=window._drafts;
+  st.loaded={}; st.updated={}; st.savedAt={}; st.chainTs=0; st.chatEntries=[];
+  // the chat policy buffer is part of the chat draft — it resets with the rest
+  // and adopts the loaded workspace's saved policy, so an "ask" turn is always
+  // answered against the focused workspace's rules, never a prior one's
+  window._chatPolicy='';
+  if(!LIVE||!S.path){ chatLogRender(); return; }
+  try{
+    const r=await tool('workspace_session',{op:'draft_load',params:{folder_context:S.path}});
+    if(r&&r.ok){ st.loaded=r.drafts||{}; st.updated=r.updated||{}; }
+  }catch(_){}
+  const chat=st.loaded.chat||{};
+  if(Array.isArray(chat.entries)) st.chatEntries=chat.entries.slice();
+  if(typeof chat.policy==='string') window._chatPolicy=chat.policy;
+  chatLogRender();
+  await draftChainTick();
+}
+window.addEventListener('pagehide',()=>{ draftFlushAll(); });
+// Policy ingest (openPolicyPanel/ingestPolicy/renderTwin/applyTwin) is shell
+// chrome (app/src/shell/policy.js), loaded unconditionally by
+// compose_classic() — no panel-mount registration needed.
+/* Back-compat: existing render gates call window.openMapPanel() directly
+   (exported below with every other panel opener); the drawer now mounts
+   through the manifest as "map" — see app/src/panels/map.js — so this is a
+   thin alias. renderMapContract stays here, rather than moving into the
+   bundle: it renders the governance_map/v1 contract (summary + group-by
+   tree; version-guarded so it can't drift from the contract), and the
+   governance chat panel (openChatPanel/renderChatResult, now shell chrome
+   in app/src/shell/chat.js) renders that same contract for a routed policy
+   paste — so this stays the one shared helper instead of forking a second
+   copy. */
+function openMapPanel(){ return patchbayOpen('map'); }
+function renderMapContract(p){
+  if(!p||p.version!=='governance_map/v1') return '<div class="finding bad"><span class="ttl">Unexpected map version</span>'+esc((p&&p.version)||'none')+'</div>';
+  const s=p.summary||{}; const badge=(n,l)=>n?(' · '+n+' '+l):'';
+  let h='';
+  if(p.question){ const f=(p.view&&p.view.filters)||{}; const fstr=Object.keys(f).map(k=>k+'='+[].concat(f[k]).join('/')).join(' · ')||'(no filter)';
+    h+='<div class="ro" style="font-size:11px;color:#8fd1ad;margin:6px 0">asked: “'+esc(p.question)+'” → '+esc(fstr)+'</div>'; }
+  h+='<div class="ro" style="font-size:11px;color:var(--txt-dim);margin:6px 0">grouped by '+esc(p.grouped_by||'')+' — '+(s.total||0)+' rules'+badge(s.empty,'empty')+badge(s.interpreter,'interpreter')+badge(s.prohibited,'prohibited')+'</div>';
+  if(!(p.groups||[]).length) h+='<div class="ro" style="font-size:11px;color:var(--txt-dim)">no rules mapped — paste Article-shaped policy text</div>';
+  (p.groups||[]).forEach(g=>{ const gr=g.group||{};
+    h+='<details style="margin:4px 0"><summary style="cursor:pointer;font-size:12px">'+esc(gr.key||'')+' ('+(gr.count||0)+')'+badge(gr.empty,'empty')+badge(gr.interpreter,'interp')+badge(gr.prohibited,'prohibit')+'</summary>';
+    h+='<ul style="margin:4px 0 6px 16px;font-size:11px">';
+    (g.rules||[]).forEach(r=>{ h+='<li>'+esc(r.pinpoint||'')+' · '+esc(r.role||'any')+' · '+esc(r.risk_tier||'—')+' · '+esc((r.cta&&r.cta.label)||'')+'</li>'; });
+    h+='</ul></details>';
+  });
+  return h;
+}
+/* Universal governance chat — ONE box routed to ingest / intake / ask (governance_chat op).
+   The router proposes the intent (shown); each op stays deterministic + audited. */
+function chatLogRender(){
+  // repaint #chatlog from the focused workspace's drafted transcript. Called on
+  // panel open and after every draft rehydrate: a workspace switch with the
+  // panel open must not leave another folder's turns on screen.
+  const clog=document.getElementById('chatlog'); if(!clog) return;
+  clog.innerHTML='';
+  const centries=window._drafts.chatEntries||[];
+  if(!centries.length) return;
+  clog.insertAdjacentHTML('beforeend','<div class="ro" style="text-align:center;font-size:10px;color:var(--txt-dim);margin:4px 0">— restored '+esc((window._drafts.updated&&window._drafts.updated.chat)||'')+' —</div>');
+  centries.forEach(m=>{ const who=(m&&m.who==='rvnd')?'rvnd':'you'; const col=who==='rvnd'?'#8fd1ad':'var(--txt-dim)';
+    clog.insertAdjacentHTML('beforeend','<div style="margin:6px 0"><span style="font-size:11px;color:'+col+'">'+who+'</span><div style="font-size:12px;color:#fff">'+esc((m&&m.text)||'')+'</div></div>'); });
+  clog.scrollTop=clog.scrollHeight;
+}
+// Governance chat (openChatPanel/sendChat/renderChatResult) is shell chrome
+// (app/src/shell/chat.js), loaded unconditionally by compose_classic() — no
+// panel-mount registration needed.
+// Register is shell chrome (app/src/shell/register.js), loaded unconditionally
+// by compose_classic() — no panel-mount registration needed.
+// Editor is shell chrome (app/src/shell/editor.js), loaded unconditionally by
+// compose_classic() — no panel-mount registration needed.
+// Environment save/open (saveEnvironment/openEnvironment) is shell chrome
+// (app/src/shell/session_env.js), loaded unconditionally by compose_classic() —
+// no panel-mount registration needed.
+// drawLoom is shell chrome (app/src/shell/loom.js), loaded unconditionally by
+// compose_classic() — no panel-mount registration needed.
+// renderDeskView is shell chrome (app/src/shell/desk_view.js), loaded
+// unconditionally by compose_classic() — no panel-mount registration needed.
+// The Matrix policy drawer (openMatrixPanel/loadMatrix, workspace_matrix) is
+// shell chrome (app/src/shell/matrix_modal.js), loaded unconditionally by
+// compose_classic() — no panel-mount registration needed. Distinct from the
+// MATRIX canvas view (renderMatrixView/mxvZoomOut, app/src/shell/matrix_view.js),
+// a separate view-toggle state.
+/* Back-compat: existing render gates call window.openCoveragePanel() directly;
+   the real drawer ships as its own pack bundle (app/src/panels/coverage.js),
+   registered through the panel-mount contract. Its "Kind × risk" and
+   "Task × role" lenses read the same server coverage_matrix projection as
+   the MATRIX canvas view (app/src/shell/matrix_view.js, a separate
+   view-toggle state, not this panel); the cell-rendering constants and
+   _loadCoverageMatrix here stay for that shell view — the panel bundle
+   keeps its own copy, per the contract's ban on a bundle reaching into
+   shell internals. */
+function openCoveragePanel(){ return patchbayOpen('coverage'); }
+const _COV_ABBR={auto:'auto',human:'person',refused:'refused',reserved:'reserved',prohibited:'blocked',unfired:'—',permitted:'ok'};
+const _COV_DARKTEXT=new Set(['auto','unfired']);   // light-background verdicts read better with dark text
+function _covShort(s){s=String(s==null?'':s);return s.length>16?s.slice(0,15)+'…':s;}
+/* Kind × risk — the coverage lens as policy shape. Reads the server's
+   coverage_matrix projection: rows are the kinds present, columns the risk
+   bands, each cell the strictest-wins verdict for that band (letter + colour,
+   colour never alone). A ringed cell is a finding — a permissive verdict in
+   the high-risk band. Read-only: loosening is a governed step in Rules. */
+// fills a background for verdicts the run-verdict palette doesn't carry — the
+// coverage-only states (a reservation that is covered, or a fail-closed gap).
+const _COV_EXTRA={covered:'#3f7d63',gap:'#c2453b'};
+function _covCellBg(v){ return _COV_EXTRA[v]||VINFO(v).col; }
+async function _loadCoverageMatrix(out,opts){
+  if(!S.path){ out.innerHTML='<div class="ro" style="color:var(--txt-dim);font-size:11px">open a folder to see its policy shape</div>'; return true; }
+  const preset=(opts&&opts.preset)||(document.getElementById('cvpreset')||{}).value||'kind_risk';
+  const gapsOnly=opts?!!opts.gapsOnly:!!(document.getElementById('cvgaps')||{}).checked;
+  let m; try{ m=await tool('workspace_workflow',{op:'coverage_matrix',params:{folder_context:S.path,preset:preset,gaps_only:gapsOnly}}); }
+  catch(e){ const banner='<div class="finding bad" style="margin-bottom:6px"><span class="ttl">Could not load the lens</span>'+esc((e&&e.message)||'failed')+'</div>';
+    if(out.querySelector('.cvtable')) out.insertAdjacentHTML('afterbegin',banner); else out.innerHTML=banner; return false; }
+  if(m&&m.error){ out.innerHTML='<div class="ro" style="color:var(--txt-dim);font-size:11px">'+esc(m.error)+'</div>'; return true; }
+  if(!m||m.empty||!Array.isArray(m.rows)||!m.rows.length){
+    out.innerHTML='<div class="ro" style="color:var(--txt-dim);font-size:11px">'+(gapsOnly?'no gaps — every cell is clean':'nothing to show for this lens yet')+'</div>'; return true; }
+  // zoom level two: one row of the same field, rendered as a strip with the
+  // cells' source refs spelled out (one component, parameterised by scope)
+  const stripRow=(opts&&opts.row&&m.rows.includes(opts.row))?opts.row:null;
+  if(stripRow){ const ri=m.rows.indexOf(stripRow); m={...m,rows:[stripRow],cells:[m.cells[ri]]}; }
+  const colAxis=m.col_axis||'column', noun=(preset==='task_role')?'approver':'use case';
+  let h='<table class="cvtable mxtable" role="grid" aria-label="'+escA((m.title||'coverage')+' — a ringed cell is a finding')+'"><thead><tr><th></th>';
+  for(const c of m.cols){ h+='<th scope="col" class="mxhdr" title="'+escA(colAxis+': '+c)+'">'+esc(_covShort(c))+'</th>'; }
+  h+='</tr></thead><tbody>';
+  m.cells.forEach((row,ri)=>{
+    h+='<tr><th scope="row" class="mxrowh" title="'+escA(m.rows[ri])+'">'+esc(_covShort(m.rows[ri]))+'</th>';
+    for(const cell of row){
+      if(!cell||cell.verdict==='none'){
+        h+='<td style="padding:0"><div class="mxcell" style="background:#1b1e24;color:#4b525e;cursor:default" aria-label="'+escA(m.rows[ri]+' at '+cell.col+' — none')+'" title="'+escA(m.rows[ri]+' · '+cell.col+' · none')+'">·</div></td>';
+        continue; }
+      const info=VINFO(cell.verdict), dark=_COV_DARKTEXT.has(cell.verdict);
+      const ring=cell.finding?';box-shadow:0 0 0 2px #e2554a':'';
+      const editable=!!cell.editable;
+      const al=cell.row+' at '+cell.col+' — '+(_COV_ABBR[cell.verdict]||info.label||cell.verdict)+' ('+cell.count+' '+noun+(cell.count===1?'':'s')+')'+(cell.finding?' — finding: '+cell.why:'')+(editable?' — activate to revoke (tighten-only)':'');
+      h+='<td style="padding:0"><div class="mxcell'+(editable?' mxedit':'')+'" style="background:'+_covCellBg(cell.verdict)+';color:'+(dark?'#15171c':'#fff')+';cursor:'+(editable?'pointer':'default')+ring+'"'+(editable?' role="button" tabindex="0" data-uc="'+escA(cell.use_case_id)+'" data-agent="'+escA(cell.agent_id)+'"':'')+' aria-label="'+escA(al)+'" title="'+escA(al)+'">'+esc(cell.letter||_COV_ABBR[cell.verdict]||cell.verdict)+'</div></td>';
+    }
+    h+='</tr>';
+  });
+  h+='</tbody></table>';
+  if(stripRow){
+    // the strip's detail: each populated band spelled out with its source refs
+    h+='<div class="ro" style="margin-top:10px" aria-label="strip detail">';
+    for(const cell of m.cells[0]){
+      if(!cell||cell.verdict==='none') continue;
+      h+='<div style="border-top:1px solid var(--line);padding:6px 0;font-size:11px">'
+        +'<b>'+esc(cell.col)+'</b> — '+esc(_COV_ABBR[cell.verdict]||cell.verdict)+' · '+cell.count+' '+esc(noun)+(cell.count===1?'':'s')
+        +(cell.finding?' · <span style="color:#e2554a">'+esc(cell.why)+'</span>':'')
+        +((cell.refs&&cell.refs.length)?'<div style="color:var(--txt-dim);margin-top:2px">'+cell.refs.map(r=>esc(r.label)).join(' · ')+'</div>':'')
+        +'</div>';
+    }
+    h+='</div>';
+  }
+  h+='<div class="ro" style="font-size:10px;color:var(--txt-dim);margin-top:8px">'
+    +(m.findings?'<b style="color:#e2554a">'+m.findings+' finding'+(m.findings===1?'':'s')+'</b> (ringed). ':'no findings. ')
+    +esc(m.note||'Read-only — loosening is a governed step in Rules.')+'</div>';
+  out.innerHTML=h;
+  return true;
+}
+// MATRIX canvas view (renderMatrixView/mxvZoomOut) is shell chrome
+// (app/src/shell/matrix_view.js), loaded unconditionally by compose_classic()
+// — no panel-mount registration needed. It reads _loadCoverageMatrix and the
+// cell-rendering constants above, which stay in this file — shared with the
+// Coverage panel-mount bundle (app/src/panels/coverage.js), which keeps its
+// own copy per the contract's ban on a bundle reaching into shell internals.
+/* Floor/arm-state lookups shared by the Inspector's track strip
+   (fillTrackStrip, above) — shell chrome, not the Egress board drawer, so
+   these stay here. The drawer itself moved to its own pack bundle
+   (app/src/panels/egress.js, panel-mount-contract.md), which keeps its own
+   copy of the same two small tables. */
+const _EG_FLOOR={permit:{col:'#5aa886',word:'permit'},hold:{col:'#c8a23f',word:'hold'},deny:{col:'#cf463c',word:'deny'}};
+const _EG_ARM={armed:{col:'#c8a23f',glyph:'●',word:'armed'},
+               no_cable:{col:'#5a616f',glyph:'○',word:'no cable — cannot reach outside'},
+               unplugged:{col:'#e2554a',glyph:'◍',word:'unplugged — revoked / unresolvable'}};
+/* Back-compat: existing render gates call window.openEgressPanel() directly;
+   the real drawer ships as its own pack bundle (app/src/panels/egress.js),
+   registered through the panel-mount contract. */
+function openEgressPanel(){ return patchbayOpen('egress'); }
+/* Back-compat: existing render gates call window.openRolesPanel() directly;
+   the real drawer ships as its own pack bundle (app/src/panels/roles.js),
+   registered through the panel-mount contract. */
+function openRolesPanel(){ return patchbayOpen('roles'); }
+/* workspace_policy — the folder's live protections. Turning a protection ON is instant
+   (safe direction); turning one OFF is a GOVERNED step recording who accepted it
+   and why (fail-safe: a loosen is deliberate + attributed). Oversight is 6 discrete
+   states (no dial). The server enforces; this sets. */
+const _OV_ORDER=['autonomous','notify','review','approve','supervised','manual'];   // loosest → strictest
+const _LOCK_MODES=['clean_room_with_algo','clean_room','off'];   // strictest → loosest
+const _LOCK_LABEL={clean_room_with_algo:'clean room + algorithm',clean_room:'clean room',off:'off'};
+/* Back-compat: existing render gates call window.openPolicySettingsPanel()
+   directly; the real drawer ships as its own pack bundle
+   (app/src/panels/protections.js), registered through the panel-mount
+   contract. */
+function openPolicySettingsPanel(){ return patchbayOpen('protections'); }
+/* workspace_audit — checks on the workspace's tamper-evident signed record.
+   The checks only read; the model-attestation cards also carry the battery's
+   governed writes (workspace_model attest_baseline / attest_run / attest_admit,
+   all recorded). verify_chain is the trust keystone (is the record intact?);
+   the solver guards (completeness/variety/accountability/sampling) need per-run
+   inputs, so they live on a run, not this folder drawer. Calibration is shown
+   categorically (responsible/review + raw counts) — never a score. */
+/* Back-compat: existing render gates call window.openAuditPanel() directly;
+   the real drawer ships as its own pack bundle (app/src/panels/audit.js),
+   registered through the panel-mount contract. */
+function openAuditPanel(){ return patchbayOpen('audit'); }
+/* Back-compat: existing render gates call window.openConformityPanel() directly;
+   the real drawer ships as its own pack bundle (app/src/panels/conformity.js),
+   registered through the panel-mount contract. */
+function openConformityPanel(){ return patchbayOpen('conformity'); }
+/* Back-compat: existing render gates call window.openGrounderPanel() directly;
+   the real drawer ships as its own pack bundle (app/src/panels/grounder.js),
+   registered through the panel-mount contract. */
+function openGrounderPanel(){ return patchbayOpen('grounder'); }
+// Live Audit Ticker is shell chrome (app/src/shell/ticker.js), loaded
+// unconditionally by compose_classic() — no panel-mount registration needed.
+/* Back-compat: existing render gates and callers still call
+   window.openApprovalsPanel() directly; the drawer now mounts through the
+   manifest (app/src/panels/approvals.js), so this is a thin alias. */
+function openApprovalsPanel(){ return patchbayOpen('approvals'); }
+/* fedChip renders a channel/group/joined verdict as a discrete chip and is
+   shared by two independent surfaces: the Connected tools drawer (its own
+   pack bundle, app/src/panels/federation.js, registered through
+   docs/loomground-proposals/panel-mount-contract.md) and federatedCheck()
+   below, the Check panel's inline federated-verdict row. It stays here,
+   at shell scope, rather than moving into the panel bundle. */
+const FEDTRI={permit:'#5aa886',hold:'#df8b46',deny:'#a8332b'};
+function fedChip(v){ const c=FEDTRI[v]||'#5a616f'; return '<span style="font-size:10px;border:1px solid '+c+';color:'+c+';border-radius:8px;padding:1px 7px">'+esc(v||'permit')+'</span>'; }
+/* Back-compat: existing render gates call window.openFederationPanel() directly;
+   the real drawer ships as its own pack bundle (app/src/panels/federation.js),
+   registered through the panel-mount contract. */
+function openFederationPanel(){ return patchbayOpen('federation'); }
+/* Back-compat: existing render gates call window.openLensPanel() directly;
+   the real drawer ships as its own pack bundle (app/src/panels/lens.js),
+   registered through the panel-mount contract. */
+function openLensPanel(){ return patchbayOpen('lens'); }
+// Privacy Lock is now a pack bundle (app/src/panels/lock.js), mounted
+// through the panel-mount contract (docs/loomground-proposals/panel-mount-contract.md).
+function openLockPanel(){ return patchbayOpen('lock'); }
+/* Data drawer (Record) — local memory, redacted mirrors, and the
+   mirror-review lifecycle (history/diff/discard). */
+/* Back-compat: existing render gates call window.openDataPanel() directly
+   (exported below with every other panel opener); the drawer now mounts
+   through the manifest (app/src/panels/data.js), so this is a thin alias. */
+function openDataPanel(){ return patchbayOpen('data'); }
+/* Erasure drawer (Rules) — the right to be removed from this machine's record.
+   Three-state intake (erasure.py): request queues for review (audit-only),
+   sweep previews scope (no writes), execute purges — execute is not exposed
+   here. The server decides and signs each act. */
+/* Back-compat: existing render gates call window.openErasurePanel() directly
+   (exported below with every other panel opener); the drawer now mounts
+   through the manifest (app/src/panels/erasure.js), so this is a thin alias. */
+function openErasurePanel(){ return patchbayOpen('erasure'); }
+/* Back-compat: existing render gates call window.openBringInPanel() directly
+   (exported below with every other panel opener); the drawer now mounts
+   through the manifest (app/src/panels/bringin.js), so this is a thin alias. */
+function openBringInPanel(){ return patchbayOpen('bringin'); }
+// AI & Capture is now a pack bundle (app/src/panels/ai.js), mounted through
+// the panel-mount contract (docs/loomground-proposals/panel-mount-contract.md).
+function openAIPanel(){ return patchbayOpen('ai'); }
+/* Panel-mount contract (docs/loomground-proposals/panel-mount-contract.md).
+   Patchbay.register(id, def) is the one global a pack bundle reads. A
+   bundle that registers an id the manifest never declared is refused, not
+   silently mounted. window.__PANEL_MANIFEST__ and the bundle scripts are
+   injected by serve.py's compose_classic() as later <script> blocks, so
+   Patchbay exists before any bundle evaluates. */
+window.Patchbay=(function(){
+  const registry={};
+  function register(id,def){
+    const decl=(window.__PANEL_MANIFEST__||[]).find(p=>p.id===id);
+    if(!decl){ console.error('Patchbay: bundle registered id "'+id+'" — the manifest declares no such panel; refused.'); return; }
+    registry[id]=def;
+  }
+  function manifestFor(id){ return (window.__PANEL_MANIFEST__||[]).find(p=>p.id===id); }
+  return {register, _registry:registry, _manifestFor:manifestFor};
+})();
+
+const PATCHBAY_SECTION_LABELS={setup:'Set up', rules:'Rules', pending:'Pending', record:'Record'};
+/* Renders each manifest entry's menu item into the section its manifest
+   names, replacing the placeholder <span data-manifest-menu-anchor="<id>">
+   already sitting in that section's markup — the shell places a menu entry
+   for a panel it has never heard of. Called once, by the trigger <script>
+   compose_classic() injects after every bundle has registered. */
+function patchbayMountMenus(){
+  for(const p of (window.__PANEL_MANIFEST__||[])){
+    if(!p.menu) continue;
+    const label=PATCHBAY_SECTION_LABELS[p.menu.section]; if(!label) continue;
+    const sectmenu=document.querySelector('.sectmenu[aria-label="'+label+'"]'); if(!sectmenu) continue;
+    const anchor=[...sectmenu.querySelectorAll('[data-manifest-menu-anchor]')].find(el=>el.getAttribute('data-manifest-menu-anchor')===p.id);
+    if(!anchor) continue;
+    const btn=document.createElement('button');
+    btn.className='mi'; btn.setAttribute('role','menuitem');
+    btn.innerHTML='<span class="mil">'+esc(p.menu.label||p.title||p.id)+'</span><span class="mid">'+esc(p.menu.detail||'')+'</span>';
+    btn.addEventListener('click',()=>{ closeAllSections(); patchbayOpen(p.id); });
+    anchor.replaceWith(btn);
+  }
+}
+
+/* Boot-time registration check (RFC §3.1: a declared entry that never
+   registers is refused at boot with a visible message — never a silent
+   partial mount). Runs once, after every bundle has evaluated: any manifest
+   id absent from the registry — a missing or malformed bundle file, a bundle
+   that threw before registering, or one that registered a different id — is
+   named in a fixed banner now, not only when the panel is opened. The banner
+   matches the pack-level refusal serve.py draws, so both refusal paths read
+   the same. */
+function patchbayVerifyBoot(){
+  const missing=(window.__PANEL_MANIFEST__||[]).filter(p=>!Patchbay._registry[p.id]).map(p=>p.id);
+  if(!missing.length) return;
+  const b=document.createElement('div');
+  b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#5a1f1f;color:#fff;font:12px monospace;padding:8px 12px';
+  b.textContent='panel pack refused: declared panel(s) never registered — '+missing.join(', ');
+  document.body.prepend(b);
+  console.error('Patchbay: declared panel(s) never registered — refused: '+missing.join(', '));
+}
+
+/* Mount lifecycle (RFC §3.3). Open toggles closed if the host already
+   exists; otherwise it creates the host (<id>panel), draws the frame from
+   the manifest (title, the read-only badge, the close control), applies
+   dialog/modal semantics (today's modalize), then calls the registered
+   bundle's open(ctx) — ctx.host is that same host element, so the panel's
+   own content lands beside the frame the shell already drew. A declared
+   panel whose bundle never registered renders a visible refusal instead of
+   an empty frame. Close runs the bundle's own close() hook, if it returned
+   one, drops its ctx.on subscriptions, then the shell's teardown. */
+async function patchbayOpen(id){
+  const decl=Patchbay._manifestFor(id);
+  if(!decl){ console.error('Patchbay: open("'+id+'") — no such panel in the manifest'); return; }
+  const hostId=id+'panel';
+  const existing=document.getElementById(hostId);
+  if(existing){ if(existing._patchbayClose) existing._patchbayClose(); return; }
+  const opener=document.activeElement;
+  const host=document.createElement('div'); host.id=hostId; host.setAttribute('role','dialog'); host.setAttribute('aria-label',decl.title||id);
+  host.style.cssText='position:absolute;top:12px;right:12px;width:460px;max-width:94%;max-height:86%;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;z-index:10;box-shadow:0 10px 40px rgba(0,0,0,.55)';
+  // A manifest may declare a custom badge (text a plain "read-only" doesn't
+  // cover — e.g. a mostly-read panel with one governed write action still
+  // reads more than it writes). Absent a declared badge, access:"read" gets
+  // the shell's own generic read-only badge, same as always.
+  const badge=decl.badge?'<span class="robadge" title="'+esc(decl.badge.title||'')+'">'+esc(decl.badge.text||'')+'</span>'
+    :(decl.access==='read'?'<span class="robadge" title="this view only reads the signed record — it changes nothing">read-only</span>':'');
+  const closeId=id+'x';
+  host.innerHTML='<div style="display:flex;align-items:center;gap:8px"><b style="font-family:Space Grotesk,sans-serif;font-size:13px">'+esc(decl.title||id)+'</b>'+badge+'<span style="flex:1"></span><span id="'+closeId+'" role="button" tabindex="0" aria-label="Close" style="cursor:pointer;color:var(--txt-dim)">✕</span></div>';
+  stage.appendChild(host);
+  const restore=modalize(host,opener);
+  const listeners=[];
+  let panelClose=null;
+  const close=()=>{
+    listeners.forEach(([ev,h])=>document.removeEventListener(ev,h));
+    if(panelClose){ try{panelClose();}catch(_){ } }
+    host.remove(); restore();
+  };
+  host._patchbayClose=close;
+  const x=host.querySelector('#'+closeId);
+  x.addEventListener('click',close); x.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();close();}});
+  host.addEventListener('keydown',ev=>{if(ev.key==='Escape'){ev.preventDefault();close();}});
+  const def=Patchbay._registry[id];
+  if(!def||typeof def.open!=='function'){
+    const err=document.createElement('div'); err.className='finding warn'; err.style.marginTop='8px';
+    err.innerHTML='<span class="ttl">Panel failed to register</span>its bundle never called Patchbay.register("'+esc(id)+'", …) — refused.';
+    host.appendChild(err);
+    console.error('Patchbay: manifest declares "'+id+'" but no bundle registered it — refused.');
+    return;
+  }
+  const ctx={
+    tool, workspace:{path:S.path, live:LIVE}, host, close,
+    on(event,fn){ const h=ev=>fn(ev&&ev.detail); document.addEventListener('patchbay:'+event,h); listeners.push(['patchbay:'+event,h]); },
+    ui:{esc,escA},
+    drafts:{queue:draftQueue, loaded:draftLoaded, flush:draftFlush},
+  };
+  const result=await def.open(ctx);
+  if(result&&typeof result.close==='function') panelClose=result.close;
+}
+/* Back-compat: existing render gates call window.openLegalPanel() directly
+   (exported below with every other panel opener); the drawer now mounts
+   through the manifest, so this is a thin alias. */
+function openLegalPanel(){ return patchbayOpen('legal'); }
+// About is shell chrome (app/src/shell/about.js), loaded unconditionally by
+// compose_classic() — no panel-mount registration needed.
+// Help is shell chrome (app/src/shell/help.js), loaded unconditionally by
+// compose_classic() — no panel-mount registration needed.
+/* First-run onboarding — mounted by boot() only when the console is live with
+   no workspace at all (shown over the demo patch). Walks: welcome → create a
+   workspace → put an agent and a task on the canvas → autonomy posture → the
+   four goal sections. The seen flag is presentation state in localStorage,
+   never a chain write; any real workspace dismisses an idle wizard. */
+const _WIZ_LS='rvnd_onboarded';
+function _wizSeen(){ try{ return localStorage.getItem(_WIZ_LS)==='1'; }catch(_){ return true; } }
+function _wizMarkSeen(){ try{ localStorage.setItem(_WIZ_LS,'1'); }catch(_){ } }
+// The wizard itself (openOnboardingWizard/dismissOnboarding/renderWizStep) is
+// shell chrome (app/src/shell/wizard.js), loaded unconditionally by
+// compose_classic() — no panel-mount registration needed.
+/* Back-compat: existing render gates call window.openObligationsPanel()
+   directly; the real drawer ships as its own pack bundle
+   (app/src/panels/obligations.js), registered through the panel-mount
+   contract. */
+function openObligationsPanel(){ return patchbayOpen('obligations'); }
+/* Decision workbench is now a pack bundle (app/src/panels/decision.js),
+   mounted through the panel-mount contract
+   (docs/loomground-proposals/panel-mount-contract.md). Two entry points stay
+   here rather than in the bundle because they must work whether or not the
+   panel is currently mounted: a decision surface arriving out of band
+   (queueDecisionSurface — the render gates simulate a server push this way)
+   and a holder's action-link deep link read from the URL at boot, before any
+   panel exists (applyActionLink, called from boot() above). Both write to
+   window._decisionQueue / _decAuth / _decClaim / _decId — the
+   pending-decision inbox the bundle reads once mounted — and both nudge an
+   already-mounted host through host._decisionRefresh(), the same host-hook
+   pattern contract.js uses for _contractSetTab, rather than duplicating
+   render logic here. The host id is "decisionpanel" (renamed from the
+   pre-decomposition "decpanel" to match every other panel's <id>panel
+   convention — the four decision gate files were updated to match). */
+function queueDecisionSurface(s){
+  (window._decisionQueue=window._decisionQueue||[]).push(s);
+  const dp=document.getElementById('decisionpanel');
+  if(dp&&dp._decisionRefresh) dp._decisionRefresh();
+}
+function openDecisionPanel(){ return patchbayOpen('decision'); }
+/* Action link — the registered channel as the credential (identity rung 1).
+   A signed single-use token from a holder's email/Slack authenticates this
+   session as that party for one decision: claim through the token, work the
+   card, record through the token. The chain carries the rung. */
+async function applyActionLink(token){
+  let c; try{ c=await tool('workspace_dispatch',{op:'decision_claim',params:{folder_context:S.path||'',link_token:token}}); }catch(e){ c={ok:false,error:(e&&e.message)||'failed'}; }
+  const dp=document.getElementById('decisionpanel');
+  if(!c||c.ok===false){ announce('This link no longer works: '+((c&&c.error)||'refused')); if(!dp) openDecisionPanel(); return c; }
+  window._decAuth={party:c.claimed_by,token:token,rung:'channel-link'};
+  window._decId=c.decision_id; window._decClaim=c;
+  (window._decisionQueue=window._decisionQueue||[]).unshift(c.surface);
+  if(!dp) await openDecisionPanel(); else if(dp._decisionRefresh) dp._decisionRefresh();
+  return c;
+}
+window.applyActionLink=applyActionLink;
+window.openDecisionPanel=openDecisionPanel; window.queueDecisionSurface=queueDecisionSurface;
+window.openObligationsPanel=openObligationsPanel;
+/* Back-compat: existing callers pass a mode ('read' | 'act') the panel now
+   holds as an in-panel toggle rather than the shell's fixed per-id frame.
+   Not-yet-mounted -> open, then (for 'act') switch its tab once mounted.
+   Already-mounted -> switch its tab directly rather than the generic
+   toggle-closed patchbayOpen would otherwise do for a second click on the
+   same id. */
+function openWorkflowPanel(mode){
+  const want=(mode==='act')?'act':'read';
+  const existing=document.getElementById('workflowpanel');
+  if(existing){ if(existing._workflowSetTab) existing._workflowSetTab(want); return; }
+  const p=patchbayOpen('workflow');
+  if(want==='act') Promise.resolve(p).then(()=>{ const h=document.getElementById('workflowpanel'); if(h&&h._workflowSetTab) h._workflowSetTab('act'); });
+  return p;
+}
+/* Back-compat: existing callers pass a mode ('read' | 'act') the panel now
+   holds as an in-panel toggle rather than the shell's fixed per-id frame.
+   Not-yet-mounted -> open, then (for 'act') switch its tab once mounted.
+   Already-mounted -> switch its tab directly rather than the generic
+   toggle-closed patchbayOpen would otherwise do for a second click on the
+   same id. */
+function openContractPanel(mode){
+  const want=(mode==='act')?'act':'read';
+  const existing=document.getElementById('contractpanel');
+  if(existing){ if(existing._contractSetTab) existing._contractSetTab(want); return; }
+  const p=patchbayOpen('contract');
+  if(want==='act') Promise.resolve(p).then(()=>{ const h=document.getElementById('contractpanel'); if(h&&h._contractSetTab) h._contractSetTab('act'); });
+  return p;
+}
+// Knob bindings' state (_CTRL_ACTIONS, _ctrlBindings/_ctrlSave, MIDI-learn
+// vars) moved with the controller functions to app/src/shell/controller.js.
+/* Workspaces rail — a DAW channel per workspace. Each strip reads that
+   workspace's live state from the server: oversight band + active/total agents,
+   plus discrete L0–L4 autonomy LEDs lit from the server's autonomy×oversight
+   grid (go=lit, ask=amber, block=off — the client reads the grid, never decides
+   it). The path tree gives hierarchy: a registered sub-folder shows a group-bus
+   tag (⮡ its parent); a parent that has registered children shows a send→
+   (publish-downward). Click the name to focus; mute suspends a strip's active
+   agents; the master All-Stop spans every workspace. All reads are guarded. */
+const _OVBANDS=['autonomous','notify','review','approve','supervised','manual'];
+function _normp(p){ return String(p||'').replace(/^\/private/,'').replace(/\/+$/,''); }
+const _samePath=(a,b)=>!!a&&!!b&&_normp(a)===_normp(b);
+// parent = the OTHER registered workspace whose path is the longest proper prefix
+function _parentOf(path,all){ const me=_normp(path); let best=null;
+  for(const w of all){ const p=_normp(w.path); if(p!==me&&me.startsWith(p+'/')&&(!best||p.length>_normp(best.path).length)) best=w; }
+  return best; }
+// discrete autonomy ceiling for this workspace at its oversight band, read from
+// the server matrix: returns 5 verdicts L0..L4 ∈ go|ask|block (missing→block).
+function _ledStates(matrix,band){ const out=[]; for(let i=0;i<5;i++){ const row=matrix&&matrix['L'+i]; const v=(row&&band&&row[band])||'block'; out.push(v==='go'?'go':(v==='ask'?'ask':'block')); } return out; }
+function _ledLabel(states){ const go=states.filter(s=>s==='go').length; const ask=states.indexOf('ask');
+  if(!go&&ask<0) return 'autonomy: all levels blocked at this oversight';
+  let t='autonomy ceiling: '+(go?('L0–L'+(go-1)+' run on their own'):'none auto'); if(ask>=0) t+=', L'+ask+' needs a person'; return t; }
+function markWsRail(){
+  // cheap: re-mark the current workspace's strip from cached state, no fetch (runs on every reload)
+  const wrap=document.getElementById('wschans'); const ws=window._wsrail; if(!wrap||!ws) return;
+  wrap.querySelectorAll('.wschan').forEach(el=>{ const c=ws[+el.dataset.i];
+    el.classList.toggle('on', !!(c&&_samePath(c.path,S.path)));
+    const soloed=!!(c&&window._solo&&window._solo.has(c.path));
+    el.classList.toggle('solo', soloed);
+    el.classList.toggle('dim', !!(window._solo&&window._solo.size&&!soloed));
+    const sb=el.querySelector('.wsolo'); if(sb){ sb.classList.toggle('on',soloed); sb.setAttribute('aria-pressed',String(soloed)); } });
+  _updateIsolate();
+}
+// The Transport bar (transportToggle/updateRunState/transportResume/
+// transportHold) is shell chrome (app/src/shell/transport.js), loaded
+// unconditionally by compose_classic() — no panel-mount registration needed.
+// Workspaces rail — view-solo/govern-solo (wsSolo, _updateIsolate, wsIsolate),
+// the rail render (loadWsRail), saveWs, focusWs, wsMute, and the master
+// All-Stop spanning every workspace (allStopAll) are shell chrome
+// (app/src/shell/wsrail.js), loaded unconditionally by compose_classic() —
+// no panel-mount registration needed.
+// Knob bindings drawer (openControllerPanel, loadController, ctrlSubmit,
+// allStop) is shell chrome (app/src/shell/controller.js), loaded
+// unconditionally by compose_classic() — no panel-mount registration needed.
+// initMidi, onMidi and renderBindings moved to app/src/shell/controller.js
+// with the rest of the knob bindings drawer (same move as above).
+// Workspace switcher is shell chrome (app/src/shell/workspace.js), loaded
+// unconditionally by compose_classic() — no panel-mount registration needed.
+window.loadWsRail=loadWsRail; window.wsMute=wsMute; window.focusWs=focusWs; window.saveWs=saveWs; window.wsSolo=wsSolo; window.wsIsolate=wsIsolate; window.allStopAll=allStopAll; window.transportResume=transportResume; window.transportHold=transportHold; window.transportToggle=transportToggle; window.updateRunState=updateRunState; window.openControllerPanel=openControllerPanel; window.loadController=loadController; window.ctrlSubmit=ctrlSubmit; window.allStop=allStop; window.initMidi=initMidi; window.onMidi=onMidi; window.renderBindings=renderBindings;
+window.openWorkspacePanel=openWorkspacePanel; window.loadWorkspace=loadWorkspace; window.openWorkflowPanel=openWorkflowPanel; window.openContractPanel=openContractPanel;
+window.boot=boot; window.openHelpPanel=openHelpPanel; window.loadHelp=loadHelp; window.filterHelp=filterHelp; window.openOnboardingWizard=openOnboardingWizard; window.dismissOnboarding=dismissOnboarding; window.renderWizStep=renderWizStep; window.openLegalPanel=openLegalPanel; window.openAboutPanel=openAboutPanel; window.openDataPanel=openDataPanel; window.openErasurePanel=openErasurePanel; window.openBringInPanel=openBringInPanel; window.openAIPanel=openAIPanel; window.openLockPanel=openLockPanel; window.toggleTicker=toggleTicker; window.loadTicker=loadTicker; window.openApprovalsPanel=openApprovalsPanel; window.openLensPanel=openLensPanel; window.openGrounderPanel=openGrounderPanel; window.openConformityPanel=openConformityPanel; window.openAuditPanel=openAuditPanel; window.reload=reload; window.S=S; window.addNode=addNode; window.wire=wire; window.tool=tool; window.render=render; window.runUC=runUC; window.requestSignoff=requestSignoff; window.parseResvTarget=parseResvTarget; window.routerRequestSignoffs=routerRequestSignoffs; window.setView=setView; window.renderArrange=renderArrange; window.renderMatrixView=renderMatrixView; window.mxvZoomOut=mxvZoomOut; window.saveEnvironment=saveEnvironment; window.openEnvironment=openEnvironment; window.overrideStep=overrideStep; window.runQuery=runQuery; window.addConnector=addConnector; window.openPolicyPanel=openPolicyPanel; window.openMapPanel=openMapPanel; window.ingestPolicy=ingestPolicy; window.applyTwin=applyTwin; window.openRegisterPanel=openRegisterPanel; window.openEditorPanel=openEditorPanel; window.editorLoad=editorLoad; window.editorValidate=editorValidate; window.editorApply=editorApply; window.drawLoom=drawLoom; window.renderDeskView=renderDeskView; window.openMatrixPanel=openMatrixPanel; window.openCoveragePanel=openCoveragePanel; window.openEgressPanel=openEgressPanel; window.openRolesPanel=openRolesPanel; window.fillTrackStrip=fillTrackStrip; window.openPolicySettingsPanel=openPolicySettingsPanel;
+window.draftQueue=draftQueue; window.draftFlush=draftFlush; window.draftFlushAll=draftFlushAll; window.draftDiscard=draftDiscard; window.draftLoaded=draftLoaded; window.draftChipTick=draftChipTick; window.rehydrateDrafts=rehydrateDrafts; window.draftChainTick=draftChainTick;
+boot();
+</script>
+</body>
+</html>

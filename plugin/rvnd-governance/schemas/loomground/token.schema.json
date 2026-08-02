@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:loomground:0.7:token",
+  "title": "Loomground token",
+  "description": "The unit of data that flows along a cord (specification, The token).",
+  "type": "object",
+  "required": ["id", "kind", "risk", "party", "provenance"],
+  "properties": {
+    "id": {"type": "string", "description": "identity; guards never range over it"},
+    "kind": {"type": "string", "description": "class of the subject or action; matched against declarations"},
+    "risk": {"enum": ["low", "medium", "high", "critical"], "description": "ordered severity level"},
+    "party": {"type": "string", "description": "the party currently responsible (a subject identity)"},
+    "provenance": {"type": "array", "items": {"type": "string"}, "description": "ordered prior nodes and parties traversed"},
+    "tags": {"type": "array", "items": {"type": "string"}, "description": "declared, non-id categories a guard may test by membership (origin, lineage, synthetic, taint); the tag vocabulary is policy"}
+  },
+  "additionalProperties": true
+}

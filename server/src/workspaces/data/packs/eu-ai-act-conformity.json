@@ -1,0 +1,30 @@
+{
+  "_comment": "REFERENCE REGIME PACK DATA, not substrate. Maps the jurisdiction-neutral conformity engine's outputs onto EU AI Act / GDPR / prEN labels. Shipped as the worked example; the substrate engine cites NO statute unless a caller/pack supplies a regime. Same rule as the contract jurisdiction packs: concepts are substrate, citations are pack data. All legal readings pending expert review.",
+  "id": "eu-ai-act",
+  "name": "EU AI Act (Reg. 2024/1689) + adjacent",
+  "footprint_instruments": {
+    "personal-data": ["GDPR (processing; Art. 28 if processor; DSAR/erasure path exists in-runtime)"],
+    "external-publish": ["AI Act Art. 50 (disclosure to affected persons)", "DSA (if publishing to a platform context)"],
+    "financial": ["sectoral — operator to confirm (e.g. MiFID II / PSD2 / DORA)"],
+    "security-control": ["NIS2 — operator to confirm (essential/important entity context)"],
+    "irreversible": ["AI Act Art. 14 (oversight commensurate with irreversibility)"]
+  },
+  "operator_questions": [
+    {"id": "q1", "question": "Does any tool process personal data beyond what footprint tags already mark?", "instrument": "GDPR"},
+    {"id": "q2", "question": "Does any tool interface with a connected product or related service?", "instrument": "Data Act", "note": "no runtime signal exists for this — operator input required"},
+    {"id": "q3", "question": "Does any tool publish or moderate content on a platform?", "instrument": "DSA"},
+    {"id": "q4", "question": "Does any tool operate within a regulated sector?", "instrument": "MDR / MiFID II / NIS2 / sectoral"}
+  ],
+  "op_basis": {
+    "evidence_pack": "prEN ISO/IEC 24970 intent (Jan 2026 Enquiry draft); Art. 12. Pending expert review.",
+    "oversight_attestation": "Art. 14 ('effective oversight during use'); the evidentiary chain action -> determination -> outcome. Pending expert review.",
+    "trigger_map": "external-action inventory generated from gate history + workflow definitions; instruments derived from footprint ontology only -- the operator questions are the part no runtime signal can answer. Pending expert review.",
+    "drift_report": "Art. 3(23) substantial-modification boundary; Art. 72 post-market monitoring; prEN 18286 cl. 9.4. The determination is always a recorded human choice. Pending expert review.",
+    "risk_register": "Art. 9 (autonomy level as risk characteristic); prEN 18228 Jan 2026 Enquiry draft scope. Boundary as designed = the ontology table; boundary as exercised = the verdict history. Pending expert review.",
+    "threat_model": "Art. 15(4); prEN 18282 scope (privilege management, access control, threat mitigation). Category labels per OWASP ASI taxonomy. Coverage = regression exists; not a guarantee. Pending expert review."
+  },
+  "disclosure": {
+    "marking_statement": "This content was produced by an AI system.",
+    "basis": "AI Act Art. 50(1) (disclosure to affected persons) + Art. 50(2) (machine-readable marking of synthetic content)."
+  }
+}

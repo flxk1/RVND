@@ -1,0 +1,13 @@
+{
+  "skill": "extract-policy-norms",
+  "provides": "governance.extract-norms",
+  "wraps_kernel": false,
+  "scripted": false,
+  "fail_closed": true,
+  "real_ops": ["workspace_workflow:help", "workspace_workflow:policy_ingest"],
+  "invariants": [
+    "every extracted requirement retains source grounding",
+    "unexpressible meaning remains residual",
+    "the host never applies or authorizes the proposal"
+  ]
+}
