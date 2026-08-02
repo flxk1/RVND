@@ -282,6 +282,30 @@ def make_handler(session_token: str):
             args = req.get("args", {})
             resolved = _resolve_principal(self.headers, args)
             if resolved is None:
+                # Local single-operator mode has no identity proxy by design,
+                # but the console still needs to open the short-lived session
+                # capability that every governed Run requires.  The bridge's
+                # unguessable session token plus loopback/Host/Origin guards
+                # authenticate this local console session.  Bind only the
+                # governance_open request, and only to the agent named by that
+                # request; governance_open itself re-checks that the agent is
+                # active and owns the approved lane.  Direct Python/MCP calls
+                # remain unable to mint without an explicit request principal.
+                params = args.get("params") or {}
+                local_open = (req.get("tool") == "workspace_workflow"
+                              and args.get("op") == "governance_open")
+                party = (params.get("party") or "").strip() if local_open else ""
+                if party:
+                    from workspaces.mcp_serving import (
+                        clear_request_principal,
+                        set_request_principal,
+                    )
+                    set_request_principal(party, party, rung="loopback-session")
+                    try:
+                        return self._send(
+                            200, _facade_call(req.get("tool", ""), args))
+                    finally:
+                        clear_request_principal()
                 return self._send(200, _facade_call(req.get("tool", ""), args))
             from workspaces.mcp_serving import (clear_request_principal,
                                                 set_request_principal)
