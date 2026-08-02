@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ast
 from pathlib import Path
+import re
 
 from workspaces import mcp_server
 
@@ -48,6 +49,34 @@ def test_loomground_toolchain_is_release_pinned():
         revision = line.rsplit("@", 1)[-1].split('"', 1)[0]
         assert len(revision) == 40
         assert all(character in "0123456789abcdef" for character in revision)
+
+
+def test_documented_release_commits_match_install_manifest():
+    """The public resolution table and the actual install pins are one claim."""
+    manifest = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    documented = (ROOT / "docs" / "release-dependency-resolution.md").read_text(
+        encoding="utf-8"
+    )
+    for package in (
+        "loomground-solver",
+        "loomground-versum",
+        "loomground-governance",
+        "loomground-deontic",
+        "loomground-ingest",
+    ):
+        installed = re.search(
+            rf'"{re.escape(package)} @ git\+https://github\.com/flxk1/'
+            rf'{re.escape(package)}@([0-9a-f]{{40}})"',
+            manifest,
+        )
+        table_row = re.search(
+            rf"^\| `{re.escape(package)}` \| [^|]+ \| `([0-9a-f]{{40}})` \|$",
+            documented,
+            re.MULTILINE,
+        )
+        assert installed is not None, f"missing immutable install pin: {package}"
+        assert table_row is not None, f"missing documented release pin: {package}"
+        assert installed.group(1) == table_row.group(1), package
 
 
 def test_versum_imports_are_confined_to_adapter():
