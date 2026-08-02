@@ -5,6 +5,17 @@ dates are ISO.
 
 ## [Unreleased]
 
+## [0.6.8.7] - 2026-08-02
+
+### Documentation
+
+- Scoped enforcement and signed-audit claims to calls routed through RVND,
+  documented the optional OS-level containment boundary, and replaced the
+  stale identity-proxy limitation with the implemented principal, lane and
+  policy-fingerprint admission contract.
+- Documented all five consumed Loomground packages and clarified that RVND,
+  rather than the ingest library, owns host-side confirmation and enforcement.
+
 ## [0.6.8.6] - 2026-08-02
 
 ### Distribution
