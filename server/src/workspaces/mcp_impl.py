@@ -16,7 +16,6 @@ from typing import Any, Optional
 from mcp.server.fastmcp import FastMCP
 from .memory import WorkspaceMemory
 from workspaces.adapters.solver.dimensions import Dimension, classify_predicate, classify_query_dimension
-from workspaces.adapters.solver.reasoning import compose_paths, extract_edges
 from .llm_capture import (
     IngestMode,
     LLMExchange,
@@ -726,7 +725,7 @@ def workspace_remember(
     """Remember a fact as a typed triple (subject, predicate, object).
 
     A triple is stored as a dimensioned edge inside a fact pair, so it lands on
-    the signed log (auditable), is found by ``workspace_query`` and ``pairs_search``,
+    the signed log (auditable), is found by ``pairs_search``,
     and is composed by ``reason``. The edge's dimension is taken from
     ``dimension`` if given, otherwise inferred from the predicate
     (``classify_predicate``). The pair id is derived from the triple, so
@@ -790,14 +789,12 @@ def workspace_query(
                 "folder_context": str(Path(folder_context).expanduser().resolve()),
                 "count": 0, "triples": []}
     from .adapters.versum import VersumKnowledgeStore, VersumSolverSource
+    # Versum is the ONLY knowledge plane; fail-closed on an unindexed workspace
+    # ("index the folder first") rather than serving a non-Versum overlay.
     knowledge = VersumKnowledgeStore(folder_context)
-    if knowledge.available:
-        backend = "loomground-versum"
-        edges = VersumSolverSource(knowledge).edges()
-    else:
-        backend = "legacy-pair-overlay"
-        mem = WorkspaceMemory(folder_context, log_root=_log_root(), actor=actor)
-        edges = extract_edges(mem.all_pairs())
+    knowledge.require()
+    backend = "loomground-versum"
+    edges = VersumSolverSource(knowledge).edges()
     out = []
     for e in edges:
         if subject and e.subject != subject:

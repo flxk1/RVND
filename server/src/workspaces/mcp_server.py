@@ -44,7 +44,6 @@ from mcp.server.fastmcp import FastMCP
 
 from .memory import WorkspaceMemory
 from workspaces.adapters.solver.dimensions import Dimension, classify_predicate, classify_query_dimension
-from workspaces.adapters.solver.reasoning import compose_paths, extract_edges
 from .llm_capture import (
     IngestMode,
     LLMExchange,
@@ -593,28 +592,19 @@ def reason(
     # window an unindexed legacy workspace remains readable, but the response names
     # that compatibility source explicitly; there is no invisible engine fallback.
     from .adapters.versum import VersumKnowledgeStore, VersumSolverSource
+    # Versum is the ONLY knowledge plane (Language -> Ingest -> Versum -> Solver).
+    # Reasoning is fail-closed: an unindexed workspace is refused ("index the
+    # folder first"), never served from a non-Versum overlay. The legacy pair
+    # overlay was retired so nothing reasons off a source other than Versum.
     knowledge = VersumKnowledgeStore(folder_context)
-    if knowledge.available:
-        knowledge_backend = "loomground-versum"
-        inferences = VersumSolverSource(knowledge).paths(
-            start=(start or None),
-            max_depth=max(2, min(int(max_depth), 6)),
-            min_confidence=max(0.0, min(float(min_confidence), 1.0)),
-            max_results=max(1, min(int(max_results), 500)),
-        )
-    else:
-        knowledge_backend = "legacy-pair-overlay"
-        grounded = [
-            p for p in mem.all_pairs()
-            if (p.get("problem") or {}).get("scope") != "reasoning"
-        ]
-        inferences = compose_paths(
-            extract_edges(grounded),
-            start=(start or None),
-            max_depth=max(2, min(int(max_depth), 6)),
-            min_confidence=max(0.0, min(float(min_confidence), 1.0)),
-            max_results=max(1, min(int(max_results), 500)),
-        )
+    knowledge.require()
+    knowledge_backend = "loomground-versum"
+    inferences = VersumSolverSource(knowledge).paths(
+        start=(start or None),
+        max_depth=max(2, min(int(max_depth), 6)),
+        min_confidence=max(0.0, min(float(min_confidence), 1.0)),
+        max_results=max(1, min(int(max_results), 500)),
+    )
 
     recorded: list[str] = []
     if record:
