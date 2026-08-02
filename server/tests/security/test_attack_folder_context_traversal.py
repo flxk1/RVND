@@ -92,6 +92,33 @@ def test_a6_path_traversal_to_unregistered_sibling_is_refused(tmp_path, monkeypa
         resolve_folder_context(traversal)
 
 
+def test_allowlist_resolution_does_not_reenter_principal_membership(
+    tmp_path, monkeypatch
+):
+    """A verified request may resolve a registered workspace without the
+    allowlist recursively trying to prove membership through MutationLog."""
+    from workspaces import workspace_registry
+    from workspaces.folder_context import resolve_folder_context
+    from workspaces.mcp_serving import clear_request_principal, set_request_principal
+    from workspaces.parties import register_party
+
+    log_root = tmp_path / "logroot"
+    folder = tmp_path / "workspace"
+    folder.mkdir()
+    monkeypatch.setattr(workspace_registry, "LOG_ROOT_DEFAULT", log_root)
+    monkeypatch.setenv("WORKSPACE_L0_LOG_ROOT", str(log_root))
+    monkeypatch.setenv("WORKSPACES_ALLOW_UNREGISTERED", "1")
+    register_party(str(folder), "agent", "agent", log_root=str(log_root))
+    workspace_registry.add_known_workspace(folder, log_root=log_root)
+    monkeypatch.delenv("WORKSPACES_ALLOW_UNREGISTERED")
+
+    set_request_principal("local-session", "agent", rung="loopback-session")
+    try:
+        assert Path(resolve_folder_context(folder)).resolve() == folder.resolve()
+    finally:
+        clear_request_principal()
+
+
 def test_a6_allowlist_blocks_unregistered_folder_context(tmp_path, monkeypatch):
     """Full mitigation: with no registered workspaces and no
     WORKSPACES_ALLOW_UNREGISTERED override, resolve must REFUSE an unknown
