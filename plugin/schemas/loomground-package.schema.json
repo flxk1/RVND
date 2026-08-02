@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://loomground.local/schemas/loomground-package.schema.json",
+  "title": "Loomground portable package",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "name", "version", "license", "description", "author", "skills", "capabilities", "runtime", "adapters"],
+  "properties": {
+    "$schema": { "type": "string", "minLength": 1 },
+    "schemaVersion": { "const": 1 },
+    "name": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$", "maxLength": 64 },
+    "version": { "type": "string", "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$" },
+    "license": { "const": "AGPL-3.0-only" },
+    "description": { "type": "string", "minLength": 1 },
+    "author": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": { "name": { "const": "flxk1" } }
+    },
+    "keywords": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "skills": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "path", "provides"],
+        "properties": {
+          "name": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+          "path": { "type": "string", "pattern": "^skills/[^/]+$" },
+          "provides": { "type": "array", "minItems": 1, "items": { "type": "string", "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*(?:\\.[a-z][a-z0-9]*(?:-[a-z0-9]+)*)+$" } }
+        }
+      }
+    },
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["mode", "humanConfirmation"],
+        "properties": {
+          "mode": { "enum": ["read", "write", "read-write"] },
+          "humanConfirmation": { "type": "boolean" }
+        }
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["python", "network", "config"],
+      "properties": {
+        "python": { "type": "string", "pattern": "^>=?[0-9]+\\.[0-9]+$" },
+        "network": { "type": "boolean" },
+        "config": { "type": "array", "items": { "type": "string" } },
+        "requires": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true }
+      }
+    },
+    "adapters": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["claude", "codex", "generic"],
+      "properties": {
+        "claude": { "type": "object" },
+        "codex": { "type": "object" },
+        "generic": { "type": "object" }
+      }
+    }
+  }
+}

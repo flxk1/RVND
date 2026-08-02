@@ -1,0 +1,31 @@
+{
+  "schema": "rvnd-public-snapshot-1",
+  "required_paths": [
+    "LICENSES/AGPL-3.0-only.txt",
+    "LICENSING.md",
+    "README.md",
+    "pyproject.toml",
+    "release/public-snapshot.json",
+    "release/patchbay-consumption.json"
+  ],
+  "forbidden_path_prefixes": [
+    ".claude",
+    ".idea",
+    ".vscode",
+    "work",
+    "working-history"
+  ],
+  "forbidden_tracked_suffixes": [
+    ".env",
+    ".key",
+    ".p12",
+    ".pfx"
+  ],
+  "forbidden_content_markers": [
+    "-----BEGIN PRIVATE KEY-----",
+    "-----BEGIN ENCRYPTED PRIVATE KEY-----",
+    "-----BEGIN OPENSSH PRIVATE KEY-----",
+    "-----BEGIN RSA PRIVATE KEY-----",
+    "-----BEGIN EC PRIVATE KEY-----"
+  ]
+}

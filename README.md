@@ -1,0 +1,270 @@
+# Loomground Rvnd
+
+Rvnd is a local-first governance system for AI agents. It is currently in beta.
+
+The name combines *reeve*, an old word for a steward, with *nD* for
+*n-dimensional*. Rvnd applies written policy across several dimensions of a
+principal–agent relationship: authority, autonomy, oversight, risk and data
+handling. It governs delegation and records the resulting decisions.
+
+It runs on your own hardware. Your data, your policies, and your models stay
+local by default; the cloud is opt‑in, and a folder can be sealed off from it
+entirely.
+
+## What it does
+
+Rvnd sits between your agents and the things they act on (files, tools, the
+network) and governs the flow:
+
+- **Privacy Lock** — inspects text leaving the local boundary for secrets and
+  personal data (a fast pattern pass plus an optional local‑model semantic pass)
+  and refuses, redacts, or asks a person, according to your policy. Fail‑closed:
+  when in doubt, it stops rather than leaks. Out of the box the pattern pass is
+  the protection; the semantic pass runs only once you configure a local model
+  (see [Local models](#local-models)).
+- **Oversight** — each action is checked against the lowest autonomy limit set
+  by the applicable rules and against a time-based stop. A task reserved for a
+  person cannot run automatically.
+- **Tamper‑evident audit** — every decision is appended to a per‑folder,
+  Ed25519‑signed hash chain, and erasure is performed with signed tombstones
+  rather than silent deletes. Against an adversary who can also write the key
+  directory, the tamper‑evidence holds only with the opt‑in key protections
+  (encrypted keys at rest, genesis key pinning) and the log shipped off‑host.
+  Erasure is data‑level: it purges this folder's record and blocks
+  re‑ingestion; it cannot recall copies that already left the boundary.
+- **Air‑gap mode** — mark a folder local‑only and its work is kept from a cloud
+  model: the governance paths exclude cloud endpoints and build no network
+  request. That in‑process check is the default; an OS‑level egress lock is the
+  tier that binds every process on the host. See
+  [docs/concepts/air-gap-enforcement.md](docs/concepts/air-gap-enforcement.md).
+- **Local‑first models** — local models (via `llama.cpp` / ONNX) serve
+  governance and completion; a cloud model is optional and itself governed.
+- **Policy ingest** — paste a written AI policy and Rvnd drafts the governance
+  graph from it for you to review, then applies it on your confirmation.
+
+Rvnd enforces the rules its operator configures. It does not determine whether
+those rules satisfy a law, regulation or organisational policy.
+
+## The two pieces
+
+- **A governance MCP server** — exposes the governance tools (Privacy Lock,
+  oversight, the audit chain, local models, policy ingest, memory) over the Model
+  Context Protocol, so any MCP‑capable agent or client can route through them.
+- **The Governance Patchbay** — a browser app that shows the governance as a
+  wiring diagram: agents, tasks, the people who sign off, and the boundary, with
+  each egress connection coloured by the server's verdict. Users edit the
+  relationships on the canvas; enforcement remains in the MCP server.
+
+## Built on Loomground
+
+Rvnd is built on **Loomground**, a published governance language and format — actors,
+human overseers, gates, and the boundary — with a reference engine and a
+conformance suite. It is a specification that Rvnd implements, not an industry
+standard. See [github.com/flxk1/loomground](https://github.com/flxk1/loomground).
+
+Its reasoning substrate is the independent
+[`loomground-solver`](https://github.com/flxk1/loomground-solver) package. RVND depends on
+Solver and supplies policy, corpus, custody and audit adapters; Solver has no
+RVND dependency. The `workspaces.dimensions`, `reasoning`, `predicate`,
+`temporal`, contract and topology modules remain as compatibility import
+surfaces and contain no duplicate Solver implementation.
+
+Its knowledge plane is the independent
+[`loomground-versum`](https://github.com/flxk1/loomground-versum) package. Versum owns
+span-grounded claims, concepts, 5D+nD graph storage, fingerprints and retrieval.
+RVND adds authorization, custody, signed audit and governance-specific read-time
+overlays. Indexed workspaces read through Versum; unindexed workspaces expose an
+explicitly labelled `legacy-pair-overlay` until their data is migrated, rather than
+silently pretending that overlay is Versum. Loomground vocabulary, schemas and
+conformance vectors are loaded from the published
+`loomground-governance` package rather than copied into RVND.
+
+## Policy model
+
+Policy is the source of authority. Rvnd evaluates agents and their proposed
+actions against individual policy items, and links each approval, hold or denial
+to the rule that produced it. The projection model is described in
+[docs/concepts/architecture-model.md](docs/concepts/architecture-model.md).
+
+## Governance layer
+
+The governance interface can ingest a policy, build views of its rules and
+answer questions about the resulting configuration. Its main operations are:
+
+- `governance_chat` — ingest policy text, complete a use-case card or answer a
+  governance question.
+- `governance_map` (`governance_map/v1`) — present rules by role, step and risk.
+- `governance_kg` (`governance_kg/v1`) — present the same rules as a graph with
+  reasoning paths.
+- `loop_graph` (`rvnd/graph-of-loops/v1`) — show how execution, oversight,
+  drift, recovery and policy improvement watch or veto one another. The graph
+  reads execution counts from the signed chain and drift state from the latest
+  baseline; it does not run actions or change policy.
+- `security_dashboard` (`security/v1`) — report security decisions and known
+  limitations.
+- `officer` — preview changes that tighten oversight.
+- `model_capability` — report whether the configured local model is available
+  and how the system degrades without it.
+
+Policy imports require human confirmation before they are applied. Set
+`RVND_GOVERNANCE_LAYER=off` to disable this interface. See
+[docs/concepts/governance-layer.md](docs/concepts/governance-layer.md) for usage and limitations.
+
+### Graph of loops
+
+Call the workflow facade with the governed folder:
+
+```json
+{
+  "op": "loop_graph",
+  "params": {"folder_context": "/absolute/path/to/workspace"}
+}
+```
+
+The result contains visualization-ready `nodes` and directed `edges`. Edges
+marked `veto: true` can stop or cap execution. Enforcement does not depend on
+rendering the graph: `workspaces.loop_graph.assess_with_drift` feeds structural
+drift into the Breaker before the action gate runs, while behavioral drift
+routes benign work to interactive review. A Patchbay view can render the same
+projection without reimplementing these decisions in the browser.
+
+`control_bindings` shows where the compiled policy acts. Authority is routed to
+execution, autonomy ceilings and reserved acts to oversight, prohibitions to
+the recovery breaker, and the signed configuration to drift monitoring. The
+projection distributes controls already compiled into the governance graph; it
+does not infer new legal meaning from the graph itself.
+
+Before a registered agent operates, approve a versioned governance lane. The
+lane is its complete governed operating envelope; `max_grade` is only its
+autonomy ceiling:
+
+```json
+{
+  "op": "governance_lane_register",
+  "params": {
+    "folder_context": "/absolute/path/to/workspace",
+    "lane_id": "lane-research-bot",
+    "agent": "research-bot",
+    "max_grade": "L3",
+    "action_classes": ["summarise", "classify"],
+    "footprints": ["personal-data"],
+    "use_cases": ["research"],
+    "connectors": ["local-model"],
+    "policy_fingerprint": "sha256:compiled-policy",
+    "approved_by": "alice",
+    "rationale": "Bounded research processing"
+  }
+}
+```
+
+Every live action is checked against all constrained dimensions. An agent may
+request its assigned grade or a lower one, but never a higher one. Missing scope
+values, an unapproved action or footprint, a connector change, a policy change,
+or an attempted grade increase produces a denial. Widening requires a new lane
+version with a named approver and rationale. `governance_lane_list` returns the
+latest lane per agent, and `loop_graph` includes the same inventory for fleet
+inspection.
+
+## Quick start
+
+The following commands create a virtual environment, install Rvnd from the
+working tree and start the local Patchbay web application on macOS or Linux.
+They need Python 3.10 or newer and `git` available on the PATH: five of Rvnd's
+runtime dependencies — the Loomground packages — are fetched directly from Git
+rather than from PyPI, so the install step clones them.
+
+```bash
+cd rvnd
+python3 -m venv .venv
+.venv/bin/python -m pip install -e .
+.venv/bin/python app/serve.py
+# → http://127.0.0.1:8799   (loopback only)
+```
+
+The application is plain HTML and requires no frontend build or desktop shell.
+It binds to the local machine only; it is not a production or multi-user
+deployment.
+
+On macOS, `app/Open Rvnd.command` provides a Finder launcher when the required
+Python packages are available to the system interpreter. The MCP server and the
+authenticated HTTP gateway are separate processes; their setup is documented
+under `docs/`.
+
+## Local models
+
+The Privacy Lock's semantic check can run a local model you supply — Rvnd bundles no
+weights and endorses no vendor. It defaults to a model‑free deterministic stub; a
+real backend is a GGUF (`llama.cpp`) or an ONNX Runtime GenAI directory, selected
+via one env var. As a licence‑clean worked example, this fetches Microsoft's
+prebuilt Phi‑3.5‑mini ONNX build (MIT) — substitute any model you prefer:
+
+```bash
+.venv/bin/python -m pip install huggingface_hub onnxruntime-genai
+scripts/fetch_onnx_model.sh
+export AGENT_TOOL_LOCK_LLM_BACKEND=onnx_genai:"$PWD"/models/phi-3.5-mini-instruct-onnx
+```
+
+Backends, a lighter GGUF path, hosted‑model notes, and verification:
+[docs/concepts/local-models.md](docs/concepts/local-models.md).
+
+## Layout
+
+```
+rvnd/
+  server/   # the MCP server + governance runtime; consumes Loomground,
+            # Solver and Versum as packages
+  app/      # the Patchbay web application and its local development server
+```
+
+## Status
+
+Rvnd is beta software under active development. Interfaces and file formats may
+change. The governance runtime and Loomground conformance suite pass the
+project's current tests. Some Patchbay panels and deployment controls,
+including identity, access and proxy-trust handling, remain incomplete. See
+[`CHANGELOG.md`](CHANGELOG.md) and the concept docs under [`docs/`](docs/).
+
+## Installation notes
+
+The quick-start procedure installs the package in editable mode. A normal
+non-editable installation from the repository root is also possible:
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install .
+```
+
+The commands above describe a POSIX environment. Windows uses different virtual
+environment paths and does not support the Finder launcher.
+
+### Troubleshooting local development
+
+- To check an installation, run `.venv/bin/workspaces-doctor`. It reports which
+  `workspaces` console scripts are present and whether each one's interpreter
+  can import the package. Exit status is 0 when every binding is sound.
+- On macOS, editable installations in an iCloud-synchronised checkout may lose
+  their link to the source tree. Move the checkout to a non-synchronised local
+  directory if that occurs.
+- An older installed package named `workspaces` can shadow this checkout. Check
+  which interpreter and package path are active before using `PYTHONPATH` as a
+  temporary development override.
+
+## Authorship
+
+Copyright in the project is held by its identified human author or authors.
+Generative AI tools assisted parts of development. See [`NOTICE.md`](NOTICE.md)
+for the authorship and provenance statement.
+
+## License
+
+Rvnd is available under the
+[GNU Affero General Public License v3.0 only](LICENSES/AGPL-3.0-only.txt), or
+under separate commercial terms from the copyright holder. See
+[LICENSING.md](LICENSING.md) and
+[COMMERCIAL-LICENSE.md](COMMERCIAL-LICENSE.md). Third-party
+components keep their own licences; see [`LICENSES/`](LICENSES/) and
+[`REUSE.toml`](REUSE.toml).
+
+Commercial offerings — certified builds, white-label branding, and licensed
+design and policy content — are separate optional products; see
+[`LICENSING.md`](LICENSING.md).

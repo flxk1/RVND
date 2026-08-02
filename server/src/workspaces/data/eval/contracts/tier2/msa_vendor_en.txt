@@ -1,0 +1,46 @@
+MASTER SERVICES AGREEMENT
+
+This Master Services Agreement is entered into between Nordwind Digital GmbH
+("Vendor") and Carlsen & Brandt KG ("Client") for the provision of managed
+IT services under individual Statements of Work.
+
+This Agreement shall become effective on 1 October 2026.
+
+1. DEFINITIONS
+
+1.1 "Services" means the managed hosting, monitoring and support services
+described in the applicable Statement of Work.
+
+1.2 "Service Levels" means the availability and response targets set out in
+Schedule 2.
+
+2. PERFORMANCE
+
+2.1 The Vendor shall perform the Services with reasonable skill and care and
+in accordance with the Service Levels.
+
+2.2 The Client shall provide the Vendor with the access credentials required
+for the Services. Any failure to provide such credentials suspends the
+affected delivery dates for the duration of the failure.
+
+3. INVOICING
+
+3.1 The Client shall pay each undisputed invoice within ten (10) business
+days of receipt of the invoice.
+
+3.2 Where an invoice remains unpaid for more than 30 days after the due
+date, the Vendor may suspend the Services.
+
+4. SUBCONTRACTING
+
+4.1 The Vendor shall not engage subcontractors for material parts of the
+Services except as set out in Clause 7.
+
+5. TERM
+
+5.1 The initial term of this Agreement is twenty-four (24) months.
+
+6. GOVERNING LAW
+
+6.1 This Agreement and any dispute arising out of or in connection with it
+are governed by German law.

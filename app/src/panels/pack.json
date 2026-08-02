@@ -1,0 +1,307 @@
+{
+  "format": "lg-panel-pack",
+  "contract_version": "1.0",
+  "pack": "rvnd-governance",
+  "panels": [
+    {
+      "id": "legal",
+      "entry": "legal.js",
+      "title": "Standing facts — the subject cards",
+      "surface": "drawer",
+      "access": "read",
+      "menu": {
+        "section": "record",
+        "label": "Standing facts",
+        "detail": "standing facts — does not certify compliance"
+      }
+    },
+    {
+      "id": "grounder",
+      "entry": "grounder.js",
+      "title": "Sources & gaps — what is grounded, where the gaps are",
+      "surface": "drawer",
+      "access": "read",
+      "menu": {
+        "section": "record",
+        "label": "Sources & gaps",
+        "detail": "what's grounded, where the gaps are"
+      }
+    },
+    {
+      "id": "conformity",
+      "entry": "conformity.js",
+      "title": "Conformity — evidence as API",
+      "surface": "drawer",
+      "access": "read",
+      "menu": {
+        "section": "record",
+        "label": "Evidence",
+        "detail": "what the record shows — attributed, never asserts compliance"
+      }
+    },
+    {
+      "id": "audit",
+      "entry": "audit.js",
+      "title": "Audit — the signed record",
+      "surface": "drawer",
+      "access": "write",
+      "badge": {
+        "text": "reads · attests",
+        "title": "the checks only read the signed record; the model-attestation battery writes through governed, recorded ops"
+      },
+      "menu": {
+        "section": "record",
+        "label": "Audit trail",
+        "detail": "is the signed record intact?"
+      }
+    },
+    {
+      "id": "obligations",
+      "entry": "obligations.js",
+      "title": "Obligations — contract deadlines",
+      "surface": "drawer",
+      "access": "read",
+      "menu": {
+        "section": "pending",
+        "label": "Obligations",
+        "detail": "contract deadlines — due, due soon, breach candidates"
+      }
+    },
+    {
+      "id": "erasure",
+      "entry": "erasure.js",
+      "title": "Erasure — the right to be removed",
+      "surface": "drawer",
+      "access": "write",
+      "badge": {
+        "text": "acts on the record",
+        "title": "the controls here write to the signed record — every act is recorded"
+      },
+      "menu": {
+        "section": "rules",
+        "label": "Erasure",
+        "detail": "remove a person from this machine's record — asks first"
+      }
+    },
+    {
+      "id": "lock",
+      "entry": "lock.js",
+      "title": "Privacy Lock — the minimisation gate + seal",
+      "surface": "drawer",
+      "access": "write",
+      "badge": {
+        "text": "reads · floor/seal/reclassify",
+        "title": "the redaction floor and lock decision history are read projections; setting the floor, sealing/unsealing for reading, and reclassifying every stored pair are governed, recorded writes"
+      },
+      "menu": {
+        "section": "rules",
+        "label": "Privacy lock",
+        "detail": "the minimisation gate + its audited decisions"
+      }
+    },
+    {
+      "id": "roles",
+      "entry": "roles.js",
+      "title": "Roles & competence",
+      "surface": "drawer",
+      "access": "write",
+      "badge": {
+        "text": "reads · registers",
+        "title": "listing the roster only reads the signed record; registering a party is a governed, recorded write"
+      },
+      "menu": {
+        "section": "setup",
+        "label": "Roles & competence",
+        "detail": "who holds which competence — role, never named identity in the rules"
+      }
+    },
+    {
+      "id": "contract",
+      "entry": "contract.js",
+      "title": "Contract execution — terms, obligations & decisions",
+      "surface": "drawer",
+      "access": "write",
+      "badge": {
+        "text": "reads · resolves",
+        "title": "reviews, ingested contracts and obligations are read projections; tick, ingest and resolve are governed, recorded writes"
+      },
+      "menu": {
+        "section": "rules",
+        "label": "Contracts",
+        "detail": "obligations & rule terms"
+      }
+    },
+    {
+      "id": "federation",
+      "entry": "federation.js",
+      "title": "Connected tools — channels · client groups · joined verdict",
+      "surface": "drawer",
+      "access": "write",
+      "badge": {
+        "text": "reads · mutes/sets floor",
+        "title": "the channels, group buses and joined verdicts are read projections; muting a channel or client and setting a group floor are governed, recorded writes"
+      },
+      "menu": {
+        "section": "rules",
+        "label": "Connected tools",
+        "detail": "third-party governance tools — channels, client groups, the joined verdict"
+      }
+    },
+    {
+      "id": "egress",
+      "entry": "egress.js",
+      "title": "Egress board — which tracks can act outside",
+      "surface": "drawer",
+      "access": "read",
+      "menu": {
+        "section": "rules",
+        "label": "Egress board",
+        "detail": "which tracks can act outside — cables, floors, arm state"
+      }
+    },
+    {
+      "id": "coverage",
+      "entry": "coverage.js",
+      "title": "Coverage — who can run what",
+      "surface": "drawer",
+      "access": "read",
+      "menu": {
+        "section": "record",
+        "label": "Coverage",
+        "detail": "who can run what — agents × tasks, gaps shown"
+      }
+    },
+    {
+      "id": "lens",
+      "entry": "lens.js",
+      "title": "Spend & limits — cap · spend · precedents",
+      "surface": "drawer",
+      "access": "write",
+      "badge": {
+        "text": "reads · sets cap/precedent",
+        "title": "listing spend and precedents only reads the signed record; setting the cost cap and declaring or revoking a precedent are governed, recorded writes"
+      },
+      "menu": {
+        "section": "rules",
+        "label": "Spend & limits",
+        "detail": "spend against the cap, declared precedents"
+      }
+    },
+    {
+      "id": "ai",
+      "entry": "ai.js",
+      "title": "AI & Capture — models, capture ledger, dispatch",
+      "surface": "drawer",
+      "access": "write",
+      "badge": {
+        "text": "reads · pins",
+        "title": "reads the signed record; pinning a skill is the one governed, recorded write here — it never invokes a model or runs a skill"
+      },
+      "menu": {
+        "section": "record",
+        "label": "Models & capture",
+        "detail": "backends, the capture ledger, recent dispatches · reads · pins"
+      }
+    },
+    {
+      "id": "workflow",
+      "entry": "workflow.js",
+      "title": "Workflow board — runs, queue & stuck runs",
+      "surface": "drawer",
+      "access": "write",
+      "badge": {
+        "text": "reads · runs",
+        "title": "definitions, the run queue and runs in flight are read projections; run, enqueue, cancel, resume and delete are governed, recorded writes"
+      },
+      "menu": {
+        "section": "record",
+        "label": "Run board",
+        "detail": "past + in-flight runs · stuck-run controls in the Stuck runs tab"
+      }
+    },
+    {
+      "id": "protections",
+      "entry": "protections.js",
+      "title": "Policy — protections & oversight",
+      "surface": "drawer",
+      "access": "write",
+      "badge": {
+        "text": "reads · sets protections",
+        "title": "the snapshot, jurisdiction-pack stack and party roster are read projections; every dial, the jurisdiction-pack stack and delegating signing authority are governed, recorded writes"
+      },
+      "menu": {
+        "section": "rules",
+        "label": "Protections",
+        "detail": "oversight, privacy lock, training opt-out, parties"
+      }
+    },
+    {
+      "id": "bringin",
+      "entry": "bringin.js",
+      "title": "Bring-in — source material",
+      "surface": "drawer",
+      "access": "write",
+      "badge": {
+        "text": "acts on the record",
+        "title": "the controls here write to the signed record — every act is recorded"
+      },
+      "menu": {
+        "section": "setup",
+        "label": "Bring-in",
+        "detail": "bring files, URLs and skills inside the boundary"
+      }
+    },
+    {
+      "id": "approvals",
+      "entry": "approvals.js",
+      "title": "Approvals — sign-off inbox",
+      "surface": "drawer",
+      "access": "write",
+      "menu": {
+        "section": "pending",
+        "label": "Sign-offs",
+        "detail": "approve the actions that need a person"
+      }
+    },
+    {
+      "id": "map",
+      "entry": "map.js",
+      "title": "Policy map — rules → roles · steps · risks",
+      "surface": "drawer",
+      "access": "read",
+      "menu": {
+        "section": "setup",
+        "label": "Policy map",
+        "detail": "rules → roles · steps · risks (collapsible)"
+      }
+    },
+    {
+      "id": "decision",
+      "entry": "decision.js",
+      "title": "Decision — the engine stopped; this choice is yours",
+      "surface": "drawer",
+      "access": "write",
+      "badge": {
+        "text": "reads · decides",
+        "title": "the pending list, options and grounds are read projections; claiming, releasing and recording a decision are governed, recorded writes"
+      },
+      "menu": {
+        "section": "pending",
+        "label": "Decisions",
+        "detail": "choose where no rule decides — with real alternatives"
+      }
+    },
+    {
+      "id": "data",
+      "entry": "data.js",
+      "title": "Local data — memory & mirrors",
+      "surface": "drawer",
+      "access": "write",
+      "menu": {
+        "section": "record",
+        "label": "Local data",
+        "detail": "memory & mirrors — what is stored locally"
+      }
+    }
+  ]
+}

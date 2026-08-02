@@ -1,0 +1,13 @@
+name: compile-loomground-policy
+loomground_governance: 0.8.2
+loomground:
+  reads: [actor, human, gate, authority, pipe, egress, reservation, quorum, prohibition, temporal, egress-obligation, redress, party, delegation, autonomy-grade]
+  proposes: [actor, human, gate, authority, pipe, egress, reservation, quorum, prohibition, temporal, egress-obligation, redress, party, delegation, autonomy-grade]
+  never_applies_directly: true
+rvnd:
+  discovery: workspace_workflow(op="help")
+  tools:
+    - tool: workspace_workflow
+      ops: [governance_netlist, patch_validate]
+confirmation:
+  mutations: not-permitted

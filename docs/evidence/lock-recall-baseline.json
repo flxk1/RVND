@@ -1,0 +1,40 @@
+{
+  "schema": "lock-recall-baseline-1",
+  "note": "Privacy Lock recall/precision floors (RV-04). Ratchet: measured recall must stay >= these per-category floors and the overall floor; a drop fails server/tests/test_lock_recall_gate.py. Regenerate the measured numbers with `PYTHONPATH=src python3 eval/lock_recall/measure_recall.py`; raise a floor when a fix improves recall so the gain is protected. Deterministic (Tier B regex + Tier B+ confusable only) — Tier C semantic recall needs a real-model eval and is not gated here.",
+  "tier_b": {
+    "overall_recall_floor": 0.95,
+    "per_category_floor": {
+      "api_key": 1.0,
+      "bearer_token": 1.0,
+      "credit_card": 1.0,
+      "de_personalausweis_10": 1.0,
+      "de_personnummer": 1.0,
+      "de_steuer_id": 1.0,
+      "email": 1.0,
+      "es_dni_nie": 1.0,
+      "fr_ssn": 1.0,
+      "iban": 0.5,
+      "iban_full": 1.0,
+      "icd10": 1.0,
+      "ipv4": 1.0,
+      "ipv6": 1.0,
+      "mrn": 1.0,
+      "name_possessive": 1.0,
+      "patient_case_id": 1.0,
+      "phone": 1.0,
+      "uk_nino": 1.0,
+      "url_with_creds": 1.0,
+      "us_ssn": 1.0
+    }
+  },
+  "tier_b_plus_confusable": {
+    "recall_floor": 1.0
+  },
+  "precision": {
+    "fp_rate_ceiling": 0.15,
+    "note": "Loose guard, not a precision SLO. In a fail-closed system over-flagging is the safe direction, so the recall floors are load-bearing and this only catches runaway false alarms on ordinary clean prose (measured 0.0 at baseline)."
+  },
+  "known_gaps": {
+    "iban": "Space-grouped IBANs (the standard 4-char grouping, e.g. 'DE89 3704 0044 ...') are not caught by either IBAN pattern — only the greedy phone pattern fires. Contiguous IBANs are caught. Floor held at 0.5; fixing space-normalisation for IBAN would raise it to 1.0."
+  }
+}

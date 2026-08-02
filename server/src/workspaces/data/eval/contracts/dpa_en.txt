@@ -1,0 +1,32 @@
+DATA PROCESSING AGREEMENT
+
+This Data Processing Agreement is made between Norddata Services GmbH (the
+"Processor") and Beispielkunde AG (the "Controller"), together governed by
+Article 28 of Regulation (EU) 2016/679 (GDPR).
+
+This Agreement is effective as of 2026-07-01.
+
+1. Definitions. "Services" means the hosting and analytics services described
+in Annex 1. "Sub-processor" means any third party engaged by the Processor to
+process personal data.
+
+2. Instructions. The Processor shall process personal data only on documented
+instructions from the Controller.
+
+3. Confidentiality. The Processor shall ensure that persons authorised to
+process the personal data have committed themselves to confidentiality.
+
+4. Breach notification. The Processor shall notify the Controller of a
+personal data breach no later than 72 hours after the personal data breach.
+
+5. Sub-processing. The Processor must not engage a Sub-processor without the
+prior written authorisation of the Controller.
+
+6. Deletion. The Processor shall delete all personal data within 30 days of
+the termination, unless Union or Member State law requires storage.
+
+7. Audits. The Controller may conduct audits of the processing activities
+once per calendar year.
+
+8. Governing law. This Agreement shall be governed by the laws of the Federal
+Republic of Germany.

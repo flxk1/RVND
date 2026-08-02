@@ -1,0 +1,64 @@
+{
+  "_comment": "Tier 2 — realistic drafting friction: defined-term subjects, written-out and day-first dates, business-day deadlines (correct answer: no predicate — business days are not calendar days), Schachtelsätze, feminine German role nouns, cross-references. No floors enforced; scores are measured and reported. The one invariant shared with all tiers: zero silently-wrong scalar values. Labels pending expert review.",
+  "contracts": {
+    "msa_vendor_en.txt": {
+      "contract_type": "msa",
+      "language": "en",
+      "parties": [
+        {"role": "vendor", "name_kw": "nordwind"},
+        {"role": "client", "name_kw": "carlsen"}
+      ],
+      "effective_date": "2026-10-01",
+      "governing_law": "DE",
+      "obligations": [
+        {"subject_kw": "vendor", "modal": "obligation", "action_kw": "reasonable skill"},
+        {"subject_kw": "client", "modal": "obligation", "action_kw": "access credentials"},
+        {"subject_kw": "client", "modal": "obligation", "action_kw": "pay"},
+        {"subject_kw": "vendor", "modal": "prohibition", "action_kw": "subcontractors"}
+      ],
+      "predicates": []
+    },
+    "avv_komplex_de.txt": {
+      "contract_type": "dpa",
+      "language": "de",
+      "parties": [
+        {"role": "auftragnehmerin", "name_kw": "beispiel cloud"},
+        {"role": "auftraggeberin", "name_kw": "volkmann"}
+      ],
+      "effective_date": "2027-01-15",
+      "governing_law": "DE",
+      "obligations": [
+        {"subject_kw": "auftragnehmerin", "modal": "obligation", "action_kw": "weisung"},
+        {"subject_kw": "auftragnehmerin", "modal": "obligation", "action_kw": "melden"},
+        {"subject_kw": "auftragnehmerin", "modal": "prohibition", "action_kw": "hinzuziehen"},
+        {"subject_kw": "auftragnehmerin", "modal": "obligation", "action_kw": "löschen"}
+      ],
+      "predicates": [
+        {"action_kw": "melden", "offset": "PT48H"},
+        {"action_kw": "löschen", "offset": "P60D"}
+      ]
+    },
+    "licence_crossref_en.txt": {
+      "contract_type": "licence",
+      "language": "en",
+      "parties": [
+        {"role": "licensor", "name_kw": "halbton"},
+        {"role": "licensee", "name_kw": "stadtfunk"}
+      ],
+      "effective_date": "2027-03-15",
+      "governing_law": "DE",
+      "obligations": [
+        {"subject_kw": "licensor", "modal": "obligation", "action_kw": "catalogue available"},
+        {"subject_kw": "licensee", "modal": "prohibition", "action_kw": "sublicense"},
+        {"subject_kw": "licensee", "modal": "obligation", "action_kw": "usage report"},
+        {"subject_kw": "licensee", "modal": "obligation", "action_kw": "supplementary fee"},
+        {"subject_kw": "licensee", "modal": "obligation", "action_kw": "cease all new uses"}
+      ],
+      "predicates": [
+        {"action_kw": "usage report", "offset": "P45D"},
+        {"action_kw": "supplementary fee", "threshold_value": "250000", "threshold_unit": "EUR"},
+        {"action_kw": "cease all new uses", "offset": "P5D"}
+      ]
+    }
+  }
+}

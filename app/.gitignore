@@ -1,0 +1,7 @@
+# deps & build artifacts
+node_modules/
+dist/
+build/
+
+# os cruft
+.DS_Store

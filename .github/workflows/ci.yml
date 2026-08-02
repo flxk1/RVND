@@ -1,0 +1,230 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { fetch-depth: 0 }
+      - name: dependency changes
+        if: github.event_name == 'pull_request'
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: high
+          license-check: false
+      # Same rule as `server-tests`: one failing gate must not hide the next.
+      # Dependency review needs repository settings the secret scan does not,
+      # so it fails independently and used to skip this scan entirely.
+      - name: repository secret scan
+        if: '!cancelled()'
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
+        with:
+          version: v0.72.0
+          scan-type: fs
+          scan-ref: .
+          scanners: secret
+          format: table
+          exit-code: "1"
+  register-lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { fetch-depth: 0 }
+      - name: register lint
+        run: sh scripts/register_lint.sh
+      - name: ruff (logic-error gate; config in pyproject.toml)
+        run: |
+          python3 -m pip install "ruff==0.15.*"
+          python3 -m ruff check .
+      - name: egress import guard (no cloud path around the proxy)
+        run: PYTHONPATH=server/src python3 scripts/egress_import_guard.py
+      - name: lock boundary (no new import edge across workspaces/lock)
+        run: python3 scripts/lock_boundary_check.py
+      - name: container inputs (immutable digests only)
+        run: python3 scripts/verify_container_inputs.py
+      - name: patchbay consumption (vendored presentation layer unchanged)
+        run: python3 scripts/verify_patchbay_consumption.py
+      - name: commit discipline (PR commits only)
+        if: github.event_name == 'pull_request'
+        run: |
+          range="origin/${{ github.base_ref }}..HEAD"
+          git fetch -q origin ${{ github.base_ref }}
+          bad=0
+          git log --no-merges --format='%s' $range | awk 'length($0)>72 {print "subject >72 chars: " $0; bad=1} END {exit bad}' || bad=1
+          if git log --no-merges --format='%(trailers)' $range | grep -iE '^Co-Authored-By:.*(claude|codex|openai|anthropic|copilot|gemini)'; then
+            echo "AI co-author trailer found — record assistance in NOTICE.md instead"; bad=1
+          fi
+          exit $bad
+
+  egress-lock-template:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: nft load-check (named user and numeric uid)
+        run: |
+          sudo apt-get -yq update >/dev/null && sudo apt-get -yq install nftables >/dev/null
+          sudo useradd rvnd-egress
+          PROXY_USER=rvnd-egress envsubst '$PROXY_USER' < deploy/firewall/nftables.conf > /tmp/egress-user.nft
+          sudo nft -c -f /tmp/egress-user.nft
+          PROXY_USER=989 envsubst '$PROXY_USER' < deploy/firewall/nftables.conf > /tmp/egress-uid.nft
+          sudo nft -c -f /tmp/egress-uid.nft
+      - name: resolve probe target before default-drop
+        run: |
+          ip="$(getent ahostsv4 api.anthropic.com | awk 'NR == 1 { print $1 }')"
+          test -n "$ip"
+          echo "PROBE_IP=$ip" >> "$GITHUB_ENV"
+      - name: apply for real (one command, exits with the verifier)
+        run: sudo ./deploy/firewall/apply-egress-lock.sh --apply --proxy-user rvnd-egress
+      - name: block probe (default user must be rejected)
+        run: |
+          echo "probing api.anthropic.com at $PROBE_IP"
+          if curl -s -o /dev/null --max-time 8 --resolve "api.anthropic.com:443:$PROBE_IP" https://api.anthropic.com/; then
+            echo "FAIL: direct egress was NOT blocked"; exit 1
+          fi
+          echo "direct egress blocked (connection rejected, as required)"
+      - name: carve-out probe (proxy user must get through)
+        run: |
+          if code="$(sudo -u rvnd-egress curl -s -o /dev/null -w '%{http_code}' --max-time 8 --resolve "api.anthropic.com:443:$PROBE_IP" https://api.anthropic.com/)"; then
+            echo "carve-out holds: proxy user reached the provider (HTTP $code)"
+          else
+            echo "FAIL: proxy user could not reach the provider -- carve-out broken"; exit 1
+          fi
+      - name: remove test firewall
+        if: always()
+        run: sudo ./deploy/firewall/apply-egress-lock.sh --remove
+
+  server-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with: { python-version: "3.12" }
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with: { node-version: "22" }
+      - name: install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[test]"
+      # Test signal and supply-chain signal must not be able to hide each other.
+      # pytest runs first because the gates below depend on third-party downloads
+      # (cyclonedx-bom, the Trivy binary and its vulnerability DB), and an outage
+      # there used to skip the whole suite. The gates then run on `!cancelled()`
+      # so a failing test cannot suppress a licence or vulnerability finding
+      # either. Everything still fails the job on its own findings.
+      - name: pytest
+        run: python -m pytest server/tests -q
+      - name: plugin surface tests (fail-closed linter + package contract)
+        if: '!cancelled()'
+        run: python -m pytest plugin/tests -q
+      - name: hardened profile (every opt-in protection ON at once)
+        if: '!cancelled()'
+        run: make test-hardened
+      - name: dependency licence gate (no copyleft in the installed closure)
+        if: '!cancelled()'
+        run: python scripts/dep_license_gate.py
+      - name: pip-audit (PyPI advisory DB over the installed closure)
+        if: '!cancelled()'
+        run: |
+          # RV-19 (BUILD-005): complements the SBOM+Trivy scan below with the
+          # Python-native advisory source. Fails the job on a known vuln in an
+          # installed dependency; --strict so a lookup error is not a silent pass.
+          # VCS/local distributions cannot be looked up in PyPI's advisory DB.
+          # Exclude only installs proven non-PyPI by their direct_url.json; names
+          # and prefixes never exempt a dependency from auditing.
+          pip install pip-audit
+          python scripts/pip_audit_requirements.py > audit-reqs.txt
+          pip-audit --strict --no-deps -r audit-reqs.txt
+      - name: generate SBOM (CycloneDX 1.6 over the installed environment)
+        if: '!cancelled()'
+        run: |
+          # cyclonedx-py scans the installed dependency closure; run it after
+          # the install step so it reflects what ships. Fails if generation
+          # errors; a valid SBOM is the artifact, not a committed file.
+          pip install cyclonedx-bom
+          cyclonedx-py environment "$(which python)" --sv 1.6 -o sbom.cdx.json
+      - name: installed dependency vulnerability scan
+        if: '!cancelled()'
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
+        with:
+          version: v0.72.0
+          scan-type: sbom
+          scan-ref: sbom.cdx.json
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          severity: HIGH,CRITICAL
+      - name: upload SBOM
+        if: '!cancelled()'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sbom-cyclonedx
+          path: sbom.cdx.json
+
+  render-board:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with: { python-version: "3.12" }
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with: { node-version: "22" }
+      - name: install
+        run: |
+          pip install -e .
+          cd app && npm ci
+      - name: UI render gates
+        run: python scripts/verify_completeness.py
+      - name: surface gate (no new unsurfaced ops vs baseline)
+        run: python scripts/verify_surface.py
+      - name: app harness gates (routing, personas, op reachability)
+        run: |
+          python app/tests/console_render_test.py
+          python app/tests/persona_test.py
+          python app/tests/coverage_gate.py
+      - name: UI-walk reconciliation (every ui-supported op driven live)
+        run: python app/tests/ui_walk_reconcile_test.py
+      - name: failure-injection gate (bridge error / hang / revoked / stale)
+        run: python app/tests/protections_failure_test.py
+
+  browser-smoke:
+    # RV-13: the one lane that needs real browser engines — kept separate from
+    # the jsdom render-board so the heavy browser install never slows or flakes
+    # the fast gates. Two engines per the register.
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with: { python-version: "3.12" }
+      - name: install
+        run: |
+          pip install -e ".[test,browser]"
+          python -m playwright install --with-deps chromium webkit
+      - name: real-browser smoke (Chromium + WebKit over the console)
+        run: python -m pytest app/tests/browser_smoke_test.py -q -m slow
+
+  wheel-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with: { python-version: "3.12" }
+      - name: build the server wheel (rollback/patch artifact must exist)
+        run: |
+          python -m pip install --upgrade pip build
+          python -m build --wheel --outdir dist .
+      - name: upload wheel
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: server-wheel
+          path: dist/*.whl

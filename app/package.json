@@ -1,0 +1,17 @@
+{
+  "name": "workspaces-app",
+  "version": "0.1.0",
+  "license": "AGPL-3.0-only",
+  "private": true,
+  "description": "Loomground Rvnd — local-first governance app (html/index served by serve.py over the /tool HTTP shim)",
+  "scripts": {
+    "dev": "python3 serve.py",
+    "serve": "python3 serve.py"
+  },
+  "devDependencies": {
+    "jsdom": "^29.1.1"
+  },
+  "overrides": {
+    "undici": "7.28.0"
+  }
+}

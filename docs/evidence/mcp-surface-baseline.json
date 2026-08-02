@@ -1,0 +1,1040 @@
+{
+  "schema": "mcp-surface-1",
+  "tools": {
+    "cross_workspace_read": {
+      "standalone": true
+    },
+    "server_info": {
+      "standalone": true
+    },
+    "workspace_ask": {
+      "standalone": true
+    },
+    "workspace_audit": {
+      "ops": {
+        "accountability": [
+          "warrants"
+        ],
+        "calibration": [
+          "folder_context"
+        ],
+        "completeness": [
+          "detected_types",
+          "doc_type"
+        ],
+        "discipline": [
+          "folder_context"
+        ],
+        "get_event": [
+          "event_id"
+        ],
+        "judge_sample": [
+          "actor",
+          "agreed",
+          "folder_context",
+          "reuse_id"
+        ],
+        "log_reuse": [
+          "fingerprint",
+          "folder_context",
+          "solver"
+        ],
+        "override_recurrence": [
+          "folder_context"
+        ],
+        "overrides": [
+          "folder_context"
+        ],
+        "record_override": [
+          "actor",
+          "card",
+          "field",
+          "folder_context",
+          "new_value",
+          "rationale"
+        ],
+        "reserved_acts": [
+          "issue_types"
+        ],
+        "sampling": [
+          "reuse_count",
+          "sampled_count"
+        ],
+        "shadow_scan": [
+          "folder_context"
+        ],
+        "step_contract": [
+          "risk"
+        ],
+        "tail": [
+          "folder_context"
+        ],
+        "variety": [
+          "covered_types",
+          "problem_types"
+        ],
+        "verify_chain": [
+          "folder_context"
+        ]
+      }
+    },
+    "workspace_capture": {
+      "ops": {
+        "llm": [
+          "folder_context",
+          "model",
+          "prompt_context",
+          "response"
+        ],
+        "read": [
+          "folder_context"
+        ],
+        "web": [
+          "engine",
+          "folder_context",
+          "query",
+          "results"
+        ]
+      }
+    },
+    "workspace_conformity": {
+      "ops": {
+        "drift_report": [
+          "folder_context"
+        ],
+        "evidence_pack": [
+          "folder_context"
+        ],
+        "oversight_attestation": [
+          "folder_context"
+        ],
+        "risk_register": [
+          "folder_context"
+        ],
+        "threat_model": [],
+        "trigger_map": [
+          "folder_context"
+        ]
+      }
+    },
+    "workspace_contract": {
+      "ops": {
+        "apply": [
+          "actions",
+          "folder_context"
+        ],
+        "demo": [
+          "folder_context"
+        ],
+        "ingest": [
+          "folder_context",
+          "text"
+        ],
+        "list_approvals": [
+          "folder_context"
+        ],
+        "list_reviews": [
+          "folder_context"
+        ],
+        "obligations": [
+          "folder_context"
+        ],
+        "record_approval": [
+          "approval_id",
+          "decision",
+          "folder_context",
+          "signer"
+        ],
+        "request_approval": [
+          "contract_id",
+          "folder_context",
+          "signers"
+        ],
+        "resolve": [
+          "actor",
+          "choice",
+          "folder_context",
+          "obligation_id",
+          "rationale"
+        ],
+        "review": [
+          "contract_id",
+          "decision",
+          "folder_context"
+        ],
+        "state": [
+          "folder_context"
+        ],
+        "tick": [
+          "folder_context"
+        ]
+      }
+    },
+    "workspace_dispatch": {
+      "ops": {
+        "decision_build": [
+          "candidates",
+          "query"
+        ],
+        "decision_claim": [
+          "folder_context"
+        ],
+        "decision_dossier": [
+          "decision_id",
+          "folder_context"
+        ],
+        "decision_link_mint": [
+          "decision_id",
+          "folder_context",
+          "party_id"
+        ],
+        "decision_notify": [
+          "decision_id",
+          "folder_context"
+        ],
+        "decision_open": [
+          "folder_context",
+          "raised_by",
+          "surface"
+        ],
+        "decision_pending": [
+          "folder_context"
+        ],
+        "decision_reconfirm_request": [
+          "folder_context",
+          "link_token"
+        ],
+        "decision_record": [
+          "actor",
+          "chosen_option_id",
+          "folder_context",
+          "rationale"
+        ],
+        "decision_release": [
+          "actor",
+          "decision_id",
+          "folder_context"
+        ],
+        "dispatch": [
+          "folder_context",
+          "skill_id"
+        ],
+        "dispatch_batch": [
+          "folder_context",
+          "skill_ids"
+        ],
+        "dispatch_ingested": [
+          "folder_context",
+          "skill_id"
+        ],
+        "dry_run": [
+          "folder_context",
+          "skill_id"
+        ],
+        "list_pinned": [
+          "folder_context"
+        ],
+        "list_plugin": [
+          "plugin_id"
+        ],
+        "pin": [
+          "folder_context",
+          "skill_id"
+        ],
+        "pin_many": [
+          "folder_context",
+          "skill_ids"
+        ],
+        "recent": [
+          "folder_context"
+        ],
+        "resolve": [
+          "folder_context"
+        ],
+        "suggest": [
+          "skill_id"
+        ],
+        "unpin": [
+          "folder_context",
+          "skill_id"
+        ]
+      }
+    },
+    "workspace_erase": {
+      "ops": {
+        "request": [
+          "folder_context",
+          "reason",
+          "requester_ref",
+          "subject"
+        ],
+        "status": [
+          "folder_context",
+          "request_id"
+        ],
+        "subject": [
+          "folder_context",
+          "legal_basis",
+          "reason",
+          "requester_ref",
+          "subject"
+        ],
+        "sweep": [
+          "folder_context",
+          "subject"
+        ]
+      }
+    },
+    "workspace_folder": {
+      "ops": {
+        "create": [
+          "path"
+        ],
+        "ingest": [
+          "path"
+        ],
+        "list": [
+          "path"
+        ],
+        "reextract": [
+          "folder_context"
+        ],
+        "scan": [
+          "folder_context"
+        ],
+        "write_file": [
+          "content",
+          "folder_context",
+          "relative_path"
+        ]
+      }
+    },
+    "workspace_grounder": {
+      "ops": {
+        "bibliography": [
+          "folder_context"
+        ],
+        "claim.check": [
+          "claim_id",
+          "folder_context"
+        ],
+        "claim.status": [
+          "claim_id",
+          "folder_context",
+          "status"
+        ],
+        "coverage": [
+          "folder_context"
+        ],
+        "creators.classify": [
+          "folder_context"
+        ],
+        "entities.link": [
+          "folder_context"
+        ],
+        "ground": [
+          "claim",
+          "folder_context",
+          "works"
+        ],
+        "oversight.feed": [
+          "folder_context"
+        ],
+        "provenance.add": [
+          "folder_context",
+          "from_work",
+          "relation",
+          "to_work"
+        ],
+        "provenance.trace": [
+          "folder_context",
+          "work_id"
+        ],
+        "source.ingest": [
+          "content",
+          "folder_context"
+        ],
+        "subject.forget": [
+          "folder_context",
+          "name"
+        ],
+        "swarm.frontier": [
+          "folder_context"
+        ],
+        "work.register": [
+          "folder_context",
+          "title"
+        ]
+      }
+    },
+    "workspace_ingest": {
+      "ops": {
+        "assemble_work": [
+          "folder_context",
+          "stem_hashes",
+          "work_id"
+        ],
+        "import_plugin": [
+          "folder_context",
+          "source"
+        ],
+        "list_urls": [
+          "folder_context"
+        ],
+        "path": [
+          "file_path",
+          "folder_context"
+        ],
+        "skill": [
+          "folder_context",
+          "source"
+        ],
+        "stem": [
+          "file_path",
+          "folder_context",
+          "origin"
+        ],
+        "url": [
+          "folder_context",
+          "url"
+        ]
+      }
+    },
+    "workspace_legal": {
+      "ops": {
+        "card.list": [
+          "folder_context"
+        ],
+        "card.load": [
+          "folder_context",
+          "subject_id"
+        ],
+        "card.save": [
+          "card",
+          "folder_context"
+        ],
+        "facts.form": [
+          "needs"
+        ],
+        "facts.record": [
+          "answers",
+          "needs"
+        ],
+        "pipeline.run_class_c": [],
+        "select.context": [
+          "entity"
+        ],
+        "select.context_step": [
+          "folder_context",
+          "step_params"
+        ],
+        "subsumption.validate": [
+          "atoms"
+        ]
+      }
+    },
+    "workspace_lens": {
+      "ops": {
+        "budget": [],
+        "budget_cap_get": [
+          "folder_context"
+        ],
+        "budget_cap_set": [
+          "cap",
+          "folder_context"
+        ],
+        "classify": [
+          "cls",
+          "content_hash"
+        ],
+        "log": [
+          "folder_context"
+        ],
+        "precedent_declare": [
+          "folder_context",
+          "id"
+        ],
+        "precedent_list": [
+          "folder_context"
+        ],
+        "precedent_revoke": [
+          "folder_context",
+          "id"
+        ],
+        "select_precedent": [
+          "candidates"
+        ]
+      }
+    },
+    "workspace_lock": {
+      "ops": {
+        "audit_query": [
+          "reason_for_query"
+        ],
+        "classify": [
+          "text"
+        ],
+        "egress_check": [
+          "arguments",
+          "task_scope",
+          "tool"
+        ],
+        "ingress_check": [
+          "payload",
+          "task_scope"
+        ],
+        "reclassify": [
+          "folder_context"
+        ],
+        "seal": [
+          "folder_context"
+        ],
+        "setup": [],
+        "setup_status": [],
+        "threshold_get": [
+          "folder_context"
+        ],
+        "threshold_set": [
+          "folder_context",
+          "threshold"
+        ],
+        "unseal": [
+          "folder_context",
+          "passphrase"
+        ]
+      }
+    },
+    "workspace_matrix": {
+      "ops": {
+        "explain": [
+          "folder_context",
+          "grade",
+          "oversight"
+        ],
+        "reset": [
+          "folder_context"
+        ],
+        "set": [
+          "folder_context",
+          "grade",
+          "light",
+          "oversight"
+        ],
+        "set_all": [
+          "folder_context",
+          "matrix"
+        ],
+        "set_col": [
+          "folder_context",
+          "grade",
+          "light"
+        ],
+        "set_row": [
+          "folder_context",
+          "light",
+          "oversight"
+        ],
+        "show": [
+          "folder_context"
+        ]
+      }
+    },
+    "workspace_memory": {
+      "ops": {
+        "fetch_spans": [
+          "folder_context",
+          "pair_ids"
+        ],
+        "layout_get": [
+          "folder_context"
+        ],
+        "layout_set": [
+          "folder_context",
+          "pair_id",
+          "x",
+          "y"
+        ],
+        "pair": [
+          "folder_context",
+          "pair_id"
+        ],
+        "pair_spans": [
+          "folder_context",
+          "pair_id"
+        ],
+        "pairs_recent": [
+          "folder_context"
+        ],
+        "query": [
+          "folder_context"
+        ],
+        "reason": [
+          "folder_context"
+        ],
+        "recent": [
+          "folder_context"
+        ],
+        "remember": [
+          "folder_context",
+          "object",
+          "predicate",
+          "subject"
+        ],
+        "safe_context": [
+          "folder_context",
+          "pair_id"
+        ],
+        "safe_context_query": [
+          "folder_context",
+          "query"
+        ],
+        "search": [
+          "folder_context",
+          "query"
+        ]
+      }
+    },
+    "workspace_mirror": {
+      "ops": {
+        "approve": [
+          "approver",
+          "folder_context",
+          "mirror_path"
+        ],
+        "diff": [
+          "folder_context",
+          "from_rev",
+          "mirror_path"
+        ],
+        "discard": [
+          "folder_context",
+          "mirror_path"
+        ],
+        "edit": [
+          "folder_context",
+          "mirror_path",
+          "operation",
+          "span_id"
+        ],
+        "generate": [
+          "folder_context",
+          "source_path"
+        ],
+        "history": [
+          "folder_context",
+          "mirror_path"
+        ],
+        "list": [
+          "folder_context"
+        ],
+        "lock_acquire": [
+          "actor",
+          "folder_context",
+          "mirror_path"
+        ],
+        "lock_release": [
+          "folder_context",
+          "mirror_path"
+        ],
+        "un_redact": [
+          "controller_key",
+          "folder_context",
+          "mirror_path",
+          "span_id"
+        ]
+      }
+    },
+    "workspace_model": {
+      "ops": {
+        "attest_admit": [
+          "folder_context",
+          "model_id",
+          "note"
+        ],
+        "attest_baseline": [
+          "folder_context",
+          "model_id",
+          "probes"
+        ],
+        "attest_run": [
+          "folder_context",
+          "model_id"
+        ],
+        "attest_status": [
+          "folder_context"
+        ],
+        "cascade": [
+          "folder_context",
+          "prompt"
+        ],
+        "classify": [
+          "categories",
+          "text"
+        ],
+        "complete": [
+          "folder_context",
+          "prompt"
+        ],
+        "list": [],
+        "status": []
+      }
+    },
+    "workspace_orchestrate": {
+      "standalone": true
+    },
+    "workspace_policy": {
+      "ops": {
+        "actor_stamps": [
+          "folder_context"
+        ],
+        "delegate_signing": [
+          "folder_context",
+          "from_party",
+          "to_party"
+        ],
+        "disable": [
+          "accepted_by",
+          "dial",
+          "folder_context",
+          "reason"
+        ],
+        "enable": [
+          "dial",
+          "folder_context"
+        ],
+        "juris_packs": [
+          "folder_context"
+        ],
+        "party_list": [
+          "folder_context"
+        ],
+        "party_register": [
+          "folder_context",
+          "kind",
+          "party_id"
+        ],
+        "party_route": [
+          "competence",
+          "folder_context"
+        ],
+        "party_status": [
+          "folder_context",
+          "party_id",
+          "status"
+        ],
+        "set_access_control": [
+          "enabled",
+          "folder_context"
+        ],
+        "set_lock_mode": [
+          "folder_context",
+          "mode"
+        ],
+        "set_oversight_level": [
+          "folder_context",
+          "level"
+        ],
+        "snapshot": [
+          "folder_context"
+        ],
+        "tdm_declare": [
+          "folder_context"
+        ],
+        "tdm_optout": [
+          "folder_context"
+        ]
+      }
+    },
+    "workspace_session": {
+      "ops": {
+        "adopt": [
+          "bundle",
+          "dest_root"
+        ],
+        "build": [
+          "name",
+          "rail",
+          "workspaces"
+        ],
+        "draft_discard": [
+          "folder_context"
+        ],
+        "draft_load": [
+          "folder_context"
+        ],
+        "draft_save": [
+          "folder_context",
+          "payload",
+          "surface"
+        ],
+        "export": [
+          "out_path",
+          "path",
+          "workspace_id"
+        ],
+        "forensic": [
+          "path"
+        ],
+        "import": [
+          "env_path",
+          "out_path",
+          "track_path",
+          "workspace_id"
+        ],
+        "restore": [
+          "dest_root",
+          "path"
+        ],
+        "restore_bytes": [
+          "bundle",
+          "dest_root"
+        ],
+        "save": [
+          "name",
+          "path",
+          "rail",
+          "workspaces"
+        ],
+        "template_list": [],
+        "template_new": [
+          "dest_root",
+          "template_id"
+        ],
+        "verify": [
+          "path"
+        ],
+        "verify_bytes": [
+          "bundle"
+        ]
+      }
+    },
+    "workspace_workflow": {
+      "ops": {
+        "active": [
+          "folder_context"
+        ],
+        "approval_decide": [
+          "actor",
+          "decision",
+          "folder_context",
+          "now",
+          "request_id"
+        ],
+        "approval_delegate": [
+          "actor",
+          "competence",
+          "folder_context",
+          "from_party",
+          "now",
+          "to_party"
+        ],
+        "approval_list": [
+          "folder_context",
+          "now"
+        ],
+        "approval_request": [
+          "folder_context",
+          "now",
+          "request_id"
+        ],
+        "approval_resolve": [
+          "folder_context",
+          "now",
+          "request_id"
+        ],
+        "authority_revoke": [
+          "actor",
+          "agent_id",
+          "folder_context",
+          "use_case_id"
+        ],
+        "cancel": [
+          "run_id"
+        ],
+        "connector_list": [
+          "folder_context"
+        ],
+        "connector_register": [
+          "channel",
+          "connector_id",
+          "folder_context",
+          "role"
+        ],
+        "console_snapshot": [],
+        "coverage_matrix": [
+          "folder_context"
+        ],
+        "define": [
+          "folder_context",
+          "name",
+          "steps"
+        ],
+        "delete": [
+          "folder_context",
+          "name"
+        ],
+        "egress_board": [
+          "folder_context"
+        ],
+        "enqueue": [
+          "folder_context",
+          "name"
+        ],
+        "federated_decision": [
+          "folder_context",
+          "use_case_id"
+        ],
+        "federation_override": [
+          "actor",
+          "folder_context",
+          "reason",
+          "use_case_id",
+          "verdict"
+        ],
+        "governance_chat": [],
+        "governance_graph": [
+          "folder_context"
+        ],
+        "governance_kg": [],
+        "governance_lane_list": [
+          "folder_context"
+        ],
+        "governance_lane_register": [
+          "action_classes",
+          "agent",
+          "approved_by",
+          "folder_context",
+          "lane_id",
+          "max_grade",
+          "rationale"
+        ],
+        "governance_map": [],
+        "governance_netlist": [
+          "folder_context"
+        ],
+        "governance_open": [
+          "folder_context",
+          "party",
+          "policy_fingerprint"
+        ],
+        "governance_query": [
+          "folder_context",
+          "query"
+        ],
+        "governance_register": [
+          "folder_context"
+        ],
+        "group_floor": [
+          "folder_context",
+          "group_id"
+        ],
+        "group_revoke": [
+          "folder_context",
+          "group_id"
+        ],
+        "inspect_stuck": [],
+        "list": [
+          "folder_context"
+        ],
+        "loop_graph": [
+          "folder_context"
+        ],
+        "mark_done": [
+          "run_id"
+        ],
+        "mark_failed": [
+          "run_id"
+        ],
+        "model_capability": [],
+        "officer": [
+          "folder_context"
+        ],
+        "operate": [
+          "agent_id",
+          "capability_token",
+          "folder_context",
+          "issues",
+          "now_epoch",
+          "use_case_id"
+        ],
+        "patch_apply": [
+          "actor",
+          "folder_context"
+        ],
+        "patch_validate": [
+          "folder_context"
+        ],
+        "policy_ingest": [
+          "folder_context"
+        ],
+        "queue": [],
+        "renew_lease": [
+          "run_id"
+        ],
+        "resume": [
+          "run_id"
+        ],
+        "run": [
+          "folder_context",
+          "name"
+        ],
+        "runs": [
+          "folder_context"
+        ],
+        "security_dashboard": [
+          "folder_context"
+        ],
+        "take_next": [],
+        "tool_call_plan": [
+          "connector_id",
+          "folder_context"
+        ],
+        "tool_revoke": [
+          "connector_id",
+          "folder_context"
+        ],
+        "tool_verdict": [
+          "connector_id",
+          "folder_context"
+        ],
+        "track_strip": [
+          "folder_context"
+        ],
+        "transport_audit": [
+          "folder_context"
+        ],
+        "use_case_get": [
+          "folder_context",
+          "use_case_id"
+        ],
+        "use_case_list": [
+          "folder_context"
+        ],
+        "use_case_register": [
+          "actor",
+          "allowed_agents",
+          "fingerprint",
+          "folder_context",
+          "name",
+          "risk",
+          "use_case_id"
+        ]
+      }
+    },
+    "workspace_workspace": {
+      "ops": {
+        "add": [
+          "folder_context"
+        ],
+        "bootstrap": [],
+        "list": [],
+        "remove": [
+          "folder_context"
+        ],
+        "route": [
+          "query"
+        ]
+      }
+    }
+  }
+}

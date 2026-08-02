@@ -1,0 +1,40 @@
+# Loomground manifest for rvnd-build-surface.
+# Its grounding is INDIRECT. It composes a presentation surface; the layout
+# manifest is not Loomground, it is an RVND presentation artifact that references
+# Loomground object identities. It reads which construct types are present to
+# decide which cards to show, and proposes no policy unless the user separately
+# invokes a governance proposal through rvnd-govern.
+name: rvnd-build-surface
+loomground_governance: 0.8.2
+loomground:
+  reads:                          # reads which construct/node/declaration types are present
+    - actor
+    - human
+    - gate
+    - master
+    - authority
+    - reservation
+    - quorum
+    - prohibition
+    - egress-obligation
+    - redress
+    - autonomy-grade
+  proposes: []                    # produces a presentation artifact, not policy
+  never_applies_directly: true
+  produces_presentation_artifact: true
+card_selection:                   # which card to show given present constructs
+  authority-editor: authority | grade present
+  decision-card(ratification): a determinate verdict to ratify (approve/deny)
+  decision-card(residual-origination): a residual decision - >=2 unranked alternatives, never approve/reject
+  duty-panel: egress-obligation present
+  redress-timeline: redress present
+  residual-panel: any residual present
+# Offline linter; drives no server. At most it reads which construct types are present
+# to select cards. See ../../references/catalogue.md.
+rvnd:
+  discovery: workspace_workflow(op="help")
+  tools:
+    - tool: workspace_workflow
+      ops: [governance_graph]     # read-only: which construct types are present, to select cards
+confirmation:
+  mutations: not-applicable       # offline composition + lint; drives no server mutation

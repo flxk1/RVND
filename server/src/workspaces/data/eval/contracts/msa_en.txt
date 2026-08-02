@@ -1,0 +1,35 @@
+MASTER SERVICES AGREEMENT
+
+This Master Services Agreement is made between Quellwerk Software GmbH (the
+"Supplier") and Hanse Logistik SE (the "Customer"). Individual projects are
+ordered under a Statement of Work.
+
+This Agreement comes into force on 2026-08-01.
+
+1. Definitions. "Deliverables" means the work products specified in a
+Statement of Work. "Acceptance" means the Customer's written confirmation
+that Deliverables conform to the agreed specification.
+
+2. Delivery. The Supplier shall deliver the Deliverables in accordance with
+the schedule in the applicable Statement of Work.
+
+3. Acceptance testing. The Customer shall complete acceptance testing within
+21 days of the delivery.
+
+4. Remediation. The Supplier shall remedy any reported non-conformity within
+30 days of the notification.
+
+5. Payment. The Customer shall pay undisputed invoices within 30 days of the
+invoice date.
+
+6. Late payment. Where the outstanding amount exceeds EUR 50,000, the
+Supplier may suspend further performance.
+
+7. Subcontracting. The Supplier must not subcontract material obligations
+without the prior written consent of the Customer.
+
+8. Liability. Neither party's aggregate liability shall exceed the fees paid
+in the twelve months preceding the claim.
+
+9. Governing law. This Agreement shall be governed by the laws of the Federal
+Republic of Germany.

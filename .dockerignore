@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+# Copyright 2026 flxk1
+# Keep local history, credentials, caches, and non-runtime output outside the
+# build context. The Dockerfile copies runtime paths explicitly.
+.git
+.github
+.claude
+.env
+.env.*
+!.env.example
+.DS_Store
+**/.DS_Store
+**/__pycache__
+**/*.py[cod]
+**/.pytest_cache
+**/.ruff_cache
+**/node_modules
+.venv
+build
+dist
+release-dependencies
+work

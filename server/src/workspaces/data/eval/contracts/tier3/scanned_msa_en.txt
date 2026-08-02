@@ -1,0 +1,30 @@
+CONFIDENTIAL — DRAFT                                        Page 1 of 12
+
+MASTER  SERVICES  AGREE-
+MENT
+
+This Master Services Agreement is entered into between  Brandgaard  Soft-
+ware ApS (the "Supplier") and  Weichsel  Logistics  GmbH  (the  "Customer")
+for warehouse management software and related services.
+
+Ef fective date: 2026- 08-15
+
+CONFIDENTIAL — DRAFT                                        Page 2 of 12
+
+1 .  DELIVERY.  The Supplier shall de-
+liver each Release in accordance with the de-
+livery schedule in the applicable Order  Form .
+
+2 .  ACCEPTANCE.   The  Customer  shall  complete  acceptance  testing
+within 21  days of the de- livery of a Release.
+
+3 .  SUPPORT.  The Supplier shall provide  second-level  support  during
+Business  Hours as defined in Schedule 3 .
+
+CONFIDENTIAL — DRAFT                                        Page 3 of 12
+
+4 .  PAYMENT.  The Customer shall pay  un-
+disputed invoices within 30 days  of  the  invoice  date .
+
+5 .  GOVERNING  LAW.   This Agreement shall be governed by the laws  of
+the Federal Republic of  Germany .

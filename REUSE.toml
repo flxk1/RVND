@@ -1,0 +1,95 @@
+version = 1
+SPDX-PackageName = "rvnd"
+SPDX-PackageSupplier = "flxk1"
+
+# rvnd's .py sources carry inline SPDX headers, which take precedence. The
+# non-source files below (app assets, config, eval/test data, docs) carry no
+# inline header and are the project's own work, covered here as AGPL-3.0-only.
+
+[[annotations]]
+path = [
+  "app/**/*.mjs", "app/**/*.html", "app/**/*.json", "app/**/*.rs",
+  "app/**/*.toml", "app/**/*.lock", "app/**/*.png", "app/**/*.md",
+  "app/src/shell/*.js", "app/.gitignore", "app/Open Rvnd.command",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 flxk1"
+SPDX-License-Identifier = "AGPL-3.0-only"
+
+[[annotations]]
+path = [
+  "server/**/*.json", "server/**/*.jsonl", "server/**/*.txt",
+  "server/**/*.md", "server/**/*.sh", "server/**/*.pem", "server/**/*.toml",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 flxk1"
+SPDX-License-Identifier = "AGPL-3.0-only"
+
+# Self-hosted webfonts (latin subsets, fetched from Google Fonts' static CDN so
+# the app makes no external request at runtime). Both families are upstream
+# OFL-1.1: Space Grotesk (Florian Karsten / the Space Grotesk Project Authors),
+# IBM Plex Mono (IBM Corp.).
+[[annotations]]
+path = ["app/src/fonts/*.woff2"]
+precedence = "override"
+SPDX-FileCopyrightText = ["2018-2020 The Space Grotesk Project Authors", "2017 IBM Corp."]
+SPDX-License-Identifier = "OFL-1.1"
+
+[[annotations]]
+path = [
+  "README.md", "NOTICE.md", "CONTRIBUTING.md", "CLA.md",
+  "COMMERCIAL-LICENSE.md", "pyproject.toml", ".gitignore", "docs/**/*.md",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 flxk1"
+SPDX-License-Identifier = "AGPL-3.0-only"
+
+# Repository configuration, root-level product documents, generated evidence,
+# and maintainer scripts are first-party RVND material.
+[[annotations]]
+path = [
+  ".github/**/*.yml",
+  "CHANGELOG.md", "LICENSING.md",
+  "deploy/.env.example", "models/**/*.md",
+  "docs/**/*.json", "docs/**/*.html", "scripts/**/*.sh",
+  "scripts/builder_visual_verdict.py",
+  "release/public-snapshot.json", "release/patchbay-consumption.json",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 flxk1"
+SPDX-License-Identifier = "AGPL-3.0-only"
+
+# Small package-adapter initializers and their focused tests predate the
+# source-licence header sweep but are first-party RVND integration code.
+[[annotations]]
+path = [
+  "server/src/workspaces/adapters/solver/__init__.py",
+  "server/src/workspaces/adapters/versum/__init__.py",
+  "server/tests/test_solver_adapters.py",
+  "server/tests/test_upstream_consumption.py",
+  "server/tests/test_versum_adapter.py",
+  "server/tests/test_loomground_tags_guard.py",
+  "server/src/workspaces/release/visual_verdict.py",
+  "server/tests/test_adapter_boundary.py",
+  "server/tests/test_builder_visual_verdict.py",
+  "server/tests/test_egress_capability.py",
+  "server/tests/test_session_admission.py",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 flxk1"
+SPDX-License-Identifier = "AGPL-3.0-only"
+
+# The RVND marketplace plugin is distributed under the same project licence.
+# Its vendored Loomground schemas are overridden below.
+[[annotations]]
+path = ["plugin/**"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 flxk1"
+SPDX-License-Identifier = "AGPL-3.0-only"
+
+# Exact copies of the public Loomground language schemas retain Apache-2.0.
+[[annotations]]
+path = ["plugin/rvnd-governance/schemas/loomground/**"]
+precedence = "override"
+SPDX-FileCopyrightText = "2026 flxk1"
+SPDX-License-Identifier = "Apache-2.0"

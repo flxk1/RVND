@@ -1,0 +1,30 @@
+MUTUAL NON-DISCLOSURE AGREEMENT
+
+This Confidentiality Agreement is made between Aurora Robotics Ltd (the
+"Discloser") and Brandt Ventures GmbH (the "Recipient").
+
+This Agreement is effective as of 2026-09-15.
+
+1. Definitions. "Confidential Information" means any non-public information
+disclosed in connection with the Purpose. "Purpose" means the evaluation of a
+potential joint venture in warehouse robotics.
+
+2. Use. The Recipient shall use Confidential Information solely for the
+Purpose.
+
+3. Protection. The Recipient shall protect Confidential Information with at
+least the same degree of care it applies to its own confidential material.
+
+4. Disclosure. The Recipient must not disclose Confidential Information to
+any third party without the prior written consent of the Discloser.
+
+5. Return. The Recipient shall return or destroy all Confidential
+Information within 14 days of a written request.
+
+6. Permitted disclosure. The Recipient may disclose Confidential Information
+where required by law or court order, provided it gives prompt notice.
+
+7. Term. The non-disclosure obligations survive for five years after the
+effective date.
+
+8. Governing law. This Agreement is governed by the laws of England and Wales.

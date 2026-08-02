@@ -1,0 +1,13 @@
+{
+  "skill": "compile-loomground-policy",
+  "provides": "governance.compile-policy",
+  "wraps_kernel": false,
+  "scripted": false,
+  "fail_closed": true,
+  "real_ops": ["workspace_workflow:help", "workspace_workflow:governance_netlist", "workspace_workflow:patch_validate"],
+  "invariants": [
+    "the host never writes .lg",
+    "validation comes only from RVND",
+    "validation does not authorize application"
+  ]
+}

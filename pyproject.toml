@@ -1,0 +1,176 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+# Copyright 2026 flxk1
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rvnd"
+# Single build config, single distribution. The import package `workspaces`
+# lives under server/src (package-dir below); this one file is the sole source
+# of the version, dependencies, entry points, and package data.
+dynamic = ["version"]
+description = "Rvnd — governance MCP server + Patchbay app, built on Loomground (Workspaces + nD)."
+requires-python = ">=3.10"
+license = "AGPL-3.0-only"
+license-files = ["LICENSES/AGPL-3.0-only.txt"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+]
+# Third-party material included in distributions retains its own licence.
+authors = [{ name = "flxk1" }]
+# Explicit dependency edges: Versum owns the knowledge/5D+nD plane, Solver owns
+# reasoning and Loomground evaluation, and loomground-governance owns all language
+# artifacts and conformance data. RVND carries adapters and governance overlays only.
+dependencies = [
+    "loomground-solver @ git+https://github.com/flxk1/loomground-solver@3d234142324cb497607e4402e7a429c68d772764",
+    "loomground-versum @ git+https://github.com/flxk1/loomground-versum@a98e568cafde9b32a196bbf5925d1024f7e32073",
+    "loomground-governance @ git+https://github.com/flxk1/loomground-governance@7e7bddde54f2bd8b72149896546a66820f2617e0",
+    "loomground-deontic @ git+https://github.com/flxk1/loomground-deontic@fd103e422f09a9e9613b50268372bba58787e295",
+    "loomground-ingest @ git+https://github.com/flxk1/loomground-ingest@1c4120f2752a6c2783e47a52c4564c0c349dacf7",
+    "cryptography>=41.0",
+    "anyascii>=0.3",
+    "mcp>=1.8,<2.0",
+    "pyyaml>=6.0",
+]
+# mcp>=1.8: the gateway (workspaces-gateway) needs the streamable-http server transport.
+# <2: mcp 2.0 removed `mcp.server.fastmcp` (superseded by `mcp.server.mcpserver`).
+# Five modules import FastMCP at module scope — workspaces/gateway.py,
+# mcp_serving.py, mcp_impl.py, mcp_server.py and lock/mcp_server.py — so without
+# the ceiling a clean install resolves 2.0.0 and every entry point raises
+# ModuleNotFoundError at import. Lift it with the FastMCP port, which spans all five.
+
+[project.optional-dependencies]
+test = [
+  "pytest>=7.0",
+  "pytest-asyncio>=0.23",
+  "pytest-timeout>=2.1",
+  "pytest-cov>=5.0",   # RV-19: coverage measurement (see [tool.coverage])
+  "pypdf>=4.0",
+  "ruff>=0.6",
+  # plugin/tests validates package.json against the vendored Loomground schema;
+  # the linter's structural floor is still proven without it (RVND_LINT_NO_JSONSCHEMA=1).
+  "jsonschema>=4.0",
+]
+# `mcp` is a REQUIRED runtime dependency (the product IS the MCP server); it lives
+# in `dependencies` above. The `[mcp]` extra is a no-op alias so existing
+# `pip install .[mcp]` invocations don't break.
+mcp = ["mcp>=1.8,<2.0"]
+llm = ["llama-cpp-python>=0.2"]
+# Tier C ONNX backend (workspaces/lock/backends/onnx_genai.py) imports
+# onnxruntime_genai lazily and classify() fails closed when it is absent, so the
+# dependency stays optional.
+onnx = ["onnxruntime-genai>=0.13"]
+build = ["pyinstaller>=6.0"]
+# RV-13: real-browser smoke lane (app/tests/browser_smoke_test.py). The
+# browsers install separately via `python -m playwright install chromium webkit`.
+browser = ["playwright>=1.62"]
+# Format-aware extractors. Without these, PDF/DOCX/Pages files get a metadata-only
+# stub. Apple Pages parses with stdlib zipfile + xml.etree; no extra dep needed.
+extractors = ["pypdf>=4.0", "python-docx>=1.0"]
+
+[project.urls]
+Homepage = "https://github.com/flxk1/rvnd"
+Source = "https://github.com/flxk1/rvnd"
+
+# Console entry points. "workspaces" is the import package and the historic command
+# prefix; the distribution installed by pip is `rvnd`.
+[project.scripts]
+workspaces                = "workspaces.cli:main"
+workspaces-mcp            = "workspaces.mcp_server:main"
+workspaces-gateway        = "workspaces.gateway:main"
+workspaces-gateway-verify = "workspaces.gateway_verify:main"
+workspaces-doctor         = "workspaces_doctor_bootstrap:main"
+workspace-lock            = "workspaces.lock.__main__:main"
+rvnd-visual-verdict       = "workspaces.release.visual_verdict:main"
+# Compatibility aliases.
+workspace                 = "workspaces.cli:main"
+workspace-mcp             = "workspaces.mcp_server:main"
+
+# src layout: the import package `workspaces` lives under server/src. An editable install
+# (`pip install -e .`) puts it on the path so `python -m workspaces.mcp_server` runs and
+# `importlib.metadata.version("rvnd")` resolves — what the host-MCP and --version tests require.
+[tool.setuptools]
+package-dir = { "" = "server/src" }
+# Top-level module (not a package) behind the workspaces-doctor entry point; it
+# stays importable even when the workspaces package can't be, so it can diagnose that case.
+py-modules = ["workspaces_doctor_bootstrap"]
+
+[tool.setuptools.dynamic]
+version = { attr = "workspaces._version.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["server/src"]
+include = ["workspaces*"]
+
+# Ship non-.py package data explicitly. Do NOT rely on include-package-data / the
+# VCS file-finder: a wheel built without it dropped all jurisdiction packs (verified
+# 2026-06-13). Globs are git-independent, so editable, wheel, and pip-from-git
+# installs all carry the data.
+[tool.setuptools.package-data]
+workspaces = [
+    "data/packs/*.json",
+    "data/packs/**/*.json",
+    "data/eval/contracts/*.json",
+    "data/eval/contracts/*.txt",
+    "data/eval/contracts/**/*.json",
+    "data/eval/contracts/**/*.txt",
+    "py.typed",
+]
+
+# Static analysis. ruff runs as a CI gate; the selected rule set (below) is a
+# ratchet — logic errors plus what widens to zero cost, tightened per the note
+# on `select`. mypy and coverage config follow.
+[tool.ruff]
+target-version = "py310"
+extend-exclude = ["build"]
+
+[tool.ruff.lint]
+# RV-19 ratchet: widened from the pure logic-error floor (E9/F63/F7/F82) by
+# adding T10 (no debugger/breakpoint left in code) — verified 0 violations, so
+# it holds the line at zero cost. The next families to fold in, with their
+# current debt so the ratchet is visible and shrinkable rather than vague:
+#   full F  ~525 (mostly unused imports — a --fix pass, but audit re-exports)
+#   C4        46 (comprehension rewrites)   B   38 (bugbear)   PIE  7
+# Each is a dedicated cleanup PR that ends by adding the family here.
+select = ["E9", "F63", "F7", "F82", "T10"]
+
+[tool.coverage.run]
+# RV-19: coverage MEASUREMENT (the ratchet's first step — a hard %-floor gate
+# is a deliberate follow-on so the threshold reflects a real baseline, not a
+# guess). `make coverage` runs the bounded suite under coverage; the report is
+# the artifact. Branch coverage on, because the high-risk logic here is in the
+# decision/fail-closed branches, not line count.
+branch = true
+source = ["server/src/workspaces"]
+omit = ["*/tests/*", "*/__pycache__/*"]
+
+[tool.coverage.report]
+skip_covered = false
+show_missing = true
+precision = 1
+
+# mypy config for local use (`mypy server/src/workspaces`). Not a CI gate yet —
+# the tree is ~70% annotated, so a full run is noisy; gating waits until it is green.
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+warn_unused_ignores = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+markers = [
+    "security: red-team attack regressions",
+    "slow: multi-second or longer; excluded from the bounded fast subset",
+    "model: needs an optional local-model backend (ONNX/llama.cpp) installed",
+    "live_session_admission: exercises the real signed session gate",
+    "live_egress_capability: exercises real signed admission at the proxy",
+]
+# Safety net so one hung test cannot block the whole run forever. `signal` raises
+# inside the test (one failure, suite continues) rather than `thread`, whose
+# watchdog calls os._exit() and would kill the entire pytest process. The value
+# sits above the slowest legitimate test (the 1k-op grounder stress budget is
+# ~56s) so it never false-kills a merely slow test; tests that are legitimately
+# longer disable it per-module with @pytest.mark.timeout(0) and carry `slow`.
+timeout = 120
+timeout_method = "signal"
