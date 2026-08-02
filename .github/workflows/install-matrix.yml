@@ -10,9 +10,10 @@
 # resolving a version Rvnd cannot import, with a green ci behind it.
 #
 # So this workflow runs on a schedule as well as on changes, and it runs the
-# README quick start verbatim rather than a curated subset: create a venv,
-# install from the working tree, then confirm the things the README promises
-# actually happen. A failure here means a new user cannot install Rvnd today.
+# README installer rather than a curated subset. Actions checkout supplies the
+# clone step; then the same installer shown to users creates the venv, installs
+# from the working tree, and proves the engine works. A failure here means a
+# new user cannot install Rvnd today.
 #
 # The floor is covered deliberately. `requires-python` claims >=3.10 while ci
 # pins 3.12, so 3.10 is asserted nowhere else; a 3.11-only construct would
@@ -32,6 +33,8 @@ on:
       - "pyproject.toml"
       - "app/serve.py"
       - "server/src/**"
+      - "server/install.sh"
+      - "README.md"
       - ".github/workflows/install-matrix.yml"
   # Every pull request must emit the quick-start checks because they are
   # required by the main-branch ruleset.  A path filter here leaves otherwise
@@ -66,13 +69,12 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
 
-      # README "Quick start", verbatim. Not `-c` constrained and not
-      # `--upgrade`d: whatever a new user's resolver picks today is the thing
-      # under test.
-      - name: quick start — create venv and install
-        run: |
-          python3 -m venv .venv
-          .venv/bin/python -m pip install -e .
+      # Actions checkout is the CI equivalent of the README's `git clone`.
+      # Select the matrix interpreter, then run the documented installer.
+      - name: quick start — install
+        env:
+          RVND_INSTALL_PYTHON: python
+        run: ./server/install.sh
 
       # The canary. `mcp` is a required runtime dependency and five modules
       # import FastMCP at module scope, so this is the first thing an upstream
@@ -90,8 +92,8 @@ jobs:
           PY
 
       # Exit 0 means every console script's interpreter can import the
-      # package. The quick start does not activate the venv, so this also
-      # keeps the doctor honest about an unactivated install.
+      # package. Each CI step starts a fresh shell, so this also keeps the
+      # doctor honest about an unactivated install.
       - name: console-script bindings
         run: .venv/bin/workspaces-doctor
 

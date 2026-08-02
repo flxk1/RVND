@@ -23,10 +23,18 @@ ROOT="$(cd "$HERE/.." && pwd)"
 cd "$ROOT"
 
 # 1. Pick a Python. Prefer 3.12 (most-tested), fall back to whatever python3 is.
-PY=""
-for cand in python3.12 python3.13 python3.11 python3; do
-  if command -v "$cand" >/dev/null 2>&1; then PY="$cand"; break; fi
-done
+# CI and advanced users may select an interpreter explicitly without changing
+# the ordinary one-command install.
+PY="${RVND_INSTALL_PYTHON:-}"
+if [ -n "$PY" ] && ! command -v "$PY" >/dev/null 2>&1; then
+  echo "error: RVND_INSTALL_PYTHON=$PY is not available on PATH." >&2
+  exit 1
+fi
+if [ -z "$PY" ]; then
+  for cand in python3.12 python3.13 python3.11 python3; do
+    if command -v "$cand" >/dev/null 2>&1; then PY="$cand"; break; fi
+  done
+fi
 if [ -z "$PY" ]; then
   echo "error: no python3 found on PATH. Install Python 3.10+ and re-run." >&2
   exit 1

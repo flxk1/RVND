@@ -5,6 +5,15 @@ dates are ISO.
 
 ## [Unreleased]
 
+## [0.6.8.9] - 2026-08-02
+
+### Documentation
+
+- Made the public quick start runnable from a clean directory by cloning the
+  correctly cased `RVND` folder first and using the tested installer.
+- Removed a display-only shell comment that interactive zsh could interpret as
+  a command when the full example was pasted.
+
 ## [0.6.8.8] - 2026-08-02
 
 ### Dependencies
