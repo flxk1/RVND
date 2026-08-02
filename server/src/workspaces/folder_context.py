@@ -146,9 +146,16 @@ def _enforce_allowlist(resolved: Path) -> Path:
     if os.environ.get(ALLOW_UNREGISTERED_ENV) == "1":
         return resolved
     try:
-        from .workspace_registry import list_known_workspaces
+        # Path containment must use the raw registry, not the principal-scoped
+        # listing.  The scoped listing proves membership by replaying this
+        # workspace's MutationLog, whose constructor resolves the folder and
+        # therefore returns here.  Calling it here would recurse forever for
+        # every authenticated request.  Authorization and response filtering
+        # remain in the serving/registry layer; this check only establishes
+        # that the path is inside a configured workspace boundary.
+        from .workspace_registry import load_registry
         roots: list[Path] = []
-        for w in list_known_workspaces():
+        for w in load_registry().get("workspaces", []):
             p = w.get("path")
             if not p:
                 continue
