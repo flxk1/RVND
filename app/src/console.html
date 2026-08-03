@@ -298,10 +298,31 @@
   var HTTP=window.__WORKSPACES_HTTP__, TOK=window.__WORKSPACES_TOKEN__;
   var showActivity=true;
   try{ showActivity=localStorage.getItem('rvnd.showActivity')!=='false'; }catch(_){}
+  // Stale-session recovery: after a server restart this page's token predates
+  // the new session, so /tool returns 403. A refetch resends the same dead
+  // token — only a reload gets a fresh one — so surface a Reconnect banner
+  // rather than silently returning null (which would read as an empty console).
+  function showReconnect(){
+    if(document.getElementById('reconnect-banner')) return;
+    var b=document.createElement('div');
+    b.id='reconnect-banner'; b.setAttribute('role','alert');
+    b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:50;background:#cf463c;color:#fff;'+
+      'font-size:12.5px;padding:8px 14px;display:flex;align-items:center;gap:12px;justify-content:center;'+
+      'box-shadow:0 2px 12px rgba(0,0,0,.4)';
+    b.innerHTML='<span>Session expired — the RVND server was restarted after this page loaded.</span>';
+    var r=document.createElement('button');
+    r.textContent='Reconnect'; r.type='button';
+    r.style.cssText='background:#fff;color:#cf463c;border:0;border-radius:6px;padding:4px 12px;font-weight:600;cursor:pointer';
+    r.addEventListener('click',function(){ location.reload(); });
+    b.appendChild(r); document.body.appendChild(b);
+  }
   function call(tool,args){
     if(!HTTP) return Promise.resolve(null);
     return fetch(HTTP,{method:'POST',headers:{'Content-Type':'application/json','X-Workspaces-Token':TOK||''},
-      body:JSON.stringify({tool:tool,args:args})}).then(function(r){return r.json();}).catch(function(){return null;});
+      body:JSON.stringify({tool:tool,args:args})}).then(function(r){
+        if(r.status===403){ showReconnect(); return null; }
+        return r.json();
+      }).catch(function(){return null;});
   }
   function esc(s){var d=document.createElement('div');d.textContent=String(s==null?'':s);return d.innerHTML;}
   function base(p){return String(p||'').split('/').pop()||p;}
@@ -337,7 +358,12 @@
     env.innerHTML='<b>'+out.count+'</b> workspace'+(out.count===1?'':'s')+
       (att?' · <span class="att">'+att+' need'+(att===1?'s':'')+' a person</span>':' · all clear')+
       (over?' (+'+over+')':'');
-    sel.innerHTML=out.buses.map(function(b){return '<option value="'+esc(b.path)+'">'+esc(base(b.name||b.path))+'</option>';}).join('')||'<option>—</option>';
+    // Hide workspaces whose folder is gone (deleted temp dirs, unmounted drives):
+    // the snapshot tags each bus with `exists`. Non-destructive — the registry is
+    // untouched, so a remounted drive reappears on the next snapshot. Only drop
+    // rows explicitly marked missing, so an older server (no flag) shows everything.
+    sel.innerHTML=out.buses.filter(function(b){return b.exists!==false;})
+      .map(function(b){return '<option value="'+esc(b.path)+'">'+esc(base(b.name||b.path))+'</option>';}).join('')||'<option>—</option>';
     if(state.activeWorkspace) sel.value=state.activeWorkspace;
   }
 
