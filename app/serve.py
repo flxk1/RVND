@@ -370,7 +370,16 @@ def make_server(host="127.0.0.1", port=8799):
                 " trust an unauthenticated proxy identity header")
         host = deployed
     token = _session_token()
-    srv = ThreadingHTTPServer((host, port), make_handler(token))
+    try:
+        srv = ThreadingHTTPServer((host, port), make_handler(token))
+    except OSError as e:
+        import errno
+        if e.errno == errno.EADDRINUSE:
+            raise SystemExit(
+                f"port {port} is already in use on {host} — RVND may already be"
+                f" running. Free it (macOS/Linux: lsof -ti tcp:{port} | xargs"
+                f" kill) or start on another port: python app/serve.py <PORT>")
+        raise
     srv.session_token = token
     return srv
 
