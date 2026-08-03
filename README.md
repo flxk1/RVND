@@ -213,6 +213,20 @@ startup) and opens your browser. Close the window it opens to stop Rvnd. The MCP
 server and the authenticated HTTP gateway are separate processes; their setup is
 documented under `docs/`.
 
+## Connect it to your AI agent
+
+To let an agent (Claude Code, Codex) drive RVND — registering the governance MCP
+server and installing the governance skills — run:
+
+```bash
+./scripts/connect-agent-hub.sh
+```
+
+It detects your hub, wires in the MCP server (via RVND's own `.venv`), installs
+the skills where scriptable, and prints the manual steps where a hub has no
+install CLI. It's safe to re-run (`--dry-run` previews; `--yes` skips the
+prompt). The plugin and its skills live under `plugin/rvnd-governance/`.
+
 ## Local models
 
 The Privacy Lock's semantic check can run a local model you supply — Rvnd bundles no
