@@ -79,7 +79,17 @@ async function main() {
   // no stale/fake verdict: the demo sample must not be presented as a real graph
   if (window.S.g && window.S.g._sample && window.S.path)
     fail("a failing read left the DEMO sample graph on screen for a real folder (stale/fake verdict)");
-  console.log("PASS: [" + MODE + "] failing bridge reads DEGRADED (“" + connText() + "”) — no calm-live, no silent green, no stale sample");
+  // Global stale-session recovery: a 403 (revoked token) — and only a 403 — must
+  // raise the reconnect banner (a reload pulls a fresh token). A down/hung server
+  // (error/hang) must NOT raise it, since reloading cannot fix it.
+  const banner = window.document.getElementById("reconnect-banner");
+  if (MODE === "revoked") {
+    if (!banner) fail("revoked (403) did not raise the global reconnect banner");
+    if (!/Reconnect/.test(banner.textContent)) fail("reconnect banner is missing its Reconnect action");
+  } else if (banner) {
+    fail(MODE + " (not a 403) wrongly raised the reconnect banner — a reload can't fix a down/hung server");
+  }
+  console.log("PASS: [" + MODE + "] failing bridge reads DEGRADED (“" + connText() + "”) — no calm-live, no silent green, no stale sample" + (MODE === "revoked" ? "; 403 raised the reconnect banner" : ""));
   process.exit(0);
 }
 main().catch((e) => fail(String((e && e.stack) || e)));
