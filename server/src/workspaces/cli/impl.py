@@ -3014,6 +3014,7 @@ def cmd_uninstall(args: argparse.Namespace) -> int:
 # an unplaced command falls through to "Other" (and the test flags it).
 _GUIDE_GROUPS: list[tuple[str, list[str]]] = [
     ("Setup & lifecycle",   ["init", "uninstall", "doctor", "status", "keys", "licence", "guide"]),
+    ("Backup & recovery",   ["backup", "restore"]),
     ("Workspaces & memory", ["workspace", "folders", "list", "show", "watch", "ingest"]),
     ("Policy & governance", ["policy", "oversight", "discipline", "matrix", "lens",
                              "grounding", "mute", "unmute", "ask", "cross-workspace",
@@ -3080,10 +3081,134 @@ def cmd_guide(args: argparse.Namespace) -> int:
     return 0
 
 
+# ---------------------------------------------------------------------------
+# backup / restore — capture and recover ~/.workspace (keys + audit chains +
+# registry). The one folder whose loss is unrecoverable. See ..backup.
+# ---------------------------------------------------------------------------
+
+def _prompt_new_passphrase(out: IO[str]) -> str:
+    """Ask for a passphrase twice (not echoed). Env wins for non-interactive use.
+    Returns "" if empty or mismatched."""
+    import getpass
+    env = os.environ.get("RVND_BACKUP_PASSPHRASE")
+    if env:
+        return env
+    p1 = getpass.getpass("Passphrase to encrypt the backup: ")
+    if not p1:
+        return ""
+    p2 = getpass.getpass("Confirm passphrase: ")
+    if p1 != p2:
+        _wsay(out, "  passphrases did not match.")
+        return ""
+    return p1
+
+
+def cmd_backup(args: argparse.Namespace) -> int:
+    from ..backup import create_backup, BackupError
+    out = sys.stdout
+    home = LOG_ROOT_DEFAULT.parent          # ~/.workspace
+    encrypt = getattr(args, "encrypt", False)
+
+    passphrase = None
+    if encrypt:
+        passphrase = _prompt_new_passphrase(out)
+        if not passphrase:
+            _wsay(out, "encryption requested but no passphrase given — aborting.")
+            return 1
+
+    if getattr(args, "out", None):
+        out_path = Path(args.out).expanduser()
+    else:
+        ts = datetime.now(tz=timezone.utc).strftime("%Y%m%d-%H%M%S")
+        ext = "rvndbackup" if encrypt else "tar.gz"
+        out_path = Path.home() / f"rvnd-backup-{ts}.{ext}"
+
+    try:
+        m = create_backup(home, out_path, passphrase=passphrase)
+    except BackupError as e:
+        _wsay(out, f"backup failed: {e}")
+        return 1
+
+    _wsay(out, "RVND backup")
+    _wsay(out, "=" * 52)
+    _wsay(out, f"  archive:  {m['archive']}")
+    _wsay(out, f"  contents: {m['file_count']} files ({m['total_bytes'] // 1024} KB) from {home}")
+    _wsay(out, f"  encrypted: {'yes (AES-256-GCM)' if m['encrypted'] else 'NO'}")
+    if not m["encrypted"]:
+        _wsay(out, "")
+        _wsay(out, "  ! This archive contains your PRIVATE SIGNING KEYS in the clear.")
+        _wsay(out, "    It is written owner-only (0600). For anything leaving this")
+        _wsay(out, "    machine, re-run with --encrypt.")
+    _wsay(out, "")
+    _wsay(out, "  Keep it somewhere safe and off this machine. To recover:")
+    _wsay(out, f"    workspaces restore {m['archive']}")
+    return 0
+
+
+def cmd_restore(args: argparse.Namespace) -> int:
+    from ..backup import restore_backup, read_manifest, is_encrypted_archive, BackupError
+    out = sys.stdout
+    home = LOG_ROOT_DEFAULT.parent
+    archive = Path(args.archive).expanduser()
+    dry = getattr(args, "dry_run", False)
+    force = getattr(args, "force", False)
+
+    if not archive.is_file():
+        _wsay(out, f"restore failed: no such archive: {archive}")
+        return 1
+
+    passphrase = None
+    try:
+        if is_encrypted_archive(archive):
+            import getpass
+            passphrase = os.environ.get("RVND_BACKUP_PASSPHRASE") or getpass.getpass(
+                "Backup passphrase: ")
+    except OSError as e:
+        _wsay(out, f"restore failed: cannot read {archive}: {e}")
+        return 1
+
+    _wsay(out, "RVND restore")
+    _wsay(out, "=" * 52)
+    try:
+        man = read_manifest(archive, passphrase=passphrase)
+        _wsay(out, f"  from:     {man.get('created_at', '?')}"
+                   f"  (rvnd {man.get('rvnd_version', '?')})")
+        if man.get("hostname") or man.get("host_id"):
+            _wsay(out, f"  host:     {man.get('hostname', '?')} ({man.get('host_id', '?')})")
+        _wsay(out, f"  contents: {man.get('file_count', '?')} files")
+    except BackupError as e:
+        _wsay(out, f"restore failed: {e}")
+        return 1
+
+    try:
+        res = restore_backup(archive, home, passphrase=passphrase, force=force, dry_run=dry)
+    except BackupError as e:
+        _wsay(out, f"restore failed: {e}")
+        return 1
+
+    _wsay(out, "-" * 52)
+    if dry:
+        _wsay(out, f"  [dry-run] would restore {res['members']} items into {home}")
+        if res["existing"]:
+            _wsay(out, "  [dry-run] the existing home would be moved aside (needs force).")
+        return 0
+    if res.get("moved_existing_to"):
+        _wsay(out, f"  ✓ existing home moved aside → {res['moved_existing_to']}")
+    _wsay(out, f"  ✓ restored {res['members']} items into {home}")
+    _wsay(out, "")
+    _wsay(out, "  Verify the chains:  workspaces doctor")
+    _wsay(out, "  Note: on a different machine RVND keeps this record's keys for")
+    _wsay(out, "  verification and mints a new host identity for future writes —")
+    _wsay(out, "  the host change is itself recorded in the audit trail.")
+    return 0
+
+
 _DISPATCH = {
     "init": cmd_init,
     "uninstall": cmd_uninstall,
     "guide": cmd_guide,
+    "backup": cmd_backup,
+    "restore": cmd_restore,
     "matrix": cmd_matrix,
     "lens": cmd_lens,
     "grounding": cmd_grounding,
