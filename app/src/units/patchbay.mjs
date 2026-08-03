@@ -10,7 +10,7 @@
 // still decides every verdict and every grade; this renders it, never
 // recomputes it.
 
-import { GHEX, VINFO, effVerdict, allowedFor, fetchGraph } from './verdict.mjs';
+import { GHEX, VINFO, effVerdict, allowedFor } from './verdict.mjs';
 
 const NW = 200, NH = 56, GAP_Y = 74;
 const COLX = { agent: 24, human: 24, use_case: 300, connector: 300, router: 300, master: 580 };
@@ -23,6 +23,8 @@ export function createPatchbay(store, call, doc) {
   let g = null;          // last fetched {nodes, edges}, or null
   let loading = false;
   let loadError = '';
+  let authStale = false; // true when /tool returned 403 — the page's session token
+                         // predates a server restart; only a reload recovers it
   let lanes = {};        // agent id (bare, no party: prefix) -> latest governance lane, or absent
   let sel = null;        // selected node id
   let addOpen = null;    // 'agent' | 'human' | 'use_case' | null — which add-form is open
@@ -36,12 +38,30 @@ export function createPatchbay(store, call, doc) {
     const fc = focus();
     loading = !!fc;
     loadError = '';
+    authStale = false;
     paint();
-    g = await fetchGraph(call, fc);
+    if (!fc) { g = null; loading = false; paint(); return; }
+    // Call governance_graph directly (not the swallow-to-null fetchGraph) so the
+    // real failure is visible: a 403 means this page's session token predates a
+    // server restart and only a reload recovers it — surface that, don't hide it
+    // behind a generic "connection" message with a Retry that resends the dead token.
+    try {
+      const r = await call('workspace_workflow', { op: 'governance_graph', params: { folder_context: fc } });
+      g = (r && Array.isArray(r.nodes)) ? r : null;
+      if (!g) loadError = 'This workspace returned no patch yet (empty or unreadable graph).';
+    } catch (e) {
+      g = null;
+      const msg = String((e && e.message) || e);
+      if (/\b403\b/.test(msg)) {
+        authStale = true;
+        loadError = 'Session expired — the RVND server was restarted after this page loaded. Reconnect to get a fresh session.';
+      } else {
+        loadError = 'The patch could not be loaded (' + msg + '). Is the RVND server still running?';
+      }
+    }
     loading = false;
-    if (fc && !g) loadError = 'The patch could not be loaded. Check the workspace connection and try again.';
     lanes = {};
-    if (fc) {
+    if (g) {
       const r = await call('workspace_workflow', { op: 'governance_lane_list', params: { folder_context: fc } }).catch(() => null);
       (r && Array.isArray(r.lanes) ? r.lanes : []).forEach((l) => { lanes[l.agent] = l; });
     }
@@ -83,10 +103,13 @@ export function createPatchbay(store, call, doc) {
     if (!focus()) { root.innerHTML = '<div class="pb-empty">open a workspace to see its patch</div>'; return; }
     if (loading) { root.innerHTML = '<div class="pb-empty">loading the patch…</div>'; return; }
     if (!g) {
+      const label = authStale ? 'Reconnect' : 'Retry';
       root.innerHTML = '<div class="pb-empty pb-error">' + esc(loadError || 'The patch is unavailable.')
-        + ' <button class="pb-retry">Retry</button></div>';
+        + ' <button class="pb-retry">' + label + '</button></div>';
       const retry = root.querySelector('.pb-retry');
-      if (retry) retry.addEventListener('click', load);
+      // On a stale session (403) a re-fetch resends the same dead token — only a
+      // page reload pulls a fresh token from the running server. Otherwise re-run.
+      if (retry) retry.addEventListener('click', authStale ? () => doc.defaultView.location.reload() : load);
       return;
     }
 
