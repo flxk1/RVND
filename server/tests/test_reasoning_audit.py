@@ -14,7 +14,6 @@ from __future__ import annotations
 import importlib
 from pathlib import Path
 
-import pytest
 from versum.store.graph import Claim, Concept, Edge, save_claims, save_concepts, save_edges
 
 from workspaces.mutation_log import MutationLog
@@ -67,10 +66,12 @@ def test_reason_dry_run_records_nothing(tmp_path, monkeypatch):
 
 
 def test_reason_requires_versum_index(tmp_path, monkeypatch):
-    """No Versum index -> fail closed ("index the folder"), never a silent
-    non-Versum fallback."""
+    """No Versum index -> fail closed with a clean error dict (versum required),
+    never a silent non-Versum fallback and never an uncaught raise."""
     folder = tmp_path / "wks"; folder.mkdir(); log_root = tmp_path / "log"
     srv = _fresh_mcp(monkeypatch, log_root)
 
-    with pytest.raises(FileNotFoundError, match="index the folder"):
-        srv.reason(folder_context=str(folder), record=False)
+    out = srv.reason(folder_context=str(folder), record=False)
+    assert out["knowledge_backend"] is None
+    assert "versum index" in out["error"].lower()
+    assert out["inferences"] == [] and out["recorded"] == 0

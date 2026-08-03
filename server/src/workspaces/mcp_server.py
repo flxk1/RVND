@@ -597,7 +597,14 @@ def reason(
     # folder first"), never served from a non-Versum overlay. The legacy pair
     # overlay was retired so nothing reasons off a source other than Versum.
     knowledge = VersumKnowledgeStore(folder_context)
-    knowledge.require()
+    if not knowledge.available:
+        return {
+            "folder_context": str(Path(folder_context).expanduser().resolve()),
+            "knowledge_backend": None,
+            "error": "versum index required — index the folder with "
+                     "loomground-versum before reasoning",
+            "count": 0, "recorded": 0, "recorded_ids": [], "inferences": [],
+        }
     knowledge_backend = "loomground-versum"
     inferences = VersumSolverSource(knowledge).paths(
         start=(start or None),

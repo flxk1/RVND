@@ -14,7 +14,6 @@ from __future__ import annotations
 import importlib
 from pathlib import Path
 
-import pytest
 
 from workspaces.memory import WorkspaceMemory
 from workspaces.mutation_log import MutationLog
@@ -68,11 +67,14 @@ def test_remember_rejects_incomplete_triple(tmp_path, monkeypatch):
 
 
 def test_query_requires_versum_index(tmp_path, monkeypatch):
-    """workspace_query reads Versum only; an unindexed folder fails closed
-    ("index the folder"), never a non-Versum overlay."""
+    """workspace_query reads Versum only; an unindexed folder fails closed with a
+    clean error dict (versum required), never a non-Versum overlay. A remembered
+    triple is therefore NOT visible to query — only to pairs_search."""
     folder = tmp_path / "wks"; folder.mkdir(); log_root = tmp_path / "log"
     srv = _fresh_mcp(monkeypatch, log_root)
     srv.workspace_remember(folder_context=str(folder), subject="A", predicate="causes", object="B")
 
-    with pytest.raises(FileNotFoundError, match="index the folder"):
-        srv.workspace_query(folder_context=str(folder), subject="A")
+    out = srv.workspace_query(folder_context=str(folder), subject="A")
+    assert out["knowledge_backend"] is None
+    assert "versum index" in out["error"].lower()
+    assert out["triples"] == []

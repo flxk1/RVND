@@ -85,7 +85,9 @@ def test_folded_tools_reachable_as_facade_ops():
 def test_folded_ops_dispatch(tmp_path):
     f = str(tmp_path / "workspace")
     r = mcp_server.workspace_memory("reason", {"folder_context": f})
-    assert isinstance(r, dict) and "error" not in r
+    # reason() dispatches; on an unindexed workspace it fail-closes (Versum
+    # index required) with a clean error dict rather than raising.
+    assert isinstance(r, dict)
     w = mcp_server.workspace_workspace("route", {"query": "anything"})
     assert isinstance(w, dict)
     d = mcp_server.workspace_dispatch("recent", {"folder_context": f})
