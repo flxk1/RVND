@@ -77,6 +77,9 @@ cat <<'DONE'
                                       python server/examples/oversight_demo.py
                                       python app/serve.py     # → http://127.0.0.1:8799
 
+  To drive RVND from an AI agent
+  (Claude Code / Codex):              ./scripts/connect-agent-hub.sh
+
   The virtual environment keeps Workspace's dependencies isolated from the rest of
   your system. Re-run ./server/install.sh any time to update.
 DONE
