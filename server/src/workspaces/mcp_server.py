@@ -865,7 +865,13 @@ def list_known_workspaces() -> dict[str, Any]:
     """Return the persisted list of known workspaces.
 
     Source of truth for the dashboard's workspace list (replaces localStorage).
-    Returns ``{ok, default, workspaces: [{path, label, added_at}, ...]}``.
+    Returns ``{ok, default, workspaces: [{path, label, added_at, exists}, ...]}``.
+
+    Each row carries ``exists`` — whether its folder is present right now — so
+    the console can hide workspaces whose folder is gone (deleted temp dirs,
+    unmounted drives) without deleting anything from the registry. It is a
+    live, non-destructive signal: an unmounted drive's workspace reappears the
+    next time it is mounted. The registry itself is never mutated here.
 
     The registry list is principal-scoped (see
     ``workspace_registry.list_known_workspaces``); the ``default`` pointer
@@ -876,6 +882,11 @@ def list_known_workspaces() -> dict[str, Any]:
         from .workspace_registry import load_registry, list_known_workspaces as _list
         data = load_registry(log_root=_log_root())
         rows = _list(log_root=_log_root())
+        for w in rows:
+            try:
+                w["exists"] = bool(w.get("path")) and Path(w["path"]).is_dir()
+            except Exception:  # noqa: BLE001 — a bad path is simply "not present"
+                w["exists"] = False
         default = data.get("default", "")
         if (get_request_principal() is not None
                 and default not in {w.get("path") for w in rows}):
