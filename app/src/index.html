@@ -428,7 +428,36 @@ const BRIDGE=COWORK?COWORK:HTTP;
 const BARE=!!HTTP;
 let LIVE=!!BRIDGE;
 const PREFIX=['mcp__workspaces__','mcp__workspace__','mcp__circle__'];
-async function tool(short,args){ if(!BRIDGE) throw new Error('no-bridge'); if(BARE) return await BRIDGE(short,args); let e; for(const p of PREFIX){try{return await BRIDGE(p+short,args);}catch(x){e=x;}} throw e; }
+async function tool(short,args){ if(!BRIDGE) throw new Error('no-bridge');
+  try{
+    if(BARE) return await BRIDGE(short,args);
+    let e; for(const p of PREFIX){try{return await BRIDGE(p+short,args);}catch(x){e=x;}} throw e;
+  }catch(err){
+    // Global recovery: a 403 means this page's session token predates a server
+    // restart. Every /tool call routes through here, so one place surfaces the
+    // stale-session banner for the whole console (not just the patch). Still throw.
+    if(/\b403\b/.test(String((err&&err.message)||err))) showReconnectBanner();
+    throw err;
+  }
+}
+/* Persistent, one-click recovery for a stale session (server restarted since the
+   page loaded → 403 on every /tool call). Only a reload pulls a fresh token, so
+   the button reloads; a plain retry would resend the dead token. Idempotent. */
+function showReconnectBanner(){
+  S.authStale=true;
+  if(document.getElementById('reconnect-banner')) return;
+  const b=document.createElement('div');
+  b.id='reconnect-banner'; b.setAttribute('role','alert');
+  b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9999;background:#cf463c;color:#fff;padding:9px 14px;font:13px/1.4 inherit;display:flex;align-items:center;gap:12px;box-shadow:0 2px 10px rgba(0,0,0,.35)';
+  const msg=document.createElement('span'); msg.style.flex='1';
+  msg.textContent='Session expired — the RVND server was restarted since this page loaded, so it can no longer verify your actions.';
+  const btn=document.createElement('button'); btn.textContent='Reconnect';
+  btn.style.cssText='background:#fff;color:#cf463c;border:0;border-radius:6px;padding:5px 13px;font-weight:600;cursor:pointer';
+  btn.addEventListener('click',()=>{ (document.defaultView||window).location.reload(); });
+  b.appendChild(msg); b.appendChild(btn);
+  (document.body||document.documentElement).appendChild(b);
+}
+window.showReconnectBanner=showReconnectBanner;
 
 /* ---- autonomy ramp + verdict colors ---- */
 const G=['var(--g0)','var(--g1)','var(--g2)','var(--g3)','var(--g4)'];
