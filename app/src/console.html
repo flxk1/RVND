@@ -470,20 +470,10 @@
       try{ if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(ok,fb); return; } }catch(_){}
       fb();
     }
-    var SETTINGS_CMDS=[
-      ['Set up',[
-        ['Open the console','python app/serve.py'],
-        ['Guided setup','workspaces init'],
-        ['Connect your AI agent','./scripts/connect-agent-hub.sh']]],
-      ['Maintain',[
-        ['Health check','workspaces doctor'],
-        ['Back up (encrypted)','workspaces backup --encrypt'],
-        ['Safe upgrade','workspaces upgrade'],
-        ['All commands','workspaces guide']]],
-      ['Recover / remove',[
-        ['Restore from a backup','workspaces restore <archive>'],
-        ['Uninstall','workspaces uninstall']]],
-    ];
+    // The command list is product-specific — the consumer supplies it as
+    // window.SETTINGS_CMDS = [[group, [[label, cmd], ...]], ...] (e.g. via the
+    // server's head-inject). With none set, the Settings dialog is empty.
+    var SETTINGS_CMDS = Array.isArray(window.SETTINGS_CMDS) ? window.SETTINGS_CMDS : [];
     (function buildSettings(){
       var host=document.getElementById('settings-cmds'); if(!host) return;
       SETTINGS_CMDS.forEach(function(g){
