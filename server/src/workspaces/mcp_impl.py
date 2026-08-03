@@ -792,7 +792,14 @@ def workspace_query(
     # Versum is the ONLY knowledge plane; fail-closed on an unindexed workspace
     # ("index the folder first") rather than serving a non-Versum overlay.
     knowledge = VersumKnowledgeStore(folder_context)
-    knowledge.require()
+    if not knowledge.available:
+        return {
+            "folder_context": str(Path(folder_context).expanduser().resolve()),
+            "knowledge_backend": None,
+            "error": "versum index required — index the folder with "
+                     "loomground-versum before querying",
+            "count": 0, "triples": [],
+        }
     backend = "loomground-versum"
     edges = VersumSolverSource(knowledge).edges()
     out = []
