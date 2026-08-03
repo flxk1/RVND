@@ -2684,7 +2684,149 @@ def cmd_matrix(args: argparse.Namespace) -> int:
     return h(args)
 
 
+# ---------------------------------------------------------------------------
+# init — first-run setup wizard. Sectioned, interactive (Enter = default),
+# with --yes (accept defaults) and --dry-run (write nothing); idempotent.
+# Writes only real config surfaces (the ~/.workspace home, the default
+# workspaces folder via the registry, an init marker) and *explains* the
+# per-workspace / model-dependent choices (oversight ladder, Lock tiers)
+# rather than inventing global config RVND does not keep.
+# ---------------------------------------------------------------------------
+
+_OVERSIGHT_LADDER = [
+    ("autonomous", "acts silently; never asks"),
+    ("notify",     "acts, then tells you afterwards"),
+    ("review",     "acts, holds the result until you look"),
+    ("approve",    "shows the plan; stops before any side-effect"),
+    ("supervised", "prompts at every step"),
+    ("manual",     "suggests a plan; you run it yourself"),
+]
+
+_LOCAL_FIRST_PROMISE = (
+    "RVND is local-first. The server binds to 127.0.0.1 only; your data,\n"
+    "policies and models stay on this machine. An AI agent you connect sees\n"
+    "the governed tool surface and the verdicts the server returns — not the\n"
+    "raw bytes of your files, your signing keys, or sealed content. Every\n"
+    "grant, run and refusal is signed into a per-folder tamper-evident record.\n"
+    "A folder can be marked local-only and kept from any cloud model."
+)
+
+
+def _wsay(w: IO[str], m: str = "") -> None:
+    w.write(m + "\n"); w.flush()
+
+
+def _wask(inp: IO[str], w: IO[str], prompt: str, default: str) -> str:
+    w.write(f"{prompt} [{default}]: "); w.flush()
+    raw = inp.readline().strip()
+    return raw or default
+
+
+def _wask_yn(inp: IO[str], w: IO[str], prompt: str, default: bool = True) -> bool:
+    w.write(f"{prompt} [{'Y/n' if default else 'y/N'}]: "); w.flush()
+    raw = inp.readline().strip().lower()
+    return default if not raw else raw in ("y", "yes")
+
+
+def cmd_init(args: argparse.Namespace) -> int:
+    yes = getattr(args, "yes", False)
+    dry = getattr(args, "dry_run", False)
+    out, inp = sys.stdout, sys.stdin
+    home = LOG_ROOT_DEFAULT.parent          # ~/.workspace
+    marker = home / "init.json"
+
+    _wsay(out, "RVND init")
+    _wsay(out, "=" * 52)
+    if dry:
+        _wsay(out, "(dry-run: nothing will be written)")
+    if yes:
+        _wsay(out, "(non-interactive: accepting recommended defaults)")
+    if marker.exists() and not dry:
+        _wsay(out, f"(already initialized — {marker}; re-running updates it)")
+
+    # §1 Foundations
+    _wsay(out, "\n§1  Foundations")
+    _wsay(out, "-" * 52)
+    _wsay(out, "RVND keeps its signing keys and signed logs under your home:")
+    if not dry:
+        (home / "keys").mkdir(parents=True, exist_ok=True)
+        (home / "log").mkdir(parents=True, exist_ok=True)
+    _wsay(out, f"  home:  {home}")
+    _wsay(out, f"  keys:  {home / 'keys'}")
+    _wsay(out, f"  logs:  {home / 'log'}   (per-folder Ed25519 audit chains)")
+
+    # §2 Local-first promise (gate — declined = stop)
+    _wsay(out, "\n§2  Local-first promise")
+    _wsay(out, "-" * 52)
+    for line in _LOCAL_FIRST_PROMISE.splitlines():
+        _wsay(out, "  " + line)
+    accepted = True if yes else _wask_yn(inp, out, "\n  I've read this and want to continue", True)
+    if not accepted:
+        _wsay(out, "\n  Not accepted — stopping. Nothing further was configured.")
+        return 1
+    ts = datetime.now(tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    # §3 Where workspaces live
+    default_ws = str(Path.home() / "Documents" / "Workspaces")
+    _wsay(out, "\n§3  Where your workspaces live")
+    _wsay(out, "-" * 52)
+    _wsay(out, "A workspace is a folder RVND governs. New ones default here (any")
+    _wsay(out, "folder anywhere can still be a workspace).")
+    ws_home = default_ws if yes else _wask(inp, out, "Default workspaces folder", default_ws)
+    if dry:
+        _wsay(out, f"  [dry-run] would set default: {ws_home}")
+    else:
+        try:
+            from ..workspace_registry import bootstrap_default_workspace
+            bootstrap_default_workspace(target=ws_home)
+            _wsay(out, f"  ✓ default workspaces folder: {ws_home}")
+        except Exception as e:  # noqa: BLE001 — report, don't abort the whole wizard
+            _wsay(out, f"  (could not set the default: {e})")
+
+    # §4 Privacy Lock (explain; the pattern pass is on by default)
+    _wsay(out, "\n§4  Privacy Lock")
+    _wsay(out, "-" * 52)
+    _wsay(out, "The Lock inspects text leaving the local boundary for secrets and")
+    _wsay(out, "personal data. The deterministic pattern pass is ON by default and")
+    _wsay(out, "needs nothing; a semantic pass is optional and needs a local model")
+    _wsay(out, "(add one later — docs/concepts/local-models.md).")
+    try:
+        from ..mcp_impl import lock_setup_status
+        st = lock_setup_status()
+        _wsay(out, f"  current: backend={st.get('backend_spec', '?')} mode={st.get('default_mode', '?')}")
+    except Exception:  # noqa: BLE001 — status is informational only
+        pass
+
+    # §5 Human oversight (per-workspace; explain the ladder)
+    _wsay(out, "\n§5  Human oversight")
+    _wsay(out, "-" * 52)
+    _wsay(out, "How much a person is in the loop, per workspace (loosest → strictest):")
+    for i, (label, desc) in enumerate(_OVERSIGHT_LADDER):
+        _wsay(out, f"  {i}  {label:11s} {desc}")
+    _wsay(out, "You set this per workspace; the console's first-run wizard picks it")
+    _wsay(out, "when you create your first one (start at 'approve' if unsure).")
+
+    # §6 Connect to an agent hub
+    _wsay(out, "\n§6  Connect to your AI agent")
+    _wsay(out, "-" * 52)
+    _wsay(out, "To let Claude Code / Codex drive RVND, run:")
+    _wsay(out, "  ./scripts/connect-agent-hub.sh")
+
+    if not dry:
+        marker.write_text(
+            json.dumps({"initialized_at": ts, "workspaces_home": ws_home,
+                        "promise_accepted": True}, indent=2) + "\n",
+            encoding="utf-8")
+
+    _wsay(out, "\nSetup complete.")
+    _wsay(out, "Next — start the console:")
+    _wsay(out, "  python app/serve.py       (or double-click 'app/Open Rvnd.command')")
+    _wsay(out, "  → http://127.0.0.1:8799   (the first-run wizard walks your first workspace)")
+    return 0
+
+
 _DISPATCH = {
+    "init": cmd_init,
     "matrix": cmd_matrix,
     "lens": cmd_lens,
     "grounding": cmd_grounding,

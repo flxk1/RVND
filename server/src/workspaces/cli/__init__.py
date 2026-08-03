@@ -182,6 +182,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
+    # init — first-run setup wizard
+    p_init = sub.add_parser("init", help="First-run setup wizard (foundations, "
+                                         "workspaces folder, Lock/oversight, agent hub).")
+    p_init.add_argument("--yes", "-y", action="store_true",
+                        help="non-interactive — accept all recommended defaults")
+    p_init.add_argument("--dry-run", action="store_true",
+                        help="print the plan but write nothing")
+
     # list
     p_list = sub.add_parser("list", help="List live pairs in scope.")
     _add_folder_arg(p_list)
