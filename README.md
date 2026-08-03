@@ -183,12 +183,32 @@ inspection.
 
 ## Quick start
 
-The following commands clone Rvnd, create an isolated virtual environment,
-install it and start the local Patchbay web application on macOS or Linux.
-Run them from the directory where you want the `RVND` folder to be created.
-They need Python 3.10 or newer and `git` available on the PATH: five of Rvnd's
-runtime dependencies — the Loomground packages — are fetched directly from Git
-rather than from PyPI, so the install step clones them.
+**One line, from a bare machine** (macOS or Linux) — checks prerequisites,
+clones into `~/rvnd`, and installs:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/flxk1/RVND/main/bootstrap.sh | sh
+```
+
+Prefer to read before running anything piped into a shell (a good habit):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/flxk1/RVND/main/bootstrap.sh -o bootstrap.sh
+less bootstrap.sh && sh bootstrap.sh
+```
+
+Set a different location with `RVND_DIR=/path sh bootstrap.sh` (or pass it as an
+argument). The bootstrap is non-interactive and idempotent — re-running updates
+in place — and it refuses to touch a non-empty directory that isn't already an
+RVND clone. When it finishes, run `workspaces init` for the guided setup.
+
+**Or step by step.** The following commands clone Rvnd, create an isolated
+virtual environment, install it and start the local Patchbay web application on
+macOS or Linux. Run them from the directory where you want the `RVND` folder to
+be created. They need Python 3.10 or newer and `git` available on the PATH: five
+of Rvnd's runtime dependencies — the Loomground packages — are fetched directly
+from Git rather than from PyPI, so the install step clones them. To check your
+machine has everything first, run `sh scripts/preflight.sh` after cloning.
 
 ```bash
 git clone https://github.com/flxk1/RVND.git
