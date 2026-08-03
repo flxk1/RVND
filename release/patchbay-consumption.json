@@ -1,10 +1,10 @@
 {
   "schema": "loomground.patchbay-consumption/v1",
   "upstream": "https://github.com/flxk1/loomground-patchbay",
-  "commit": "36e70ada8d51583b7071a51edf12e6d65b1a0cc5",
-  "tag": "v0.1.0",
+  "commit": "cff39b735876ab8bd7b8fe4cf95cbc1a82581f05",
+  "tag": "v0.2.1",
   "license": "AGPL-3.0-only",
-  "aggregate_sha256": "5f36c426da26c29ca29f9382aa5fa3b58a1810f3ea3396ae174f3c9d1020e072",
+  "aggregate_sha256": "33a9f1a0639e4d0e1fd47654b2460c194a5b1adcdf4b99a26bfb9d6f9eef19d7",
   "files": [
     "app/harness/console_ingest.mjs",
     "app/harness/console_sync.mjs",
@@ -29,6 +29,7 @@
     "app/shell/wizard_render.mjs",
     "app/shell/workspace_render.mjs",
     "app/shell/wsrail_render.mjs",
+    "app/src/console.html",
     "app/src/fonts/ibm-plex-mono-400-latin.woff2",
     "app/src/fonts/ibm-plex-mono-500-latin.woff2",
     "app/src/fonts/ibm-plex-mono-600-latin.woff2",
@@ -53,6 +54,11 @@
     "app/src/shell/wizard.js",
     "app/src/shell/workspace.js",
     "app/src/shell/wsrail.js",
-    "app/src/units/state.mjs"
+    "app/src/units/matrix.mjs",
+    "app/src/units/patchbay.mjs",
+    "app/src/units/run.mjs",
+    "app/src/units/say.mjs",
+    "app/src/units/state.mjs",
+    "app/src/units/verdict.mjs"
   ]
 }
