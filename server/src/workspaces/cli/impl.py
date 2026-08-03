@@ -3013,7 +3013,7 @@ def cmd_uninstall(args: argparse.Namespace) -> int:
 # is the order sections print in. Keep this in sync when adding a command —
 # an unplaced command falls through to "Other" (and the test flags it).
 _GUIDE_GROUPS: list[tuple[str, list[str]]] = [
-    ("Setup & lifecycle",   ["init", "uninstall", "doctor", "status", "keys", "licence", "guide"]),
+    ("Setup & lifecycle",   ["init", "upgrade", "uninstall", "doctor", "status", "keys", "licence", "guide"]),
     ("Backup & recovery",   ["backup", "restore"]),
     ("Workspaces & memory", ["workspace", "folders", "list", "show", "watch", "ingest"]),
     ("Policy & governance", ["policy", "oversight", "discipline", "matrix", "lens",
@@ -3203,12 +3203,151 @@ def cmd_restore(args: argparse.Namespace) -> int:
     return 0
 
 
+# ---------------------------------------------------------------------------
+# upgrade — a version/schema-aware safe upgrade. RVND applies its migrations
+# lazily and idempotently, so the real safety a user needs when moving to a new
+# release is: (1) a backup taken first, (2) the audit chains verified intact
+# BEFORE and AFTER, so a migration can never silently invalidate the signed
+# record, and (3) a version stamp so a future release can detect the jump.
+# ---------------------------------------------------------------------------
+
+def _read_version_stamp(home: Path) -> "dict | None":
+    f = home / "version.json"
+    if not f.exists():
+        return None
+    try:
+        return json.loads(f.read_text(encoding="utf-8"))
+    except Exception:  # noqa: BLE001
+        return None  # a corrupt stamp reads as "unknown" — the upgrade re-stamps it
+
+
+def _write_version_stamp(home: Path, version: str) -> None:
+    home.mkdir(parents=True, exist_ok=True)
+    ts = datetime.now(tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    (home / "version.json").write_text(
+        json.dumps({"rvnd_version": version, "stamped_at": ts}, indent=2) + "\n",
+        encoding="utf-8")
+
+
+def _verify_all_chains(log_root: Path) -> dict[str, Any]:
+    """Verify every per-folder audit chain. Returns {total, ok, broken:[paths]}."""
+    from ..mutation_log import MutationLog
+    folders = discover_folders(log_root)
+    total = ok = 0
+    broken: list[str] = []
+    for path in folders:
+        total += 1
+        try:
+            if MutationLog(path, log_root=log_root).verify_chain().ok:
+                ok += 1
+            else:
+                broken.append(path)
+        except Exception:  # noqa: BLE001 — an unreadable chain counts as broken
+            broken.append(path)
+    return {"total": total, "ok": ok, "broken": broken}
+
+
+def _apply_migrations(out: IO[str]) -> list[str]:
+    """Run the idempotent migrations explicitly. Each is a no-op if already done."""
+    done: list[str] = []
+    try:
+        from .. import signing
+        msg = signing.migrate_legacy_keypair_to_host_subdir()
+        done.append(f"key layout: {msg}")
+    except Exception as e:  # noqa: BLE001 — a migration that can't run is reported, not fatal
+        done.append(f"key layout: skipped ({e})")
+    for d in done:
+        _wsay(out, f"    - {d}")
+    return done
+
+
+def cmd_upgrade(args: argparse.Namespace) -> int:
+    from .._version import __version__ as code_ver
+    out = sys.stdout
+    home = LOG_ROOT_DEFAULT.parent
+    log_root = LOG_ROOT_DEFAULT
+    check = getattr(args, "check", False)
+    skip_backup = getattr(args, "skip_backup", False)
+
+    stamp = _read_version_stamp(home)
+    prev = stamp.get("rvnd_version") if stamp else None
+
+    _wsay(out, "RVND upgrade")
+    _wsay(out, "=" * 52)
+    _wsay(out, f"  installed version:  {code_ver}")
+    _wsay(out, f"  data last stamped:  {prev or '(never — first upgrade run)'}")
+
+    # 1. Verify BEFORE — establishes the baseline; pre-existing damage is not
+    #    the upgrade's fault, but it must be surfaced.
+    _wsay(out, "\n  verifying audit chains…")
+    before = _verify_all_chains(log_root)
+    line = f"  chains: {before['ok']}/{before['total']} intact"
+    if before["broken"]:
+        line += f"  ({len(before['broken'])} already broken before this run)"
+    _wsay(out, line)
+
+    up_needed = prev != code_ver
+
+    if check:
+        _wsay(out, "-" * 52)
+        if not up_needed:
+            _wsay(out, "  Up to date — your data matches the installed version.")
+        else:
+            _wsay(out, f"  An upgrade pass is advised: {prev or 'unstamped'} → {code_ver}.")
+            _wsay(out, "  Run `workspaces upgrade` — it backs up and verifies first.")
+        return 0
+
+    if not up_needed and not before["broken"]:
+        _wsay(out, "\n  Already current — nothing to migrate.")
+        return 0
+
+    # 2. Backup — the safety net. Refuse to migrate without one unless forced.
+    if not skip_backup:
+        from ..backup import create_backup, BackupError
+        ts = datetime.now(tz=timezone.utc).strftime("%Y%m%d-%H%M%S")
+        bpath = Path.home() / f"rvnd-backup-preupgrade-{ts}.tar.gz"
+        try:
+            m = create_backup(home, bpath, passphrase=None)
+            _wsay(out, f"\n  ✓ safety backup: {m['archive']}  ({m['file_count']} files)")
+        except BackupError as e:
+            _wsay(out, f"\n  backup failed: {e}")
+            _wsay(out, "  Aborting — refusing to upgrade without a backup "
+                       "(override with --skip-backup).")
+            return 1
+    else:
+        _wsay(out, "\n  ! --skip-backup: proceeding WITHOUT a safety backup.")
+
+    # 3. Apply the idempotent migrations.
+    _wsay(out, "\n  applying migrations…")
+    _apply_migrations(out)
+
+    # 4. Verify AFTER — a chain intact before that is broken now means the
+    #    upgrade damaged the record. Fail loudly; the backup is the way back.
+    after = _verify_all_chains(log_root)
+    newly_broken = sorted(set(after["broken"]) - set(before["broken"]))
+    if newly_broken:
+        _wsay(out, f"\n  ✗ FAILED — {len(newly_broken)} chain(s) intact before are now broken:")
+        for p in newly_broken[:10]:
+            _wsay(out, f"      {p}")
+        _wsay(out, "  Your record is safe in the backup above — restore it with "
+                   "`workspaces restore`. The version stamp was NOT advanced.")
+        return 1
+    _wsay(out, f"  chains after: {after['ok']}/{after['total']} intact — no new breakage.")
+
+    # 5. Stamp — only after a clean, verified pass.
+    _write_version_stamp(home, code_ver)
+    _wsay(out, "-" * 52)
+    _wsay(out, f"  ✓ upgraded to {code_ver} and stamped.")
+    return 0
+
+
 _DISPATCH = {
     "init": cmd_init,
     "uninstall": cmd_uninstall,
     "guide": cmd_guide,
     "backup": cmd_backup,
     "restore": cmd_restore,
+    "upgrade": cmd_upgrade,
     "matrix": cmd_matrix,
     "lens": cmd_lens,
     "grounding": cmd_grounding,
