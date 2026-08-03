@@ -557,6 +557,12 @@ async function boot(){
   // folder list
   S.bridgeFault=null;   // re-evaluate the bridge each boot
   if(LIVE){ try{ const r=await tool('workspace_workspace',{op:'list'}); if(r&&(r.error||r.ok===false)){ workspaces=[]; S.bridgeFault=r.error||'refused'; } else { workspaces=(r&&r.workspaces)||[]; } }catch(e){ workspaces=[]; S.bridgeFault=(e&&e.message)||'bridge unreachable'; } }
+  // Hide workspaces whose folder is gone (deleted temp dirs, unmounted drives):
+  // the server tags each row with `exists`. Non-destructive — the registry is
+  // untouched, so a remounted drive's workspace reappears on the next list. Only
+  // drop rows the server EXPLICITLY marks missing, so an older server (no flag)
+  // still shows everything.
+  workspaces=workspaces.filter(w=>w&&w.exists!==false);
   const fi=window._fi||0;
   const opts=workspaces.length?workspaces.map((c,i)=>'<option'+(i===fi?' selected':'')+'>'+esc(bn(c.path||''))+'</option>').join(''):'<option disabled selected>— no workspace —</option>';
   const _fsel=document.getElementById('folder'); if(_fsel) _fsel.innerHTML=opts;
