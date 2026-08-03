@@ -51,6 +51,17 @@ const OP_TOOLS = [
 // the human alone may complete — it renders no execute control.
 const RESERVED = new Set(["reserved", "reserved_by_law"]);
 
+// Standalone (non-op) tools have no help/ops entry, so the op registry can't
+// reach them. Surface them as explicit command verbs, each scoped to the
+// focused workspace, so the command bar reaches the whole tool surface — not
+// just the op-based facades. (server_info is a read-only shell affordance, not
+// a query, so it stays out of the command grammar.)
+const STANDALONE_CMDS = [
+  { verb: "ask",         tool: "workspace_ask",         mk: (q, fc) => ({ folder_context: fc, query: q }) },
+  { verb: "orchestrate", tool: "workspace_orchestrate", mk: (q, fc) => ({ folder_context: fc, query: q }) },
+  { verb: "cross-read",  tool: "cross_workspace_read",  mk: (q, fc) => ({ folder_context: fc, sources: [q] }) },
+];
+
 // Words too common to match a graph node on their own (kept short and
 // unglamorous — this is deliberately not a stemmer or a stopword corpus).
 const STOPWORDS = new Set([
@@ -563,8 +574,13 @@ export function createSay(store, call, doc) {
       return '<tr><td>' + esc(n) + '</td><td>' + esc(base(e.tool).replace("workspace_", "")) + "</td><td>"
         + (e.entry.mutates ? "writes" : "reads") + "</td></tr>";
     }).join("");
-    show('<div class="say-card"><div class="say-h">ops (' + names.length + ") — type an op name to run it</div>"
-      + '<div class="say-scroll"><table class="say-tbl"><tr><th>op</th><th>tool</th><th></th></tr>' + rows + "</table></div></div>");
+    // the standalone query verbs are not in the op registry — list them first so
+    // they are as discoverable as any op.
+    const sc = STANDALONE_CMDS.filter((c) => !filter || c.verb.indexOf(filter) >= 0);
+    const scRows = sc.map((c) =>
+      '<tr><td>' + esc(c.verb) + " …</td><td>" + esc(c.tool.replace("workspace_", "").replace("cross_workspace_read", "cross")) + "</td><td>query</td></tr>").join("");
+    show('<div class="say-card"><div class="say-h">ops (' + (names.length + sc.length) + ") — type an op name to run it</div>"
+      + '<div class="say-scroll"><table class="say-tbl"><tr><th>op</th><th>tool</th><th></th></tr>' + scRows + rows + "</table></div></div>");
   }
 
   // --- the one entry point ---------------------------------------------------
@@ -580,6 +596,18 @@ export function createSay(store, call, doc) {
     // explicit ingest command forces the grower's policy intent
     const ing = /^ingest\s+([\s\S]+)/i.exec(text);
     if (ing) { await grow(ing[1].trim(), "policy"); return; }
+
+    // standalone (non-op) query verbs — run against the focused workspace and
+    // render the governed result like any read.
+    const sv = /^([a-z-]+)\s+([\s\S]+)$/.exec(text);
+    const scmd = sv && STANDALONE_CMDS.find((c) => c.verb === sv[1]);
+    if (scmd) {
+      if (!focus()) { show('<div class="say-err">Select a workspace first.</div>'); return; }
+      show('<div class="say-card"><div class="say-h">' + esc(scmd.verb) + " · running…</div></div>");
+      const r = await call(scmd.tool, scmd.mk(sv[2].trim(), focus())).catch((e) => ({ error: String(e && e.message || e) }));
+      show(renderResult(scmd.verb, r));
+      return;
+    }
 
     // command grammar: `tool op …` or a bare op resolved through the registry
     const tokens = text.split(/\s+/);
