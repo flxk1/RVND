@@ -202,6 +202,13 @@ def build_parser() -> argparse.ArgumentParser:
     p_guide.add_argument("--json", action="store_true",
                          help="machine-readable grouped output")
 
+    p_upgrade = sub.add_parser("upgrade", help="Safe upgrade: back up, verify audit "
+                                              "chains before + after, then stamp the version.")
+    p_upgrade.add_argument("--check", action="store_true",
+                           help="Report version + chain integrity only; change nothing.")
+    p_upgrade.add_argument("--skip-backup", action="store_true",
+                           help="Proceed without taking a safety backup first (not recommended).")
+
     p_backup = sub.add_parser("backup", help="Archive ~/.workspace (keys + audit "
                                              "chains + registry) — the irreplaceable record.")
     p_backup.add_argument("--out", default=None,
