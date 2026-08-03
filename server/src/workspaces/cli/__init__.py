@@ -190,6 +190,13 @@ def build_parser() -> argparse.ArgumentParser:
     p_init.add_argument("--dry-run", action="store_true",
                         help="print the plan but write nothing")
 
+    p_uninstall = sub.add_parser("uninstall", help="Guided removal (mirror of init). "
+                                                   "Keeps your data unless you explicitly delete it.")
+    p_uninstall.add_argument("--yes", "-y", action="store_true",
+                             help="non-interactive — accept SAFE defaults (your data is kept)")
+    p_uninstall.add_argument("--dry-run", action="store_true",
+                             help="print what would happen but remove nothing")
+
     # list
     p_list = sub.add_parser("list", help="List live pairs in scope.")
     _add_folder_arg(p_list)
