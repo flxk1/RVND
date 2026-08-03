@@ -202,6 +202,7 @@ def make_handler(session_token: str):
             on POST /tool."""
             return ("<script>window.__WORKSPACES_HTTP__='/tool';"
                     f"window.__WORKSPACES_TOKEN__={json.dumps(session_token)};"
+                    f"window.SETTINGS_CMDS={json.dumps(_SETTINGS_CMDS)};"
                     "</script>")
 
         def do_GET(self):
@@ -351,6 +352,19 @@ def _session_token() -> str:
     RVND_BRIDGE_TOKEN so both ends know it (test harnesses, a supervising
     parent); otherwise it is freshly generated per server."""
     return (_os.environ.get("RVND_BRIDGE_TOKEN") or "").strip() or secrets.token_urlsafe(32)
+
+
+_SETTINGS_CMDS = [
+    ["Set up", [["Open the console", "python app/serve.py"],
+                ["Guided setup", "workspaces init"],
+                ["Connect your AI agent", "./scripts/connect-agent-hub.sh"]]],
+    ["Maintain", [["Health check", "workspaces doctor"],
+                  ["Back up (encrypted)", "workspaces backup --encrypt"],
+                  ["Safe upgrade", "workspaces upgrade"],
+                  ["All commands", "workspaces guide"]]],
+    ["Recover / remove", [["Restore from a backup", "workspaces restore <archive>"],
+                          ["Uninstall", "workspaces uninstall"]]],
+]
 
 
 def make_server(host="127.0.0.1", port=8799):
