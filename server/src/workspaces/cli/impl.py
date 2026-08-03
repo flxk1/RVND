@@ -2825,8 +2825,137 @@ def cmd_init(args: argparse.Namespace) -> int:
     return 0
 
 
+# ---------------------------------------------------------------------------
+# uninstall — the mirror of `init`. Same sectioned, --yes / --dry-run feel,
+# walking the setup in reverse. The guiding rule: nothing precious dies by
+# accident. Your audit chains, signing keys, and governed workspaces are KEPT
+# by default and removed only on an explicit, typed confirmation — never under
+# --yes. What uninstall touches on its own is only RVND's own throwaway state
+# (the init marker) and the guidance to disconnect the agent hub.
+# ---------------------------------------------------------------------------
+
+def _wconfirm_delete(inp: IO[str], w: IO[str], what: str) -> bool:
+    """A stronger gate than y/N for an irreversible delete: the user must type
+    the word DELETE. Empty / anything else = keep."""
+    w.write(f"  To delete {what}, type DELETE (anything else keeps it): ")
+    w.flush()
+    return inp.readline().strip() == "DELETE"
+
+
+def cmd_uninstall(args: argparse.Namespace) -> int:
+    import shutil
+    yes = getattr(args, "yes", False)
+    dry = getattr(args, "dry_run", False)
+    out, inp = sys.stdout, sys.stdin
+    home = LOG_ROOT_DEFAULT.parent          # ~/.workspace
+    marker = home / "init.json"
+    ws_home = str(Path.home() / "Documents" / "Workspaces")
+    if marker.exists():
+        try:
+            ws_home = json.loads(marker.read_text(encoding="utf-8")).get(
+                "workspaces_home", ws_home)
+        except Exception:  # noqa: BLE001 — a corrupt marker just falls back
+            pass
+
+    kept: list[str] = []
+    removed: list[str] = []
+
+    _wsay(out, "RVND uninstall")
+    _wsay(out, "=" * 52)
+    if dry:
+        _wsay(out, "(dry-run: nothing will be removed)")
+    if yes:
+        _wsay(out, "(non-interactive: accepting SAFE defaults — your data is kept)")
+
+    # §1 What this does
+    _wsay(out, "\n§1  What uninstall does")
+    _wsay(out, "-" * 52)
+    _wsay(out, "It walks setup in reverse. Your governance record and your files")
+    _wsay(out, "are KEPT by default; the only things removed without asking are")
+    _wsay(out, "RVND's own throwaway state. Anything irreversible needs you to")
+    _wsay(out, "type DELETE, and never happens under --yes.")
+
+    # §2 Disconnect from the agent hub (mirror of connect-agent-hub.sh)
+    _wsay(out, "\n§2  Disconnect from your AI agent")
+    _wsay(out, "-" * 52)
+    _wsay(out, "Undo what ./scripts/connect-agent-hub.sh registered. For Claude Code:")
+    _wsay(out, "  claude mcp remove rvnd-governance")
+    _wsay(out, "  claude plugin uninstall rvnd-governance")
+    _wsay(out, "  claude plugin marketplace remove rvnd")
+    _wsay(out, "(For Codex: remove the 'rvnd-governance' entry from your ~/.codex config.)")
+
+    # §3 Privacy Lock (a SEPARATE tool — we don't touch it)
+    _wsay(out, "\n§3  Privacy Lock")
+    _wsay(out, "-" * 52)
+    _wsay(out, "The Lock is a separate tool (agent-tool-lock) with its own config")
+    _wsay(out, "under ~/.config/agent-tool-lock/. RVND won't remove another tool's")
+    _wsay(out, "files — uninstall it on its own if you no longer want it.")
+
+    # §4 RVND's own throwaway state — the init marker (safe to remove)
+    _wsay(out, "\n§4  RVND setup marker")
+    _wsay(out, "-" * 52)
+    if marker.exists():
+        if dry:
+            _wsay(out, f"  [dry-run] would remove {marker}")
+        else:
+            marker.unlink()
+            removed.append(str(marker))
+            _wsay(out, f"  ✓ removed {marker}")
+    else:
+        _wsay(out, "  (no init marker found)")
+
+    # §5 Audit chains + signing keys — PROTECTED. Typed confirm, never --yes.
+    _wsay(out, "\n§5  Your audit chains and signing keys")
+    _wsay(out, "-" * 52)
+    _wsay(out, f"  {home}")
+    _wsay(out, "This holds your Ed25519 signing keys, the per-folder tamper-evident")
+    _wsay(out, "audit chains, and the workspace registry. Deleting it DESTROYS the")
+    _wsay(out, "signed history — it cannot be recovered. Back it up first if unsure.")
+    if not home.exists():
+        _wsay(out, "  (nothing here to remove)")
+    elif yes or dry:
+        kept.append(str(home))
+        _wsay(out, "  → KEEPING it" + (" (dry-run)" if dry else " (safe default)"))
+    elif _wconfirm_delete(inp, out, f"the entire {home}"):
+        shutil.rmtree(home, ignore_errors=True)
+        removed.append(str(home))
+        _wsay(out, f"  ✓ removed {home}")
+    else:
+        kept.append(str(home))
+        _wsay(out, "  → kept.")
+
+    # §6 Your governed workspaces — NEVER deleted by this tool.
+    _wsay(out, "\n§6  Your workspaces")
+    _wsay(out, "-" * 52)
+    _wsay(out, f"  {ws_home}")
+    _wsay(out, "These folders are your own content. RVND will not delete them —")
+    _wsay(out, "remove them yourself if, and only if, you mean to.")
+    kept.append(ws_home)
+
+    # §7 The code itself
+    _wsay(out, "\n§7  The RVND code")
+    _wsay(out, "-" * 52)
+    _wsay(out, "Finally, delete the cloned repo folder (the .venv lives inside it).")
+    _wsay(out, "RVND can't delete the code it's running from — do this last, by hand.")
+
+    # Summary
+    _wsay(out, "\n" + "=" * 52)
+    _wsay(out, "Summary")
+    if removed:
+        _wsay(out, "  removed:")
+        for r in removed:
+            _wsay(out, f"    - {r}")
+    if kept:
+        _wsay(out, "  kept:")
+        for k in kept:
+            _wsay(out, f"    - {k}")
+    _wsay(out, "\nUninstall walk-through complete.")
+    return 0
+
+
 _DISPATCH = {
     "init": cmd_init,
+    "uninstall": cmd_uninstall,
     "matrix": cmd_matrix,
     "lens": cmd_lens,
     "grounding": cmd_grounding,
