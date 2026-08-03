@@ -211,6 +211,7 @@
     <span class="spacer"></span>
     <button class="rec" id="record-settings" type="button" title="Recording detail and activity display">Record · Minimal</button>
     <button class="rec" id="settings-open" type="button" title="Settings — setup, backup, upgrade and uninstall commands" aria-label="Settings">⚙ Settings</button>
+    <button class="rec" id="server-open" type="button" title="Server info + governed queries (ask, orchestrate, cross-workspace read)" aria-label="Server and governed queries">ⓘ Server</button>
     <a class="rec" href="/sign" title="open the human sign-off page">5 · Sign</a>
     <span class="skel">Phase 1</span>
   </header>
@@ -261,6 +262,19 @@
   <menu>
     <button type="button" class="primary" id="settings-close">Done</button>
   </menu>
+</div>
+<div class="ws-dialog" id="server-dialog" role="dialog" aria-modal="true" aria-labelledby="server-dialog-title" hidden style="max-height:86vh;overflow:auto;min-width:min(540px,calc(100vw - 40px))">
+  <div id="server-dialog-title" style="font-weight:700">Server &amp; governed queries</div>
+  <div class="record-copy" style="text-transform:none;margin-top:6px">Read-only server info, and three governed queries that run against the <b>active workspace</b> through the audited bridge.</div>
+  <div id="server-about" style="font-family:ui-monospace,Menlo,monospace;font-size:11.5px;color:var(--txt-dim);white-space:pre-wrap;margin:10px 0;padding:8px;border:1px solid var(--line);border-radius:6px">loading…</div>
+  <label for="ask-q">Ask this workspace <span style="text-transform:none;font-weight:400">· workspace_ask</span></label>
+  <div style="display:flex;gap:6px"><input id="ask-q" placeholder="a question about this workspace's works"><button id="ask-run" class="primary" type="button">Ask</button></div>
+  <label for="orch-q">Ask across the workspace tree <span style="text-transform:none;font-weight:400">· workspace_orchestrate</span></label>
+  <div style="display:flex;gap:6px"><input id="orch-q" placeholder="a question routed across companion workspaces"><button id="orch-run" class="primary" type="button">Route</button></div>
+  <label for="xwr-src">Read from another workspace <span style="text-transform:none;font-weight:400">· cross_workspace_read</span></label>
+  <div style="display:flex;gap:6px"><input id="xwr-src" placeholder="/full/path/to/source/workspace"><button id="xwr-run" class="primary" type="button">Read</button></div>
+  <div id="server-out" role="status" aria-live="polite" style="margin-top:12px;font-family:ui-monospace,Menlo,monospace;font-size:11.5px;white-space:pre-wrap;max-height:200px;overflow:auto"></div>
+  <menu><button type="button" class="primary" id="server-close">Done</button></menu>
 </div>
 <div class="ws-dialog" id="ws-dialog" role="dialog" aria-modal="true" aria-labelledby="ws-dialog-title" hidden>
   <form id="ws-form">
@@ -500,6 +514,53 @@
     settingsOpen.addEventListener('click',function(){ settingsDialog.hidden=false; document.getElementById('settings-close').focus(); });
     document.getElementById('settings-close').addEventListener('click',closeSettings);
     wireModal(settingsDialog,closeSettings);
+
+    // Server & governed queries — wires the four standalone (non-op) backend
+    // tools the command router can't reach: server_info (read-only) + the three
+    // governed queries (ask / orchestrate / cross-workspace read), each run
+    // against the active workspace through the same audited /tool bridge.
+    var serverDialog=document.getElementById('server-dialog'),serverOpen=document.getElementById('server-open');
+    function fmtInfo(r){
+      if(!r) return 'server info unavailable';
+      return [ (r.product||'Rvnd')+' '+(r.server_version||''),
+        'server: '+(r.server_name||'?'),
+        'substrate: '+(r.os||'?'),
+        'tools: '+((r.tool_count!=null)?r.tool_count:((r.tools||[]).length)),
+        r.public_key_fingerprint?('signing key: '+r.public_key_fingerprint):'',
+        r.host_id?('host: '+r.host_id):'' ].filter(Boolean).join('\n');
+    }
+    function closeServer(){ serverDialog.hidden=true; serverOpen.focus(); }
+    serverOpen.addEventListener('click',function(){
+      serverDialog.hidden=false;
+      document.getElementById('server-out').textContent='';
+      var about=document.getElementById('server-about'); about.textContent='loading…';
+      call('server_info',{}).then(function(r){ about.textContent=fmtInfo(r); });
+      document.getElementById('server-close').focus();
+    });
+    document.getElementById('server-close').addEventListener('click',closeServer);
+    wireModal(serverDialog,closeServer);
+    function activeWs(){ return (window.__RVND&&window.__RVND.store)?window.__RVND.store.getState().activeWorkspace:null; }
+    function runGov(btn,make){
+      var fc=activeWs(), out=document.getElementById('server-out');
+      if(!fc){ out.textContent='Select a workspace first.'; return; }
+      var label=btn.textContent; btn.disabled=true; btn.textContent='…'; out.textContent='running…';
+      make(fc).then(function(r){ out.textContent = (r==null) ? 'no response (or session expired)'
+        : (typeof r==='string'? r : JSON.stringify(r,null,2)); })
+        .catch(function(e){ out.textContent='error: '+((e&&e.message)||e); })
+        .then(function(){ btn.disabled=false; btn.textContent=label; });
+    }
+    document.getElementById('ask-run').addEventListener('click',function(){
+      var q=document.getElementById('ask-q').value.trim(); if(!q) return;
+      runGov(this,function(fc){ return call('workspace_ask',{folder_context:fc,query:q}); });
+    });
+    document.getElementById('orch-run').addEventListener('click',function(){
+      var q=document.getElementById('orch-q').value.trim(); if(!q) return;
+      runGov(this,function(fc){ return call('workspace_orchestrate',{folder_context:fc,query:q}); });
+    });
+    document.getElementById('xwr-run').addEventListener('click',function(){
+      var s=document.getElementById('xwr-src').value.trim(); if(!s) return;
+      runGov(this,function(fc){ return call('cross_workspace_read',{folder_context:fc,sources:[s]}); });
+    });
     showActivityBox.addEventListener('change',function(){
       showActivity=this.checked;
       try{ localStorage.setItem('rvnd.showActivity',String(showActivity)); }catch(_){}
