@@ -202,6 +202,20 @@ def build_parser() -> argparse.ArgumentParser:
     p_guide.add_argument("--json", action="store_true",
                          help="machine-readable grouped output")
 
+    p_backup = sub.add_parser("backup", help="Archive ~/.workspace (keys + audit "
+                                             "chains + registry) — the irreplaceable record.")
+    p_backup.add_argument("--out", default=None,
+                          help="Archive path (default: ~/rvnd-backup-<timestamp>).")
+    p_backup.add_argument("--encrypt", action="store_true",
+                          help="Encrypt with a passphrase (recommended for off-machine copies).")
+
+    p_restore = sub.add_parser("restore", help="Restore ~/.workspace from a backup archive.")
+    p_restore.add_argument("archive", help="Path to a backup archive.")
+    p_restore.add_argument("--force", action="store_true",
+                           help="Restore over an existing home (moved aside to .bak first).")
+    p_restore.add_argument("--dry-run", action="store_true",
+                           help="Show the manifest and validate, but write nothing.")
+
     # list
     p_list = sub.add_parser("list", help="List live pairs in scope.")
     _add_folder_arg(p_list)
