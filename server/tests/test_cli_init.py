@@ -34,7 +34,8 @@ def test_init_yes_writes_marker_and_sets_default(monkeypatch, tmp_path):
     assert (home / "keys").is_dir() and (home / "log").is_dir()
     assert calls.get("target")           # the default workspace was set via the registry
     assert "Setup complete" in out
-    assert "§6" in out                   # the agent-hub step is present
+    assert "§5  Local model" in out              # the local-model step is present
+    assert "connect-agent-hub.sh" in out         # the agent-hub step is present (now §7)
 
 
 def test_init_dry_run_writes_nothing(monkeypatch, tmp_path):
@@ -43,6 +44,26 @@ def test_init_dry_run_writes_nothing(monkeypatch, tmp_path):
     assert not (home / "init.json").exists()
     assert calls == {}                   # dry-run never calls the registry
     assert "dry-run" in out
+
+
+def test_init_model_step_shows_paths_when_none_registered(monkeypatch, tmp_path):
+    import workspaces.models_registry as mr
+    monkeypatch.setattr(mr, "models_for_role", lambda role: [])
+    rc, out, _c, _h = _run(monkeypatch, tmp_path, yes=True)
+    assert rc == 0
+    assert "§5  Local model" in out
+    assert "workspaces models pull" in out       # the download path is offered
+    assert "models register" in out              # register-your-own path
+    assert "models config --local-url" in out    # BYOK endpoint path
+    assert "local-models.md" in out
+
+
+def test_init_model_step_confirms_when_registered(monkeypatch, tmp_path):
+    import workspaces.models_registry as mr
+    monkeypatch.setattr(mr, "models_for_role", lambda role: ["my-local-gguf"])
+    rc, out, _c, _h = _run(monkeypatch, tmp_path, yes=True)
+    assert rc == 0
+    assert "a local model is registered: my-local-gguf" in out
 
 
 def test_init_promise_decline_aborts(monkeypatch, tmp_path):
