@@ -206,10 +206,12 @@ The application is plain HTML and requires no frontend build or desktop shell.
 It binds to the local machine only; it is not a production or multi-user
 deployment.
 
-On macOS, `app/Open Rvnd.command` provides a Finder launcher when the required
-Python packages are available to the system interpreter. The MCP server and the
-authenticated HTTP gateway are separate processes; their setup is documented
-under `docs/`.
+On macOS, **double-click `app/Open Rvnd.command`** in Finder — no terminal
+needed. On first run it creates the virtual environment and installs Rvnd
+itself; on every run it picks a free port (so a leftover instance never blocks
+startup) and opens your browser. Close the window it opens to stop Rvnd. The MCP
+server and the authenticated HTTP gateway are separate processes; their setup is
+documented under `docs/`.
 
 ## Local models
 
