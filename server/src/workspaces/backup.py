@@ -70,7 +70,7 @@ def _host_info() -> dict[str, str]:
         import socket
         info["hostname"] = socket.gethostname()
     except Exception:  # noqa: BLE001
-        pass
+        pass  # hostname is best-effort manifest metadata — omit it if unavailable
     try:
         from . import signing
         info["host_id"] = signing._host_id()
@@ -91,7 +91,7 @@ def _tree_stats(home: Path) -> tuple[int, int]:
             try:
                 total += p.stat().st_size
             except OSError:
-                pass
+                pass  # a file that vanished mid-walk just doesn't count toward the total
     return files, total
 
 
@@ -174,9 +174,7 @@ def _load_tar_bytes(archive: Path, passphrase: Optional[str]) -> bytes:
             return decrypt_record(raw, passphrase=passphrase, folder=BACKUP_AAD)
         except Exception as e:  # noqa: BLE001 — SealError etc. → one clear message
             raise BackupError("could not decrypt — wrong passphrase or corrupt archive.") from e
-    if passphrase:
-        # A passphrase was given for a plaintext archive: not an error, but say so.
-        pass
+    # A passphrase supplied for a plaintext archive is simply ignored.
     return raw
 
 
