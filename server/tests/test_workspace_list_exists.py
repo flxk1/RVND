@@ -6,19 +6,35 @@ The console uses this to hide workspaces whose folder is gone (deleted temp
 dirs, unmounted drives) without deleting anything from the registry. The flag
 is a live, non-destructive signal computed at list time — the registry is never
 mutated, so a remounted drive's workspace reappears on the next list.
+
+These tests are hermetic: a fresh registry via WORKSPACE_L0_LOG_ROOT and a
+cleared request principal, so full-suite ordering (a principal left set by an
+earlier test would otherwise scope our rows out of the list) can't affect them.
 """
 from __future__ import annotations
 
+import pytest
+
 from workspaces import mcp_server
+import workspaces.mcp_serving as serving
 from workspaces.workspace_registry import add_known_workspace
 
 
-def test_list_flags_present_and_missing_folders(tmp_path):
+@pytest.fixture
+def registry(tmp_path, monkeypatch):
+    reg = tmp_path / "reg"
+    reg.mkdir()
+    monkeypatch.setenv("WORKSPACE_L0_LOG_ROOT", str(reg))
+    serving.clear_request_principal()   # local-operator mode: unscoped full list
+    return reg
+
+
+def test_list_flags_present_and_missing_folders(tmp_path, registry):
     present = tmp_path / "here"
     present.mkdir()
     absent = tmp_path / "gone"          # deliberately never created
-    add_known_workspace(present, label="present-ws")
-    add_known_workspace(absent, label="absent-ws")
+    add_known_workspace(present, label="present-ws", log_root=registry)
+    add_known_workspace(absent, label="absent-ws", log_root=registry)
 
     res = mcp_server.list_known_workspaces()
     assert res["ok"] is True
@@ -28,13 +44,13 @@ def test_list_flags_present_and_missing_folders(tmp_path):
     assert by_label["absent-ws"]["exists"] is False
 
 
-def test_list_does_not_delete_missing_from_registry(tmp_path):
+def test_list_does_not_delete_missing_from_registry(tmp_path, registry):
     # The flag is non-destructive: a missing folder is still LISTED (just tagged
     # exists=False), never dropped from the registry. Recreating the folder
     # flips the flag back without any re-registration.
     ws = tmp_path / "roundtrip"
     ws.mkdir()
-    add_known_workspace(ws, label="roundtrip-ws")
+    add_known_workspace(ws, label="roundtrip-ws", log_root=registry)
 
     ws.rmdir()                          # folder goes away (e.g. unmounted)
     res1 = mcp_server.list_known_workspaces()
