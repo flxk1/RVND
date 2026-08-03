@@ -210,6 +210,7 @@
     <span class="env" id="env" aria-live="polite" title="every workspace you can see — console_snapshot">—</span>
     <span class="spacer"></span>
     <button class="rec" id="record-settings" type="button" title="Recording detail and activity display">Record · Minimal</button>
+    <button class="rec" id="settings-open" type="button" title="Settings — setup, backup, upgrade and uninstall commands" aria-label="Settings">⚙ Settings</button>
     <a class="rec" href="/sign" title="open the human sign-off page">5 · Sign</a>
     <span class="skel">Phase 1</span>
   </header>
@@ -250,6 +251,15 @@
   <div class="record-copy" style="margin-top:10px"><b>Diagnostic log · Optional</b>Privacy Lock’s separate diagnostic JSONL log is off unless the server operator configures it.</div>
   <menu>
     <button type="button" class="primary" id="record-close">Done</button>
+  </menu>
+</div>
+<div class="ws-dialog" id="settings-dialog" role="dialog" aria-modal="true" aria-labelledby="settings-dialog-title" hidden style="max-height:86vh;overflow:auto">
+  <div id="settings-dialog-title" style="font-weight:700">Settings</div>
+  <div class="record-copy" style="text-transform:none;margin-top:6px">Setup, maintenance and removal. Copy a command and run it in a terminal from your RVND folder (after <code>source .venv/bin/activate</code>) — the console can’t run these for you, since they change files, keys and settings on your machine.</div>
+  <div id="settings-cmds"></div>
+  <div class="record-copy" style="text-transform:none;margin-top:12px">Your data lives in <code>~/.workspace</code> (keys + audit chains) and <code>~/Documents/Workspaces</code> (your workspaces).</div>
+  <menu>
+    <button type="button" class="primary" id="settings-close">Done</button>
   </menu>
 </div>
 <div class="ws-dialog" id="ws-dialog" role="dialog" aria-modal="true" aria-labelledby="ws-dialog-title" hidden>
@@ -416,6 +426,53 @@
     recordOpen.addEventListener('click',function(){ recordDialog.hidden=false; showActivityBox.focus(); });
     document.getElementById('record-close').addEventListener('click',closeRecord);
     wireModal(recordDialog,closeRecord);
+
+    // Settings — surface the lifecycle CLI commands for non-terminal users.
+    // The loopback bridge only runs governed MCP facades, never setup/teardown
+    // shell (init/backup/upgrade/uninstall change files, keys and settings), so
+    // this hands over the exact command to copy rather than executing it.
+    function copyText(text,btn){
+      function ok(){ var o=btn.textContent; btn.textContent='Copied ✓'; setTimeout(function(){ btn.textContent=o; },1200); }
+      function fb(){ try{ var ta=document.createElement('textarea'); ta.value=text; ta.style.cssText='position:fixed;opacity:0'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); ok(); }catch(_){} }
+      try{ if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(ok,fb); return; } }catch(_){}
+      fb();
+    }
+    var SETTINGS_CMDS=[
+      ['Set up',[
+        ['Guided setup','workspaces init'],
+        ['Connect your AI agent','./scripts/connect-agent-hub.sh']]],
+      ['Maintain',[
+        ['Health check','workspaces doctor'],
+        ['Back up (encrypted)','workspaces backup --encrypt'],
+        ['Safe upgrade','workspaces upgrade'],
+        ['All commands','workspaces guide']]],
+      ['Recover / remove',[
+        ['Restore from a backup','workspaces restore <archive>'],
+        ['Uninstall','workspaces uninstall']]],
+    ];
+    (function buildSettings(){
+      var host=document.getElementById('settings-cmds'); if(!host) return;
+      SETTINGS_CMDS.forEach(function(g){
+        var h=document.createElement('div'); h.textContent=g[0];
+        h.style.cssText='font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--txt-dim);margin:12px 0 2px';
+        host.appendChild(h);
+        g[1].forEach(function(r){
+          var row=document.createElement('div'); row.style.cssText='display:flex;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--line)';
+          var meta=document.createElement('div'); meta.style.cssText='flex:1;min-width:0';
+          var t=document.createElement('div'); t.textContent=r[0]; t.style.cssText='font-size:12.5px';
+          var c=document.createElement('code'); c.textContent=r[1]; c.style.cssText='display:block;font-family:ui-monospace,Menlo,monospace;font-size:11.5px;color:var(--txt-dim);white-space:nowrap;overflow-x:auto';
+          meta.appendChild(t); meta.appendChild(c);
+          var btn=document.createElement('button'); btn.type='button'; btn.textContent='Copy'; btn.setAttribute('aria-label','Copy: '+r[1]);
+          btn.addEventListener('click',function(){ copyText(r[1],btn); });
+          row.appendChild(meta); row.appendChild(btn); host.appendChild(row);
+        });
+      });
+    })();
+    var settingsDialog=document.getElementById('settings-dialog'),settingsOpen=document.getElementById('settings-open');
+    function closeSettings(){ settingsDialog.hidden=true; settingsOpen.focus(); }
+    settingsOpen.addEventListener('click',function(){ settingsDialog.hidden=false; document.getElementById('settings-close').focus(); });
+    document.getElementById('settings-close').addEventListener('click',closeSettings);
+    wireModal(settingsDialog,closeSettings);
     showActivityBox.addEventListener('change',function(){
       showActivity=this.checked;
       try{ localStorage.setItem('rvnd.showActivity',String(showActivity)); }catch(_){}
