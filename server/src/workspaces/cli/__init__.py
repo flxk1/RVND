@@ -197,6 +197,11 @@ def build_parser() -> argparse.ArgumentParser:
     p_uninstall.add_argument("--dry-run", action="store_true",
                              help="print what would happen but remove nothing")
 
+    p_guide = sub.add_parser("guide", help="Categorized map of every command, "
+                                           "grouped by what you're trying to do.")
+    p_guide.add_argument("--json", action="store_true",
+                         help="machine-readable grouped output")
+
     # list
     p_list = sub.add_parser("list", help="List live pairs in scope.")
     _add_folder_arg(p_list)

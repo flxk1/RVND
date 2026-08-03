@@ -2953,9 +2953,89 @@ def cmd_uninstall(args: argparse.Namespace) -> int:
     return 0
 
 
+# ---------------------------------------------------------------------------
+# guide — a categorized, human-readable map of every subcommand. `--help`
+# dumps ~40 commands as a flat wall; this groups them by purpose and pulls
+# each one-line description straight from the parser, so it can never drift
+# from the real help. New commands not yet placed in a group still appear
+# under "Other", so the guide can never silently omit a command.
+# ---------------------------------------------------------------------------
+
+# Ordered groups. Each command name maps to exactly one group; the order here
+# is the order sections print in. Keep this in sync when adding a command —
+# an unplaced command falls through to "Other" (and the test flags it).
+_GUIDE_GROUPS: list[tuple[str, list[str]]] = [
+    ("Setup & lifecycle",   ["init", "uninstall", "doctor", "status", "keys", "licence", "guide"]),
+    ("Workspaces & memory", ["workspace", "folders", "list", "show", "watch", "ingest"]),
+    ("Policy & governance", ["policy", "oversight", "discipline", "matrix", "lens",
+                             "grounding", "mute", "unmute", "ask", "cross-workspace",
+                             "shadow-scan", "tools"]),
+    ("Privacy & sealing",   ["seal", "unseal", "lock", "unlock", "mirror"]),
+    ("Skills & publishing", ["pin", "unpin", "list-pins", "resolve-skills",
+                             "publish", "unpublish", "run-worker"]),
+    ("Local models",        ["models"]),
+    ("Data & erasure",      ["delete", "delete-document", "purge", "purge-document",
+                             "erase", "erase-status", "audit-tail"]),
+]
+
+
+def _guide_help_map() -> dict[str, str]:
+    """{command: one-line help} pulled from the live parser — the source of
+    truth, so descriptions never drift from `--help`."""
+    from . import build_parser
+    parser = build_parser()
+    sub = next((a for a in parser._actions
+                if isinstance(a, argparse._SubParsersAction)), None)
+    if sub is None:  # pragma: no cover — the parser always has subcommands
+        return {}
+    return {act.dest: (act.help or "") for act in sub._choices_actions}
+
+
+def cmd_guide(args: argparse.Namespace) -> int:
+    out = sys.stdout
+    help_map = _guide_help_map()
+    if getattr(args, "json", False):
+        grouped = {title: {c: help_map[c] for c in cmds if c in help_map}
+                   for title, cmds in _GUIDE_GROUPS}
+        placed = {c for _, cmds in _GUIDE_GROUPS for c in cmds}
+        other = {c: help_map[c] for c in help_map if c not in placed}
+        if other:
+            grouped["Other"] = other
+        _wsay(out, json.dumps(grouped, indent=2))
+        return 0
+
+    width = max((len(c) for c in help_map), default=0)
+    _wsay(out, "RVND — command guide")
+    _wsay(out, "=" * 60)
+    _wsay(out, "Run any command with -h for its own options, e.g. `workspaces init -h`.")
+
+    placed: set[str] = set()
+    for title, cmds in _GUIDE_GROUPS:
+        rows = [(c, help_map[c]) for c in cmds if c in help_map]
+        if not rows:
+            continue
+        _wsay(out, f"\n{title}")
+        _wsay(out, "-" * 60)
+        for name, htext in rows:
+            _wsay(out, f"  {name:<{width}}  {htext}")
+            placed.add(name)
+
+    leftover = [(c, help_map[c]) for c in help_map if c not in placed]
+    if leftover:
+        _wsay(out, "\nOther")
+        _wsay(out, "-" * 60)
+        for name, htext in leftover:
+            _wsay(out, f"  {name:<{width}}  {htext}")
+
+    _wsay(out, "\nNew here? Start with:  workspaces init   → then open the console.")
+    _wsay(out, "Leaving?               workspaces uninstall")
+    return 0
+
+
 _DISPATCH = {
     "init": cmd_init,
     "uninstall": cmd_uninstall,
+    "guide": cmd_guide,
     "matrix": cmd_matrix,
     "lens": cmd_lens,
     "grounding": cmd_grounding,
