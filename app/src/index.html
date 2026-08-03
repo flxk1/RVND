@@ -385,6 +385,7 @@
       </nav>
       <button class="abtn" onclick="closeAllSections();openHelpPanel()" aria-label="Help — every operation this console can ask of the server" title="help — the live operation reference, grouped by goal; read-only">?</button>
       <button class="abtn" onclick="closeAllSections();openAboutPanel()" aria-label="About this server" title="about — what this server is, version, the signing keys">ⓘ</button>
+      <button class="abtn" onclick="closeAllSections();openSettingsPanel()" aria-label="Settings — setup, backup, upgrade and uninstall" title="settings — the setup, maintenance and removal commands, ready to copy">⚙</button>
     </div>
   </header>
   <main>
@@ -1760,6 +1761,68 @@ function markWsRail(){
 // unconditionally by compose_classic() — no panel-mount registration needed.
 window.loadWsRail=loadWsRail; window.wsMute=wsMute; window.focusWs=focusWs; window.saveWs=saveWs; window.wsSolo=wsSolo; window.wsIsolate=wsIsolate; window.allStopAll=allStopAll; window.transportResume=transportResume; window.transportHold=transportHold; window.transportToggle=transportToggle; window.updateRunState=updateRunState; window.openControllerPanel=openControllerPanel; window.loadController=loadController; window.ctrlSubmit=ctrlSubmit; window.allStop=allStop; window.initMidi=initMidi; window.onMidi=onMidi; window.renderBindings=renderBindings;
 window.openWorkspacePanel=openWorkspacePanel; window.loadWorkspace=loadWorkspace; window.openWorkflowPanel=openWorkflowPanel; window.openContractPanel=openContractPanel;
+/* Settings — the lifecycle/maintenance commands, surfaced for non-terminal
+   users. These are CLI commands (init/backup/upgrade/uninstall/connect) that
+   the loopback bridge cannot and should not run for you — they change files,
+   keys and settings on your machine — so the panel hands you the exact command
+   to copy and run in a terminal, rather than executing shell from a page. */
+function copyCmd(btn, text){
+  const done=()=>{ const o=btn.textContent; btn.textContent='Copied ✓'; setTimeout(()=>{ if(document.contains(btn)) btn.textContent=o; },1200); };
+  const fallback=()=>{ try{ const ta=document.createElement('textarea'); ta.value=text; ta.style.cssText='position:fixed;opacity:0'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); done(); }catch(_){} };
+  try{ if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(done, fallback); return; } }catch(_){}
+  fallback();
+}
+function openSettingsPanel(){
+  if(document.getElementById('settingspanel')) return;
+  const groups=[
+    ['Set up',[
+      ['Guided setup','First-run wizard: home, workspaces folder, Privacy Lock, oversight.','workspaces init'],
+      ['Connect your AI agent','Register RVND with Claude Code / Codex.','./scripts/connect-agent-hub.sh'],
+    ]],
+    ['Maintain',[
+      ['Health check','Check Python, keys, audit chains, MCP reachability.','workspaces doctor'],
+      ['Back up','Archive your keys + audit chains, encrypted.','workspaces backup --encrypt'],
+      ['Safe upgrade','Back up + verify the chains, then move to a new version.','workspaces upgrade'],
+      ['All commands','A categorized map of everything the CLI can do.','workspaces guide'],
+    ]],
+    ['Recover / remove',[
+      ['Restore','Recover ~/.workspace from a backup archive.','workspaces restore <archive>'],
+      ['Uninstall','Guided removal; your data is kept unless you say otherwise.','workspaces uninstall'],
+    ]],
+  ];
+  let body='';
+  for(const g of groups){
+    body+='<div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--txt-dim);margin:14px 0 2px">'+esc(g[0])+'</div>';
+    for(const r of g[1]){
+      body+='<div style="display:flex;flex-direction:column;gap:4px;padding:9px 0;border-top:1px solid var(--line)">'
+        +'<div style="font-weight:600;font-size:13px">'+esc(r[0])+'</div>'
+        +'<div style="font-size:12px;color:var(--txt-dim)">'+esc(r[1])+'</div>'
+        +'<div style="display:flex;gap:6px;align-items:center;margin-top:3px">'
+        +'<code style="flex:1;font-family:ui-monospace,Menlo,monospace;font-size:12px;border:1px solid var(--line);border-radius:6px;padding:5px 8px;overflow-x:auto;white-space:nowrap">'+esc(r[2])+'</code>'
+        +'<button class="abtn set-copy" data-cmd="'+esc(r[2])+'">Copy</button>'
+        +'</div></div>';
+    }
+  }
+  const note='<div style="font-size:11.5px;color:var(--txt-dim);margin-top:14px;line-height:1.55">'
+    +'Run these in a terminal from your RVND folder (after <code>source .venv/bin/activate</code>). '
+    +'The console can’t run them for you — they change files, keys and settings on your machine.<br>'
+    +'Your data lives in <code>~/.workspace</code> (keys + audit chains) and <code>~/Documents/Workspaces</code> (your workspaces).'
+    +'</div>';
+  const panel=document.createElement('div');
+  panel.id='settingspanel'; panel.setAttribute('role','dialog'); panel.setAttribute('aria-modal','true'); panel.setAttribute('aria-label','Settings');
+  panel.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:80;width:min(560px,92vw);max-height:86vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 24px 60px rgba(0,0,0,.5);padding:18px 20px';
+  panel.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2 style="margin:0;font-size:16px">Settings</h2><button class="abtn" id="settingsClose" aria-label="Close settings">✕</button></div>'
+    +'<div style="font-size:12px;color:var(--txt-dim);margin:4px 0 2px">Setup, maintenance and removal — copy a command and run it in your terminal.</div>'
+    +body+note;
+  document.body.appendChild(panel);
+  const close=modalize(panel, document.activeElement);
+  const dismiss=()=>{ document.removeEventListener('keydown',onKey); if(typeof close==='function'){ try{close();}catch(_){} } if(panel.parentNode) panel.remove(); };
+  function onKey(ev){ if(ev.key==='Escape'){ ev.stopPropagation(); dismiss(); } }
+  document.addEventListener('keydown',onKey);
+  const x=panel.querySelector('#settingsClose'); if(x) x.addEventListener('click',dismiss);
+  panel.querySelectorAll('.set-copy').forEach(b=>b.addEventListener('click',()=>copyCmd(b,b.getAttribute('data-cmd'))));
+}
+window.openSettingsPanel=openSettingsPanel; window.copyCmd=copyCmd;
 window.boot=boot; window.openHelpPanel=openHelpPanel; window.loadHelp=loadHelp; window.filterHelp=filterHelp; window.openOnboardingWizard=openOnboardingWizard; window.dismissOnboarding=dismissOnboarding; window.renderWizStep=renderWizStep; window.openLegalPanel=openLegalPanel; window.openAboutPanel=openAboutPanel; window.openDataPanel=openDataPanel; window.openErasurePanel=openErasurePanel; window.openBringInPanel=openBringInPanel; window.openAIPanel=openAIPanel; window.openLockPanel=openLockPanel; window.toggleTicker=toggleTicker; window.loadTicker=loadTicker; window.openApprovalsPanel=openApprovalsPanel; window.openLensPanel=openLensPanel; window.openGrounderPanel=openGrounderPanel; window.openConformityPanel=openConformityPanel; window.openAuditPanel=openAuditPanel; window.reload=reload; window.S=S; window.addNode=addNode; window.wire=wire; window.tool=tool; window.render=render; window.runUC=runUC; window.requestSignoff=requestSignoff; window.parseResvTarget=parseResvTarget; window.routerRequestSignoffs=routerRequestSignoffs; window.setView=setView; window.renderArrange=renderArrange; window.renderMatrixView=renderMatrixView; window.mxvZoomOut=mxvZoomOut; window.saveEnvironment=saveEnvironment; window.openEnvironment=openEnvironment; window.overrideStep=overrideStep; window.runQuery=runQuery; window.addConnector=addConnector; window.openPolicyPanel=openPolicyPanel; window.openMapPanel=openMapPanel; window.ingestPolicy=ingestPolicy; window.applyTwin=applyTwin; window.openRegisterPanel=openRegisterPanel; window.openEditorPanel=openEditorPanel; window.editorLoad=editorLoad; window.editorValidate=editorValidate; window.editorApply=editorApply; window.drawLoom=drawLoom; window.renderDeskView=renderDeskView; window.openMatrixPanel=openMatrixPanel; window.openCoveragePanel=openCoveragePanel; window.openEgressPanel=openEgressPanel; window.openRolesPanel=openRolesPanel; window.fillTrackStrip=fillTrackStrip; window.openPolicySettingsPanel=openPolicySettingsPanel;
 window.draftQueue=draftQueue; window.draftFlush=draftFlush; window.draftFlushAll=draftFlushAll; window.draftDiscard=draftDiscard; window.draftLoaded=draftLoaded; window.draftChipTick=draftChipTick; window.rehydrateDrafts=rehydrateDrafts; window.draftChainTick=draftChainTick;
 boot();
