@@ -2728,6 +2728,21 @@ def _wask_yn(inp: IO[str], w: IO[str], prompt: str, default: bool = True) -> boo
     return default if not raw else raw in ("y", "yes")
 
 
+def _find_pull_package() -> "Path | None":
+    """Best-effort: locate a marketplace package that ships a pull_models.sh,
+    so the wizard can tell the user a downloadable local model is available.
+    Mirrors the walk in models_registry.pull_model. Returns the package dir or
+    None (the common case in a bare checkout with no model package installed)."""
+    here = Path(__file__).resolve()
+    for ancestor in here.parents:
+        mp = ancestor / "workspace-marketplace"
+        if mp.is_dir():
+            for pkg in sorted(mp.iterdir()):
+                if (pkg / "scripts" / "pull_models.sh").exists():
+                    return pkg
+    return None
+
+
 def cmd_init(args: argparse.Namespace) -> int:
     yes = getattr(args, "yes", False)
     dry = getattr(args, "dry_run", False)
@@ -2789,7 +2804,7 @@ def cmd_init(args: argparse.Namespace) -> int:
     _wsay(out, "The Lock inspects text leaving the local boundary for secrets and")
     _wsay(out, "personal data. The deterministic pattern pass is ON by default and")
     _wsay(out, "needs nothing; a semantic pass is optional and needs a local model")
-    _wsay(out, "(add one later — docs/concepts/local-models.md).")
+    _wsay(out, "(the next step helps you add one).")
     try:
         from ..mcp_impl import lock_setup_status
         st = lock_setup_status()
@@ -2797,8 +2812,41 @@ def cmd_init(args: argparse.Namespace) -> int:
     except Exception:  # noqa: BLE001 — status is informational only
         pass
 
-    # §5 Human oversight (per-workspace; explain the ladder)
-    _wsay(out, "\n§5  Human oversight")
+    # §5 Local model (optional — powers the semantic Privacy Lock pass).
+    # Honest + adaptive: if a workspace model is already registered we say so;
+    # otherwise we show the real ways to add one and flag a downloadable model
+    # package only when one is actually present. We don't auto-pull: a model
+    # download is large, and there is no reliable "which id?" source in a bare
+    # checkout — so we hand the user the exact command instead of guessing.
+    _wsay(out, "\n§5  Local model  (optional — for the semantic Privacy Lock)")
+    _wsay(out, "-" * 52)
+    try:
+        from ..models_registry import models_for_role
+        registered = models_for_role("workspace")
+    except Exception:  # noqa: BLE001 — the registry is informational here
+        registered = []
+    if registered:
+        _wsay(out, f"  ✓ a local model is registered: {registered[0]}")
+        _wsay(out, "    The semantic Lock pass can use it — nothing to do here.")
+    else:
+        _wsay(out, "  None yet. The pattern pass already protects you; a local")
+        _wsay(out, "  model adds the optional semantic pass. Add one when ready:")
+        pkg = _find_pull_package()
+        _wsay(out, "    • download a packaged model:")
+        _wsay(out, "        workspaces models pull <id>")
+        if pkg:
+            _wsay(out, f"      (a model package is available here: {pkg.name})")
+        else:
+            _wsay(out, "      (needs a marketplace model package installed)")
+        _wsay(out, "    • register one you already have:")
+        _wsay(out, "        workspaces models register --role workspace \\")
+        _wsay(out, "          --model <id> --artifact-path <path>")
+        _wsay(out, "    • or point at a local endpoint (BYOK):")
+        _wsay(out, "        workspaces models config --local-url <url> --local-model <id>")
+        _wsay(out, "  Details: docs/concepts/local-models.md")
+
+    # §6 Human oversight (per-workspace; explain the ladder)
+    _wsay(out, "\n§6  Human oversight")
     _wsay(out, "-" * 52)
     _wsay(out, "How much a person is in the loop, per workspace (loosest → strictest):")
     for i, (label, desc) in enumerate(_OVERSIGHT_LADDER):
@@ -2806,8 +2854,8 @@ def cmd_init(args: argparse.Namespace) -> int:
     _wsay(out, "You set this per workspace; the console's first-run wizard picks it")
     _wsay(out, "when you create your first one (start at 'approve' if unsure).")
 
-    # §6 Connect to an agent hub
-    _wsay(out, "\n§6  Connect to your AI agent")
+    # §7 Connect to an agent hub
+    _wsay(out, "\n§7  Connect to your AI agent")
     _wsay(out, "-" * 52)
     _wsay(out, "To let Claude Code / Codex drive RVND, run:")
     _wsay(out, "  ./scripts/connect-agent-hub.sh")
