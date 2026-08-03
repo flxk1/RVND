@@ -68,7 +68,8 @@ def console_snapshot(*, now: float, log_root: Optional[Path] = None,
             # a folder that will not read is reported unreadable, never skipped
             # (a missing bus must not look like a clear one).
             buses.append({"path": path, "name": Path(path).name or path,
-                          "unreadable": True, "parent": _parent_path(path, all_paths)})
+                          "unreadable": True, "exists": Path(path).is_dir(),
+                          "parent": _parent_path(path, all_paths)})
             continue
         nodes = g.get("nodes") or []
         agents = [n for n in nodes if n.get("kind") == "agent"]
@@ -89,6 +90,7 @@ def console_snapshot(*, now: float, log_root: Optional[Path] = None,
             "agents_total": len(agents),
             "agents_held": len(held),
             "unreadable": False,
+            "exists": Path(path).is_dir(),
         })
 
     ranked = [b for b in buses
