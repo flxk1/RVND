@@ -375,11 +375,11 @@ class RuleRegistry:
         instrument (``cites`` with the article pinpoint as basis) plus its
         jurisdiction and enforcing regulators. This is how the norms *inside* a law
         enter the ND-rule map individually, not just clauses that cite it."""
-        from .legal_norm_splitter import segment_provisions
+        from .adapters.ingest.governance import legal_norm_splitter as _lns
         world = world or _resolve_world(str(self.folder))
         host = _host_instrument_anchors(instrument_code, world)
         placed: list[dict] = []
-        for prov in segment_provisions(content):
+        for prov in _lns.segment_provisions(content):
             # one law, many norms: do NOT fingerprint-dedupe across provisions —
             # every article's operative norm must enter the map individually.
             for f in extract_rules(prov.text, gated_by_fingerprint=False):

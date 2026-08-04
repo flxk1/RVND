@@ -174,7 +174,9 @@ class Workflow:
 # Per-step policy-binding vocabularies (2026-06-07). Grades = action reach;
 # oversight names = the six-level dial (forbidden/NO-GO is a gate verdict, not a
 # settable oversight). Kept local to avoid importing the lock package here.
-_GRADES = {"L0", "L1", "L2", "L3", "L4"}
+from .adapters.policy_languages import grade_levels as _grade_levels
+
+_GRADES = set(_grade_levels())  # grade lattice consumed from governance's grammar
 _OVERSIGHT_NAMES = {"autonomous", "notify", "review", "approve", "supervised", "manual"}
 
 

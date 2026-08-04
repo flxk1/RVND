@@ -19,11 +19,11 @@ Current tag-to-commit mapping:
 
 | Package | Release tag | Pinned commit |
 |---|---|---|
-| `loomground-solver` | `solver-v0.2.0` | `910468f5f0415946b2236f569f3c7890cc91e5ae` |
-| `loomground-versum` | `loomground-versum-v0.7.0` | `0ba5325048e7da7fdd947c955a7515723d8148e6` |
+| `loomground-solver` | `solver-v0.2.0` | `8bfbf44850626acd0c4a9710b2b7aae1d2094032` |
+| `loomground-versum` | `loomground-versum-v0.7.0` | `71164f31f34882aff87ea1622952a855e194a4f3` |
 | `loomground-governance` | `v0.8.2` | `b69e0e17b8ab313f9ec0303523deeffdfe7ff115` |
-| `loomground-deontic` | `v0.1.3` | `85e7c6d3c8a6e64cf06e333573cacfa6c671d0b2` |
-| `loomground-ingest` | `v0.1.1` | `236fa8510b47a7978b152f5d07f84cd78c71229a` |
+| `loomground-deontic` | `v0.1.3` | `e346601a5d09d53cee410e22973ff1ec52246338` |
+| `loomground-ingest` | `v0.1.1` | `22661a761afa8178fbadbd4e50f25f958acbe1a2` |
 | `loomground-patchbay` | `v0.1.0` | `36e70ada8d51583b7071a51edf12e6d65b1a0cc5` |
 
 Patchbay is consumed by vendoring the shared presentation contract rather than

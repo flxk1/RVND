@@ -7,8 +7,7 @@ from __future__ import annotations
 from workspaces.subject_card import make_card, AI_ACT_VOCAB, get_vocabulary
 from workspaces.applicability import enrich_pairs, applicability_facets_ai_act
 from workspaces.matcher import assess, match_obligation, Match
-from workspaces.deontic import DeonticFormulaND, OP_OBLIGATION
-from workspaces.nd_routing import DefaultClassifier
+from workspaces.deontic_facets import extract_deontic_pairs
 from workspaces.memo import build_memo, render_memo
 
 
@@ -24,8 +23,7 @@ AI_ACT = (
 
 
 def _obligations(text=AI_ACT):
-    cls = DefaultClassifier().classify(text)
-    pairs = DeonticFormulaND().extract(text, cls, source_document="ai-act")
+    pairs = extract_deontic_pairs(text, source_document="ai-act")
     enrich_pairs(pairs, "ai-act")
     return pairs
 

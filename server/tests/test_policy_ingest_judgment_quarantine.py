@@ -16,8 +16,8 @@ from pathlib import Path
 import pytest
 
 from workspaces import format_extractors as fx
-from workspaces import genre_router
-from workspaces import policy_ingest
+from workspaces.adapters.ingest.governance import genre_router
+from workspaces.adapters.ingest.governance import compiler as policy_ingest
 
 from tests.test_policy_ingest import POLICY   # the golden fixture — shared, not copied
 

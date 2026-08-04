@@ -3,13 +3,16 @@
 """Article-level norm extraction: a law's own provisions enter the ND-rule map
 individually, each anchored to its instrument with its article pinpoint.
 
+The dependency-free segmentation unit tests moved with the splitter to
+``loomground-ingest``. What stays here are the per-article placement tests that
+drive ``RuleRegistry`` — the registry the RVND host owns.
+
 The fixture is real GDPR operative text (a handful of articles) so the test
 exercises actual legal drafting, not synthetic sentences.
 """
 
 from __future__ import annotations
 
-from workspaces import legal_norm_splitter as splitter
 from workspaces import legal_corpus
 from workspaces.rule_registry import RuleRegistry
 
@@ -40,23 +43,6 @@ Notification of a personal data breach to the supervisory authority
 def _seed(tmp_path):
     legal_corpus.seed_registry(tmp_path)        # so the world map has gdpr→EU→EDPB
     return RuleRegistry(tmp_path, user="alex")
-
-
-# ── segmentation ──────────────────────────────────────────────────────────────
-
-def test_segments_articles_and_paragraphs_with_pinpoints():
-    provs = splitter.segment_provisions(GDPR)
-    pins = [p.pinpoint for p in provs]
-    assert "Art. 5(1)" in pins and "Art. 6(1)" in pins
-    assert "Art. 17(1)" in pins and "Art. 17(3)" in pins and "Art. 33(1)" in pins
-    # Art. 17 yields two distinct paragraph-level provisions
-    assert sum(1 for p in provs if p.article == "17") == 2
-
-
-def test_german_paragraph_segmentation():
-    text = "§ 286\n1. Der Schuldner kommt in Verzug.\n2. Dem Verzug steht es gleich."
-    provs = splitter.segment_provisions(text)
-    assert {p.pinpoint for p in provs} >= {"§ 286(1)", "§ 286(2)"}
 
 
 # ── per-article norms in the ND-rule map ──────────────────────────────────────

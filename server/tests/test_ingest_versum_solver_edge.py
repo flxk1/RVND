@@ -18,9 +18,14 @@ def test_policy_ingest_reaches_versum_and_solver(tmp_path: Path):
     edges = dimensioned_edges(str(tmp_path))
 
     assert result["ok"] is True
+    # Plain obligations no longer belong to a home-grown RVND policy ingester:
+    # GovernanceIngester takes only express governance, so this bare "must"
+    # obligation falls through to the consumed DeonticIngester (documented
+    # behaviour: "Controller must notify" -> "deontic"). The deontic projection
+    # is richer, but the obligation still reaches versum and composes in solver.
+    assert result["ingester"] == "deontic"
     assert result["write"]["status"] == "inserted"
-    assert len(edges) == 2
-    assert edges[0].predicate == "O"
+    assert ("Controller", "O", "notify") in [(e.subject, e.predicate, e.object) for e in edges]
     assert compose_paths(edges, start="Controller")
 
 

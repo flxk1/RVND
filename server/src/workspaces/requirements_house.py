@@ -194,13 +194,15 @@ def build_house_from_text(instrument_text: str, domain: str,
                           *, title: str = "") -> RequirementsHouse:
     """Convenience: run the NDs over instrument text, then assemble the house."""
     from .nd_routing import DefaultClassifier
-    from .deontic import DeonticFormulaND
+    from .deontic_facets import extract_deontic_pairs
     from .instrument_obligation_extractor import RequiredArtifactExtractor
     from .crossref_extractor import extract_cross_references
     from .applicability import enrich_pairs
 
     cls = DefaultClassifier().classify(instrument_text)
-    obligations = DeonticFormulaND().extract(instrument_text, cls, source_document=domain)
+    # TODO(flow): consume the deontic facet as a patchbay relation
+    # (versum → solver → patchbay → rvnd) rather than re-reading the surface here.
+    obligations = extract_deontic_pairs(instrument_text, source_document=domain)
     enrich_pairs(obligations, domain)
     artifacts = RequiredArtifactExtractor().extract(instrument_text, cls, source_document=domain)
     refs = [r.to_dict() for r in extract_cross_references(instrument_text, host_key=domain)]

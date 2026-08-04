@@ -47,7 +47,9 @@ class Verdict(str, Enum):
 
 
 # Autonomy grades L0 (interactive, every step approved) → L4 (silent publish).
-_GRADE = {"L0": 0, "L1": 1, "L2": 2, "L3": 3, "L4": 4}
+from .adapters.policy_languages import grade_index as _grade_index
+
+_GRADE = _grade_index()  # grade lattice consumed from governance's grammar
 
 # Footprint tags that flag an action out of the fast path, with the minimum
 # autonomy grade at which they may proceed at all (below it → NO-GO).
