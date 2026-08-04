@@ -23,11 +23,11 @@ authors = [{ name = "flxk1" }]
 # reasoning and Loomground evaluation, and loomground-governance owns all language
 # artifacts and conformance data. RVND carries adapters and governance overlays only.
 dependencies = [
-    "loomground-solver @ git+https://github.com/flxk1/loomground-solver@910468f5f0415946b2236f569f3c7890cc91e5ae",
-    "loomground-versum @ git+https://github.com/flxk1/loomground-versum@0ba5325048e7da7fdd947c955a7515723d8148e6",
+    "loomground-solver @ git+https://github.com/flxk1/loomground-solver@8bfbf44850626acd0c4a9710b2b7aae1d2094032",
+    "loomground-versum @ git+https://github.com/flxk1/loomground-versum@c417c91077e2860893bc29260c3b1aabfdddf121",
     "loomground-governance @ git+https://github.com/flxk1/loomground-governance@b69e0e17b8ab313f9ec0303523deeffdfe7ff115",
-    "loomground-deontic @ git+https://github.com/flxk1/loomground-deontic@85e7c6d3c8a6e64cf06e333573cacfa6c671d0b2",
-    "loomground-ingest @ git+https://github.com/flxk1/loomground-ingest@236fa8510b47a7978b152f5d07f84cd78c71229a",
+    "loomground-deontic @ git+https://github.com/flxk1/loomground-deontic@e346601a5d09d53cee410e22973ff1ec52246338",
+    "loomground-ingest @ git+https://github.com/flxk1/loomground-ingest@22661a761afa8178fbadbd4e50f25f958acbe1a2",
     "cryptography>=41.0",
     "anyascii>=0.3",
     "mcp>=1.8,<2.0",

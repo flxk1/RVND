@@ -27,11 +27,12 @@ from .policy import PolicyIngester
 
 
 def default_registry() -> IngesterRegistry:
-    """A registry carrying RVND's ingesters. Policy is the only instance today;
-    it is the best-guess fallback for governance text and self-quarantines a
-    court judgment."""
+    """The registry carries only the consumed grammar ingester. RVND has no
+    ingest of its own: DeonticIngester (from loomground_ingest, over
+    loomground-deontic + loomground-governance projected across the 5D) builds
+    the versum. The RVND-grown regex twin (PolicyIngester/policy_ingest) is
+    being retired — consumers read the versum, not an RVND-internal twin."""
     reg = IngesterRegistry()
-    reg.register(PolicyIngester())
     reg.register(DeonticIngester())
     return reg
 
