@@ -16,10 +16,11 @@ composition are supplied by Solver, while durable knowledge is supplied by Versu
 """
 from __future__ import annotations
 
-from collections import Counter, deque
+from collections import Counter
 from typing import Any, Iterable, Optional
 
-from workspaces.adapters.solver.dimensions import Dimension, compose
+from workspaces.adapters.solver.dimensions import Dimension
+from workspaces.adapters.solver.reasoning import Edge, compose_paths
 
 SCHEMA_VERSION = "governance_kg/v1"
 KINDS = ("instrument", "role", "room", "rule", "obligation", "gate", "artifact")
@@ -124,29 +125,28 @@ def _wrap(level: str, nodes: dict, edges: list, focus: Optional[str], dims: Opti
 
 
 def path(rules: Iterable[Any], src: str, dst: str) -> dict[str, Any]:
-    """A reasoning path from ``src`` to ``dst`` over the detail graph — the ordered edges
-    (provenance) + the left-fold composed dimension (``dimensions.compose``). This is the
-    auditable "why" a table can't give."""
+    """A reasoning path from ``src`` to ``dst`` over the detail graph — the ordered
+    edges (provenance) + the composed dimension. Composition is delegated to the
+    consumed solver (:func:`compose_paths`); RVND keeps no path-finder of its own.
+    A direct edge is a fact, not a derivation, so it is returned as a single hop;
+    a longer connection is composed by the solver over both edge directions (the
+    governance graph reads undirected for this query)."""
     g = project(rules, level="detail")
-    adj: dict[str, list[dict]] = {}
-    for e in g["edges"]:                                     # undirected traversal
-        adj.setdefault(e["source"], []).append(e)
-        adj.setdefault(e["target"], []).append({**e, "source": e["target"], "target": e["source"]})
-    q: deque = deque([(src, [])])
-    seen = {src}
-    while q:
-        cur, trail = q.popleft()
-        if cur == dst:
-            chain = [Dimension(e["dimension"]) for e in trail]
-            overall = chain[0] if chain else None
-            for d in chain[1:]:
-                overall = compose(overall, d)
-            return {"version": SCHEMA_VERSION, "from": src, "to": dst, "hops": len(trail),
-                    "edges": trail, "dimension_chain": [e["dimension"] for e in trail],
-                    "overall_dimension": overall.value if overall else None}
-        for e in adj.get(cur, []):
-            if e["target"] not in seen:
-                seen.add(e["target"])
-                q.append((e["target"], trail + [e]))
+    for e in g["edges"]:                                     # a direct edge is a fact
+        if {e["source"], e["target"]} == {src, dst}:
+            return {"version": SCHEMA_VERSION, "from": src, "to": dst, "hops": 1,
+                    "edges": [e], "dimension_chain": [e["dimension"]],
+                    "overall_dimension": e["dimension"]}
+    edges: list[Edge] = []
+    for e in g["edges"]:
+        dim = Dimension(e["dimension"])
+        pred = e.get("kind") or e.get("predicate") or "linked"
+        edges.append(Edge(subject=e["source"], predicate=pred, object=e["target"], dimension=dim))
+        edges.append(Edge(subject=e["target"], predicate=pred, object=e["source"], dimension=dim))
+    for inf in compose_paths(edges, start=src, max_depth=8):   # best-confidence first
+        if inf.object == dst:
+            return {"version": SCHEMA_VERSION, "from": src, "to": dst, "hops": inf.hops,
+                    "edges": inf.path, "dimension_chain": inf.dimension_chain,
+                    "overall_dimension": inf.dimension.value}
     return {"version": SCHEMA_VERSION, "from": src, "to": dst, "hops": 0, "edges": [],
             "reason": "no path"}
