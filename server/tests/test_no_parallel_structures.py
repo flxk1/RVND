@@ -16,21 +16,31 @@ comment below into ``RETIRED`` and this gate makes the removal permanent.
 """
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 SRC = Path(__file__).resolve().parents[1] / "src" / "workspaces"
 
 # Parallel structures already retired — must stay absent (deleted + unimported).
-# Grows as S1-S4 land. (Empty until the first stack retirement completes.)
-RETIRED: tuple[str, ...] = ()
+# Grows as S1-S4 land. (``ingest/policy.py`` is fenced separately below: its stem
+# ``policy`` collides with the live ``workspaces/policy.py`` policy loader.)
+RETIRED: tuple[str, ...] = (
+    "policy_ingest.py",       # governance compiler -> loomground_ingest.governance
+    "genre_router.py",        # -> loomground_ingest.governance.genre_router
+    "legal_norm_splitter.py", # -> loomground_ingest.governance.legal_norm_splitter
+    "policy_normalise.py",    # -> loomground_ingest.governance.policy_normalise
+)
 
 # Known parallel structures still being retired (tracked debt, not yet fenced):
-#   languages/ingest: deontic.py, hohfeld.py, rule_extractor.py,
-#     rule_extractor_llm.py, policy_ingest.py, legal_norm_splitter.py,
-#     legal_extractors.py, crossref_extractor.py, instrument_obligation_extractor.py
-#   versum stores: memory.py (WorkspaceMemory), legal_corpus.py,
-#     legal_world.py, world_corpus_loader.py, world_relations.py
-#   solver composition: governance_kg.py (path), legal_connection.py (compose*)
+#   languages/ingest: hohfeld.py, rule_extractor.py,
+#     rule_extractor_llm.py, legal_extractors.py, crossref_extractor.py,
+#     instrument_obligation_extractor.py
+#   (deontic.py is RETIRED — fenced by test_rvnd_deontic_language_is_retired below)
+#   (legal_connection.py composition is RETIRED — now a consumer shim over
+#    loomground-legal; fenced by test_legal_connection_composition_is_retired)
+#   versum stores: memory.py (WorkspaceMemory knowledge role — audit chain stays),
+#     legal_corpus.py, legal_world.py, world_corpus_loader.py, world_relations.py
+#   solver composition: governance_kg.py (path)
 
 
 def _py_files() -> list[Path]:
@@ -72,6 +82,85 @@ def test_retired_parallel_structures_stay_gone() -> None:
     for path in _py_files():
         text = path.read_text(encoding="utf-8")
         for stem in stems:
-            if f"import {stem}" in text or f"from .{stem} import" in text or f"from workspaces.{stem} import" in text:
+            # Fence the retired MODULE by its old import paths — a returned
+            # parallel structure would be imported as ``(workspaces.).<stem>``
+            # or pulled straight from the ``workspaces``/local package. The
+            # names are legitimately re-exported through the sanctioned adapter
+            # seam (``from .adapters.ingest.governance import <stem> as ...``),
+            # so match the module path, not a bare occurrence of the name.
+            patterns = (
+                rf"^\s*import\s+{stem}\b",                              # import legal_norm_splitter
+                rf"^\s*import\s+workspaces\.{stem}\b",                  # import workspaces.legal_norm_splitter
+                rf"^\s*from\s+\.?{stem}\s+import\b",                    # from (.)legal_norm_splitter import ...
+                rf"^\s*from\s+workspaces\.{stem}\s+import\b",           # from workspaces.legal_norm_splitter import ...
+                rf"^\s*from\s+workspaces\s+import\s+[^\n]*\b{stem}\b",  # from workspaces import legal_norm_splitter
+                rf"^\s*from\s+\.\s+import\s+[^\n]*\b{stem}\b",          # from . import legal_norm_splitter
+            )
+            if any(re.search(p, text, re.MULTILINE) for p in patterns):
                 reimported.append(f"{path.relative_to(SRC)} -> {stem}")
     assert not reimported, f"retired parallel structure re-imported: {reimported}"
+
+
+def test_rvnd_deontic_language_is_retired() -> None:
+    """RVND's parallel deontic core + its ``DeonticFormulaND`` nD-facet dispatch
+    (``deontic.py``) are gone. The deontic GRAMMAR is consumed from the
+    ``deontic`` package via ``adapters/deontic.py``; the text→deontic-pair wiring
+    lives in ``deontic_facets.py``. Fenced apart from RETIRED because its stem
+    ``deontic`` collides with the sanctioned package import ``import deontic``
+    (the adapter seam + the mcp health probe) — so we fence the RVND MODULE path
+    (``.deontic`` / ``workspaces.deontic``), never the bare package."""
+    assert not (SRC / "deontic.py").exists(), (
+        "workspaces/deontic.py (RVND-grown deontic language) reappeared")
+    patterns = (
+        r"^\s*from\s+\.deontic\s+import\b",                       # from .deontic import ...
+        r"^\s*from\s+workspaces\.deontic\s+import\b",             # from workspaces.deontic import ...
+        r"^\s*import\s+workspaces\.deontic\b",                    # import workspaces.deontic
+        r"^\s*from\s+workspaces\s+import\s+[^\n]*\bdeontic\b",    # from workspaces import deontic
+        r"^\s*from\s+\.\s+import\s+[^\n]*\bdeontic\b",            # from . import deontic
+    )
+    offenders: list[str] = []
+    for path in _py_files():
+        text = path.read_text(encoding="utf-8")
+        if any(re.search(p, text, re.MULTILINE) for p in patterns):
+            offenders.append(str(path.relative_to(SRC)))
+    assert not offenders, f"retired RVND deontic module re-imported: {offenders}"
+
+
+def test_legal_connection_composition_is_retired() -> None:
+    """RVND's parallel legal-connection composition ENGINE is retired.
+
+    ``legal_connection.py`` is now a consumer shim over loomground-legal's
+    connection algebra (the solver ``RelationAlgebra`` built from that package's
+    ``connections.json``). It must carry NO composition table or hand-rolled
+    fold of its own, and must source the algebra + vocabulary from
+    ``loomground_legal`` — so the parallel engine cannot silently return."""
+    src = (SRC / "legal_connection.py").read_text(encoding="utf-8")
+    # consumes loomground-legal's algebra THROUGH the adapters/ seam (the
+    # workspaces boundary rule: no direct upstream import outside adapters/).
+    assert "adapters.legal" in src, (
+        "legal_connection must consume loomground-legal via the adapters/legal seam")
+    seam = (SRC / "adapters" / "legal.py").read_text(encoding="utf-8")
+    assert "from loomground_legal" in seam, (
+        "adapters/legal must re-export loomground-legal's connection algebra")
+    assert "_connection_algebra()" in src, (
+        "legal_connection must build on the consumed RelationAlgebra")
+    # the retired engine: a local composition table + its left-fold
+    assert "_COMPOSE" not in src, (
+        "legal_connection re-grew a local composition table (_COMPOSE)")
+    # composition must delegate to the consumed algebra, not re-implement a fold
+    assert "_ALG.compose_path" in src and "_ALG.compose" in src, (
+        "legal_connection.compose/compose_path must delegate to the algebra")
+
+
+def test_rvnd_grown_policy_ingester_is_retired() -> None:
+    """The RVND-grown ``ingest/policy.py`` (PolicyIngester) is gone; the consumed
+    GovernanceIngester replaces it. Fenced apart from RETIRED because its stem
+    ``policy`` collides with the live ``workspaces/policy.py`` policy loader."""
+    assert not (SRC / "ingest" / "policy.py").exists(), (
+        "ingest/policy.py (RVND-grown PolicyIngester) reappeared")
+    offenders: list[str] = []
+    for path in _py_files():
+        text = path.read_text(encoding="utf-8")
+        if "ingest.policy import" in text or "from .policy import PolicyIngester" in text:
+            offenders.append(str(path.relative_to(SRC)))
+    assert not offenders, f"retired PolicyIngester re-imported: {offenders}"

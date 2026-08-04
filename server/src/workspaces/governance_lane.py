@@ -25,7 +25,9 @@ __all__ = [
     "get_lane", "list_lanes",
 ]
 
-_GRADES = {"L0": 0, "L1": 1, "L2": 2, "L3": 3, "L4": 4}
+from .adapters.policy_languages import grade_index as _grade_index
+
+_GRADES = _grade_index()  # grade lattice consumed from governance's grammar
 _EVENT_KIND = "governance-lane-approved"
 _LEGACY_EVENT_KIND = "autonomy-lane-approved"
 

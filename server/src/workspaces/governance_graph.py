@@ -27,7 +27,11 @@ from .operations import runs_for
 from .step_contract import risk_grade_cap
 
 # Strictest-wins precedence: what actually governs the edge to the world.
-_RANK = {"auto": 1, "human": 2, "refused": 3, "reserved": 4}
+from .adapters.policy_languages import verdict_order as _verdict_order
+
+# restrictiveness rank consumed from governance's verdict grammar (adds
+# 'prohibited' the local table had omitted — the worst verdict now ranks worst).
+_RANK = {v: i + 1 for i, v in enumerate(_verdict_order())}
 _BY_RANK = {v: k for k, v in _RANK.items()}
 
 

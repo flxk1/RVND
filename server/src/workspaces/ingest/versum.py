@@ -6,7 +6,7 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 
-from loomground_ingest import versum_writer
+from loomground_ingest import EnrichingWriter, versum_writer
 
 from ..adapters.versum import DimensionedSubgraphSink
 from . import default_registry, ingest_file
@@ -32,7 +32,11 @@ def ingest_into_versum(file_path: str, folder_context: str) -> dict:
     evidence_id = "evidence:" + hashlib.sha256(
         (source_id + ":artifact").encode("utf-8")
     ).hexdigest()
-    writer = versum_writer(
+    # EnrichingWriter composes the other languages (factual conditions -> 5D
+    # edges, epistemic triggers -> the epistemic nD facet) onto each norm before
+    # the versum write, so the store is built with every applicable nD, not just
+    # deontic. The base pipeline stays pure; composition rides on this seam.
+    writer = EnrichingWriter(versum_writer(
         DimensionedSubgraphSink(
             workspace / ".versum", authorized_store_root=workspace
         ),
@@ -50,7 +54,7 @@ def ingest_into_versum(file_path: str, folder_context: str) -> dict:
             "dimension_count": len(FEDERATION_AXES),
             "axes": FEDERATION_AXES,
         },
-    )
+    ))
     return ingest_file(
         str(source), str(workspace), registry=default_registry(), writer=writer,
         ctx={"source_id": source_id},

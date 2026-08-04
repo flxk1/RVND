@@ -33,7 +33,9 @@ OVERSIGHT_LEVELS = (
     "AUTONOMOUS", "NOTIFY", "REVIEW", "APPROVE", "SUPERVISED", "MANUAL")
 _LEVEL_ORDER = {lvl: i for i, lvl in enumerate(OVERSIGHT_LEVELS)}
 
-_GRADE_ORDER = {"L0": 0, "L1": 1, "L2": 2, "L3": 3, "L4": 4}
+from .adapters.policy_languages import grade_index as _grade_index
+
+_GRADE_ORDER = _grade_index()  # grade lattice consumed from governance's grammar
 
 
 @dataclass

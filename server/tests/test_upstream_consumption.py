@@ -89,12 +89,19 @@ def test_versum_imports_are_confined_to_adapter():
     assert not violations, f"direct Versum imports outside adapter: {violations}"
 
 
-def test_policy_ingest_directly_consumes_both_language_packs():
-    """RVND policy ingestion must not receive either language only transitively."""
-    imports = _imports(PKG / "ingest" / "policy.py")
-    assert "loomground_governance" in imports
-    assert "deontic" in imports
-    assert "loomground_ingest" in imports
+def test_policy_ingest_is_consumed_from_upstream_through_the_adapter():
+    """RVND no longer grows its own policy ingester: the RVND-local
+    ``ingest/policy.py`` is retired (fenced in ``test_no_parallel_structures``)
+    and the governance compiler is consumed from ``loomground-ingest`` through the
+    sanctioned adapter seam. The "both language packs consumed, never transitively"
+    invariant now lives upstream inside ``loomground-ingest``; the RVND host reaches
+    it only through this one seam (never a copied or bypassed ingester)."""
+    assert not (PKG / "ingest" / "policy.py").exists(), (
+        "ingest/policy.py (RVND-grown PolicyIngester) reappeared")
+    imports = _imports(PKG / "adapters" / "ingest" / "governance.py")
+    assert any(name == "loomground_ingest" or name.startswith("loomground_ingest.")
+               for name in imports), (
+        "the governance adapter must consume the compiler from loomground-ingest")
 
 
 def test_solver_compatibility_modules_have_no_substantive_bodies():
