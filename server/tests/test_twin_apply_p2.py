@@ -19,7 +19,7 @@ import os
 import pytest
 
 from workspaces import mcp_server as M
-from workspaces import policy_ingest as P
+from workspaces.adapters.ingest.governance import compiler as P
 from workspaces.governance import decide_action
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")

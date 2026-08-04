@@ -758,6 +758,20 @@ def workspace_remember(
     }
     mem = WorkspaceMemory(folder_context, log_root=_log_root(), actor=_default_actor())
     pair_id = mem.remember(pair, channel="fact")
+    # Knowledge plane: the triple is a runtime fact — write it into the folder's
+    # Versum store so it is a first-class node/relation reachable by
+    # workspace_query / reason (closing the remember->query loop). The signed
+    # mutation-log event above remains the audit record; Versum holds the
+    # knowledge. Best-effort: a Versum write failure must not lose the audited
+    # remember.
+    try:
+        import versum
+        store = Path(folder_abs) / ".versum"
+        store.mkdir(parents=True, exist_ok=True)
+        versum.append_fact(str(store), subject=subject, predicate=predicate,
+                           object=object, dimension=dim, actor=_default_actor())
+    except Exception:
+        pass
     return {
         "remembered": True,
         "pair_id": pair_id,
@@ -792,7 +806,7 @@ def workspace_query(
     # Versum is the ONLY knowledge plane; fail-closed on an unindexed workspace
     # ("index the folder first") rather than serving a non-Versum overlay.
     knowledge = VersumKnowledgeStore(folder_context)
-    if not knowledge.available:
+    if not knowledge.has_records:
         return {
             "folder_context": str(Path(folder_context).expanduser().resolve()),
             "knowledge_backend": None,

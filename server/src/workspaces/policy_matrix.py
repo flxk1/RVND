@@ -37,7 +37,9 @@ from typing import Iterable, Optional
 
 from . import verdict as _v
 
-GRADES = ("L0", "L1", "L2", "L3", "L4")                      # action reach
+from .adapters.policy_languages import grade_levels as _grade_levels
+
+GRADES = _grade_levels()   # action reach — consumed from governance's grammar
 OVERSIGHT = ("autonomous", "notify", "review", "approve", "supervised", "manual")
 LIGHTS = ("go", "ask", "block")
 # Ordering + gate mapping derive from the shared tri-state — one source of truth

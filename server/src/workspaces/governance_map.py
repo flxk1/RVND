@@ -351,7 +351,7 @@ def build(*, provisions: Optional[list[dict[str, Any]]] = None,
     from . import duty_identification as _di
     prov = list(provisions or [])
     if not prov and policy_text:
-        from . import legal_norm_splitter as _split
+        from .adapters.ingest.governance import legal_norm_splitter as _split
         segs = _split.segment_provisions(policy_text)
         if segs:
             for p in segs:

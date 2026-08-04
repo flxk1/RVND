@@ -49,14 +49,16 @@ def extract_inputs(instrument_text: str, domain: str) -> MemoInputs:
     directly (no folder/memory needed for a one-shot memo).
     """
     from .nd_routing import DefaultClassifier
-    from .deontic import DeonticFormulaND
+    from .deontic_facets import extract_deontic_pairs
     from .decisions.extractor import DecisionExtractor
     from .instrument_obligation_extractor import RequiredArtifactExtractor
     from .crossref_extractor import extract_cross_references
 
     cls = DefaultClassifier().classify(instrument_text)
     src = domain
-    obligations = DeonticFormulaND().extract(instrument_text, cls, source_document=src)
+    # TODO(flow): consume the deontic facet as a patchbay relation
+    # (versum → solver → patchbay → rvnd) rather than re-reading the surface here.
+    obligations = extract_deontic_pairs(instrument_text, source_document=src)
     decisions = DecisionExtractor().extract(instrument_text, cls, source_document=src)
     artifacts = RequiredArtifactExtractor().extract(instrument_text, cls, source_document=src)
     refs = [r.to_dict() for r in extract_cross_references(instrument_text, host_key=domain)]
@@ -99,7 +101,7 @@ def build_memo(instrument_text: str, card: SubjectCard,
 # ---------------------------------------------------------------------------
 
 def _ob_line(m) -> str:
-    op = {"O": "must", "F": "must not", "P": "may", "R": "has right to"}.get(m.operator, "—")
+    op = {"O": "must", "F": "must not", "P": "may"}.get(m.operator, "—")
     act = (m.action or "").strip()
     why = "; ".join(v.reason for v in m.facet_verdicts) or "unconditional"
     cite = f"  [{m.pair_id[:18]}… · {m.source}]"

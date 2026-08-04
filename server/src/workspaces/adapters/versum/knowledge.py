@@ -48,6 +48,22 @@ class VersumKnowledgeStore:
     def available(self) -> bool:
         return (self.root / "claims.csv").is_file()
 
+    @property
+    def has_records(self) -> bool:
+        """True if this folder holds ANY versum knowledge — curated claims OR
+        runtime/file-ingest dimensioned-subgraph records.
+
+        The ``available`` gate only sees the curated ``claims.csv`` projection.
+        Runtime facts (``versum.append_fact``) and file ingests land in the
+        dimensioned-subgraph transaction store instead, so the query/reason
+        gates use this broader check to recognise a folder that knows things
+        without a curated index.
+        """
+        if self.available:
+            return True
+        txns = self.root / "_dimensioned_subgraph_transactions"
+        return txns.is_dir() and any(txns.glob("*.json"))
+
     def require(self) -> None:
         if not self.available:
             raise FileNotFoundError(
@@ -88,6 +104,22 @@ class VersumKnowledgeStore:
             rows = [r for r in rows if (r.get("dimension") or "relational")
                     in wanted_dims]
         return rows
+
+    def search(self, query, *, k: int = 10,
+               filters: Optional[dict] = None) -> list[dict]:
+        """Keyword/similarity search over this folder's ingested content, via the
+        consumed versum search (``search_similar``) over the DimensionedSubgraph
+        store the ingest writes. Additive read surface: the memory→versum read
+        migration routes ``pairs_search`` here once the write paths populate
+        versum for the remaining channels (until then memory stays the source for
+        pair channels versum does not yet hold)."""
+        if not self.root.is_dir():
+            raise FileNotFoundError(
+                f"Versum store not found at {self.root}; ingest the folder with "
+                "loomground-ingest before searching")
+        from versum.store.retrieve import from_dimensioned_store
+        return from_dimensioned_store(self.root).search_similar(
+            query, k=k, filters=filters)
 
     def snapshot(self) -> VersumSnapshot:
         claims = tuple(self.claims())

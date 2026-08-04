@@ -16,7 +16,7 @@ from pathlib import Path
 import pytest
 
 from workspaces import judgment_reading as JR
-from workspaces import policy_ingest as P
+from workspaces.adapters.ingest.governance import compiler as P
 from workspaces import format_extractors as fx
 from workspaces.source_classes import Effect
 

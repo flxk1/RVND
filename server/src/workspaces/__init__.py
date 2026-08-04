@@ -190,14 +190,6 @@ from .domain_nds import (
     OversightND,
     register_default_domain_nds,
 )
-from .deontic import (
-    DeonticFormula,
-    DeonticFormulaND,
-    detect_conflicts,
-    extract_formulae,
-    formula_from_rule,
-    register_deontic_nd,
-)
 from .crossref_extractor import (
     CrossReference,
     CrossReferenceExtractor,
@@ -451,12 +443,6 @@ __all__ = [
     "OversightND",
     "register_default_domain_nds",
     # NotebookLM-grade legal analysis layer
-    "DeonticFormula",
-    "DeonticFormulaND",
-    "extract_formulae",
-    "formula_from_rule",
-    "detect_conflicts",
-    "register_deontic_nd",
     "CrossReference",
     "CrossReferenceExtractor",
     "extract_cross_references",

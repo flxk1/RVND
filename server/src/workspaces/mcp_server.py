@@ -597,7 +597,7 @@ def reason(
     # folder first"), never served from a non-Versum overlay. The legacy pair
     # overlay was retired so nothing reasons off a source other than Versum.
     knowledge = VersumKnowledgeStore(folder_context)
-    if not knowledge.available:
+    if not knowledge.has_records:
         return {
             "folder_context": str(Path(folder_context).expanduser().resolve()),
             "knowledge_backend": None,
@@ -646,6 +646,20 @@ def reason(
                 }],
             }
             recorded.append(mem.remember(pair, channel="reasoning"))
+            # Knowledge plane: record the inference into Versum as a node/relation
+            # chain so it is reachable by query/reason. The signed mutation-log
+            # event above stays the audit record; best-effort on the Versum side.
+            try:
+                import versum
+                store = Path(folder_context).expanduser().resolve() / ".versum"
+                store.mkdir(parents=True, exist_ok=True)
+                versum.append_inference(
+                    str(store),
+                    path=[{"subject": h["subject"], "predicate": h["predicate"],
+                           "object": h["object"]} for h in inf.path],
+                    dimension=inf.dimension.value, actor=_default_actor())
+            except Exception:
+                pass
 
     return {
         "folder_context": str(Path(folder_context).expanduser().resolve()),
@@ -1928,7 +1942,7 @@ def _read_policy_file(path: str, folder_context: str) -> tuple[str, Optional[str
         return "", None, f"no extractable text in {fp.name} (scanned/encrypted?)"
     # GENRE ROUTER: detect the document genre, drop its non-normative preamble (recitals /
     # foreword), and line-clean — so extraction sees the normative body, not PDF fragments.
-    from . import genre_router as _gr
+    from .adapters.ingest.governance import genre_router as _gr
     genre, cleaned = _gr.ingest_prepare(res.text)
     return cleaned, genre, None
 
@@ -2621,7 +2635,7 @@ def workspace_workflow(op: str, params: dict[str, Any] | None = None) -> dict[st
                 return {"ok": False, "errors": [f"malformed patch: {e}"]}
         if op == "policy_ingest":
             # Policy ingest → digital twin; consumed by the UI panel.
-            from . import policy_ingest as _pi
+            from .adapters.ingest.governance import compiler as _pi
             _txt = p.get("policy_text", "")
             _genre = None
             _path = p.get("path")
