@@ -390,6 +390,72 @@ class WorkspaceMemory:
             _LOG.warning("versum mirror skipped for pair %s: %s",
                          pair.get("id", "?"), exc)
 
+    def _versum_knowledge_pairs(self) -> dict[str, dict[str, Any]]:
+        """Knowledge pairs from this folder + descendants' versum sinks, keyed by
+        the pair's own id.
+
+        The read side of the memory→versum split: knowledge bodies live in versum
+        (``remember`` mirrors them via ``append_record``, storing the full pair in
+        the node's ``properties.record``), and versum already hides erased
+        knowledge. Hierarchy mirrors :meth:`_logs_in_scope` — folder_context plus
+        every descendant, never siblings or ancestors. Best-effort: a versum read
+        failure is logged and skipped so a read never breaks.
+        """
+        out: dict[str, dict[str, Any]] = {}
+        try:
+            from .adapters.versum import iter_records
+        except Exception:  # versum surface absent → nothing to fold in
+            return out
+        folders = discover_descendants(self.folder_context, log_root=self._log_root)
+        if self.folder_context not in folders:
+            folders.append(self.folder_context)
+        for fp in folders:
+            store = Path(fp) / ".versum"
+            try:
+                for rec in iter_records(store):
+                    props = rec.get("properties") if isinstance(rec, dict) else None
+                    body = props.get("record") if isinstance(props, dict) else None
+                    if isinstance(body, dict) and body.get("id"):
+                        out.setdefault(str(body["id"]), body)
+            except Exception as exc:
+                _LOG.warning("versum knowledge read skipped for %s: %s", fp, exc)
+        return out
+
+    def _erase_knowledge_from_versum(self, pair_ids: set[str], *,
+                                     physical: bool, reason: str = "") -> None:
+        """Keep the versum sink consistent with a log delete/purge of knowledge.
+
+        A logical delete is already honored by reads via the log's lifecycle state,
+        but a PURGE removes the log event outright — so without erasing the versum
+        mirror too, the read union would resurface a purged pair. Enumerates folder
+        + descendants' sinks and erases every node whose stored pair id is in
+        ``pair_ids`` (physical purge when ``physical``, else a tombstone). Guarded:
+        a versum failure is logged, never fatal to the log operation.
+        """
+        if not pair_ids:
+            return
+        try:
+            from .adapters.versum import iter_records, erase_record
+        except Exception:
+            return
+        folders = discover_descendants(self.folder_context, log_root=self._log_root)
+        if self.folder_context not in folders:
+            folders.append(self.folder_context)
+        for fp in folders:
+            store = Path(fp) / ".versum"
+            if not store.is_dir():
+                continue
+            try:
+                for rec in iter_records(store):
+                    props = rec.get("properties") if isinstance(rec, dict) else None
+                    body = props.get("record") if isinstance(props, dict) else None
+                    nid = rec.get("node_id") if isinstance(rec, dict) else None
+                    if nid and isinstance(body, dict) and str(body.get("id")) in pair_ids:
+                        erase_record(store, nid, physical=physical,
+                                     actor=self._actor, reason=reason)
+            except Exception as exc:
+                _LOG.warning("versum erasure sync skipped for %s: %s", fp, exc)
+
     def publish(
         self,
         pair: dict[str, Any],
@@ -670,14 +736,17 @@ class WorkspaceMemory:
         See ``MutationLog.purge`` for validation rules.
         """
         log = self._find_owning_log(pair_id)
-        if log is None:
-            return 0
-        return log.purge(
+        purged = 0 if log is None else log.purge(
             pair_id,
             legal_basis=legal_basis,
             requester_ref=requester_ref,
             reason=reason,
         )
+        # Keep the versum sink consistent: physically erase the knowledge mirror,
+        # else the read union would resurface a purged pair (its log event is gone).
+        self._erase_knowledge_from_versum(
+            {pair_id}, physical=True, reason=reason or "purge_pair")
+        return purged
 
     def purge_document(
         self,
@@ -703,6 +772,7 @@ class WorkspaceMemory:
         """
         target = str(document_path)
         total_purged = 0
+        purged_ids: set[str] = set()
         for log in self._logs_in_scope():
             pair_ids_to_purge: set[str] = set()
             for evt in log.replay():
@@ -719,6 +789,11 @@ class WorkspaceMemory:
                     requester_ref=requester_ref,
                     reason=reason,
                 )
+            purged_ids |= pair_ids_to_purge
+        # Keep the versum sink consistent: physically erase the knowledge mirrors of
+        # every purged pair, else the read union would resurface them.
+        self._erase_knowledge_from_versum(
+            purged_ids, physical=True, reason=reason or "purge_document")
         return total_purged
 
     # ----------------------------------------------------------------------
@@ -801,6 +876,14 @@ class WorkspaceMemory:
                 return None
             return latest_body
 
+        # Not in the log — check the versum sink (memory→versum read). A pair the
+        # log knows as deleted returned None above; this only serves knowledge
+        # whose body lives in versum and not (or no longer) in the log. versum
+        # already hides erased knowledge.
+        vp = self._versum_knowledge_pairs().get(pair_id)
+        if vp is not None:
+            return vp
+
         # Not in own scope — check ancestor-distributed pairs (B5).
         anc_bodies, _, _ = self._ancestor_distributed_aggregation()
         return anc_bodies.get(pair_id)
@@ -842,6 +925,17 @@ class WorkspaceMemory:
                 if evt.lifecycle_state:
                     latest_state[evt.pair_id] = evt.lifecycle_state
                 latest_ts[evt.pair_id] = evt.ts
+
+        # memory→versum read: fold in knowledge bodies from the versum sink. In
+        # the dual-write phase these mirror the log (dedup → no change); once
+        # knowledge is sink-only they are the sole source. The log still owns
+        # lifecycle STATE, so a pair the log marks deleted is filtered below even
+        # if versum still holds a body (versum-side erasure lands in a later
+        # stage); versum-only pairs have no local state and read as live.
+        for pid, body in self._versum_knowledge_pairs().items():
+            if pid not in bodies:
+                bodies[pid] = body
+                latest_ts.setdefault(pid, 0.0)
 
         live_ids = [
             pid for pid in bodies
@@ -889,9 +983,22 @@ class WorkspaceMemory:
             if latest_state.get(pid) not in ("deleted", "purged", "rejected")
         ]
 
+        existing_ids = {p.get("id") for p in result}
+
+        # memory→versum read: include knowledge bodies the versum sink holds that
+        # the log doesn't already surface, honoring log deletion state (a pair the
+        # log marks deleted stays hidden until versum-side erasure lands; versum
+        # already hides its own erased knowledge).
+        for pid, body in self._versum_knowledge_pairs().items():
+            if pid in existing_ids:
+                continue
+            if latest_state.get(pid) in ("deleted", "purged", "rejected"):
+                continue
+            result.append(body)
+            existing_ids.add(pid)
+
         # B5: include ancestor-distributed pairs.
         anc_bodies, _, _ = self._ancestor_distributed_aggregation()
-        existing_ids = {p.get("id") for p in result}
         for pid, body in anc_bodies.items():
             if pid not in existing_ids:
                 result.append(body)
