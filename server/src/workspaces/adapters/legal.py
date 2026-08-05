@@ -68,13 +68,22 @@ from loomground_legal import (
 )
 from loomground_legal.contracts import _lei_checksum_ok
 
+# -- anchoring (the legal-domain step; norm-independent) ----------------------
+# Placing a norm onto the instruments/jurisdictions/regulators that govern it is
+# a LEGAL-domain concern. It now lives in loomground-legal (lifted out of the
+# norm plane), and RVND consumes it HERE — the legal seam — not from norm.
+from loomground_legal import (
+    Anchor, anchor, place_legal_text,
+    ANCHOR_KINDS, ANCHOR_RELATIONS, TextProvision, segment_provisions,
+)
+
 __all__ = [
     # connection algebra (the legal_connection cut)
     "ESCALATE", "Dimension",
     "GOVERNING", "connection_algebra", "is_connection", "load_connections",
     # world model + seed
     "Entity", "EntityKind", "WorldEdge", "WorldMap", "GovEntry", "ReachResult",
-    "JURISDICTION_KINDS", "seed_world", "reach",
+    "JURISDICTION_KINDS", "seed_world", "reach", "as_package_world",
     # corpus loaders + enrichment
     "build_world", "enrich", "load_instruments",
     "CODE", "DOMAIN", "TRANCHES", "EU27",
@@ -83,6 +92,9 @@ __all__ = [
     "PRIMARY_LAW", "INSTITUTIONAL", "SUPPORTING", "SECONDARY", "GENERAL",
     # contract model (registry stays in RVND)
     "PartyRef", "ContractInstance", "ContractError", "_lei_checksum_ok",
+    # anchoring (the legal-domain placement step)
+    "Anchor", "anchor", "place_legal_text",
+    "ANCHOR_KINDS", "ANCHOR_RELATIONS", "TextProvision", "segment_provisions",
 ]
 
 
@@ -198,6 +210,15 @@ def _to_pkg_map(world: "WorldMap") -> "_L.WorldMap":
         pm.connect(ed.subject, conn, ed.object,
                    basis=ed.basis, url=ed.url, source=ed.source)
     return pm
+
+
+def as_package_world(world: "WorldMap") -> "_L.WorldMap":
+    """RVND's enum-edged ``WorldMap`` → the package's native string-edged
+    ``WorldMap``. Consumers that run a package mechanism against the world graph
+    directly — anchoring (:func:`anchor` / :func:`place_legal_text`) — resolve
+    against the package's own shape, so this is the seam's public bridge for
+    them (``reach`` / ``validate_corpus`` translate internally and need it not)."""
+    return _to_pkg_map(world)
 
 
 def _to_rvnd_map(pm: "_L.WorldMap") -> "WorldMap":
