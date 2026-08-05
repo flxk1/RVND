@@ -933,6 +933,10 @@
           "group_id"
         ],
         "inspect_stuck": [],
+        "lane_capabilities": [
+          "actor",
+          "folder_context"
+        ],
         "list": [
           "folder_context"
         ],
