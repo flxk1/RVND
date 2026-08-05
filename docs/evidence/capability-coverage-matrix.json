@@ -1915,7 +1915,7 @@
    "channel": "mcp",
    "valid_ok": true,
    "invalid_ok": false,
-   "reason": "invalid not refused: {'folder_context': '<COVERAGE_WORKSPACE>/ws', 'nodes': [{'id': 'party:svc-bot', 'kind': 'agent', 'agent_uid': '31af9290"
+   "reason": "invalid not refused: {'folder_context': '<COVERAGE_WORKSPACE>/ws', 'nodes': [{'id': 'party:svc-bot', 'kind': 'agent', 'agent_uid': '02f8691b"
   },
   {
    "facade": "workspace_workflow",
