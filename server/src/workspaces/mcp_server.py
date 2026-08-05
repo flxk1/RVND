@@ -650,11 +650,11 @@ def reason(
             # chain so it is reachable by query/reason. The signed mutation-log
             # event above stays the audit record; best-effort on the Versum side.
             try:
-                import versum
+                from .adapters.versum import append_inference as _append_inference
                 store = Path(folder_context).expanduser().resolve() / ".versum"
                 store.mkdir(parents=True, exist_ok=True)
-                versum.append_inference(
-                    str(store),
+                _append_inference(
+                    store,
                     path=[{"subject": h["subject"], "predicate": h["predicate"],
                            "object": h["object"]} for h in inf.path],
                     dimension=inf.dimension.value, actor=_default_actor())
