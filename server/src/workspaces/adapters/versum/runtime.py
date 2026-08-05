@@ -43,3 +43,32 @@ def append_record(store: Any, *, record: Any, dimension: str, actor: str,
     return versum.append_record(
         str(store), record=record, dimension=dimension, actor=actor,
         observed_at=observed_at, captures=captures)
+
+
+def iter_records(store: Any, *, exclude_erased: bool = True) -> list:
+    """Enumerate the full records in a folder's versum sink (erasure honored).
+
+    The read side of the memory split: knowledge bodies live in versum, so
+    ``by_id`` / ``all_pairs`` / the search union enumerate them through here. A
+    store directory that does not exist yet yields nothing (a folder with no
+    versum knowledge)."""
+    import versum
+    from pathlib import Path as _Path
+    if not _Path(str(store)).is_dir():
+        return []
+    return list(versum.iter_records(str(store), exclude_erased=exclude_erased))
+
+
+def erase_record(store: Any, node_id: str, *, physical: bool = False,
+                 actor: str = "", reason: str = "") -> Any:
+    """Erase one sink record, keeping versum consistent with a log delete/purge.
+
+    Logical delete (a tombstone — hidden from every read but recoverable) unless
+    ``physical`` (GDPR Art.17 purge — content stripped, not recoverable). The sink
+    erasure API addresses a dimensioned-subgraph node under the ``sink:`` prefix;
+    the raw ``node_id`` (as minted by ``append_record``) is prefixed here."""
+    from versum.store import erasure
+    sink_id = str(node_id) if str(node_id).startswith("sink:") else "sink:" + str(node_id)
+    if physical:
+        return erasure.purge(str(store), sink_id, reason=reason, actor=actor)
+    return erasure.delete(str(store), sink_id, reason=reason, actor=actor)

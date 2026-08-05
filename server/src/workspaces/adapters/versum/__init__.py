@@ -25,11 +25,13 @@ from versum import DimensionedSubgraphSink, load_dimensioned_subgraphs
 from .knowledge import (VersumKnowledgeStore, VersumSnapshot,
                         versum_language_runtime)
 from .solver_source import VersumSolverSource
-from .runtime import append_fact, append_inference, append_record
+from .runtime import (append_fact, append_inference, append_record,
+                      erase_record, iter_records)
 
 __all__ = [
     "DimensionedSubgraphSink", "load_dimensioned_subgraphs",
     "VersumKnowledgeStore", "VersumSnapshot", "VersumSolverSource",
     "versum_language_runtime",
-    "append_fact", "append_inference", "append_record",
+    "append_fact", "append_inference", "append_record", "iter_records",
+    "erase_record",
 ]
