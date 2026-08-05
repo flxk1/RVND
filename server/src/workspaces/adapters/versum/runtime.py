@@ -30,3 +30,16 @@ def append_inference(store: Any, *, path: list, dimension: str, actor: str) -> A
     import versum
     return versum.append_inference(
         str(store), path=path, dimension=dimension, actor=actor)
+
+
+def append_record(store: Any, *, record: Any, dimension: str, actor: str,
+                  observed_at: Any = None, captures: Any = None) -> Any:
+    """Append a full runtime record — an RVND-style problem/solution pair — as
+    first-class versum knowledge. The rich analogue of ``append_fact``: the whole
+    pair body (every domain facet) is preserved losslessly in the versum node's
+    ``properties.record``. This is the write door the memory-split routes
+    knowledge-channel ``remember()`` through."""
+    import versum
+    return versum.append_record(
+        str(store), record=record, dimension=dimension, actor=actor,
+        observed_at=observed_at, captures=captures)

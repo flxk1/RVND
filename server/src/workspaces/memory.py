@@ -35,6 +35,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import re
 import time
 import uuid
@@ -49,6 +50,15 @@ from .mutation_log import (
     MutationLog,
     folder_hash,
 )
+
+_LOG = logging.getLogger(__name__)
+
+# Channels that carry shared KNOWLEDGE (the plane owned by versum), as opposed to
+# RVND-local capture-evidence (llm_answer / websearch) and audit/system events.
+# Knowledge-channel pairs are mirrored into the folder's versum sink so the read
+# path can be served from versum (the memory→versum split). Capture-evidence and
+# system/audit stay in the local MutationLog.
+_KNOWLEDGE_CHANNELS = frozenset({"document", "fact", "reasoning"})
 
 
 # ===========================================================================
@@ -356,7 +366,29 @@ class WorkspaceMemory:
             extra={"pair": pair, "distribution_scope": "private"},
         )
         self._own_log.append(evt)
+        # memory→versum split: mirror knowledge-channel pairs into the folder's
+        # versum sink (the canonical knowledge plane). Dual-write for now — the
+        # log stays the read source until the read path moves to versum. Best-
+        # effort: a sink failure must never break a remember (the log is intact).
+        if channel in _KNOWLEDGE_CHANNELS:
+            self._mirror_to_versum(pair)
         return pair_id
+
+    def _mirror_to_versum(self, pair: dict[str, Any]) -> None:
+        """Write a knowledge-channel pair into this folder's versum sink via the
+        adapters.versum seam (``append_record``). The full pair body — every
+        facet — is preserved losslessly in the versum node's properties. Guarded:
+        any failure is logged and swallowed so the local log write is never lost.
+        """
+        try:
+            from .adapters.versum import append_record
+            store = Path(self.folder_context) / ".versum"
+            store.mkdir(parents=True, exist_ok=True)
+            append_record(store, record=pair, dimension="relational",
+                          actor=self._actor)
+        except Exception as exc:  # best-effort dual-write (see caller)
+            _LOG.warning("versum mirror skipped for pair %s: %s",
+                         pair.get("id", "?"), exc)
 
     def publish(
         self,
