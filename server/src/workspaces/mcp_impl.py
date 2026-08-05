@@ -765,11 +765,11 @@ def workspace_remember(
     # knowledge. Best-effort: a Versum write failure must not lose the audited
     # remember.
     try:
-        import versum
+        from .adapters.versum import append_fact as _append_fact
         store = Path(folder_abs) / ".versum"
         store.mkdir(parents=True, exist_ok=True)
-        versum.append_fact(str(store), subject=subject, predicate=predicate,
-                           object=object, dimension=dim, actor=_default_actor())
+        _append_fact(store, subject=subject, predicate=predicate,
+                     object=object, dimension=dim, actor=_default_actor())
     except Exception:
         pass
     return {
