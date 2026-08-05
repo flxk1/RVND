@@ -2349,6 +2349,17 @@ def workspace_workflow(op: str, params: dict[str, Any] | None = None) -> dict[st
             {"op": "coverage_matrix", "required": ["folder_context"],
              "optional": ["preset", "gaps_only", "tags"],
              "note": "read-only coverage lens: the same patch as a rows x cols grid so absence and policy-shape are visible (the spatial form of governance_query). preset='kind_risk' (flagship, derived read-only) is default; preset='list' returns the available lenses. Each cell is the strictest-wins verdict for its band with the source use cases attached; gaps_only drops finding-free rows"},
+            {"op": "lane_capabilities", "required": ["folder_context", "actor"],
+             "optional": ["kinds", "risks"],
+             "note": "read-only agent-facing projection of ONE agent's governance-lane "
+                     "boundaries: per (kind[, risk]) the verdict the gate would dispose "
+                     "(auto|human|reserved|refused|prohibited), the grade required, the "
+                     "escalation point, and the governing guard. A projection of the same "
+                     ".lg policy the gate enforces — advisory, never dispositive. Carries "
+                     "the policy_fingerprint it reflects. Fail-closed: unreadable policy "
+                     "yields no capabilities, never 'all allowed'. Also rides the "
+                     "governance_open admission response, so an agent starts knowing its "
+                     "bounds; this verb re-queries it mid-session"},
             {"op": "governance_register", "required": ["folder_context"],
              "optional": ["scope"],
              "note": "read-only register/inventory of agents + use-cases (per folder; scope='all' aggregates known folders). Categorical status, never a score; per-folder + all-folders, NOT multi-tenant"},
@@ -2513,6 +2524,10 @@ def workspace_workflow(op: str, params: dict[str, Any] | None = None) -> dict[st
             return _cm(p["folder_context"], p.get("preset", "kind_risk"),
                        gaps_only=bool(p.get("gaps_only")), tags=p.get("tags"),
                        log_root=_log_root())
+        if op == "lane_capabilities":
+            from .mcp_impl import lane_capabilities as _lcap
+            return _lcap(p["folder_context"], p["actor"],
+                         kinds=p.get("kinds"), risks=p.get("risks"))
         if op == "governance_register":
             from .governance_graph import governance_register as _gr, governance_register_all as _gra
             if p.get("scope") == "all":

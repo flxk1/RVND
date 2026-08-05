@@ -43,7 +43,14 @@ def governance_open(
     ttl_seconds: int = 900,
     log_root: Optional[str] = None,
 ) -> dict[str, Any]:
-    """Mint only for an active registered agent with an approved current lane."""
+    """Mint only for an active registered agent with an approved current lane.
+
+    The admission response also carries the agent's ``capabilities`` — the
+    read-only ``lane_capabilities`` projection of the just-bound lane — so an
+    agent starts the session already knowing its boundaries, provably about
+    the same policy the token is bound to (identical policy_fingerprint). A
+    pure read riding the response: it touches neither the audit event nor
+    enforcement, and stays re-queryable mid-session via the standalone verb."""
     from .mcp_serving import get_request_principal
     principal = get_request_principal()
     if principal is None or principal.get("rung") not in {
@@ -86,7 +93,13 @@ def governance_open(
             },
         )
     )
-    return {"ok": True, "capability_token": token, "claims": asdict(claims)}
+    # The boundary projection rides the admission response (never the audit
+    # event). lane_capabilities is fail-closed internally: on any read failure
+    # it reports no capabilities, so admission itself is never blocked by it.
+    from .lane_capabilities import lane_capabilities
+    capabilities = lane_capabilities(folder, party, log_root=log_root)
+    return {"ok": True, "capability_token": token, "claims": asdict(claims),
+            "capabilities": capabilities}
 
 
 def verify_operation_session(
