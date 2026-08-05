@@ -209,3 +209,105 @@ def test_pin_pending_entries_are_actually_consumed() -> None:
         assert dist in consumed, f"_PIN_PENDING lists {dist} but it is not consumed"
         assert dist not in declared, (
             f"{dist} is declared in pyproject — remove it from _PIN_PENDING")
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# The legal-world stack is CONSUMED, not re-grown.
+#
+# RVND's world-map stack (the entity model + graph container + reach, the seed
+# corpus, the md-table loader, the curated relational enrichment, the instrument
+# catalogue, corpus validation, the contract model) is retired in favour of
+# ``loomground-legal``, consumed through ``workspaces.adapters.legal``. Unlike
+# the norm twins (uniform shims), these are a *parallel-by-role* set: some are
+# pure re-export shims (legal_world, corpus/validate, world_corpus_loader,
+# world_relations) and some are SPLITs that KEEP their folder-runtime local
+# (regulatory_population, contracts/instance, legal_corpus). The fence therefore
+# checks, per file: (b1) it consumes the surface through ``adapters.legal``, and
+# (b2) it re-grows none of the symbols that MOVED to the package (while the
+# kept-local runtime — EntityRegistry, ContractRegistry, populate_*,
+# build_enriched_world, default_csv/_default_refdir, the RVND-KG project() — is
+# untouched).
+# ════════════════════════════════════════════════════════════════════════════
+
+# twin file (relative to WORKSPACES_ROOT) -> regexes for MOVED symbols that must
+# NOT be defined locally (they now live in the package, behind the seam).
+LEGAL_TWINS: dict[str, tuple[str, ...]] = {
+    "legal_world.py": (
+        r"class\s+WorldMap\b", r"class\s+Entity\b", r"class\s+WorldEdge\b",
+        r"class\s+EntityKind\b", r"def\s+seed_world\s*\(", r"def\s+reach\s*\(",
+    ),
+    "corpus/validate.py": (
+        r"def\s+validate_corpus\s*\(", r"class\s+Finding\b", r"def\s+_authority\s*\(",
+    ),
+    "world_corpus_loader.py": (
+        r"def\s+build_world\s*\(", r"def\s+parse_md\s*\(", r"def\s+_slug\s*\(",
+    ),
+    "regulatory_population.py": (
+        r"def\s+load_instruments\s*\(", r"^CODE\s*[:=]", r"^DOMAIN\s*[:=]",
+        r"^TRANCHES\s*[:=]",
+    ),
+    "world_relations.py": (
+        r"def\s+enrich\s*\(", r"^_COE\s*[:=]", r"^_REGULATORS\s*[:=]",
+    ),
+    "contracts/instance.py": (
+        r"class\s+PartyRef\b", r"class\s+ContractInstance\b",
+        r"def\s+_lei_checksum_ok\s*\(",
+    ),
+    "legal_corpus.py": (
+        r"class\s+WorldMap\b", r"class\s+Entity\b", r"class\s+EntityKind\b",
+        r"def\s+seed_world\s*\(",
+    ),
+}
+
+# quarantined legal originals kept for verification before deletion (the MOVE
+# files whole; the SPLIT files as their migrated model/data only).
+LEGAL_QUARANTINE = (
+    "legal_world.py", "validate.py", "world_corpus_loader.py",
+    "world_relations.py", "regulatory_population.py", "instance.py",
+)
+
+
+def test_legal_twins_consume_adapters_legal() -> None:
+    """Each legal-stack twin consumes the plane through ``adapters.legal`` and
+    re-grows none of the symbols that moved to the package."""
+    seam = re.compile(
+        r"from\s+\.+adapters\.legal\s+import|from\s+workspaces\.adapters\.legal\s+import")
+    not_shims: list[str] = []
+    regrown: list[str] = []
+    for name, forbidden in LEGAL_TWINS.items():
+        text = (WORKSPACES_ROOT / name).read_text(encoding="utf-8")
+        if not seam.search(text):
+            not_shims.append(name)
+        for pat in forbidden:
+            if re.search(pat, text, re.MULTILINE):
+                regrown.append(f"{name}: {pat}")
+    assert not not_shims, f"legal twins not consuming adapters.legal: {not_shims}"
+    assert not regrown, f"legal twins re-grew moved behavior locally: {regrown}"
+
+
+def test_adapters_legal_is_the_only_legal_import_site() -> None:
+    """``loomground_legal`` is imported in exactly one place — the seam."""
+    importers: list[str] = []
+    for path in _all_py_files():
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                if any(a.name == "loomground_legal" or a.name.startswith("loomground_legal.")
+                       for a in node.names):
+                    importers.append(str(path.relative_to(WORKSPACES_ROOT)))
+            elif isinstance(node, ast.ImportFrom) and not node.level:
+                if node.module and (node.module == "loomground_legal"
+                                    or node.module.startswith("loomground_legal.")):
+                    importers.append(str(path.relative_to(WORKSPACES_ROOT)))
+    assert set(importers) == {"adapters/legal.py"}, (
+        f"loomground_legal must be imported only in adapters/legal.py; got {sorted(set(importers))}")
+
+
+def test_legal_quarantine_originals_present() -> None:
+    """The retired legal originals are kept in _quarantine (for verification
+    before deletion) and remain inert (no live import — fenced above)."""
+    q = WORKSPACES_ROOT / "_quarantine"
+    present = sorted(p.name for p in q.glob("*.py") if p.name != "__init__.py")
+    assert set(LEGAL_QUARANTINE) <= set(present), (
+        f"quarantine is missing some retired legal originals: "
+        f"{set(LEGAL_QUARANTINE) - set(present)}")
