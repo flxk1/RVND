@@ -311,3 +311,85 @@ def test_legal_quarantine_originals_present() -> None:
     assert set(LEGAL_QUARANTINE) <= set(present), (
         f"quarantine is missing some retired legal originals: "
         f"{set(LEGAL_QUARANTINE) - set(present)}")
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# (d) No shadow parallels of consumed surface.
+#
+# The checks above key off DECLARED upstream imports, so a module that re-grows
+# an engine while importing NOTHING upstream is invisible to them — which is
+# exactly how ``problem_kg``'s copy of solver.case's Ground/Fact/CaseRecord/
+# project_pairs hid for so long. This check closes that hole by looking at
+# DEFINITIONS, not imports: a live workspaces module (outside the adapters/
+# seam) must not DEFINE a symbol that duplicates a consumed package's
+# distinctive public surface. Genuine name-collisions are allow-listed with a
+# reason.
+# ════════════════════════════════════════════════════════════════════════════
+
+# Distinctive symbols owned by a consumed loomground package. Generic names
+# (check, plan, gate, derive, holds, neg, audit) are deliberately excluded —
+# only names specific enough that a local definition means a parallel, not a
+# coincidence.
+CONSUMED_SURFACE_SYMBOLS = {
+    # loomground-solver — reasoning / case / algebra
+    "CaseRecord", "Ground", "project_pairs", "_norm_spans_for",
+    "Subsumption", "subsume", "Scenario", "DecisionSpace", "decision_space",
+    "grounded_labels", "RelationAlgebra", "Edge", "Inference", "InferenceList",
+    "Neighborhood", "neighborhood", "compose_paths", "extract_edges",
+    "fingerprint", "derive_solution", "ContractReport", "Norm", "Rule",
+    # shared premise / verdict vocab
+    "Fact", "Finding",
+}
+
+# Legitimate name-collisions: a DIFFERENT concept in a different domain, not a
+# re-grown engine. Keyed by (module relpath, symbol), each with its reason.
+SHADOW_ALLOWLIST = {
+    ("lock/core.py", "Finding"):
+        "egress-lock scan finding — unrelated to solver's contract Finding",
+    ("fact_source.py", "Fact"):
+        "a measurement observation (subject_ref/value/unit) — not solver's premise Fact",
+    ("use_case_nd.py", "subsume"):
+        "AI-Act use-case -> duty join — a domain op, not solver's Tatbestand subsumption",
+}
+
+
+def test_no_shadow_parallel_of_consumed_surface() -> None:
+    """A live workspaces module must not DEFINE (top-level) a symbol that
+    duplicates a consumed package's distinctive surface, outside the adapters/
+    seam. Catches parallels that import nothing upstream. Legitimate
+    name-collisions are allow-listed above with a reason."""
+    offenders: list[str] = []
+    for path in _live_py_files():
+        rel = path.relative_to(WORKSPACES_ROOT).as_posix()
+        if rel.startswith("adapters/"):
+            continue  # the seam is where re-exports legitimately live
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        for node in tree.body:  # top-level definitions only
+            if isinstance(node, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
+                if node.name in CONSUMED_SURFACE_SYMBOLS \
+                        and (rel, node.name) not in SHADOW_ALLOWLIST:
+                    offenders.append(f"{rel}: defines {node.name!r}")
+    assert not offenders, (
+        "shadow parallels of consumed-package surface — consume via the "
+        "adapters/ seam instead, or allow-list a genuine name-collision:\n  "
+        + "\n  ".join(sorted(offenders)))
+
+
+def test_shadow_allowlist_is_not_stale() -> None:
+    """Every allow-listed collision must still exist (a top-level def of that
+    name in that file) — else drop it, so the allowlist can't rot into a
+    silent escape hatch."""
+    stale: list[str] = []
+    for (rel, name) in SHADOW_ALLOWLIST:
+        path = WORKSPACES_ROOT / rel
+        if not path.exists():
+            stale.append(f"{rel} (file gone)")
+            continue
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        found = any(
+            isinstance(n, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef))
+            and n.name == name
+            for n in tree.body)
+        if not found:
+            stale.append(f"{rel}:{name} (no longer defined)")
+    assert not stale, f"stale SHADOW_ALLOWLIST entries — remove them: {stale}"
