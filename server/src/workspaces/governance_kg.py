@@ -20,7 +20,7 @@ from collections import Counter
 from typing import Any, Iterable, Optional
 
 from workspaces.adapters.solver.dimensions import Dimension
-from workspaces.adapters.solver.reasoning import Edge, compose_paths
+from workspaces.adapters.solver.reasoning import Edge, compose_paths, to_undirected
 
 SCHEMA_VERSION = "governance_kg/v1"
 KINDS = ("instrument", "role", "room", "rule", "obligation", "gate", "artifact")
@@ -132,18 +132,18 @@ def path(rules: Iterable[Any], src: str, dst: str) -> dict[str, Any]:
     a longer connection is composed by the solver over both edge directions (the
     governance graph reads undirected for this query)."""
     g = project(rules, level="detail")
-    for e in g["edges"]:                                     # a direct edge is a fact
-        if {e["source"], e["target"]} == {src, dst}:
-            return {"version": SCHEMA_VERSION, "from": src, "to": dst, "hops": 1,
-                    "edges": [e], "dimension_chain": [e["dimension"]],
-                    "overall_dimension": e["dimension"]}
-    edges: list[Edge] = []
-    for e in g["edges"]:
-        dim = Dimension(e["dimension"])
-        pred = e.get("kind") or e.get("predicate") or "linked"
-        edges.append(Edge(subject=e["source"], predicate=pred, object=e["target"], dimension=dim))
-        edges.append(Edge(subject=e["target"], predicate=pred, object=e["source"], dimension=dim))
-    for inf in compose_paths(edges, start=src, max_depth=8):   # best-confidence first
+    # Graph-prep + path-finding are the solver's: read the governance graph
+    # undirected (to_undirected) and let compose_paths walk it. min_hops=1 makes a
+    # direct edge a 1-hop result (a fact) and a longer connection a composed path,
+    # in one bounded call — RVND keeps no traversal of its own.
+    directed = [
+        Edge(subject=e["source"],
+             predicate=e.get("kind") or e.get("predicate") or "linked",
+             object=e["target"], dimension=Dimension(e["dimension"]))
+        for e in g["edges"]
+    ]
+    for inf in compose_paths(to_undirected(directed), start=src, max_depth=8,
+                             min_hops=1):                      # best-confidence first
         if inf.object == dst:
             return {"version": SCHEMA_VERSION, "from": src, "to": dst, "hops": inf.hops,
                     "edges": inf.path, "dimension_chain": inf.dimension_chain,

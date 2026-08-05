@@ -142,18 +142,24 @@ class VersumKnowledgeStore:
 
     def subgraph(self, focus: str, *, depth: int = 2,
                  dimensions: Optional[Iterable[str]] = None) -> dict:
-        """Return a deterministic neighborhood without creating RVND graph state."""
-        all_edges = self.edges(dimensions=dimensions)
-        reached = {focus}
-        selected: list[dict] = []
-        for _ in range(max(0, depth)):
-            frontier = set(reached)
-            step = [e for e in all_edges if e.get("src_id") in frontier or
-                    e.get("dst_id") in frontier]
-            for edge in step:
-                reached.update((edge.get("src_id"), edge.get("dst_id")))
-                if edge not in selected:
-                    selected.append(edge)
+        """Return a deterministic neighborhood without creating RVND graph state.
+
+        Traversal is the solver's (:func:`neighborhood`); this adapter only maps
+        the folder's dict-shaped edges into solver ``Edge``s and the reached node
+        ids back to the folder's claim/concept records — RVND keeps no BFS."""
+        from ..solver.reasoning import Edge, neighborhood
+        from ..solver.dimensions import Dimension
+        dict_edges = self.edges(dimensions=dimensions)
+        edges = [
+            Edge(subject=str(e.get("src_id") or ""),
+                 predicate=str(e.get("predicate") or ""),
+                 object=str(e.get("dst_id") or ""),
+                 dimension=Dimension(e.get("dimension") or "relational"))
+            for e in dict_edges
+        ]
+        reached = set(neighborhood(edges, focus, depth=depth)["nodes"])
+        selected = [e for e in dict_edges
+                    if e.get("src_id") in reached or e.get("dst_id") in reached]
         claims = [r for r in self.claims() if r.get("item_id") in reached]
         concepts = [r for r in self.concepts() if r.get("concept_id") in reached]
         return {

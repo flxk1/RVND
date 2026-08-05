@@ -40,7 +40,8 @@ RETIRED: tuple[str, ...] = (
 #    loomground-legal; fenced by test_legal_connection_composition_is_retired)
 #   versum stores: memory.py (WorkspaceMemory knowledge role — audit chain stays),
 #     legal_corpus.py, legal_world.py, world_corpus_loader.py, world_relations.py
-#   solver composition: governance_kg.py (path)
+#   (governance_kg.path + knowledge.subgraph traversal is RETIRED — consume the
+#    solver graph API; fenced by test_solver_graph_traversal_is_consumed)
 
 
 def _py_files() -> list[Path]:
@@ -150,6 +151,22 @@ def test_legal_connection_composition_is_retired() -> None:
     # composition must delegate to the consumed algebra, not re-implement a fold
     assert "_ALG.compose_path" in src and "_ALG.compose" in src, (
         "legal_connection.compose/compose_path must delegate to the algebra")
+
+
+def test_solver_graph_traversal_is_consumed() -> None:
+    """Graph traversal is the solver's, not RVND's. ``governance_kg.path``
+    composes over the solver's ``to_undirected`` + ``compose_paths`` (min_hops),
+    and the versum knowledge adapter's ``subgraph`` delegates to the solver's
+    ``neighborhood`` — neither hand-rolls a BFS/frontier of its own."""
+    gk = (SRC / "governance_kg.py").read_text(encoding="utf-8")
+    assert "to_undirected(" in gk and "compose_paths(" in gk, (
+        "governance_kg.path must consume the solver's to_undirected + compose_paths")
+    kn = (SRC / "adapters" / "versum" / "knowledge.py").read_text(encoding="utf-8")
+    assert "neighborhood(" in kn, (
+        "knowledge.subgraph must consume the solver's neighborhood")
+    for name, text in (("governance_kg.py", gk),
+                       ("adapters/versum/knowledge.py", kn)):
+        assert "frontier" not in text, f"{name} re-grew a local frontier BFS walk"
 
 
 def test_rvnd_grown_policy_ingester_is_retired() -> None:
