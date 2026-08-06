@@ -21,6 +21,7 @@ else:
     _sys.modules.setdefault("loomground_language", _governance_kit)
 
 from versum import DimensionedSubgraphSink, load_dimensioned_subgraphs
+from versum.store.retrieve import BM25  # the consumed lexical-ranking mechanism
 
 from .knowledge import (VersumKnowledgeStore, VersumSnapshot,
                         versum_language_runtime)
@@ -33,5 +34,5 @@ __all__ = [
     "VersumKnowledgeStore", "VersumSnapshot", "VersumSolverSource",
     "versum_language_runtime",
     "append_fact", "append_inference", "append_record", "iter_records",
-    "erase_record",
+    "erase_record", "BM25",
 ]
