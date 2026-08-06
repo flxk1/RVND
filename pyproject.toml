@@ -24,7 +24,7 @@ authors = [{ name = "flxk1" }]
 # artifacts and conformance data. RVND carries adapters and governance overlays only.
 dependencies = [
     "loomground-solver @ git+https://github.com/flxk1/loomground-solver@2129b64c03bf91fd86792333cae1164626cae62a",
-    "loomground-versum @ git+https://github.com/flxk1/loomground-versum@71164f31f34882aff87ea1622952a855e194a4f3",
+    "loomground-versum @ git+https://github.com/flxk1/loomground-versum@035d8dca1f043e72d4e3b730b1d29a498c7e1262",
     "loomground-governance @ git+https://github.com/flxk1/loomground-governance@b69e0e17b8ab313f9ec0303523deeffdfe7ff115",
     "loomground-deontic @ git+https://github.com/flxk1/loomground-deontic@e346601a5d09d53cee410e22973ff1ec52246338",
     "loomground-ingest @ git+https://github.com/flxk1/loomground-ingest@1b276389c22835563c0f1dec573ac627694cc6e9",
