@@ -34,6 +34,7 @@ from __future__ import annotations
 import contextlib
 import hashlib
 import json
+import os
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -90,6 +91,13 @@ def _claim_id(text: str) -> str:
     h = hashlib.sha256()
     h.update(text.strip().encode("utf-8"))
     return "claim:" + h.hexdigest()[:24]
+
+
+def _row_version(rid: str, row: dict) -> str:
+    """The monotonic version keying a row's versum identity-upsert: its
+    ``last_seen`` (bumped on every mutation), falling back to ``first_seen`` then
+    the row id — so an edit supersedes and an unchanged row re-flush is a no-op."""
+    return str(row.get("last_seen") or row.get("first_seen") or rid)
 
 
 def _work_mint_ids(identifiers: Optional[dict], doi: str) -> dict:
@@ -273,6 +281,11 @@ class GroundingLedger:
         self.works: dict[str, dict] = {}
         self.claims: dict[str, dict] = {}
         self.provenance: dict[str, dict] = {}   # edge-key -> record
+        # dirty-skip: node-key -> last-written version, so a _flush re-appends
+        # only the row(s) that actually changed (last_seen bumped) instead of the
+        # whole dict — keeps writes O(changed), not O(n) per mutation.
+        self._written: dict[str, str] = {}
+        self._txn_seen: int = -1          # sink fingerprint at last load (reload gate)
         self.load()
 
     # ── persistence ───────────────────────────────────────────────────────────
@@ -320,10 +333,47 @@ class GroundingLedger:
         with open(d / ".lock", "a+") as fh:
             fcntl.flock(fh.fileno(), fcntl.LOCK_EX)
             try:
-                self.load()                     # see other writers' state
+                # Reload only when the sink actually changed under us (another
+                # writer). Re-reading + revalidating every versum transaction on
+                # every mutation is O(n) per call → O(n²) over a batch; a cheap
+                # fingerprint keeps a single writer's own sequential writes O(1)
+                # here (its flush updates the fingerprint) while a concurrent
+                # writer's new transaction still triggers a reload.
+                if self._sink_fingerprint() != self._txn_seen:
+                    self.load()                 # see another writer's state
                 yield
             finally:
                 fcntl.flock(fh.fileno(), fcntl.LOCK_UN)
+
+    def _sink_fingerprint(self) -> int:
+        """An O(1) change-detector for the versum sink: the mtime (ns) of its
+        append-only transaction directory, which advances whenever any writer adds
+        or removes a transaction. Counting files instead would be O(n) per
+        write-lock → O(n²) over a bulk import; a single stat keeps the reload gate
+        cheap while still catching a concurrent writer's change."""
+        # the sink's transaction dir name is versum's (``ingestion.subgraph``); the
+        # grounder already writes through the adapters.versum seam, so keying the
+        # change-token off that dir is within the same consumed boundary.
+        txn_dir = self._versum_store() / "_dimensioned_subgraph_transactions"
+        try:
+            return os.stat(txn_dir).st_mtime_ns
+        except OSError:
+            return 0
+
+    # works/claims/provenance no longer live in a local JSONL store — they are
+    # CONSUMED from the folder's versum sink (the canonical knowledge plane) as
+    # identity-upsert records. The store is dedicated to the grounder
+    # (``grounding/.versum``); each row rides losslessly as a versum record body
+    # wrapped ``{"id": "<kind>:<row-id>", "_kind": <kind>, "_row": <row>}`` and
+    # is keyed for supersede-in-place by the row's monotonic ``last_seen``
+    # (versum ``identity=True``). The three in-memory dicts remain the working
+    # projection every method reads/mutates; only the persistence layer moved.
+    _STORE_KIND = {"works.jsonl": "work", "claims.jsonl": "claim",
+                   "provenance.jsonl": "provenance"}
+    _KIND_KEYFIELD = {"work": "id", "claim": "id", "provenance": "key"}
+
+    def _versum_store(self) -> Path:
+        return self._dir() / ".versum"
 
     def _load_jsonl(self, name: str, key: str) -> dict[str, dict]:
         p = self._dir() / name
@@ -336,18 +386,88 @@ class GroundingLedger:
         return out
 
     def load(self) -> None:
-        self.works = self._load_jsonl("works.jsonl", "id")
-        self.claims = self._load_jsonl("claims.jsonl", "id")
-        self.provenance = self._load_jsonl("provenance.jsonl", "key")
+        """Rebuild the three projections from the folder's versum sink (identity
+        records, latest-wins), then self-heal any pre-versum JSONL store."""
+        self.works, self.claims, self.provenance = {}, {}, {}
+        self._written = {}
+        buckets = {"work": self.works, "claim": self.claims,
+                   "provenance": self.provenance}
+        try:
+            from .adapters.versum import iter_records
+            for rec in iter_records(self._versum_store()):
+                props = rec.get("properties") if isinstance(rec, dict) else None
+                body = props.get("record") if isinstance(props, dict) else None
+                if not isinstance(body, dict):
+                    continue
+                kind, row = body.get("_kind"), body.get("_row")
+                if kind in buckets and isinstance(row, dict):
+                    k = row.get(self._KIND_KEYFIELD[kind])
+                    if k:
+                        buckets[kind][str(k)] = row
+                        self._written[f"{kind}:{k}"] = _row_version(k, row)
+        except Exception:                                       # noqa: BLE001
+            pass
+        self._migrate_legacy_jsonl(buckets)
+        self._txn_seen = self._sink_fingerprint()
+
+    def _migrate_legacy_jsonl(self, buckets: dict[str, dict]) -> None:
+        """One-time self-heal: import a pre-versum ``grounding/*.jsonl`` store into
+        the versum sink for any row not already present. Idempotent — once
+        migrated, subsequent loads read everything from versum and this adds
+        nothing."""
+        legacy = {"work": ("works.jsonl", "id"), "claim": ("claims.jsonl", "id"),
+                  "provenance": ("provenance.jsonl", "key")}
+        for kind, (fname, key) in legacy.items():
+            rows = self._load_jsonl(fname, key)
+            missing = {k: r for k, r in rows.items() if k not in buckets[kind]}
+            if not missing:
+                continue
+            buckets[kind].update(missing)
+            self._write_rows(kind, missing)
+
+    def _write_rows(self, kind: str, rows: dict[str, dict]) -> None:
+        """Write-through: persist the CHANGED rows of this kind to the versum sink
+        as identity-upsert records (supersede-in-place, keyed by monotonic
+        ``last_seen``) in ONE batched transaction — one durable write for the whole
+        flush, not one per row. Unchanged rows (``last_seen`` not advanced since the
+        last write) are skipped."""
+        keyfield = self._KIND_KEYFIELD[kind]
+        batch: list[dict] = []
+        marks: list[tuple[str, str]] = []
+        for row in rows.values():
+            rid = str(row.get(keyfield) or "")
+            if not rid:
+                continue
+            version = _row_version(rid, row)
+            id_key = f"{kind}:{rid}"
+            if self._written.get(id_key) == version:
+                continue                                # unchanged since last write
+            batch.append({"record": {"id": id_key, "_kind": kind, "_row": row},
+                          "version": version})
+            marks.append((id_key, version))
+        if not batch:
+            return
+        try:
+            from .adapters.versum import append_records
+        except Exception:                                       # noqa: BLE001
+            return
+        store = self._versum_store()
+        store.mkdir(parents=True, exist_ok=True)
+        try:
+            append_records(store, records=batch, dimension="relational",
+                           actor="grounder")
+            for id_key, version in marks:
+                self._written[id_key] = version
+            # my own writes are now reflected — don't let the next _write_lock
+            # treat them as another writer's change and trigger a full reload.
+            self._txn_seen = self._sink_fingerprint()
+        except Exception:                                       # noqa: BLE001
+            pass
 
     def _flush(self, name: str, rows: dict[str, dict]) -> None:
         if getattr(self, "_in_batch", False):   # batch() flushes once on exit
             return
-        d = self._dir()
-        d.mkdir(parents=True, exist_ok=True)
-        (d / name).write_text(
-            "\n".join(json.dumps(r, ensure_ascii=False) for r in rows.values())
-            + ("\n" if rows else ""), encoding="utf-8")
+        self._write_rows(self._STORE_KIND[name], rows)
 
     def _log(self, event: str, pair_id: str, extra: dict,
              actor: str = "grounder") -> Optional[str]:
@@ -742,6 +862,7 @@ class GroundingLedger:
                                       source="grounder")
                     if code not in w.get("entity_refs", []):
                         w.setdefault("entity_refs", []).append(code)
+                        w["last_seen"] = _now()   # content changed → advance version
                     linked.append({"work": w["id"], "entity": code,
                                    "name": name, "kind": kind})
             self._flush("works.jsonl", self.works)
@@ -777,6 +898,7 @@ class GroundingLedger:
                 w["creator_erased"] = True
                 w["entity_refs"] = [r for r in w.get("entity_refs", [])
                                     if r != code]
+                w["last_seen"] = _now()   # content changed → advance the sink version
                 works_touched.append(w["id"])
         if works_touched:
             self._flush("works.jsonl", self.works)

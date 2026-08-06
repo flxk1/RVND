@@ -188,13 +188,15 @@ def test_huge_claim_text_and_unicode(ledger):
     assert led2.claims[res["id"]]["text"].endswith("end.")
 
 
-def test_jsonl_remains_valid_after_stress(ledger, tmp_path):
+def test_store_survives_hostile_values_after_stress(ledger, tmp_path):
+    # every write persists through the versum sink and reloads intact, even with
+    # quote/backslash-injection in titles and creator names (the store is now the
+    # folder's versum sink, not a local JSONL file).
     for i in range(50):
         ledger.register_work(title=f'W"{i}\\', url=f"https://x.test/q{i}",
                              creators=[{"name": 'Quote", "injection'}])
-    raw = (tmp_path / "grounding" / "works.jsonl").read_text(encoding="utf-8")
-    rows = [json.loads(l) for l in raw.splitlines() if l.strip()]
-    assert len(rows) == 50                            # every line parses
+    led2 = GroundingLedger(ledger.folder, log_root=ledger.log_root)
+    assert len(led2.works) == 50                       # every write reloads
 
 
 def test_empty_and_whitespace_claims_still_keyed(ledger):
