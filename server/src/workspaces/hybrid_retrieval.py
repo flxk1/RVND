@@ -25,7 +25,6 @@ Internal by design: a retrieval stage inside the legal pipelines, not a standalo
 
 from __future__ import annotations
 
-import math
 import re
 from collections import Counter
 from dataclasses import dataclass, field
@@ -33,6 +32,7 @@ from datetime import date
 from typing import Iterable, Optional
 
 from . import currency as cur
+from .adapters.versum import BM25 as _VersumBM25  # the consumed lexical-ranking mechanism
 
 
 _TOKEN_RE = re.compile(r"\w+", re.UNICODE)
@@ -126,32 +126,12 @@ class HybridIndex:
 
     def __init__(self, docs: Iterable[Document], *, k1: float = 1.5, b: float = 0.75):
         self.docs = list(docs)
-        self.k1, self.b = k1, b
-        self._df: Counter = Counter()
-        for d in self.docs:
-            for term in set(d.tokens):
-                self._df[term] += 1
-        self.N = len(self.docs)
-        self.avgdl = (sum(len(d.tokens) for d in self.docs) / self.N) if self.N else 0.0
-
-    def _idf(self, term: str) -> float:
-        n = self._df.get(term, 0)
-        # BM25 idf with +1 so a term in every doc still scores ≥ 0.
-        return math.log(1 + (self.N - n + 0.5) / (n + 0.5))
-
-    def _bm25(self, doc: Document, qbag: Counter) -> float:
-        if not doc.tokens:
-            return 0.0
-        tf = Counter(doc.tokens)
-        dl = len(doc.tokens)
-        score = 0.0
-        for term, qw in qbag.items():
-            f = tf.get(term, 0)
-            if not f:
-                continue
-            denom = f + self.k1 * (1 - self.b + self.b * dl / (self.avgdl or 1))
-            score += qw * self._idf(term) * (f * (self.k1 + 1)) / denom
-        return score
+        # Consume versum's BM25 (the lexical idf/tf-normalisation mechanism) rather
+        # than re-growing it here. The legal wrapper in retrieve() — query
+        # expansion (weighted), ratione-temporis filtering, authority boost and
+        # concept coverage — stays local; versum's BM25.score(..., weights=)
+        # carries the expanded-term weighting exactly as before.
+        self._bm25 = _VersumBM25(k1, b).fit([d.tokens for d in self.docs])
 
     def retrieve(self, query: str, *, k: int = 5, expand: bool = True,
                  as_of: Optional[date] = None,
@@ -172,7 +152,7 @@ class HybridIndex:
                      if expand else set())
 
         hits: list[Hit] = []
-        for d in self.docs:
+        for i, d in enumerate(self.docs):
             status = "n/a"
             factor = 1.0
             if as_of and registry is not None and d.celex:
@@ -182,7 +162,9 @@ class HybridIndex:
                         continue
                     if temporal == "penalise":
                         factor *= 0.1
-            score = self._bm25(d, qbag) * factor
+            # versum BM25 over the doc index; the weighted query bag carries the
+            # expansion weights (originals 1.0, synonyms discounted) exactly.
+            score = self._bm25.score(list(qbag), i, weights=qbag) * factor
             if authority_boost and score > 0:
                 score *= 1.0 + (4 - min(max(d.authority_tier, 1), 4)) * 0.05
             coverage = (doc_concept_coverage(d.tokens, qclusters, legal_system=legal_system)
