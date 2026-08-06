@@ -50,8 +50,12 @@ def test_read_through_returns_plaintext_without_unsealing(tmp_path):
     # Serve the sealed workspace in memory.
     served = seal.read_through(folder, passphrase="pw-123", log_root=log_root)
 
-    # Same bytes as before sealing.
-    assert served == before
+    # Same log bytes as before sealing, served in memory — plus the folder's
+    # knowledge sinks (.versum / grounding), which are now sealed alongside the
+    # log and therefore also served through read-through.
+    assert before.items() <= served.items()
+    assert all(k.startswith("__folder_sink__/")
+               for k in served.keys() - before.keys())
 
     # And the workspace is STILL sealed — read-through did not unseal to disk.
     assert seal.is_sealed(folder, log_root=log_root)
