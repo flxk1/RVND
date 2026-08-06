@@ -9,8 +9,12 @@ whether the obligation applies, by comparing facet sets through the domain's
 
 The match question is genus/species: a system tagged ``employment`` satisfies an
 obligation keyed to ``high-risk`` because ``employment`` IS-A high-risk class
-(``DomainVocabulary.subsumption``). So the matcher walks the structural taxonomy,
-exactly the structural dimension of the 5D edge model.
+(``DomainVocabulary.subsumption``). The matcher does not walk the taxonomy
+itself: it projects ``vocab.subsumption`` into STRUCTURAL is-a edges and asks the
+Solver engine — :func:`loomground_solver.cross_subsumption.subsume_across`, via
+the ``adapters.solver.subsumption`` seam — whether the subject value reaches the
+trigger value. That is the structural dimension of the 5D edge model, evaluated
+by the one canonical reachability engine rather than a parallel one here.
 
 Three-valued result — never a silent boolean:
 
@@ -31,6 +35,9 @@ from enum import Enum
 from typing import Any, Optional
 
 from .subject_card import SubjectCard, DomainVocabulary, get_vocabulary, UNKNOWN
+from .adapters.solver.subsumption import Condition, FactSpace, Verdict, subsume_across
+from .adapters.solver.reasoning import Edge
+from .adapters.solver.dimensions import Dimension
 
 
 class Match(str, Enum):
@@ -72,14 +79,39 @@ class ObligationMatch:
         return d
 
 
+def _taxonomy_facts(vocab: DomainVocabulary) -> FactSpace:
+    """Project the domain's subsumption taxonomy into a Solver ``FactSpace``.
+
+    Each ``(child, parent)`` is-a pair in ``vocab.subsumption`` becomes a
+    STRUCTURAL edge ``child -is-a-> parent``. The matcher then asks the engine
+    'does the subject value reach the trigger value over these edges' rather than
+    re-implementing the transitive walk. The taxonomy is treated as complete
+    (closed-world): ``incomplete_structural`` is left empty, so an unreachable
+    target is NOT_SATISFIED, never OPEN — the matcher's only escalation channel
+    is an UNKNOWN facet on the *card*, decided below, not the taxonomy.
+    """
+    edges = tuple(
+        Edge(subject=str(child), predicate="is-a", object=str(parent),
+             dimension=Dimension.STRUCTURAL)
+        for child, parent in vocab.subsumption
+    )
+    return FactSpace(structural_edges=edges)
+
+
 def _match_one_facet(
-    name: str, trigger_value: Any, card: SubjectCard, vocab: DomainVocabulary,
+    name: str, trigger_value: Any, card: SubjectCard, facts: FactSpace,
 ) -> FacetVerdict:
-    """Compare one trigger facet against the card, via subsumption.
+    """Compare one trigger facet against the card, via the Solver engine.
 
     The obligation is satisfied on this facet iff some subject value subsumes
-    (is-a, transitively) the trigger value — i.e. the trigger value is an
-    ancestor of a subject value, or equals it.
+    (is-a, transitively) the trigger value — decided by
+    :func:`subsume_across` over the projected taxonomy edges (a reachable path,
+    including the 0-hop ``sv == tv`` identity, is SATISFIED). Within the facet the
+    combination is OR over ``(subject value, trigger value)`` pairs: any SATISFIED
+    → APPLIES; else any OPEN → MAY_APPLY (a known-incomplete taxonomy region, if
+    the vocabulary ever flags one); else NOT_TRIGGERED. An UNKNOWN facet on the
+    card short-circuits to MAY_APPLY — that is card incompleteness, matcher's own
+    escalation rule, distinct from the engine's structural verdict.
     """
     subj = card.get(name)
     trig_vals = trigger_value if isinstance(trigger_value, (list, tuple)) else [trigger_value]
@@ -89,13 +121,25 @@ def _match_one_facet(
                             f"subject's {name!r} is unknown")
 
     subj_vals = subj if isinstance(subj, (list, tuple)) else [subj]
-    # subject satisfies trigger if any subject value subsumes any trigger value
+    # subject satisfies trigger if any subject value subsumes any trigger value —
+    # the reachability question routed to the engine, not walked here.
+    saw_open = False
     for sv in subj_vals:
-        ancestors = vocab.ancestors(sv)            # {sv, parents...}
         for tv in trig_vals:
-            if tv in ancestors:
+            dv = subsume_across(
+                Condition(name=name, dimension=Dimension.STRUCTURAL,
+                          subject=str(sv), object=str(tv)),
+                facts,
+            )
+            if dv.verdict is Verdict.SATISFIED:
                 return FacetVerdict(name, trigger_value, subj, Match.APPLIES,
                                     f"{sv!r} is-a {tv!r}" if sv != tv else f"{sv!r} matches")
+            if dv.verdict is Verdict.OPEN:
+                saw_open = True
+    if saw_open:
+        return FacetVerdict(name, trigger_value, subj, Match.MAY_APPLY,
+                            f"subject {subj!r} → {trigger_value!r} rests on a "
+                            "known-incomplete taxonomy region")
     # no subject value reaches any trigger value → positively excluded
     return FacetVerdict(name, trigger_value, subj, Match.NOT_TRIGGERED,
                         f"subject {subj!r} is not / not-a {trigger_value!r}")
@@ -118,7 +162,8 @@ def match_obligation(pair: dict[str, Any], card: SubjectCard,
     prob = pair.get("problem") or {}
     trigger = pair.get("applicability") or {}
 
-    verdicts = [_match_one_facet(name, val, card, vocab)
+    facts = _taxonomy_facts(vocab)
+    verdicts = [_match_one_facet(name, val, card, facts)
                 for name, val in trigger.items()]
 
     results = {v.result for v in verdicts}
