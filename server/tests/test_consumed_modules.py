@@ -65,7 +65,7 @@ FORBIDDEN_LOCAL_DEFS = (
 # loomground distributions consumed-but-undeclared until release (git deps not
 # yet pinned in pyproject). A new orphan NOT on this list (and not declared)
 # fails check (c).
-_PIN_PENDING = ("loomground-legal", "loomground-norm")
+_PIN_PENDING = ("loomground-norm",)
 
 # import-name -> distribution-name for the loomground packages RVND consumes.
 _IMPORT_TO_DIST = {
