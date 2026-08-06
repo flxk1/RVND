@@ -24,6 +24,8 @@ import re
 from typing import Any, Optional
 
 from . import controlforms as _cf
+from .adapters.policy_languages import grade_index
+from .breaker import cap_grade
 
 # ── the nine primary demand kinds — verb · label · handler it opens ───────────────────────
 DEMANDS: dict[str, tuple[str, str, str]] = {
@@ -98,8 +100,9 @@ _OVERSIGHT_GUARANTEES: dict[str, frozenset] = {
 
 
 def _grade_rank(g: Any) -> int:
-    m = re.search(r"(\d+)", str(g or "L2"))
-    return int(m.group(1)) if m else 2
+    """Rank of an autonomy grade in the CONSUMED governance grade lattice —
+    not a local re-derivation of the ``L<int>`` token."""
+    return grade_index().get(str(g or "L2"), 2)
 
 
 def overlay_effective(floor: dict[str, Any], user: Optional[dict[str, Any]] = None) -> dict[str, Any]:
@@ -119,7 +122,7 @@ def overlay_effective(floor: dict[str, Any], user: Optional[dict[str, Any]] = No
         eff_grade = fg
     else:
         ug, uo = user.get("grade", fg), user.get("oversight", fo)
-        eff_grade = f"L{min(_grade_rank(fg), _grade_rank(ug))}"          # never above the ceiling
+        eff_grade = cap_grade(ug, fg)          # lattice meet: user capped at the floor ceiling
         composed = floor_guar | _OVERSIGHT_GUARANTEES.get(uo, frozenset())  # only adds
     return {
         "grade": eff_grade,

@@ -35,6 +35,7 @@ from pathlib import Path
 from typing import Any, Iterable, Optional
 
 from .action_gate import _POSTURE_SHIFT, _RISK_MIN_GRADE  # noqa: F401 — ontology is the register
+from .adapters.policy_languages import grade_levels
 from .mutation_log import LogEvent, MutationLog
 from .pinned_skills import load_pinned_skills
 from .policy import load_policy
@@ -402,6 +403,14 @@ def drift_report(folder: str | Path, *, log_root: Optional[Path] = None,
 
 # ── 5. risk register ─────────────────────────────────────────────────────────
 
+def _grade_token(rank: int) -> str:
+    """Render a grade RANK as the governance lattice's token — consuming
+    ``grade_levels()`` rather than hardcoding the ``L<int>`` format or an ``L4``
+    ceiling. Clamps into range so it never over/under-flows the lattice."""
+    lv = grade_levels()
+    return lv[max(0, min(len(lv) - 1, int(rank)))]
+
+
 def risk_register(folder: str | Path, *, log_root: Optional[Path] = None,
                   posture: str = "balanced",
                   regime: Optional[dict] = None) -> dict[str, Any]:
@@ -416,8 +425,8 @@ def risk_register(folder: str | Path, *, log_root: Optional[Path] = None,
         base = _RISK_MIN_GRADE[tag]
         boundary.append({
             "footprint": tag,
-            "min_grade_base": f"L{base}",
-            "min_grade_under_posture": f"L{min(4, max(0, base + shift))}",
+            "min_grade_base": _grade_token(base),
+            "min_grade_under_posture": _grade_token(base + shift),
             "below_minimum": "NO-GO",
             "at_or_above_without_approval": "CONDITIONAL (human sign-off)",
             "telemetry": "observables may raise to CONDITIONAL, never lower (NT-13)"})
