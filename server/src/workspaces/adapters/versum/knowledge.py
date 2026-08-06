@@ -157,7 +157,7 @@ class VersumKnowledgeStore:
                  dimension=Dimension(e.get("dimension") or "relational"))
             for e in dict_edges
         ]
-        reached = set(neighborhood(edges, focus, depth=depth)["nodes"])
+        reached = set(neighborhood(edges, focus, depth=depth).nodes)
         selected = [e for e in dict_edges
                     if e.get("src_id") in reached or e.get("dst_id") in reached]
         claims = [r for r in self.claims() if r.get("item_id") in reached]
