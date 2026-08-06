@@ -85,6 +85,12 @@ from loomground_legal import (
     infer_host_instrument, extract_cross_references,
     DocumentSummary, summarize_document,
 )
+# applicable-law theory: the universal source-class map + the jurisdiction-family
+# packs. Re-exported as the plane's own modules so the ``workspaces.source_classes``
+# / ``workspaces.legal_systems`` shims consume them HERE — the single legal import
+# site — rather than reaching upstream. The taxonomy, effect ceilings, relation
+# vocabulary, pack registry and applicable-law resolver are the plane's, whole.
+from loomground_legal import source_classes, legal_systems
 
 __all__ = [
     # connection algebra (the legal_connection cut)
@@ -109,6 +115,8 @@ __all__ = [
     "resolve_celex", "resolve_citation_number", "resolve_short_name",
     "infer_host_instrument", "extract_cross_references",
     "DocumentSummary", "summarize_document",
+    # applicable-law theory (plane modules the source_classes/legal_systems shims consume)
+    "source_classes", "legal_systems",
 ]
 
 
