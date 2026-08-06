@@ -300,6 +300,23 @@ LEGAL_TWINS: dict[str, tuple[str, ...]] = {
         r"^_REG_NAME_RE\s*[:=]", r"^_DIR_NAME_RE\s*[:=]", r"^_CASE_NAME_RE\s*[:=]",
         r'2024/1689"\s+in',
     ),
+    # source_classes: the universal source-class map (taxonomy of source KINDS,
+    # effect ceilings, relation vocabulary, SC-2/SC-3 invariants) is consumed from
+    # loomground_legal.source_classes; none of it may regrow here. (Patterns match
+    # real definitions only, never the shim's `X = _sc.X` rebinds.)
+    "source_classes.py": (
+        r"class\s+SourceClass\b", r"class\s+Effect\b", r"class\s+Relation\b",
+        r"^_MAX_EFFECT\s*[:=]", r"^_SELF_EXECUTING\s*[:=]",
+        r"def\s+max_effect\s*\(", r"def\s+check_source\s*\(",
+    ),
+    # legal_systems: the jurisdiction-family packs (DE/EU/UK/US) + applicable-law
+    # resolver is consumed from loomground_legal.legal_systems; the registry, the
+    # equivalence clusters, and the resolver functions must not regrow here.
+    "legal_systems.py": (
+        r"class\s+LegalSystem\b", r"class\s+ApplicableLaw\b", r"class\s+SourceEntry\b",
+        r"^_REGISTRY\s*[:=]", r"^_DE_CLUSTERS\s*[:=]", r"^_EN_CLUSTERS\s*[:=]",
+        r"def\s+applicable_law\s*\(", r"def\s+applicable_systems\s*\(",
+    ),
 }
 
 # quarantined legal originals kept for verification before deletion (the MOVE
