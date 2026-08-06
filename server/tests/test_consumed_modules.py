@@ -488,3 +488,31 @@ def test_shadow_allowlist_is_not_stale() -> None:
         if not found:
             stale.append(f"{rel}:{name} (no longer defined)")
     assert not stale, f"stale SHADOW_ALLOWLIST entries — remove them: {stale}"
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# (e) The matcher consumes the Solver subsumption engine, never re-grows it.
+#
+# matcher.py answers the genus/species question — does THIS subject trigger THIS
+# obligation — by structural is-a reachability. That reachability belongs to
+# Solver (``cross_subsumption.subsume_across``, reached through the
+# ``adapters.solver.subsumption`` seam), NOT to a local transitive taxonomy walk.
+# The historic parallel was matcher computing the is-a closure itself via
+# ``DomainVocabulary.ancestors()``. This fence keeps it retired: matcher must
+# consume ``subsume_across`` from the seam, and must not walk ``vocab.ancestors``
+# for matching. (``use_case_nd.subsume`` is a *different* concern — a domain
+# use-case→duty join, allow-listed above as a non-parallel; it is not fenced
+# here because it consumes no reachability engine to begin with.)
+# ════════════════════════════════════════════════════════════════════════════
+
+def test_matcher_consumes_solver_subsumption() -> None:
+    """matcher.py routes is-a matching through Solver's ``subsume_across`` and
+    does not re-grow the transitive taxonomy walk (``vocab.ancestors``)."""
+    src = (WORKSPACES_ROOT / "matcher.py").read_text(encoding="utf-8")
+    assert ("from .adapters.solver.subsumption import" in src
+            and "subsume_across" in src), (
+        "matcher.py must consume Solver's subsumption engine (subsume_across) "
+        "through the adapters.solver.subsumption seam")
+    assert ".ancestors(" not in src, (
+        "matcher.py re-grows the transitive is-a walk (vocab.ancestors) — that "
+        "reachability is Solver's; route it through subsume_across instead")
