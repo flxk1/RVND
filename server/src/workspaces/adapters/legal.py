@@ -91,6 +91,13 @@ from loomground_legal import (
 # site — rather than reaching upstream. The taxonomy, effect ceilings, relation
 # vocabulary, pack registry and applicable-law resolver are the plane's, whole.
 from loomground_legal import source_classes, legal_systems
+# the legal GRAMMAR front door — the canonical statement + the one-call analysis
+# (recognition → adjudication over the algebra). RVND consumes the legal engine
+# HERE, through the seam: build ``LegalStatement``s, ``analyse`` them against
+# facts, get a graded ``Analysis`` (every unsettled point escalates; ill-formed
+# law is excluded, never reasoned over). Recognition, algebra and the secondary
+# rules are the plane's, whole and entire.
+from loomground_legal import LegalStatement, WellFormedness, validate, Analysis, analyse
 
 __all__ = [
     # connection algebra (the legal_connection cut)
@@ -117,6 +124,8 @@ __all__ = [
     "DocumentSummary", "summarize_document",
     # applicable-law theory (plane modules the source_classes/legal_systems shims consume)
     "source_classes", "legal_systems",
+    # the legal grammar front door (recognition → adjudication over the algebra)
+    "LegalStatement", "WellFormedness", "validate", "Analysis", "analyse",
 ]
 
 
