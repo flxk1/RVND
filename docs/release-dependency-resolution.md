@@ -23,7 +23,7 @@ Current tag-to-commit mapping:
 | `loomground-versum` | `loomground-versum-v0.7.0` | `71164f31f34882aff87ea1622952a855e194a4f3` |
 | `loomground-governance` | `v0.8.2` | `b69e0e17b8ab313f9ec0303523deeffdfe7ff115` |
 | `loomground-deontic` | `v0.1.3` | `e346601a5d09d53cee410e22973ff1ec52246338` |
-| `loomground-ingest` | `v0.1.1` | `22661a761afa8178fbadbd4e50f25f958acbe1a2` |
+| `loomground-ingest` | `feat/governance-compiler` | `1b276389c22835563c0f1dec573ac627694cc6e9` |
 | `loomground-patchbay` | `v0.1.0` | `36e70ada8d51583b7071a51edf12e6d65b1a0cc5` |
 
 Patchbay is consumed by vendoring the shared presentation contract rather than

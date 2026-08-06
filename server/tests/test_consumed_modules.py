@@ -200,6 +200,34 @@ def test_every_consumed_loomground_dist_is_declared_or_pinned() -> None:
         f"  consumed: {sorted(consumed)}")
 
 
+def test_every_declared_loomground_dist_is_consumed() -> None:
+    """The reverse of the orphan check above, and the direction it was missing: a
+    loomground-* distribution DECLARED as a dependency must actually be imported
+    somewhere under server/src.
+
+    A declared-but-unconsumed dependency is the ``orphan = reimplemented`` signal
+    the standing consume-vs-regrow gate exists to catch: RVND paid the dependency
+    cost but grew its own runtime instead of consuming the module (the historical
+    ``loomground_norm`` failure — declared/vendored yet imported nowhere while a
+    parallel twin carried the work). Together with
+    :func:`test_every_consumed_loomground_dist_is_declared_or_pinned` this makes the
+    manifest↔usage relationship bidirectional: nothing consumed-but-undeclared, and
+    nothing declared-but-unconsumed.
+
+    (_PIN_PENDING dists are consumed-but-undeclared by construction, so they never
+    appear in ``declared`` and cannot trip this check.)"""
+    declared = _declared_loomground_dists()
+    consumed = _consumed_loomground_dists()
+    unconsumed = sorted(declared - consumed)
+    assert not unconsumed, (
+        f"loomground distributions declared in pyproject but imported NOWHERE under "
+        f"server/src — declared-but-unconsumed means the capability was reimplemented "
+        f"as a parallel structure instead of consumed. Consume the module through its "
+        f"adapter seam, or drop the dependency: {unconsumed}\n"
+        f"  declared: {sorted(declared)}\n"
+        f"  consumed: {sorted(consumed)}")
+
+
 def test_pin_pending_entries_are_actually_consumed() -> None:
     """Guard against _PIN_PENDING going stale: every pinned-pending dist must
     actually be consumed (else drop it), and must NOT also be declared."""
@@ -257,6 +285,21 @@ LEGAL_TWINS: dict[str, tuple[str, ...]] = {
         r"class\s+WorldMap\b", r"class\s+Entity\b", r"class\s+EntityKind\b",
         r"def\s+seed_world\s*\(",
     ),
+    # crossref_extractor: fully consumes legal.extract_cross_references /
+    # infer_host_instrument / INSTRUMENTS — the instrument registry, relation-verb
+    # typing, citation regexes and resolution must not regrow here.
+    "crossref_extractor.py": (
+        r"^_RELATIONS\s*[:=]", r"^_REG_CITE_RE\s*[:=]", r"^_CELEX_RE\s*[:=]",
+        r"def\s+_resolve_by_celex\s*\(", r"def\s+_nearest_relation\s*\(",
+    ),
+    # legal_extractors: its DocumentSummaryExtractor consumes legal.summarize_document
+    # and _infer_regulation consumes infer_host_instrument — the doc-kind header
+    # regexes and the hardcoded host-inference heuristic must not regrow.
+    # (Definition/ArticleReference extractors are NOT yet retired — not fenced here.)
+    "legal_extractors.py": (
+        r"^_REG_NAME_RE\s*[:=]", r"^_DIR_NAME_RE\s*[:=]", r"^_CASE_NAME_RE\s*[:=]",
+        r'2024/1689"\s+in',
+    ),
 }
 
 # quarantined legal originals kept for verification before deletion (the MOVE
@@ -301,6 +344,41 @@ def test_adapters_legal_is_the_only_legal_import_site() -> None:
                     importers.append(str(path.relative_to(WORKSPACES_ROOT)))
     assert set(importers) == {"adapters/legal.py"}, (
         f"loomground_legal must be imported only in adapters/legal.py; got {sorted(set(importers))}")
+
+
+# The required-artifact catalogue is CONSUMED from loomground-ingest, not re-grown.
+# (A single-import-site rule is NOT used here — loomground_ingest is legitimately
+# imported by workspaces/ingest/* and adapters/ingest/governance.py — so this is the
+# twin-consume + no-regrow shape, like LEGAL_TWINS.)
+INGEST_TWINS: dict[str, tuple[str, ...]] = {
+    # instrument_obligation_extractor: consumes ingest.extract_required_artifacts /
+    # RequiredArtifact — the catalogue, ArtifactSpec schema, obligation-cue regex and
+    # the scan must not regrow here. Only the ND-dispatcher wrapping stays local.
+    "instrument_obligation_extractor.py": (
+        r"^_ARTIFACTS\s*[:=]", r"^_OBLIGATION_CUE\s*[:=]", r"^_OBLIGATION_WINDOW\s*[:=]",
+        r"class\s+ArtifactSpec\b", r"class\s+RequiredArtifact\b",
+        r"def\s+extract_required_artifacts\s*\(",
+    ),
+}
+
+
+def test_ingest_twins_consume_adapters_ingest() -> None:
+    """The required-artifact catalogue is consumed from the ingest plane through
+    ``adapters.ingest``; its catalogue, schema, obligation-cue regex and scan must
+    not regrow in the ND-dispatcher module."""
+    seam = re.compile(
+        r"from\s+\.+adapters\.ingest\b|from\s+workspaces\.adapters\.ingest\b")
+    not_shims: list[str] = []
+    regrown: list[str] = []
+    for name, forbidden in INGEST_TWINS.items():
+        text = (WORKSPACES_ROOT / name).read_text(encoding="utf-8")
+        if not seam.search(text):
+            not_shims.append(name)
+        for pat in forbidden:
+            if re.search(pat, text, re.MULTILINE):
+                regrown.append(f"{name}: {pat}")
+    assert not not_shims, f"ingest twins not consuming adapters.ingest: {not_shims}"
+    assert not regrown, f"ingest twins re-grew the catalogue locally: {regrown}"
 
 
 def test_legal_quarantine_originals_present() -> None:
