@@ -33,15 +33,34 @@ def append_inference(store: Any, *, path: list, dimension: str, actor: str) -> A
 
 
 def append_record(store: Any, *, record: Any, dimension: str, actor: str,
-                  observed_at: Any = None, captures: Any = None) -> Any:
+                  observed_at: Any = None, captures: Any = None,
+                  identity: bool = False, version: Any = None) -> Any:
     """Append a full runtime record — an RVND-style problem/solution pair — as
     first-class versum knowledge. The rich analogue of ``append_fact``: the whole
     pair body (every domain facet) is preserved losslessly in the versum node's
     ``properties.record``. This is the write door the memory-split routes
-    knowledge-channel ``remember()`` through."""
+    knowledge-channel ``remember()`` through.
+
+    ``identity=True`` (with a monotonic ``version``) upserts a MUTABLE record in
+    place — a stable node id whose latest ``version`` wins on read — the door the
+    grounder-store retirement writes works/claims/provenance through. Default
+    (``identity=False``) is the content-addressed append every other caller uses."""
     import versum
     return versum.append_record(
         str(store), record=record, dimension=dimension, actor=actor,
+        observed_at=observed_at, captures=captures,
+        identity=identity, version=version)
+
+
+def append_records(store: Any, *, records: Any, dimension: str, actor: str,
+                   observed_at: Any = None, captures: Any = None) -> Any:
+    """Batch identity-upsert — persist many mutable records in ONE versum
+    transaction (one fsync). Each item is ``{"record": <body>, "version": <str>}``.
+    The write door the grounder-store retirement flushes changed works/claims/
+    provenance through, so a bulk import / batch pays one durable write, not N."""
+    import versum
+    return versum.append_records(
+        str(store), records=records, dimension=dimension, actor=actor,
         observed_at=observed_at, captures=captures)
 
 
