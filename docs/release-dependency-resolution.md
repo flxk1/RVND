@@ -19,7 +19,7 @@ Current tag-to-commit mapping:
 
 | Package | Release tag | Pinned commit |
 |---|---|---|
-| `loomground-solver` | `solver-v0.2.0` | `8bfbf44850626acd0c4a9710b2b7aae1d2094032` |
+| `loomground-solver` | `feat/scale-reasoning` | `2129b64c03bf91fd86792333cae1164626cae62a` |
 | `loomground-versum` | `loomground-versum-v0.7.0` | `71164f31f34882aff87ea1622952a855e194a4f3` |
 | `loomground-governance` | `v0.8.2` | `b69e0e17b8ab313f9ec0303523deeffdfe7ff115` |
 | `loomground-deontic` | `v0.1.3` | `e346601a5d09d53cee410e22973ff1ec52246338` |
