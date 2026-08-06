@@ -130,14 +130,38 @@ def read_pairs(folder: str | Path, *, log_root: str | Path | None = None) -> dic
     pair-creating events). Serves a sealed+unlocked workspace from memory without
     unsealing to disk; reads an unsealed workspace from disk. Raises if locked.
 
-    Note: this is the raw created/updated-pair view from the chain, not the
-    full lifecycle projection (deletes/publishes) that ``WorkspaceMemory`` computes.
+    Note: this is the raw created/updated-pair view, not the full lifecycle
+    projection (deletes/publishes) that ``WorkspaceMemory`` computes.
+
+    Post body-drop, knowledge-channel pair bodies live in the versum sink (not the
+    log event), so this unions two sources: the log-body pairs still carried in the
+    chain (capture / system / published pairs) and the knowledge bodies from the
+    versum sink — served from the sealed workspace's in-memory store when
+    sealed+unlocked, or the on-disk ``.versum`` sink when unsealed. ``serve`` still
+    gates access (raises if locked).
     """
     from .memory import _pair_from_event
+    from .mutation_log import events_from_bytes
+    from .adapters.versum import (read_disk_versum_records,
+                                  read_served_versum_records)
+    store = serve(folder, log_root=log_root)  # gate: raises if sealed + locked
     out: dict = {}
-    for evt in replay(folder, log_root=log_root):
+    # (a) pairs whose body still rides in the log (non-knowledge channels, publish)
+    raw = store.get("events.jsonl")
+    for evt in (events_from_bytes(raw) if raw else ()):
         pair = _pair_from_event(evt)
         if pair is not None:
             pid = pair.get("id") or (pair.get("problem") or {}).get("id")
-            out[pid] = pair
+            if pid:
+                out[pid] = pair
+    # (b) knowledge bodies from the versum sink (body-dropped from the log)
+    records = (read_served_versum_records(store)
+               if any(k.startswith("__folder_sink__/.versum/") for k in store)
+               else read_disk_versum_records(folder))
+    for rec in records:
+        body = rec.get("properties", {}).get("record") if isinstance(rec, dict) else None
+        if isinstance(body, dict):
+            pid = body.get("id") or (body.get("problem") or {}).get("id")
+            if pid:
+                out.setdefault(pid, body)
     return out
