@@ -76,6 +76,15 @@ from loomground_legal import (
     Anchor, anchor, place_legal_text,
     ANCHOR_KINDS, ANCHOR_RELATIONS, TextProvision, segment_provisions,
 )
+# instrument cross-reference resolution + document summary — the legal-domain
+# capabilities the crossref / legal doc-summary extractors consume (retiring the
+# hand-rolled parallels those RVND modules used to carry).
+from loomground_legal import (
+    InstrumentRef, INSTRUMENTS, CrossReference,
+    resolve_celex, resolve_citation_number, resolve_short_name,
+    infer_host_instrument, extract_cross_references,
+    DocumentSummary, summarize_document,
+)
 
 __all__ = [
     # connection algebra (the legal_connection cut)
@@ -95,6 +104,11 @@ __all__ = [
     # anchoring (the legal-domain placement step)
     "Anchor", "anchor", "place_legal_text",
     "ANCHOR_KINDS", "ANCHOR_RELATIONS", "TextProvision", "segment_provisions",
+    # instrument cross-reference resolution + document summary
+    "InstrumentRef", "INSTRUMENTS", "CrossReference",
+    "resolve_celex", "resolve_citation_number", "resolve_short_name",
+    "infer_host_instrument", "extract_cross_references",
+    "DocumentSummary", "summarize_document",
 ]
 
 
