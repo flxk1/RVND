@@ -45,6 +45,12 @@ import re
 from typing import Any
 
 from .nd_routing import BaseNDDispatcher, Classification
+# document kind/identifier/instrument + host inference are the legal plane's;
+# consumed through the single adapters.legal seam (retiring the parallels below).
+from .adapters.legal import (
+    summarize_document as _summarize_document,
+    infer_host_instrument as _legal_infer_host_instrument,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -176,19 +182,13 @@ _ANNEX_RE   = re.compile(r"\b(?:Annex|Anhang)\s+(?P<num>[IVXLCDM]+|\d+)\b", re.I
 
 
 def _infer_regulation(content: str) -> str:
-    """Best-effort: detect which regulation the content is from."""
-    snippet = content[:4000].lower()
-    if "regulation (eu) 2024/1689" in snippet or "ai act" in snippet:
-        return "ai-act"
-    if "regulation (eu) 2016/679" in snippet or "gdpr" in snippet or "general data protection" in snippet:
-        return "gdpr"
-    if "directive 2009/24" in snippet:
-        return "software-directive"
-    if "regulation (eu) 2022/1925" in snippet or "digital markets act" in snippet or "dma" in snippet:
-        return "dma"
-    if "regulation (eu) 2022/2065" in snippet or "digital services act" in snippet or "dsa" in snippet:
-        return "dsa"
-    return "unknown"
+    """Which instrument the content is from ('unknown' if none).
+
+    Consumed from the legal plane's single host inference — this module no longer
+    carries its own, so the twin of ``crossref.infer_host_instrument`` collapses
+    onto the plane's one. The '' the plane returns for 'no instrument' is preserved
+    as 'unknown' for the mental-model scope fields."""
+    return _legal_infer_host_instrument(content) or "unknown"
 
 
 class ArticleReferenceExtractor(BaseNDDispatcher):
@@ -257,17 +257,9 @@ class ArticleReferenceExtractor(BaseNDDispatcher):
 # DocumentSummaryExtractor — one mental model per document
 # ---------------------------------------------------------------------------
 
-_REG_NAME_RE = re.compile(
-    r"REGULATION\s*(?:\(EU\))?\s*(?P<num>\d+/\d+)\s+OF\s+THE\s+[A-Z]+\s+(?:PARLIAMENT)?",
-    re.IGNORECASE,
-)
-_DIR_NAME_RE = re.compile(
-    r"DIRECTIVE\s*(?:\(EU\))?\s*(?P<num>\d+/\d+)\s+OF\s+THE\s+[A-Z]+",
-    re.IGNORECASE,
-)
-_CASE_NAME_RE = re.compile(
-    r"\b(C-\d+/\d+|T-\d+/\d+|\d+\s+U\.?S\.?\s+\d+)\b",
-)
+# Document-kind detection (regulation / directive / case-law header patterns) is
+# the legal plane's — consumed via legal.summarize_document (the _REG_NAME_RE /
+# _DIR_NAME_RE / _CASE_NAME_RE parallels that used to live here are retired).
 
 
 class DocumentSummaryExtractor(BaseNDDispatcher):
@@ -290,28 +282,15 @@ class DocumentSummaryExtractor(BaseNDDispatcher):
     confidence_floor = 0.0    # always fires — one per doc
 
     def extract(self, content, classification, *, source_document=None):
-        # Detect document kind + identifier.
-        regulation_match = _REG_NAME_RE.search(content[:8000])
-        directive_match = _DIR_NAME_RE.search(content[:8000])
-        case_match = _CASE_NAME_RE.search(content[:4000])
-        if regulation_match:
-            doc_kind = "regulation"
-            doc_id = regulation_match.group("num")
-        elif directive_match:
-            doc_kind = "directive"
-            doc_id = directive_match.group("num")
-        elif case_match:
-            doc_kind = "case-law"
-            doc_id = case_match.group(0)
-        elif "Case Study" in content[:500] or "Scenario" in content[:500]:
-            doc_kind = "case-study"
-            doc_id = (source_document or "case").split("/")[-1][:60]
-        else:
-            doc_kind = "document"
-            doc_id = (source_document or "doc").split("/")[-1][:60]
-
-        regulation = _infer_regulation(content)
-        # Pick a summary excerpt — first 600 chars of meaningful content.
+        # Document kind, identifier and instrument are the legal plane's — consume
+        # its document summary (retiring the _REG_NAME_RE / _DIR_NAME_RE /
+        # _CASE_NAME_RE + _infer_regulation parallels this module used to carry).
+        summary = _summarize_document(content, source_name=source_document or "")
+        doc_kind = summary.doc_kind
+        doc_id = summary.doc_id
+        regulation = summary.instrument or "unknown"
+        # The excerpt is a general PDF-text concern (skip page markers / short
+        # paragraphs) — kept local, not a legal-domain parallel.
         summary_excerpt = _first_summary_excerpt(content)
 
         # ONE pair per document.
