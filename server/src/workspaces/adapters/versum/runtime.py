@@ -78,6 +78,40 @@ def iter_records(store: Any, *, exclude_erased: bool = True) -> list:
     return list(versum.iter_records(str(store), exclude_erased=exclude_erased))
 
 
+#: seal manifest prefix for a folder's ``.versum`` sink (seal.py ``_SINK_PREFIX``
+#: + the ``.versum`` sink name) — where a sealed workspace's versum transactions
+#: live inside its served in-memory store.
+_SERVED_VERSUM_PREFIX = "__folder_sink__/.versum/"
+
+
+def read_disk_versum_records(folder: Any) -> list:
+    """Full versum knowledge records for an UNSEALED folder's ``.versum`` sink on
+    disk (erasure honored). ``[]`` if the sink does not exist. The read side of the
+    body-drop for the unsealed path."""
+    import versum
+    from pathlib import Path as _Path
+    store = _Path(str(folder)) / ".versum"
+    if not store.is_dir():
+        return []
+    return list(versum.iter_records(str(store)))
+
+
+def read_served_versum_records(served: dict) -> list:
+    """Full versum knowledge records for a SEALED+unlocked workspace, read from its
+    in-memory served store (``workspace_lock.serve`` / ``seal.read_through``) — the
+    ``.versum`` transactions packed under the seal manifest, never plaintext on
+    disk. Erasure honored via the served ``_erasure.json`` bytes. ``[]`` if the
+    served store carries no versum sink."""
+    import versum
+    txn_prefix = _SERVED_VERSUM_PREFIX + "_dimensioned_subgraph_transactions/"
+    txns = [v for k, v in served.items()
+            if k.startswith(txn_prefix) and k.endswith(".json")]
+    if not txns:
+        return []
+    tombs = versum.tombstones_from_bytes(served.get(_SERVED_VERSUM_PREFIX + "_erasure.json"))
+    return list(versum.iter_records_from_transactions(txns, tombstones=tombs))
+
+
 def erase_record(store: Any, node_id: str, *, physical: bool = False,
                  actor: str = "", reason: str = "") -> Any:
     """Erase one sink record, keeping versum consistent with a log delete/purge.
