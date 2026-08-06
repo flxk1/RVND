@@ -323,7 +323,10 @@ class WorkspaceMemory:
         """
         for log in self._logs_in_scope():
             for evt in log.replay():
-                if evt.pair_id == pair_id and evt.event in ("ingest", "live") and "pair" in evt.extra:
+                # the ingest/live event identifies the owning log by pair_id — post
+                # body-drop a knowledge ingest event no longer carries the body in
+                # ``extra['pair']``, so match on the event kind, not the body.
+                if evt.pair_id == pair_id and evt.event in ("ingest", "live"):
                     return log
         return None
 
@@ -354,6 +357,19 @@ class WorkspaceMemory:
             raise ValueError("pair must have an 'id' key")
         problem_id = str(pair.get("problem", {}).get("id", "")) if isinstance(pair.get("problem"), dict) else ""
 
+        # memory→versum body-drop: a knowledge-channel pair's BODY lives in the
+        # folder's versum sink (the canonical, authoritative knowledge plane), NOT
+        # in the log event. Write versum FIRST so a sink failure fails the remember
+        # rather than leaving a body-less log event with no body anywhere; then log
+        # a body-less event (it still owns pair_id + lifecycle + scope). A
+        # non-knowledge channel (capture / system) keeps its body in the log — it
+        # has no versum copy, so it is not redundant.
+        if channel in _KNOWLEDGE_CHANNELS:
+            self._write_knowledge_to_versum(pair)
+            extra: dict[str, Any] = {"distribution_scope": "private"}
+        else:
+            extra = {"pair": pair, "distribution_scope": "private"}
+
         evt = LogEvent(
             event="ingest",
             folder_path=self.folder_context,  # overwritten by log on append
@@ -363,32 +379,34 @@ class WorkspaceMemory:
             problem_id=problem_id,
             source_hash=source_hash,
             actor=self._actor,
-            extra={"pair": pair, "distribution_scope": "private"},
+            extra=extra,
         )
         self._own_log.append(evt)
-        # memory→versum split: mirror knowledge-channel pairs into the folder's
-        # versum sink (the canonical knowledge plane). Dual-write for now — the
-        # log stays the read source until the read path moves to versum. Best-
-        # effort: a sink failure must never break a remember (the log is intact).
-        if channel in _KNOWLEDGE_CHANNELS:
-            self._mirror_to_versum(pair)
         return pair_id
 
-    def _mirror_to_versum(self, pair: dict[str, Any]) -> None:
-        """Write a knowledge-channel pair into this folder's versum sink via the
-        adapters.versum seam (``append_record``). The full pair body — every
-        facet — is preserved losslessly in the versum node's properties. Guarded:
-        any failure is logged and swallowed so the local log write is never lost.
+    def _write_knowledge_to_versum(self, pair: dict[str, Any]) -> None:
+        """Write a knowledge-channel pair's body into this folder's versum sink as
+        an identity-upsert record (a re-``remember`` of the same id supersedes in
+        place, latest-wins on read), via the adapters.versum seam. Authoritative,
+        NOT best-effort: after the body-drop the body lives ONLY here, so a sink
+        failure must raise (and fail the remember) rather than silently lose it.
         """
-        try:
-            from .adapters.versum import append_record
-            store = Path(self.folder_context) / ".versum"
-            store.mkdir(parents=True, exist_ok=True)
-            append_record(store, record=pair, dimension="relational",
-                          actor=self._actor)
-        except Exception as exc:  # best-effort dual-write (see caller)
-            _LOG.warning("versum mirror skipped for pair %s: %s",
-                         pair.get("id", "?"), exc)
+        # A sealed workspace is read-only: refuse the write BEFORE touching disk,
+        # the same refusal the mutation log enforces — else the versum-first write
+        # would both bypass the seal and leak plaintext knowledge into .versum.
+        from . import seal
+        from .mutation_log import SealedWriteError
+        if seal.is_sealed(self.folder_context, log_root=self._log_root):
+            raise SealedWriteError(
+                "workspace is sealed — unseal before writing knowledge")
+        from .adapters.versum import append_record
+        store = Path(self.folder_context) / ".versum"
+        store.mkdir(parents=True, exist_ok=True)
+        # a strictly-monotonic per-process version so a later remember of the same
+        # pair id wins on read (str of ns epoch: stable digit-count → lexicographic
+        # order == chronological).
+        append_record(store, record=pair, dimension="relational",
+                      actor=self._actor, identity=True, version=str(time.time_ns()))
 
     def _versum_knowledge_pairs(self) -> dict[str, dict[str, Any]]:
         """Knowledge pairs from this folder + descendants' versum sinks, keyed by
@@ -419,6 +437,21 @@ class WorkspaceMemory:
                         out.setdefault(str(body["id"]), body)
             except Exception as exc:
                 _LOG.warning("versum knowledge read skipped for %s: %s", fp, exc)
+        return out
+
+    def _versum_bodies_for(self, folder_path: str) -> dict[str, dict[str, Any]]:
+        """Knowledge pair bodies in ONE folder's versum sink, keyed by pair id
+        (on-disk read). Used where the log no longer carries the body post
+        body-drop (e.g. cascade delete-by-document). Best-effort."""
+        out: dict[str, dict[str, Any]] = {}
+        try:
+            from .adapters.versum import read_disk_versum_records
+            for rec in read_disk_versum_records(folder_path):
+                body = rec.get("properties", {}).get("record") if isinstance(rec, dict) else None
+                if isinstance(body, dict) and body.get("id"):
+                    out.setdefault(str(body["id"]), body)
+        except Exception:  # best-effort — the log still owns lifecycle
+            pass
         return out
 
     def _erase_knowledge_from_versum(self, pair_ids: set[str], *,
@@ -689,8 +722,12 @@ class WorkspaceMemory:
         deleted = 0
         for log in self._logs_in_scope():
             seen: set[str] = set()
+            # post body-drop a knowledge pair's body (with its source_document)
+            # lives in the folder's versum sink, not the log event — resolve it so
+            # the cascade still matches by source document.
+            versum_bodies = self._versum_bodies_for(log.folder_path)
             for evt in log.replay():
-                pair = _pair_from_event(evt)
+                pair = _pair_from_event(evt) or versum_bodies.get(evt.pair_id)
                 if pair is None:
                     continue
                 problem = pair.get("problem") if isinstance(pair, dict) else None
@@ -775,8 +812,12 @@ class WorkspaceMemory:
         purged_ids: set[str] = set()
         for log in self._logs_in_scope():
             pair_ids_to_purge: set[str] = set()
+            # post body-drop a knowledge pair's body (with source_document) lives in
+            # the folder's versum sink, not the log event — resolve it so purge
+            # still matches by source document.
+            versum_bodies = self._versum_bodies_for(log.folder_path)
             for evt in log.replay():
-                pair = _pair_from_event(evt)
+                pair = _pair_from_event(evt) or versum_bodies.get(evt.pair_id)
                 if pair is None:
                     continue
                 problem = pair.get("problem") if isinstance(pair, dict) else None
@@ -871,18 +912,16 @@ class WorkspaceMemory:
                     latest_body = pair
                 if evt.lifecycle_state:
                     latest_state = evt.lifecycle_state
+        # memory→versum body-drop: a knowledge pair's body lives in versum, not the
+        # log event — so fold in the versum body BEFORE applying lifecycle, so the
+        # log's delete/purge/reject state governs a versum-sourced body too (else a
+        # deleted knowledge pair whose body is only in versum would leak).
+        if latest_body is None:
+            latest_body = self._versum_knowledge_pairs().get(pair_id)
         if latest_body is not None:
             if latest_state in ("deleted", "purged", "rejected"):
                 return None
             return latest_body
-
-        # Not in the log — check the versum sink (memory→versum read). A pair the
-        # log knows as deleted returned None above; this only serves knowledge
-        # whose body lives in versum and not (or no longer) in the log. versum
-        # already hides erased knowledge.
-        vp = self._versum_knowledge_pairs().get(pair_id)
-        if vp is not None:
-            return vp
 
         # Not in own scope — check ancestor-distributed pairs (B5).
         anc_bodies, _, _ = self._ancestor_distributed_aggregation()
