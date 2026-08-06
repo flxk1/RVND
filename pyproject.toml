@@ -28,7 +28,7 @@ dependencies = [
     "loomground-governance @ git+https://github.com/flxk1/loomground-governance@b69e0e17b8ab313f9ec0303523deeffdfe7ff115",
     "loomground-deontic @ git+https://github.com/flxk1/loomground-deontic@e346601a5d09d53cee410e22973ff1ec52246338",
     "loomground-ingest @ git+https://github.com/flxk1/loomground-ingest@1b276389c22835563c0f1dec573ac627694cc6e9",
-    "loomground-legal @ git+https://github.com/flxk1/loomground-legal@1991a63e72b029c575e06d474e9654d941857141",
+    "loomground-legal @ git+https://github.com/flxk1/loomground-legal@056fdb344c8ecdb455bda44c728155ebe8bb30ea",
     "cryptography>=41.0",
     "anyascii>=0.3",
     "mcp>=1.8,<2.0",
