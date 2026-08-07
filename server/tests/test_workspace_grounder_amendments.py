@@ -102,9 +102,7 @@ def test_two_writers_lose_nothing(tmp_path):
         pool.map(_register_batch, [(folder, log_root, 0),
                                    (folder, log_root, 25)])
     led = GroundingLedger(folder, log_root=log_root)
-    assert len(led.works) == 50                       # no lost updates
-    raw = (tmp_path / "grounding" / "works.jsonl").read_text(encoding="utf-8")
-    assert all(json.loads(l) for l in raw.splitlines() if l.strip())
+    assert len(led.works) == 50                       # no lost updates (reloaded from versum)
 
 
 def test_lock_reloads_other_writers_state(tmp_path):
@@ -125,9 +123,11 @@ def test_content_auto_hash(ledger):
     import hashlib
     assert sha == hashlib.sha256(page.encode("utf-8")).hexdigest()
     assert w["id"] not in ledger.coverage()["web_works_missing_fixity"]
-    # content itself is never stored
-    raw = (ledger.folder / "grounding" / "works.jsonl").read_text("utf-8")
-    assert "actual retrieved page" not in raw
+    # content itself is never stored (only its sha256) — scan the versum sink
+    store = ledger._versum_store()
+    blob = "".join(p.read_text("utf-8") for p in store.rglob("*.json")) \
+        if store.exists() else ""
+    assert "actual retrieved page" not in blob
 
 
 def test_explicit_sha_not_overwritten_by_content(ledger):

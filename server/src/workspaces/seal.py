@@ -116,13 +116,30 @@ def is_sealed(folder: str | Path, *, log_root: str | Path | None = None) -> bool
     return _sealed_path(_resolve_log_dir(folder, log_root)).exists()
 
 
+# Plaintext knowledge sinks that live under the WORKSPACE FOLDER itself (not the
+# log dir). Sealing the log dir alone leaves these in plaintext at rest, so a
+# sealed workspace's knowledge would leak through them — ``.versum`` is the
+# memory→versum knowledge sink (memory split), ``grounding`` is the grounder's
+# versum sink + legacy store. They are packed into the same sealed blob under a
+# distinct prefix so unseal routes them back to the folder, never to the log dir.
+_FOLDER_MEMORY_SINKS: tuple[str, ...] = (".versum", "grounding")
+_SINK_PREFIX = "__folder_sink__/"
+
+
+def _existing_sinks(folder: Path) -> list[tuple[str, Path]]:
+    """The folder's plaintext knowledge sinks that currently exist on disk."""
+    return [(name, folder / name) for name in _FOLDER_MEMORY_SINKS
+            if (folder / name).exists()]
+
+
 def seal_folder(
     folder: str | Path,
     *,
     passphrase: str,
     log_root: str | Path | None = None,
 ) -> dict[str, Any]:
-    """Encrypt the folder's memory directory at rest and remove the plaintext."""
+    """Encrypt the folder's memory (log dir + versum/grounding knowledge sinks) at
+    rest and remove the plaintext."""
     if not passphrase:
         raise SealError("a passphrase is required to seal")
     log_dir = _resolve_log_dir(folder, log_root)
@@ -156,6 +173,15 @@ def seal_folder(
                 if path.is_file():
                     rel = path.relative_to(log_dir).as_posix()
                     files[rel] = base64.b64encode(path.read_bytes()).decode("ascii")
+            # Also pack the folder's plaintext knowledge sinks (.versum, grounding)
+            # under a distinct prefix — they live under the workspace folder, not
+            # log_dir, so the log seal alone would leave them in plaintext at rest.
+            folder_sinks = _existing_sinks(Path(folder))
+            for name, sink in folder_sinks:
+                for path in sorted(sink.rglob("*")):
+                    if path.is_file():
+                        rel = _SINK_PREFIX + name + "/" + path.relative_to(sink).as_posix()
+                        files[rel] = base64.b64encode(path.read_bytes()).decode("ascii")
             plaintext = json.dumps({"files": files}).encode("utf-8")
 
             salt = os.urandom(16)
@@ -183,6 +209,9 @@ def seal_folder(
             except OSError:
                 pass
             shutil.rmtree(log_dir)
+            # remove the now-sealed plaintext knowledge sinks too
+            for _name, sink in folder_sinks:
+                shutil.rmtree(sink, ignore_errors=True)
 
     return {"sealed": True, "path": str(sealed), "files_sealed": len(files)}
 
@@ -202,6 +231,10 @@ def unseal_folder(
         raise SealError(f"not sealed: {sealed} does not exist")
     if log_dir.exists():
         raise SealError(f"refusing to overwrite existing plaintext at {log_dir}")
+    for name in _FOLDER_MEMORY_SINKS:
+        if (Path(folder) / name).exists():
+            raise SealError(
+                f"refusing to overwrite existing plaintext at {Path(folder) / name}")
 
     envelope = json.loads(sealed.read_text())
     if envelope.get("magic") != _MAGIC:
@@ -224,7 +257,11 @@ def unseal_folder(
     log_dir.mkdir(parents=True, exist_ok=True)
     n = 0
     for rel, b64 in manifest.get("files", {}).items():
-        dest = log_dir / rel
+        if rel.startswith(_SINK_PREFIX):
+            # a folder knowledge sink (.versum / grounding) → back under the folder
+            dest = Path(folder) / rel[len(_SINK_PREFIX):]
+        else:
+            dest = log_dir / rel
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_bytes(base64.b64decode(b64))
         try:

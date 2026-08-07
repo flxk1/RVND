@@ -112,10 +112,9 @@ answer questions about the resulting configuration. Its main operations are:
 - `governance_map` (`governance_map/v1`) — present rules by role, step and risk.
 - `governance_kg` (`governance_kg/v1`) — present the same rules as a graph with
   reasoning paths.
-- `loop_graph` (`rvnd/graph-of-loops/v1`) — show how execution, oversight,
-  drift, recovery and policy improvement watch or veto one another. The graph
-  reads execution counts from the signed chain and drift state from the latest
-  baseline; it does not run actions or change policy.
+- `loop_graph` (`rvnd/graph-of-loops/v1`) — present the same governance as a
+  graph of control loops (execution, oversight, drift, recovery, improvement).
+  One of several read-only projections; see [Projections](#projections).
 - `security_dashboard` (`security/v1`) — report security decisions and known
   limitations.
 - `officer` — preview changes that tighten oversight.
@@ -126,29 +125,21 @@ Policy imports require human confirmation before they are applied. Set
 `RVND_GOVERNANCE_LAYER=off` to disable this interface. See
 [docs/concepts/governance-layer.md](docs/concepts/governance-layer.md) for usage and limitations.
 
-### Graph of loops
+### Projections
 
-Call the workflow facade with the governed folder:
+RVND compiles policy into one governance graph and projects it read-only in
+several ways — by role, step and risk (`governance_map`), as a reasoning graph
+(`governance_kg`), and as a graph of control loops (`loop_graph`); a Patchbay
+view can render any of them. The graph of loops is one such view, not the model.
 
-```json
-{
-  "op": "loop_graph",
-  "params": {"folder_context": "/absolute/path/to/workspace"}
-}
-```
+The projections **declare; they do not decide**, and enforcement does not depend
+on rendering any of them: `workspaces.loop_graph.assess_with_drift` feeds
+structural drift into the Breaker *before* the action gate runs, while behavioral
+drift routes benign work to interactive review — the checks run whether or not a
+graph is ever drawn.
 
-The result contains visualization-ready `nodes` and directed `edges`. Edges
-marked `veto: true` can stop or cap execution. Enforcement does not depend on
-rendering the graph: `workspaces.loop_graph.assess_with_drift` feeds structural
-drift into the Breaker before the action gate runs, while behavioral drift
-routes benign work to interactive review. A Patchbay view can render the same
-projection without reimplementing these decisions in the browser.
-
-`control_bindings` shows where the compiled policy acts. Authority is routed to
-execution, autonomy ceilings and reserved acts to oversight, prohibitions to
-the recovery breaker, and the signed configuration to drift monitoring. The
-projection distributes controls already compiled into the governance graph; it
-does not infer new legal meaning from the graph itself.
+For the `loop_graph` call, its node/edge shape, and `control_bindings`, see
+[docs/concepts/graph-of-loops.md](docs/concepts/graph-of-loops.md).
 
 Before a registered agent operates, approve a versioned governance lane. The
 lane is its complete governed operating envelope; `max_grade` is only its

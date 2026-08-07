@@ -16,7 +16,16 @@ class VersumSolverSource:
 
     def edges(self) -> list[Edge]:
         out = []
-        for row in self.store.edges():
+        # Runtime facts / file-ingest relations live in the dimensioned-subgraph
+        # store (written by versum.append_fact / ingest_into_versum); curated
+        # relations live in semantic_edges.csv. Union both so reasoning sees the
+        # whole knowledge plane. Terms are already resolved by dimensioned_edges.
+        from ..solver.versum import dimensioned_edges
+        out.extend(dimensioned_edges(str(self.store.root.parent)))
+        # Curated semantic edges are optional: a runtime-only folder has the
+        # dimensioned store but no claims.csv, and store.edges() would raise.
+        semantic_rows = self.store.edges() if self.store.available else []
+        for row in semantic_rows:
             dimension = row.get("dimension") or "relational"
             try:
                 dim = Dimension(dimension)

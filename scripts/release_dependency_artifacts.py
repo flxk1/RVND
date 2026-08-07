@@ -22,6 +22,10 @@ VCS_FIRST_PARTY = {
     "loomground-governance",
     "loomground-deontic",
     "loomground-ingest",
+    "loomground-legal",
+    "loomground-norm",
+    "loomground-factual",
+    "loomground-epistemic",
 }
 COPYLEFT = re.compile(r"\b(?:AGPL|GPL|LGPL|SSPL|EUPL|OSL|CECILL)\b", re.I)
 KNOWN_LICENSES = (

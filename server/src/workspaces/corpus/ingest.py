@@ -37,8 +37,15 @@ _DOMAINS: dict[str, tuple[str, ...]] = {
     "dsm-directive": ("copyright",), "software-directive": ("copyright",),
 }
 
-# instrument key → canonical short slug used as the corpus code (align with seed)
-_CODE_ALIASES = {"data-governance-act": "dga"}
+# instrument key → canonical short slug used as the corpus code (align with seed).
+# Empty since RVND consumes the legal plane's instrument catalogue, whose keys
+# ARE the short corpus codes (``dga``, ``ai-act``, ``data-act`` …). The old
+# ``{"data-governance-act": "dga"}`` bridged RVND's retired long-form local key
+# to the seed code; with the plane's ``InstrumentRef.code`` = the short code,
+# key and corpus code are identical and no translation remains. Kept as a named
+# (empty) map because ``adapters.norm`` and the quarantined rule_registry import
+# it; extend it only if the plane ever reintroduces a long-form key.
+_CODE_ALIASES: dict[str, str] = {}
 _CODE_TO_KEY = {v: k for k, v in _CODE_ALIASES.items()}
 
 

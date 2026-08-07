@@ -2709,6 +2709,18 @@
   },
   {
    "facade": "workspace_workflow",
+   "op": "lane_capabilities",
+   "status": "deferred",
+   "gateway": false,
+   "mutates": false,
+   "surface_state": "unsurfaced",
+   "route_tested": false,
+   "callable": false,
+   "transport_proven": null,
+   "basis": "deferred: no committed test crosses this operation's public transport (MCP host / HTTP /tool / gateway serving) for success and refusal. Read-only lane-boundary projection. Recorded evidence \u2014 no console surface binding; direct in-process unit test (test_lane_capabilities.py) passes but does not cross the facade route or the coverage matrix, so route/callable stay unproven. Promotion is separately scoped transport work."
+  },
+  {
+   "facade": "workspace_workflow",
    "op": "list",
    "status": "deferred",
    "gateway": false,

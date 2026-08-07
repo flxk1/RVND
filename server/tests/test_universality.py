@@ -56,7 +56,7 @@ def test_us_court_pack_yields_readings(clean_packs):                   # N1
 
 
 def test_registered_genre_routes(clean_packs):                         # N2
-    from workspaces import genre_router as GR
+    from workspaces.adapters.ingest.governance import genre_router as GR
     sg = "Personal Data Protection Act 2012\nSection 13. An organisation shall not collect data."
     before = GR.detect_genre(sg)
     GR.register_genre("sg-statute",

@@ -48,6 +48,37 @@ def test_seal_unseal_round_trip_preserves_chain_and_pairs(tmp_path):
     assert len(WorkspaceMemory(folder, log_root=log_root, actor="t").all_pairs()) == 3
 
 
+def test_seal_covers_versum_knowledge_sink_no_plaintext_leak(tmp_path):
+    """A sealed workspace must leave NO plaintext knowledge on disk — including the
+    memory→versum sink at folder/.versum, which lives outside the log dir. Regression
+    for the memory-split leak where sealing the log left the versum mirror in the
+    clear."""
+    import pathlib
+    folder = tmp_path / "wks"; folder.mkdir()
+    log_root = tmp_path / "log"
+    secret = "UNIQUE_SEALED_KNOWLEDGE_TOKEN_9f3a"
+    mem = WorkspaceMemory(folder, log_root=log_root, actor="t")
+    mem.remember({
+        "id": "sha256:s1",
+        "problem": {"id": "p1", "scope": "s", "type": "rule", "summary": secret},
+        "solution": {"id": "sha256:s1", "problem_id": "p1", "body": "b",
+                     "authority_tier": 1, "confidence": 1.0, "body_format": "prose"},
+    }, channel="document")
+
+    def plaintext_hits():
+        return [str(p) for p in pathlib.Path(folder).rglob("*")
+                if p.is_file() and secret.encode() in p.read_bytes()]
+
+    assert plaintext_hits(), "precondition: knowledge is on disk (versum mirror) pre-seal"
+    seal.seal_folder(folder, passphrase="pw", log_root=log_root)
+    assert not (folder / ".versum").exists(), "the versum sink plaintext must be removed on seal"
+    assert plaintext_hits() == [], "a sealed workspace must leak no plaintext knowledge"
+
+    seal.unseal_folder(folder, passphrase="pw", log_root=log_root)
+    assert (folder / ".versum").exists(), "unseal restores the versum sink"
+    assert len(WorkspaceMemory(folder, log_root=log_root, actor="t").all_pairs()) == 1
+
+
 def test_wrong_passphrase_restores_nothing(tmp_path):
     folder = tmp_path / "wks"; folder.mkdir()
     log_root = tmp_path / "log"

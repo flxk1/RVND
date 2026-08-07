@@ -19,7 +19,11 @@ from pathlib import Path
 from typing import Any, Optional
 
 # worst-first: the strictest state a folder carries decides its lamp.
-_SEVERITY = ("prohibited", "reserved", "human", "refused", "ask", "auto")
+from .adapters.policy_languages import verdict_order as _verdict_order
+
+# most-restrictive first: governance's verdict order, reversed. 'ask' is an RVND
+# display-only prompt state (not a governance verdict), kept explicit at the end.
+_SEVERITY = tuple(reversed(_verdict_order())) + ("ask",)
 _ATTENTION = frozenset({"prohibited", "reserved", "human"})
 
 

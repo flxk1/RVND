@@ -9,20 +9,22 @@ extractions route through the oversight policy instead of being silently emitted
 """
 from __future__ import annotations
 
-from workspaces.deontic import extract_formulae, obligation_is_grounded
+from workspaces.deontic_facets import extract_formulae, obligation_is_grounded
 from workspaces import governance as gov
 
-# (sentence, expected operator | None).  O=obligation P=permission F=prohibition
-# R=right. None = no deontic norm → the extractor must NOT fabricate one.
+# (sentence, expected operator | None).  O=obligation P=permission F=prohibition.
+# There is no "R": a right is CONSTRUCTED as P (a privilege/liberty) or the
+# correlative O (a claim), carried by the Hohfeld incident — never a primitive.
+# None = no deontic norm → the extractor must NOT fabricate one.
 GOLD = [
     ("The provider shall establish a risk management system.", "O"),
     ("Member States shall ensure that providers comply.", "O"),
     ("The deployer may use the system for its intended purpose.", "P"),
     ("A provider shall not place a prohibited AI system on the market.", "F"),
     ("The controller must not retain data longer than necessary.", "F"),
-    ("The data subject has the right to obtain erasure of personal data.", "R"),
+    ("The data subject has the right to obtain erasure of personal data.", "P"),
     ("Providers are required to draw up technical documentation.", "O"),
-    ("The user is entitled to lodge a complaint.", "R"),
+    ("The user is entitled to lodge a complaint.", "P"),
     ("Operators should consider the residual risks.", "O"),
     ("This Regulation applies to providers placing systems on the market.", None),
 ]
@@ -47,7 +49,7 @@ def test_clean_catalogued_modals_are_correct():
         "The provider shall establish a risk management system.": "O",
         "The deployer may use the system for its intended purpose.": "P",
         "A provider shall not place a prohibited AI system on the market.": "F",
-        "The data subject has the right to obtain erasure of personal data.": "R",
+        "The data subject has the right to obtain erasure of personal data.": "P",
     }
     for text, exp in clean.items():
         ops = [f.operator for f in extract_formulae(text, gated_by_fingerprint=False)]

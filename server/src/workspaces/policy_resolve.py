@@ -25,7 +25,8 @@ from pathlib import Path
 from typing import Any, Callable, Optional
 
 from . import loomground_lang as _L
-from . import model_capability, policy_ingest, reasoning_walker, rule_extractor
+from . import model_capability, reasoning_walker, rule_extractor
+from .adapters.ingest.governance import compiler as policy_ingest
 from .rule_extractor import RuleFacet
 from .rule_registry import Anchor, RuleRegistry
 

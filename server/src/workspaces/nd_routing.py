@@ -752,7 +752,6 @@ def make_full_extractor():
     from .format_extractors import FormatAwareExtractor
     from .domain_nds import register_default_domain_nds
     from .legal_extractors import register_legal_mental_model_extractors
-    from .deontic import register_deontic_nd
     from .crossref_extractor import register_crossref_nd
     from .decisions.extractor import register_decision_nd
     from .instrument_obligation_extractor import register_required_artifact_nd
@@ -762,10 +761,12 @@ def make_full_extractor():
     router = NDRouter()
     register_default_domain_nds(router)
     register_legal_mental_model_extractors(router)
-    # NotebookLM-grade legal analysis layer: deontic formulae, cross-document
-    # references (AI Act → GDPR), reader-facing decisions, and the artifacts
+    # NotebookLM-grade legal analysis layer: cross-document references
+    # (AI Act → GDPR), reader-facing decisions, and the artifacts
     # (contracts/policies/registers/assessments) the instrument requires.
-    register_deontic_nd(router)
+    # NOTE: the deontic nD-facet dispatch is retired — the deontic facet is
+    # emitted by ingest into versum and reaches RVND via the flow, not by a
+    # local router ND. Text→deontic-pair convenience lives in `deontic_facets`.
     register_crossref_nd(router)
     register_decision_nd(router)
     register_required_artifact_nd(router)
