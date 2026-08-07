@@ -44,7 +44,7 @@ def test_loomground_toolchain_is_release_pinned():
     text = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     direct_urls = [line for line in text.splitlines()
                    if "git+https://github.com/flxk1/" in line]
-    assert len(direct_urls) == 7
+    assert len(direct_urls) == 9
     for line in direct_urls:
         revision = line.rsplit("@", 1)[-1].split('"', 1)[0]
         assert len(revision) == 40
@@ -65,6 +65,8 @@ def test_documented_release_commits_match_install_manifest():
         "loomground-ingest",
         "loomground-legal",
         "loomground-norm",
+        "loomground-factual",
+        "loomground-epistemic",
     ):
         installed = re.search(
             rf'"{re.escape(package)} @ git\+https://github\.com/flxk1/'
