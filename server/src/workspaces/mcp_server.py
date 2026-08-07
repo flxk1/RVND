@@ -2671,7 +2671,9 @@ def workspace_workflow(op: str, params: dict[str, Any] | None = None) -> dict[st
             # (capable:false → the deterministic draft ran, declared in the panel).
             if _use_llm and isinstance(twin, dict) and twin.get("ok"):
                 from . import model_capability as _mc
-                twin.setdefault("capability", _mc.for_task("extraction").as_dict())
+                # `or`, not setdefault: a present-but-None capability must still be
+                # filled (setdefault only fills an absent key).
+                twin["capability"] = twin.get("capability") or _mc.for_task("extraction").as_dict()
                 twin["llm_used"] = bool(twin.get("llm_used"))
             # G3 (Rvnd): anchor each reservation to the statute the policy NAMES.
             twin = _attach_statute_sources(twin, _txt)
