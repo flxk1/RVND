@@ -92,6 +92,12 @@ jobs:
         run: python -m pip install --dry-run --ignore-installed .
       - name: resolve base + test extra (what ci installs)
         run: python -m pip install --dry-run --ignore-installed ".[test]"
+      # Traceability: every doc row that names a version tag must resolve, on
+      # that plane's repo, to exactly the pinned commit. Branch-pins are exempt.
+      # Catches a moved/mislabelled/nonexistent release tag the SHA-only gates
+      # (test_upstream_consumption) cannot see. Pure stdlib; uses git ls-remote.
+      - name: verify pin↔tag traceability
+        run: python scripts/verify_pin_tags.py
 
   egress-lock-template:
     runs-on: ubuntu-latest
