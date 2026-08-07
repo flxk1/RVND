@@ -2660,7 +2660,19 @@ def workspace_workflow(op: str, params: dict[str, Any] | None = None) -> dict[st
                 _txt, _genre, _err = _read_policy_file(_path, p.get("folder_context", ""))
                 if _err:
                     return {"ok": False, "errors": [f"file ingest: {_err}"]}
-            twin = _pi.ingest(_txt, use_llm=bool(p.get("use_llm", False)))
+            _use_llm = bool(p.get("use_llm", False))
+            twin = _pi.ingest(_txt, use_llm=_use_llm)
+            # Honest-degrade contract (restored). The retired RVND-local policy_ingest
+            # declared the ambient local-model gate's verdict on the twin whenever the
+            # local model was opted into — never a silent skip. The governance compiler
+            # consumed from loomground-ingest carries no local-model registry (that is
+            # RVND's concern), so it emits no `capability`. Re-apply the gate here: an
+            # opt-in must either report `llm_used` or carry the capability verdict
+            # (capable:false → the deterministic draft ran, declared in the panel).
+            if _use_llm and isinstance(twin, dict) and twin.get("ok"):
+                from . import model_capability as _mc
+                twin.setdefault("capability", _mc.for_task("extraction").as_dict())
+                twin["llm_used"] = bool(twin.get("llm_used"))
             # G3 (Rvnd): anchor each reservation to the statute the policy NAMES.
             twin = _attach_statute_sources(twin, _txt)
             if _genre and isinstance(twin, dict):
