@@ -85,7 +85,8 @@ def _hash(s: str) -> str:
 _TARGET_INSTRUCTIONS = {
     "obligations": (
         "Extract every normative rule as a JSON array. Each item: "
-        '{"operator": one of O|P|F|R (Obligation/Permission/proHibition/Right), '
+        '{"operator": one of O|P|F (Obligation/Permission/proHibition; a right is '
+        'a Permission, never a separate operator), '
         '"bearer": who it binds, "action": what, "condition": when (or ""), '
         '"exception": carve-out (or ""), "confidence": 0..1}. '
         "Transcribe only what the text states; do not infer duties."
@@ -166,7 +167,7 @@ def _first_span(s: str, open_c: str, close_c: str) -> Optional[str]:
 # Shaping parsed JSON into the canonical pair schema (target=obligations)
 # ---------------------------------------------------------------------------
 
-_VALID_OPS = {"O", "P", "F", "R"}
+_VALID_OPS = {"O", "P", "F"}  # deontic is O/P/F only; a right is a P (never "R")
 
 
 def _to_obligation_pairs(items: Any, profile: DomainProfile,

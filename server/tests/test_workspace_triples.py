@@ -66,15 +66,31 @@ def test_remember_rejects_incomplete_triple(tmp_path, monkeypatch):
     assert bad["remembered"] is False
 
 
-def test_query_requires_versum_index(tmp_path, monkeypatch):
-    """workspace_query reads Versum only; an unindexed folder fails closed with a
-    clean error dict (versum required), never a non-Versum overlay. A remembered
-    triple is therefore NOT visible to query — only to pairs_search."""
+def test_query_fails_closed_on_unindexed_folder(tmp_path, monkeypatch):
+    """workspace_query reads Versum only; a folder that knows NOTHING (no
+    remember, no ingest) fails closed with a clean error dict (versum required),
+    never a non-Versum overlay."""
     folder = tmp_path / "wks"; folder.mkdir(); log_root = tmp_path / "log"
     srv = _fresh_mcp(monkeypatch, log_root)
-    srv.workspace_remember(folder_context=str(folder), subject="A", predicate="causes", object="B")
 
     out = srv.workspace_query(folder_context=str(folder), subject="A")
     assert out["knowledge_backend"] is None
     assert "versum index" in out["error"].lower()
     assert out["triples"] == []
+
+
+def test_remember_closes_the_loop_to_query(tmp_path, monkeypatch):
+    """A remembered triple is now first-class Versum knowledge: workspace_remember
+    writes it into the folder's Versum store, so workspace_query (Versum-only)
+    finds it by its term. This closes the remember->query loop that the retired
+    memory-only pair overlay left broken (the write went to memory, the read to
+    Versum, so a remembered fact was invisible to query)."""
+    folder = tmp_path / "wks"; folder.mkdir(); log_root = tmp_path / "log"
+    srv = _fresh_mcp(monkeypatch, log_root)
+    srv.workspace_remember(folder_context=str(folder), subject="A", predicate="causes", object="B")
+
+    out = srv.workspace_query(folder_context=str(folder), subject="A")
+    assert out["knowledge_backend"] == "loomground-versum"
+    hit = next(t for t in out["triples"] if t["subject"] == "A")
+    assert hit["object"] == "B"
+    assert hit["dimension"] == "causal"   # inferred from "causes"

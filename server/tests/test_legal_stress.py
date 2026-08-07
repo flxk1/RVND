@@ -29,9 +29,10 @@ import pytest
 import workspaces.currency as cur
 from workspaces.dimensions import Dimension, classify_query_dimension
 from workspaces.reasoning import extract_edges, compose_paths
-from workspaces.deontic import (
-    DeonticFormula, OP_OBLIGATION, OP_PROHIBITION, detect_conflicts, extract_formulae,
+from workspaces.adapters.deontic import (
+    DeonticFormula, OP_OBLIGATION, OP_PROHIBITION, detect_conflicts,
 )
+from workspaces.deontic_facets import extract_formulae
 from workspaces.requirements_house import build_house_from_text
 from workspaces.evidence_coverage import EvidenceDoc, map_coverage
 from workspaces.norm_contract import gate, check_pair, Level, ContractViolation
@@ -177,7 +178,8 @@ class TestAspect3MultiHop:
         ]
         conflicts = detect_conflicts(formulae)
         assert len(conflicts) == 1
-        assert conflicts[0]["resolution"] == "genuine-conflict-escalate"
+        # the consumed deontic grammar flags, never resolves — escalate to a human
+        assert conflicts[0]["resolution"] == "candidate-escalate"
 
     def test_a_conflict_may_not_carry_an_auto_resolved_winner(self):
         p = _conforming_rule_pair()

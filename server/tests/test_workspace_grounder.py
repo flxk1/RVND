@@ -77,18 +77,18 @@ def test_work_carries_tags_and_confidence(ledger):
 
 def test_batch_registers_many_works_with_one_deferred_flush(tmp_path):
     led = GroundingLedger(tmp_path, log_root=tmp_path / "log")
-    works_file = tmp_path / "grounding" / "works.jsonl"
     with led.batch():
         led.register_work(title="A", url="https://x.test/a")
         led.register_work(title="B", url="https://x.test/b")
-        # flush is deferred inside the batch — nothing written yet, and the
-        # second register must not reload state and drop the unflushed first
-        assert not works_file.exists() or "x.test/a" not in works_file.read_text()
+        # flush is deferred inside the batch — nothing persisted to the sink yet,
+        # and the second register must not reload state and drop the unflushed first
+        assert len(GroundingLedger(tmp_path, log_root=tmp_path / "log").works) == 0
         assert len(led.works) == 2
-    text = works_file.read_text(encoding="utf-8")
-    assert "x.test/a" in text and "x.test/b" in text
-    # a fresh open sees both works
-    assert len(GroundingLedger(tmp_path, log_root=tmp_path / "log").works) == 2
+    # a fresh open sees both works after the batch flushes once on exit
+    reopened = GroundingLedger(tmp_path, log_root=tmp_path / "log")
+    assert len(reopened.works) == 2
+    assert {w["url"] for w in reopened.works.values()} == {"https://x.test/a",
+                                                           "https://x.test/b"}
 
 
 # ── works ─────────────────────────────────────────────────────────────────────
@@ -121,8 +121,8 @@ def test_persistence_roundtrip(tmp_path):
     led.register_work(**_work())
     led2 = GroundingLedger(tmp_path, log_root=tmp_path / "log")
     assert len(led2.works) == 1
-    raw = (tmp_path / "grounding" / "works.jsonl").read_text(encoding="utf-8")
-    assert json.loads(raw.splitlines()[0])["title"] == "Attention Is All You Need"
+    # persisted through the versum sink and reloaded intact
+    assert next(iter(led2.works.values()))["title"] == "Attention Is All You Need"
 
 
 # ── no citation, no claim ─────────────────────────────────────────────────────

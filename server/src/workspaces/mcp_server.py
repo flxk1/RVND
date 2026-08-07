@@ -597,7 +597,7 @@ def reason(
     # folder first"), never served from a non-Versum overlay. The legacy pair
     # overlay was retired so nothing reasons off a source other than Versum.
     knowledge = VersumKnowledgeStore(folder_context)
-    if not knowledge.available:
+    if not knowledge.has_records:
         return {
             "folder_context": str(Path(folder_context).expanduser().resolve()),
             "knowledge_backend": None,
@@ -646,6 +646,20 @@ def reason(
                 }],
             }
             recorded.append(mem.remember(pair, channel="reasoning"))
+            # Knowledge plane: record the inference into Versum as a node/relation
+            # chain so it is reachable by query/reason. The signed mutation-log
+            # event above stays the audit record; best-effort on the Versum side.
+            try:
+                from .adapters.versum import append_inference as _append_inference
+                store = Path(folder_context).expanduser().resolve() / ".versum"
+                store.mkdir(parents=True, exist_ok=True)
+                _append_inference(
+                    store,
+                    path=[{"subject": h["subject"], "predicate": h["predicate"],
+                           "object": h["object"]} for h in inf.path],
+                    dimension=inf.dimension.value, actor=_default_actor())
+            except Exception:
+                pass
 
     return {
         "folder_context": str(Path(folder_context).expanduser().resolve()),
@@ -1928,7 +1942,7 @@ def _read_policy_file(path: str, folder_context: str) -> tuple[str, Optional[str
         return "", None, f"no extractable text in {fp.name} (scanned/encrypted?)"
     # GENRE ROUTER: detect the document genre, drop its non-normative preamble (recitals /
     # foreword), and line-clean — so extraction sees the normative body, not PDF fragments.
-    from . import genre_router as _gr
+    from .adapters.ingest.governance import genre_router as _gr
     genre, cleaned = _gr.ingest_prepare(res.text)
     return cleaned, genre, None
 
@@ -2335,6 +2349,17 @@ def workspace_workflow(op: str, params: dict[str, Any] | None = None) -> dict[st
             {"op": "coverage_matrix", "required": ["folder_context"],
              "optional": ["preset", "gaps_only", "tags"],
              "note": "read-only coverage lens: the same patch as a rows x cols grid so absence and policy-shape are visible (the spatial form of governance_query). preset='kind_risk' (flagship, derived read-only) is default; preset='list' returns the available lenses. Each cell is the strictest-wins verdict for its band with the source use cases attached; gaps_only drops finding-free rows"},
+            {"op": "lane_capabilities", "required": ["folder_context", "actor"],
+             "optional": ["kinds", "risks"],
+             "note": "read-only agent-facing projection of ONE agent's governance-lane "
+                     "boundaries: per (kind[, risk]) the verdict the gate would dispose "
+                     "(auto|human|reserved|refused|prohibited), the grade required, the "
+                     "escalation point, and the governing guard. A projection of the same "
+                     ".lg policy the gate enforces — advisory, never dispositive. Carries "
+                     "the policy_fingerprint it reflects. Fail-closed: unreadable policy "
+                     "yields no capabilities, never 'all allowed'. Also rides the "
+                     "governance_open admission response, so an agent starts knowing its "
+                     "bounds; this verb re-queries it mid-session"},
             {"op": "governance_register", "required": ["folder_context"],
              "optional": ["scope"],
              "note": "read-only register/inventory of agents + use-cases (per folder; scope='all' aggregates known folders). Categorical status, never a score; per-folder + all-folders, NOT multi-tenant"},
@@ -2499,6 +2524,10 @@ def workspace_workflow(op: str, params: dict[str, Any] | None = None) -> dict[st
             return _cm(p["folder_context"], p.get("preset", "kind_risk"),
                        gaps_only=bool(p.get("gaps_only")), tags=p.get("tags"),
                        log_root=_log_root())
+        if op == "lane_capabilities":
+            from .mcp_impl import lane_capabilities as _lcap
+            return _lcap(p["folder_context"], p["actor"],
+                         kinds=p.get("kinds"), risks=p.get("risks"))
         if op == "governance_register":
             from .governance_graph import governance_register as _gr, governance_register_all as _gra
             if p.get("scope") == "all":
@@ -2621,7 +2650,7 @@ def workspace_workflow(op: str, params: dict[str, Any] | None = None) -> dict[st
                 return {"ok": False, "errors": [f"malformed patch: {e}"]}
         if op == "policy_ingest":
             # Policy ingest → digital twin; consumed by the UI panel.
-            from . import policy_ingest as _pi
+            from .adapters.ingest.governance import compiler as _pi
             _txt = p.get("policy_text", "")
             _genre = None
             _path = p.get("path")
@@ -2631,7 +2660,21 @@ def workspace_workflow(op: str, params: dict[str, Any] | None = None) -> dict[st
                 _txt, _genre, _err = _read_policy_file(_path, p.get("folder_context", ""))
                 if _err:
                     return {"ok": False, "errors": [f"file ingest: {_err}"]}
-            twin = _pi.ingest(_txt, use_llm=bool(p.get("use_llm", False)))
+            _use_llm = bool(p.get("use_llm", False))
+            twin = _pi.ingest(_txt, use_llm=_use_llm)
+            # Honest-degrade contract (restored). The retired RVND-local policy_ingest
+            # declared the ambient local-model gate's verdict on the twin whenever the
+            # local model was opted into — never a silent skip. The governance compiler
+            # consumed from loomground-ingest carries no local-model registry (that is
+            # RVND's concern), so it emits no `capability`. Re-apply the gate here: an
+            # opt-in must either report `llm_used` or carry the capability verdict
+            # (capable:false → the deterministic draft ran, declared in the panel).
+            if _use_llm and isinstance(twin, dict) and twin.get("ok"):
+                from . import model_capability as _mc
+                # `or`, not setdefault: a present-but-None capability must still be
+                # filled (setdefault only fills an absent key).
+                twin["capability"] = twin.get("capability") or _mc.for_task("extraction").as_dict()
+                twin["llm_used"] = bool(twin.get("llm_used"))
             # G3 (Rvnd): anchor each reservation to the statute the policy NAMES.
             twin = _attach_statute_sources(twin, _txt)
             if _genre and isinstance(twin, dict):

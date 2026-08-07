@@ -25,7 +25,7 @@ from workspaces.subject_card import make_card
 
 PROFILE = DomainProfile(
     domain="ai-act",
-    vocabulary={"operator": ["O", "P", "F", "R"]},
+    vocabulary={"operator": ["O", "P", "F"]},
     confidence_floor=0.7,
 )
 

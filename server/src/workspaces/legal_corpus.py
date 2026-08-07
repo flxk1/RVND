@@ -34,7 +34,7 @@ from pathlib import Path
 from typing import Any, Iterable, Optional
 
 from .legal_connection import Connection, is_connection
-from .legal_world import Entity, EntityKind, WorldEdge, WorldMap
+from .adapters.legal import Entity, EntityKind, WorldEdge, WorldMap
 from .mutation_log import MutationLog, LogEvent
 from .urn import mint_canonical
 
@@ -351,7 +351,7 @@ def seed_registry(folder: str | Path, *, log_root: Optional[str | Path] = None,
     floating: a span anchored to an instrument resolves onward to the regulator
     that enforces it and the orders it binds. Failure of the enrichment pass
     falls back to the bare seed rather than blocking folder setup."""
-    from .legal_world import seed_world
+    from .adapters.legal import seed_world
     reg = EntityRegistry(folder, log_root=log_root)
     _persist_world(reg, seed_world(), source="seed")
     if enriched:
