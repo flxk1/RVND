@@ -108,7 +108,8 @@ HARDENED_SUITES = \
   server/tests/test_purge_tombstone_068.py \
   server/tests/test_erase_guard_fail_closed.py \
   server/tests/test_lock_text.py \
-  server/tests/test_lock_hardening_067.py
+  server/tests/test_lock_hardening_067.py \
+  server/tests/test_doctor_068.py
 
 test-hardened:
 	RVND_TEST_HARDENED=1 PYTHONPATH="$(PYTHONPATH)" $(PY) -m pytest $(HARDENED_SUITES) -q
