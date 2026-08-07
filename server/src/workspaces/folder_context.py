@@ -133,7 +133,7 @@ def _path_is_within(child: Path, parent: Path) -> bool:
         return False
 
 
-def _enforce_allowlist(resolved: Path) -> Path:
+def _enforce_allowlist(resolved: Path, *, log_root: str | Path | None = None) -> Path:
     """A6: refuse an explicit folder_context that escapes the known-workspaces
     allowlist, unless the override env var is set.
 
@@ -142,6 +142,17 @@ def _enforce_allowlist(resolved: Path) -> Path:
     OS process can read) and reach a sibling tenant's folder. The registry is
     the allowlist: the resolved path must be a registered workspace or live
     under one. Descendants are allowed (the asymmetric folder rule).
+
+    ``log_root`` selects which registry file backs the allowlist —
+    ``<log_root>/known-workspaces.json`` — and MUST match the log root the
+    operation runs under so enforcement reads the same registry that
+    ``add_known_workspace`` / ``bootstrap_default_workspace`` write to. When
+    ``None`` it falls back to the default log root (the historic behaviour).
+    ``log_root`` is always an operator setting (the ``--log-root`` flag or the
+    ``WORKSPACE_L0_LOG_ROOT`` startup env), never request-derived, so honouring
+    it opens no path-escape the caller couldn't already reach with the env
+    override — it only stops a custom-``--log-root`` operator's own
+    registrations from being invisible to enforcement.
     """
     if os.environ.get(ALLOW_UNREGISTERED_ENV) == "1":
         return resolved
@@ -155,7 +166,7 @@ def _enforce_allowlist(resolved: Path) -> Path:
         # that the path is inside a configured workspace boundary.
         from .workspace_registry import load_registry
         roots: list[Path] = []
-        for w in load_registry().get("workspaces", []):
+        for w in load_registry(log_root=log_root).get("workspaces", []):
             p = w.get("path")
             if not p:
                 continue
@@ -295,6 +306,7 @@ def resolve_folder_context(
     explicit: str | Path | None,
     *,
     allow_unscoped: bool = False,
+    log_root: str | Path | None = None,
 ) -> str:
     """Resolve a final folder path for an WorkspaceMemory call.
 
@@ -304,10 +316,17 @@ def resolve_folder_context(
       3. If ``allow_unscoped`` is True → :data:`UNSCOPED_SENTINEL` with a warning.
       4. Else → raise :class:`NoFolderContextError`.
 
+    ``log_root`` scopes the A6 allowlist to ``<log_root>/known-workspaces.json``
+    (see :func:`_enforce_allowlist`); pass the same log root the operation runs
+    under so a folder registered under a custom ``--log-root`` is honoured.
+    Only the ``explicit`` branch is allowlist-checked, so ``log_root`` is
+    ignored for the contextvar/env and unscoped branches.
+
     Returns the resolved absolute path string (or the sentinel for unscoped).
     """
     if explicit is not None:
-        return str(_enforce_allowlist(_resolve_with_symlink_policy(explicit)))
+        return str(_enforce_allowlist(
+            _resolve_with_symlink_policy(explicit), log_root=log_root))
 
     found = current_folder()
     if found is not None:
