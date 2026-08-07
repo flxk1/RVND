@@ -64,8 +64,18 @@ FORBIDDEN_LOCAL_DEFS = (
 
 # loomground distributions consumed-but-undeclared until release (git deps not
 # yet pinned in pyproject). A new orphan NOT on this list (and not declared)
-# fails check (c).
-_PIN_PENDING = ("loomground-norm",)
+# fails check (c). Empty now: loomground-norm graduated to a declared git pin.
+_PIN_PENDING: tuple[str, ...] = ()
+
+# The opposite category: dists RVND pins to PROVIDE the installable git artifact
+# for a plane that imports them transitively but does not declare them
+# (loomground-ingest imports loomground_factual at module scope and
+# loomground_epistemic lazily, yet declares neither). They are not on any package
+# index, so pip cannot resolve them from ingest's abstract requirement — RVND must
+# carry the direct-URL pin. RVND does NOT consume them directly, so they are
+# exempt from the declared-must-be-consumed direction (check below). Proper
+# long-term home: ingest declaring these deps; until then RVND provides them.
+_TRANSITIVE_PROVIDER = ("loomground-factual", "loomground-epistemic")
 
 # import-name -> distribution-name for the loomground packages RVND consumes.
 _IMPORT_TO_DIST = {
@@ -218,7 +228,9 @@ def test_every_declared_loomground_dist_is_consumed() -> None:
     appear in ``declared`` and cannot trip this check.)"""
     declared = _declared_loomground_dists()
     consumed = _consumed_loomground_dists()
-    unconsumed = sorted(declared - consumed)
+    # _TRANSITIVE_PROVIDER dists are pinned to provide a transitive plane artifact,
+    # not consumed by RVND directly — they are declared-but-unconsumed by design.
+    unconsumed = sorted(declared - consumed - set(_TRANSITIVE_PROVIDER))
     assert not unconsumed, (
         f"loomground distributions declared in pyproject but imported NOWHERE under "
         f"server/src — declared-but-unconsumed means the capability was reimplemented "
