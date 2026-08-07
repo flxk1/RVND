@@ -58,8 +58,23 @@ carry the upstream bundling exception and they are not runtime dependencies.
 The `release-dependencies` workflow runs this matrix on pull requests and main.
 For a `v*` tag, its attachment job creates the GitHub release when necessary
 and attaches all nine platform artifacts. A tag is not dependency-release
-complete until that job succeeds. Local execution can reproduce one resolved
-platform:
+complete until that job succeeds.
+
+That matrix is thorough but slow (three platforms, py312 only, a 45-minute
+budget), so it is not where a broken pin should first show. The `resolve-pins`
+job in `ci` is the fast preflight: it runs pip's real resolver over the base
+and `test` closures with `--dry-run` on the declared 3.10 floor and fails in
+seconds when the plane pins do not resolve. It exists because an editable or
+`--no-deps` install hides an unsatisfiable graph — the failure mode that once
+left RVND un-installable-from-pins (a phantom `loomground-solver` floor plus an
+unpinned `loomground-norm`) behind a green `ci`. The floor interpreter is
+deliberate: `release-dependencies` only exercises py312, so a plane that
+quietly requires `>=3.11` is caught only here. Native/wheel-only extras
+(`llm`, `onnx`, `build`, `extractors`) stay in `release-dependencies`, where
+py312 wheels exist and a missing upstream wheel is not mistaken for a pin
+conflict.
+
+Local execution can reproduce one resolved platform:
 
 ```sh
 python -m pip install --dry-run --ignore-installed --report pip-report.json \
