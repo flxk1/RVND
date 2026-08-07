@@ -17,6 +17,7 @@ import time
 from pathlib import Path
 from typing import IO, Any
 from ..folder_context import (
+    ALLOW_UNREGISTERED_ENV,
     NoFolderContextError,
     resolve_folder_context,
 )
@@ -1938,17 +1939,33 @@ def _doctor_check_sample_round_trip(log_root: Path) -> dict:
         with tempfile.TemporaryDirectory(prefix="workspaces-doctor-") as td:
             folder = Path(td) / "sample_workspace"
             folder.mkdir()
-            log = MutationLog(folder, log_root=log_root)
-            evt = LogEvent(
-                event="system",
-                folder_path=str(folder),
-                pair_id="doctor:sample",
-                channel="system",
-                actor="system:doctor",
-                extra={"kind": "doctor_sample"},
-            )
-            log.append(evt)
-            result = log.verify_chain()
+            # This probe exercises append + verify_chain mechanics, not the A6
+            # allowlist. Its scratch folder is never registered, so on any
+            # enforcing install (fresh machine or populated registry alike) the
+            # MutationLog constructor would refuse it and the probe could never
+            # report OK — masking the very diagnosis it exists to give. Allow
+            # unregistered folders for the probe's own scratch dir only; the
+            # prior value is restored below so enforcement for real folder ops
+            # is untouched (registry state is surfaced by workspace_registry).
+            prior = os.environ.get(ALLOW_UNREGISTERED_ENV)
+            os.environ[ALLOW_UNREGISTERED_ENV] = "1"
+            try:
+                log = MutationLog(folder, log_root=log_root)
+                evt = LogEvent(
+                    event="system",
+                    folder_path=str(folder),
+                    pair_id="doctor:sample",
+                    channel="system",
+                    actor="system:doctor",
+                    extra={"kind": "doctor_sample"},
+                )
+                log.append(evt)
+                result = log.verify_chain()
+            finally:
+                if prior is None:
+                    os.environ.pop(ALLOW_UNREGISTERED_ENV, None)
+                else:
+                    os.environ[ALLOW_UNREGISTERED_ENV] = prior
             if not result.ok:
                 return {"name": "sample_round_trip",
                         "level": DOCTOR_LEVEL_ERROR,
@@ -1957,7 +1974,8 @@ def _doctor_check_sample_round_trip(log_root: Path) -> dict:
                                   f"sig_failures={len(result.signature_failures)}"}
             return {"name": "sample_round_trip",
                     "level": DOCTOR_LEVEL_OK,
-                    "detail": f"appended + verified ({result.total_events} event)"}
+                    "detail": f"appended + verified ({result.total_events} event; "
+                              f"scratch folder, allowlist scoped off for probe)"}
     except Exception as e:
         return {"name": "sample_round_trip",
                 "level": DOCTOR_LEVEL_ERROR,
