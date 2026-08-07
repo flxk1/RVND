@@ -268,8 +268,10 @@ class WorkspaceMemory:
         determined and ``allow_unscoped`` is False, raises
         :class:`~workspaces.folder_context.NoFolderContextError`.
         """
+        # Scope the A6 allowlist to this view's log root (matches _own_log below),
+        # so enforcement reads the registry the operation actually writes to.
         self.folder_context = resolve_folder_context(
-            folder_context, allow_unscoped=allow_unscoped
+            folder_context, allow_unscoped=allow_unscoped, log_root=log_root
         )
         self._log_root = Path(log_root) if log_root else LOG_ROOT_DEFAULT
         self._actor = actor
