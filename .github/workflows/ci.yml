@@ -62,6 +62,37 @@ jobs:
           fi
           exit $bad
 
+  resolve-pins:
+    # Fast preflight: do the nine Loomground plane pins actually resolve into
+    # an installable set? An editable or `--no-deps` install hides an
+    # unsatisfiable graph — which is exactly how a phantom floor (legal
+    # requiring a loomground-solver release that was never cut) plus an
+    # unpinned loomground-norm left RVND un-installable-from-pins with a green
+    # ci behind it, for weeks. This gate runs pip's real resolver over the pins
+    # and fails in seconds, instead of surfacing deep inside the 45-minute
+    # release-dependencies matrix (py312 only) — or not at all locally.
+    #
+    # It runs on the declared 3.10 floor, the strictest interpreter and the one
+    # release-dependencies never exercises, so a plane that quietly needs
+    # >=3.11 is caught here too. --dry-run resolves metadata without building or
+    # installing anything, so it stays fast. Native/wheel-only extras
+    # (llm/onnx/build/extractors) stay in release-dependencies, where py312
+    # wheels exist and a missing upstream wheel is not mistaken for a pin
+    # conflict; the base + `test` closure resolved here is where the plane pins
+    # actually conflict.
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with: { python-version: "3.10" }
+      - name: upgrade pip (resolver quality + legible conflict reports)
+        run: python -m pip install --upgrade pip
+      - name: resolve base dependencies (what `pip install rvnd` gets)
+        run: python -m pip install --dry-run --ignore-installed .
+      - name: resolve base + test extra (what ci installs)
+        run: python -m pip install --dry-run --ignore-installed ".[test]"
+
   egress-lock-template:
     runs-on: ubuntu-latest
     timeout-minutes: 5
