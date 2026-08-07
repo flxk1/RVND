@@ -277,7 +277,7 @@ def cmd_purge_document(args: argparse.Namespace) -> int:
 
 def cmd_audit_tail(args: argparse.Namespace) -> int:
     try:
-        folder = resolve_folder_context(args.folder, allow_unscoped=False)
+        folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
     except NoFolderContextError as e:
         print(f"error: {e}", file=sys.stderr)
         return 3
@@ -352,7 +352,7 @@ def cmd_licence(args: argparse.Namespace) -> int:
 
 def cmd_watch(args: argparse.Namespace) -> int:
     try:
-        folder = resolve_folder_context(args.folder, allow_unscoped=False)
+        folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
     except NoFolderContextError as e:
         print(f"error: {e}", file=sys.stderr)
         return 3
@@ -403,7 +403,7 @@ def cmd_watch(args: argparse.Namespace) -> int:
 
 def cmd_ingest(args: argparse.Namespace) -> int:
     try:
-        folder = resolve_folder_context(args.folder, allow_unscoped=False)
+        folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
     except NoFolderContextError as e:
         print(f"error: {e}", file=sys.stderr)
         return 3
@@ -440,7 +440,7 @@ def _log_root(args: argparse.Namespace) -> Path:
 
 def cmd_policy_show(args: argparse.Namespace) -> int:
     try:
-        folder = resolve_folder_context(args.folder, allow_unscoped=False)
+        folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
     except NoFolderContextError as e:
         print(f"error: {e}", file=sys.stderr)
         return 3
@@ -470,7 +470,7 @@ def cmd_policy_show(args: argparse.Namespace) -> int:
 
 def cmd_policy_disable_lock(args: argparse.Namespace) -> int:
     try:
-        folder = resolve_folder_context(args.folder, allow_unscoped=False)
+        folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
     except NoFolderContextError as e:
         print(f"error: {e}", file=sys.stderr)
         return 3
@@ -492,7 +492,7 @@ def cmd_policy_disable_lock(args: argparse.Namespace) -> int:
 
 def cmd_policy_enable_lock(args: argparse.Namespace) -> int:
     try:
-        folder = resolve_folder_context(args.folder, allow_unscoped=False)
+        folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
     except NoFolderContextError as e:
         print(f"error: {e}", file=sys.stderr)
         return 3
@@ -503,7 +503,7 @@ def cmd_policy_enable_lock(args: argparse.Namespace) -> int:
 
 def cmd_policy_disable_oversight(args: argparse.Namespace) -> int:
     try:
-        folder = resolve_folder_context(args.folder, allow_unscoped=False)
+        folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
     except NoFolderContextError as e:
         print(f"error: {e}", file=sys.stderr)
         return 3
@@ -523,7 +523,7 @@ def cmd_policy_disable_oversight(args: argparse.Namespace) -> int:
 
 def cmd_policy_enable_oversight(args: argparse.Namespace) -> int:
     try:
-        folder = resolve_folder_context(args.folder, allow_unscoped=False)
+        folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
     except NoFolderContextError as e:
         print(f"error: {e}", file=sys.stderr)
         return 3
@@ -585,7 +585,7 @@ def cmd_unpublish(args: argparse.Namespace) -> int:
 
 def cmd_policy_enable_discipline(args: argparse.Namespace) -> int:
     try:
-        folder = resolve_folder_context(args.folder, allow_unscoped=False)
+        folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
     except NoFolderContextError as e:
         print(f"error: {e}", file=sys.stderr)
         return 3
@@ -599,7 +599,7 @@ def cmd_policy_enable_discipline(args: argparse.Namespace) -> int:
 
 def cmd_policy_disable_discipline(args: argparse.Namespace) -> int:
     try:
-        folder = resolve_folder_context(args.folder, allow_unscoped=False)
+        folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
     except NoFolderContextError as e:
         print(f"error: {e}", file=sys.stderr)
         return 3
@@ -628,7 +628,7 @@ def cmd_policy(args: argparse.Namespace) -> int:
 
 def cmd_pin(args: argparse.Namespace) -> int:
     try:
-        folder = resolve_folder_context(args.folder, allow_unscoped=False)
+        folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
     except NoFolderContextError as e:
         print(f"error: {e}", file=sys.stderr)
         return 3
@@ -789,7 +789,7 @@ def _cmd_pin_interactive(folder: Path, args: argparse.Namespace) -> int:
 
 def cmd_unpin(args: argparse.Namespace) -> int:
     try:
-        folder = resolve_folder_context(args.folder, allow_unscoped=False)
+        folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
     except NoFolderContextError as e:
         print(f"error: {e}", file=sys.stderr)
         return 3
@@ -804,7 +804,7 @@ def cmd_unpin(args: argparse.Namespace) -> int:
 
 def cmd_list_pins(args: argparse.Namespace) -> int:
     try:
-        folder = resolve_folder_context(args.folder, allow_unscoped=False)
+        folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
     except NoFolderContextError as e:
         print(f"error: {e}", file=sys.stderr)
         return 3
@@ -821,7 +821,7 @@ def cmd_list_pins(args: argparse.Namespace) -> int:
 
 def cmd_resolve_skills(args: argparse.Namespace) -> int:
     try:
-        folder = resolve_folder_context(args.folder, allow_unscoped=False)
+        folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
     except NoFolderContextError as e:
         print(f"error: {e}", file=sys.stderr)
         return 3
@@ -897,7 +897,7 @@ def _seal_passphrase(args: argparse.Namespace, *, confirm: bool) -> str:
 def cmd_seal(args: argparse.Namespace) -> int:
     from ..seal import SealError, seal_folder
     try:
-        folder = resolve_folder_context(args.folder, allow_unscoped=False)
+        folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
     except Exception as e:
         print(f"ERROR: {e}", file=sys.stderr)
         return 2
@@ -914,7 +914,7 @@ def cmd_seal(args: argparse.Namespace) -> int:
 def cmd_unseal(args: argparse.Namespace) -> int:
     from ..seal import SealError, unseal_folder
     try:
-        folder = resolve_folder_context(args.folder, allow_unscoped=False)
+        folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
     except Exception as e:
         print(f"ERROR: {e}", file=sys.stderr)
         return 2
@@ -930,7 +930,7 @@ def cmd_unseal(args: argparse.Namespace) -> int:
 def cmd_status(args: argparse.Namespace) -> int:
     """Folder-aware overview. The 'what's happening here' entry point."""
     try:
-        folder = resolve_folder_context(args.folder, allow_unscoped=False)
+        folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
     except Exception as e:
         print(f"ERROR: {e}", file=sys.stderr)
         return 2
@@ -1121,7 +1121,7 @@ def cmd_tools(args: argparse.Namespace) -> int:
 
 def cmd_mirror_generate(args: argparse.Namespace) -> int:
     try:
-        folder = resolve_folder_context(args.folder, allow_unscoped=False)
+        folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
     except NoFolderContextError as e:
         print(f"error: {e}", file=sys.stderr)
         return 3
@@ -1144,7 +1144,7 @@ def cmd_mirror_generate(args: argparse.Namespace) -> int:
 
 def cmd_mirror_approve(args: argparse.Namespace) -> int:
     try:
-        folder = resolve_folder_context(args.folder, allow_unscoped=False)
+        folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
     except NoFolderContextError as e:
         print(f"error: {e}", file=sys.stderr)
         return 3
@@ -1170,7 +1170,7 @@ def cmd_mirror_approve(args: argparse.Namespace) -> int:
 
 def cmd_mirror_list(args: argparse.Namespace) -> int:
     try:
-        folder = resolve_folder_context(args.folder, allow_unscoped=False)
+        folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
     except NoFolderContextError as e:
         print(f"error: {e}", file=sys.stderr)
         return 3
@@ -1187,7 +1187,7 @@ def cmd_mirror_list(args: argparse.Namespace) -> int:
 
 def cmd_mirror_edit(args: argparse.Namespace) -> int:
     try:
-        folder = resolve_folder_context(args.folder, allow_unscoped=False)
+        folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
     except NoFolderContextError as e:
         print(f"error: {e}", file=sys.stderr); return 3
     from .. import mirror_editor
@@ -1208,7 +1208,7 @@ def cmd_mirror_edit(args: argparse.Namespace) -> int:
 
 def cmd_mirror_revisions(args: argparse.Namespace) -> int:
     try:
-        folder = resolve_folder_context(args.folder, allow_unscoped=False)
+        folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
     except NoFolderContextError as e:
         print(f"error: {e}", file=sys.stderr); return 3
     from .. import mirror_editor
@@ -1224,7 +1224,7 @@ def cmd_mirror_revisions(args: argparse.Namespace) -> int:
 
 def cmd_mirror_diff(args: argparse.Namespace) -> int:
     try:
-        folder = resolve_folder_context(args.folder, allow_unscoped=False)
+        folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
     except NoFolderContextError as e:
         print(f"error: {e}", file=sys.stderr); return 3
     from .. import mirror_editor
@@ -1237,7 +1237,7 @@ def cmd_mirror_diff(args: argparse.Namespace) -> int:
 
 def cmd_mirror_discard(args: argparse.Namespace) -> int:
     try:
-        folder = resolve_folder_context(args.folder, allow_unscoped=False)
+        folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
     except NoFolderContextError as e:
         print(f"error: {e}", file=sys.stderr); return 3
     from .. import mirror_editor
@@ -1313,7 +1313,7 @@ def cmd_erase(args: argparse.Namespace) -> int:
     from .. import erasure
 
     try:
-        folder = resolve_folder_context(args.folder, allow_unscoped=False)
+        folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
     except NoFolderContextError as e:
         print(f"error: {e}", file=sys.stderr)
         return 3
@@ -1370,7 +1370,7 @@ def cmd_erase_status(args: argparse.Namespace) -> int:
     """Print the cascade manifest for an existing erase request."""
     from .. import erasure
     try:
-        folder = resolve_folder_context(args.folder, allow_unscoped=False)
+        folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
     except NoFolderContextError as e:
         print(f"error: {e}", file=sys.stderr)
         return 3
@@ -2289,7 +2289,7 @@ def cmd_discipline(args: argparse.Namespace) -> int:
     """Run the discipline gate over a folder (audit / diff / check)."""
     from ..discipline import run_discipline
     try:
-        folder = resolve_folder_context(args.folder, allow_unscoped=False)
+        folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
     except NoFolderContextError as e:
         print(f"error: {e}", file=sys.stderr)
         return 3
@@ -2321,7 +2321,7 @@ def cmd_discipline(args: argparse.Namespace) -> int:
 def cmd_cross_workspace(args: argparse.Namespace) -> int:
     """Governed lateral read from source workspaces into a target workspace."""
     try:
-        target = resolve_folder_context(args.folder, allow_unscoped=False)
+        target = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
     except Exception as e:
         print(f"ERROR: {e}", file=sys.stderr)
         return 2
@@ -2351,7 +2351,7 @@ def cmd_cross_workspace(args: argparse.Namespace) -> int:
 def cmd_lock(args: argparse.Namespace) -> int:
     """Governance verb: seal a workspace's memory at rest + turn on egress screening."""
     try:
-        folder = resolve_folder_context(args.folder, allow_unscoped=False)
+        folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
     except Exception as e:
         print(f"ERROR: {e}", file=sys.stderr)
         return 2
@@ -2383,7 +2383,7 @@ def cmd_lock(args: argparse.Namespace) -> int:
 def cmd_unlock(args: argparse.Namespace) -> int:
     """Governance verb: decrypt a workspace's sealed memory back to disk."""
     try:
-        folder = resolve_folder_context(args.folder, allow_unscoped=False)
+        folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
     except Exception as e:
         print(f"ERROR: {e}", file=sys.stderr)
         return 2
@@ -2404,7 +2404,7 @@ def cmd_unlock(args: argparse.Namespace) -> int:
 def cmd_ask(args: argparse.Namespace) -> int:
     """One governed chat turn over a workspace — the CLI face of /Workspaces."""
     try:
-        folder = resolve_folder_context(args.folder, allow_unscoped=False)
+        folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
     except Exception as e:
         print(f"ERROR: {e}", file=sys.stderr)
         return 2
@@ -2439,7 +2439,7 @@ def cmd_ask(args: argparse.Namespace) -> int:
 def cmd_shadow_scan(args: argparse.Namespace) -> int:
     """Classify recorded cross-workspace crossings into shadow vs declared flow."""
     try:
-        folder = resolve_folder_context(args.folder, allow_unscoped=False)
+        folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
     except NoFolderContextError as e:
         print(f"error: {e}", file=sys.stderr)
         return 3
@@ -2466,7 +2466,7 @@ def cmd_shadow_scan(args: argparse.Namespace) -> int:
 def cmd_oversight(args: argparse.Namespace) -> int:
     """Show or set a workspace's oversight dial (top-level governance verb)."""
     try:
-        folder = resolve_folder_context(args.folder, allow_unscoped=False)
+        folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
     except NoFolderContextError as e:
         print(f"error: {e}", file=sys.stderr)
         return 3
@@ -2486,7 +2486,7 @@ def cmd_oversight(args: argparse.Namespace) -> int:
 def cmd_mute(args: argparse.Namespace) -> int:
     """Mute oversight prompts (disclaimer-gated alias of disable-oversight)."""
     try:
-        folder = resolve_folder_context(args.folder, allow_unscoped=False)
+        folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
     except NoFolderContextError as e:
         print(f"error: {e}", file=sys.stderr)
         return 3
@@ -2503,7 +2503,7 @@ def cmd_mute(args: argparse.Namespace) -> int:
 
 def cmd_unmute(args: argparse.Namespace) -> int:
     try:
-        folder = resolve_folder_context(args.folder, allow_unscoped=False)
+        folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
     except NoFolderContextError as e:
         print(f"error: {e}", file=sys.stderr)
         return 3
@@ -2519,7 +2519,7 @@ def cmd_lens(args: argparse.Namespace) -> int:
     sub = args.lens_command
     if sub == "log":
         try:
-            folder = resolve_folder_context(args.folder, allow_unscoped=False)
+            folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
         except NoFolderContextError as e:
             print(f"error: {e}", file=sys.stderr); return 3
         res = _ls.admission_log(folder, limit=args.limit)
@@ -2535,7 +2535,7 @@ def cmd_lens(args: argparse.Namespace) -> int:
         return 0
     if sub == "precedents":
         try:
-            folder = resolve_folder_context(args.folder, allow_unscoped=False)
+            folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
         except NoFolderContextError as e:
             print(f"error: {e}", file=sys.stderr); return 3
         res = _ls.precedent_list(folder, include_inactive=args.include_inactive)
@@ -2548,7 +2548,7 @@ def cmd_lens(args: argparse.Namespace) -> int:
         return 0
     if sub == "cap":
         try:
-            folder = resolve_folder_context(args.folder, allow_unscoped=False)
+            folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
         except NoFolderContextError as e:
             print(f"error: {e}", file=sys.stderr); return 3
         if args.set_cap is not None:
@@ -2577,7 +2577,7 @@ def cmd_grounding(args: argparse.Namespace) -> int:
     the CLI face of workspace_grounder oversight.feed (parity with app + MCP)."""
     sub = args.grounding_command
     try:
-        folder = resolve_folder_context(args.folder, allow_unscoped=False)
+        folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
     except NoFolderContextError as e:
         print(f"error: {e}", file=sys.stderr); return 3
     if sub == "feed":
@@ -2603,7 +2603,7 @@ def cmd_grounding(args: argparse.Namespace) -> int:
 def _matrix_ctx(args: argparse.Namespace):
     """Return (folder, pm, effective_matrix). Effective = this workspace's own grid if
     set, else inherited (nearest ancestor / global default) — the override cascade."""
-    folder = resolve_folder_context(args.folder, allow_unscoped=False)
+    folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
     from workspaces import policy_matrix as pm
     return folder, pm, pm.resolve_matrix(folder)
 

@@ -173,6 +173,59 @@ def test_a6_persistence_stores_enforce_workspace_allowlist(tmp_path, monkeypatch
     assert not rogue.exists()
 
 
+def test_a6_allowlist_is_scoped_to_the_active_log_root(tmp_path, monkeypatch):
+    """The allowlist is read from the registry co-located with the log root the
+    operation runs under — not always the default log root.
+
+    Regression: ``_enforce_allowlist`` called ``load_registry()`` with no
+    ``log_root``, so it always read ``<LOG_ROOT_DEFAULT>/known-workspaces.json``
+    even when the operation ran under a custom ``--log-root``. Two consequences,
+    both pinned below: a folder registered under the custom root was invisible
+    to enforcement (legitimate op refused), and a folder registered only under
+    the default root leaked through when operating under a different root. The
+    prior tests never caught it because they monkeypatch ``LOG_ROOT_DEFAULT`` to
+    equal the ``log_root`` they register under; here the two roots differ.
+    """
+    from workspaces import workspace_registry
+    from workspaces.folder_context import (
+        FolderContextNotAllowed,
+        resolve_folder_context,
+    )
+    from workspaces.mutation_log import MutationLog
+
+    default_root = tmp_path / "default-logroot"
+    custom_root = tmp_path / "custom-logroot"
+    monkeypatch.setattr(workspace_registry, "LOG_ROOT_DEFAULT", default_root)
+    monkeypatch.delenv("WORKSPACES_ALLOW_UNREGISTERED", raising=False)
+
+    under_custom = tmp_path / "ws-registered-under-custom"
+    under_default = tmp_path / "ws-registered-under-default"
+    under_custom.mkdir()
+    under_default.mkdir()
+    workspace_registry.add_known_workspace(under_custom, log_root=custom_root)
+    workspace_registry.add_known_workspace(under_default, log_root=default_root)
+
+    # (1) Registered under the CUSTOM root → honoured when the op runs under it.
+    # This is the reported bug: pre-fix, enforcement read the default registry
+    # and refused this legitimate folder.
+    assert Path(resolve_folder_context(
+        str(under_custom), log_root=custom_root)).resolve() == under_custom.resolve()
+    # The authoritative construction path threads its own log_root and agrees.
+    MutationLog(under_custom, log_root=custom_root)  # must not raise
+
+    # (2) Registered ONLY under the default root → NOT consulted under the custom
+    # root. Pre-fix this leaked through (default entry honoured everywhere).
+    with pytest.raises(FolderContextNotAllowed):
+        resolve_folder_context(str(under_default), log_root=custom_root)
+
+    # (3) Symmetry: under the default root, the default-registered folder passes
+    # and the custom-registered one is refused.
+    assert Path(resolve_folder_context(
+        str(under_default), log_root=default_root)).resolve() == under_default.resolve()
+    with pytest.raises(FolderContextNotAllowed):
+        resolve_folder_context(str(under_custom), log_root=default_root)
+
+
 def test_a6_documented_gap_is_in_red_team_findings():
     """Meta-test: ensure the gap stays surfaced in
     docs/reviews/red-team-findings.md so the historical finding and mitigation
