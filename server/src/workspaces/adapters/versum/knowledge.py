@@ -48,6 +48,22 @@ class VersumKnowledgeStore:
     def available(self) -> bool:
         return (self.root / "claims.csv").is_file()
 
+    @property
+    def has_records(self) -> bool:
+        """True if this folder holds ANY versum knowledge — curated claims OR
+        runtime/file-ingest dimensioned-subgraph records.
+
+        The ``available`` gate only sees the curated ``claims.csv`` projection.
+        Runtime facts (``versum.append_fact``) and file ingests land in the
+        dimensioned-subgraph transaction store instead, so the query/reason
+        gates use this broader check to recognise a folder that knows things
+        without a curated index.
+        """
+        if self.available:
+            return True
+        txns = self.root / "_dimensioned_subgraph_transactions"
+        return txns.is_dir() and any(txns.glob("*.json"))
+
     def require(self) -> None:
         if not self.available:
             raise FileNotFoundError(
@@ -89,6 +105,22 @@ class VersumKnowledgeStore:
                     in wanted_dims]
         return rows
 
+    def search(self, query, *, k: int = 10,
+               filters: Optional[dict] = None) -> list[dict]:
+        """Keyword/similarity search over this folder's ingested content, via the
+        consumed versum search (``search_similar``) over the DimensionedSubgraph
+        store the ingest writes. Additive read surface: the memory→versum read
+        migration routes ``pairs_search`` here once the write paths populate
+        versum for the remaining channels (until then memory stays the source for
+        pair channels versum does not yet hold)."""
+        if not self.root.is_dir():
+            raise FileNotFoundError(
+                f"Versum store not found at {self.root}; ingest the folder with "
+                "loomground-ingest before searching")
+        from versum.store.retrieve import from_dimensioned_store
+        return from_dimensioned_store(self.root).search_similar(
+            query, k=k, filters=filters)
+
     def snapshot(self) -> VersumSnapshot:
         claims = tuple(self.claims())
         concepts = tuple(self.concepts())
@@ -110,18 +142,24 @@ class VersumKnowledgeStore:
 
     def subgraph(self, focus: str, *, depth: int = 2,
                  dimensions: Optional[Iterable[str]] = None) -> dict:
-        """Return a deterministic neighborhood without creating RVND graph state."""
-        all_edges = self.edges(dimensions=dimensions)
-        reached = {focus}
-        selected: list[dict] = []
-        for _ in range(max(0, depth)):
-            frontier = set(reached)
-            step = [e for e in all_edges if e.get("src_id") in frontier or
-                    e.get("dst_id") in frontier]
-            for edge in step:
-                reached.update((edge.get("src_id"), edge.get("dst_id")))
-                if edge not in selected:
-                    selected.append(edge)
+        """Return a deterministic neighborhood without creating RVND graph state.
+
+        Traversal is the solver's (:func:`neighborhood`); this adapter only maps
+        the folder's dict-shaped edges into solver ``Edge``s and the reached node
+        ids back to the folder's claim/concept records — RVND keeps no BFS."""
+        from ..solver.reasoning import Edge, neighborhood
+        from ..solver.dimensions import Dimension
+        dict_edges = self.edges(dimensions=dimensions)
+        edges = [
+            Edge(subject=str(e.get("src_id") or ""),
+                 predicate=str(e.get("predicate") or ""),
+                 object=str(e.get("dst_id") or ""),
+                 dimension=Dimension(e.get("dimension") or "relational"))
+            for e in dict_edges
+        ]
+        reached = set(neighborhood(edges, focus, depth=depth).nodes)
+        selected = [e for e in dict_edges
+                    if e.get("src_id") in reached or e.get("dst_id") in reached]
         claims = [r for r in self.claims() if r.get("item_id") in reached]
         concepts = [r for r in self.concepts() if r.get("concept_id") in reached]
         return {

@@ -6,7 +6,7 @@ what the deterministic read resolved from what the INTERPRETER layer must read.
 End-to-end front of the navigator's allocation path:
 
     instrument text → rule_extractor (subject/modal/action/condition)
-                    → deontic operator (O/F/P/R)
+                    → deontic operator (O/P/F; a right is P + a Hohfeld incident)
                     → applicability facets (role / risk_tier / area)
                     → IdentifiedDuty + a TRIAGE flag
 
@@ -29,7 +29,7 @@ from dataclasses import dataclass, field, asdict
 from typing import Any, Optional
 
 from . import rule_extractor as _re
-from . import deontic as _de
+from . import deontic_facets as _de
 from . import applicability as _ap
 
 

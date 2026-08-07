@@ -1,30 +1,45 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # Copyright 2026 flxk1
-"""Tests for the deontic-logic formalisation layer (deontic.py)."""
+"""Tests for RVND's deontic surface.
+
+RVND no longer owns a deontic *language*: the grammar (formula shape, the
+``O`` / ``P`` / ``F`` operators, incidents, conflict detection) is consumed
+from the ``deontic`` package through :mod:`workspaces.adapters.deontic`. RVND
+owns only the *facet extraction* that wires that grammar to its surface reader
+(:mod:`workspaces.deontic_facets`). There is no ``R`` operator — a right is
+CONSTRUCTED as ``P`` (privilege) or the correlative ``O`` (claim), carried by
+the Hohfeld incident.
+"""
 
 from __future__ import annotations
 
-from workspaces.deontic import (
+import pytest
+
+from workspaces.adapters.deontic import (
     DeonticFormula,
-    DeonticFormulaND,
+    VALID_OPERATORS,
     OP_OBLIGATION,
     OP_PERMISSION,
     OP_PROHIBITION,
-    OP_RIGHT,
+    correlative,
     detect_conflicts,
+)
+from workspaces.deontic_facets import (
+    extract_deontic_pairs,
     extract_formulae,
     formula_from_rule,
 )
-from workspaces.nd_routing import Classification
 from workspaces.rule_extractor import RuleFacet
 
 
-def _normative_classification(facets=None):
-    return Classification(primary_type="normative", facets=facets or [],
-                          confidence=0.9, metadata={})
+# --- the consumed grammar is O/P/F only ------------------------------------
+
+def test_operator_vocabulary_is_opf_with_no_right():
+    assert VALID_OPERATORS == ("O", "P", "F")
+    assert "R" not in VALID_OPERATORS
 
 
-# --- formula model ---------------------------------------------------------
+# --- formula model (consumed grammar) --------------------------------------
 
 def test_obligation_renders_core_with_bearer_and_action():
     f = DeonticFormula(operator=OP_OBLIGATION, bearer="controller",
@@ -56,9 +71,12 @@ def test_permission_dual_is_not_o_not():
     assert f.dual() == "¬O(¬ object)"
 
 
-def test_unknown_operator_falls_back_to_obligation():
-    f = DeonticFormula(operator="ZZZ", bearer="x", action="y")
-    assert f.operator == OP_OBLIGATION
+def test_grammar_rejects_unknown_operator():
+    # the consumed grammar is strict — an unknown operator is a construction
+    # error, not silently coerced. The safe-default fallback lives one layer
+    # up, in the modal→operator mapping (see below).
+    with pytest.raises(ValueError):
+        DeonticFormula(operator="ZZZ", bearer="x", action="y")
 
 
 def test_to_dict_carries_formula_and_flags():
@@ -71,14 +89,13 @@ def test_to_dict_carries_formula_and_flags():
     assert d["operator_gloss"] == "obligatory"
 
 
-# --- mapping from RuleFacet ------------------------------------------------
+# --- mapping from RuleFacet (RVND extractor) -------------------------------
 
-def test_formula_from_rule_maps_modal_classes():
+def test_formula_from_rule_maps_catalogued_modals():
     cases = {
         "obligation": OP_OBLIGATION,
         "permission": OP_PERMISSION,
         "prohibition": OP_PROHIBITION,
-        "right": OP_RIGHT,
     }
     for modal, op in cases.items():
         r = RuleFacet(subject="controller", modal=modal, modal_phrase="x",
@@ -86,15 +103,27 @@ def test_formula_from_rule_maps_modal_classes():
         assert formula_from_rule(r).operator == op
 
 
-def test_formula_from_rule_unknown_modal_lowers_confidence():
+def test_right_is_constructed_not_a_primitive_operator():
+    # "right" is not an operator: it lifts to P (a privilege/liberty) carrying
+    # a Hohfeld incident whose correlative is what binds the other party.
+    r = RuleFacet(subject="data subject", modal="right", modal_phrase="has the right to",
+                  action="obtain erasure", confidence=0.8)
+    f = formula_from_rule(r)
+    assert f.operator == OP_PERMISSION
+    assert f.operator != "R"
+    assert f.incident, "a right must carry a Hohfeld incident"
+    assert correlative(f.incident)  # the incident has a correlative (what binds the counterparty)
+
+
+def test_formula_from_rule_unknown_modal_falls_back_to_obligation():
     r = RuleFacet(subject="x", modal="weird", modal_phrase="x", action="y",
                   confidence=0.8)
     f = formula_from_rule(r)
-    assert f.operator == OP_OBLIGATION
-    assert f.confidence < 0.8
+    assert f.operator == OP_OBLIGATION          # safe legal default
+    assert f.confidence < 0.8                    # uncatalogued modal lowers confidence
 
 
-# --- extraction over real text ---------------------------------------------
+# --- extraction over real text (RVND extractor over consumed grammar) ------
 
 def test_extract_formulae_from_gdpr_text():
     content = (
@@ -106,9 +135,10 @@ def test_extract_formulae_from_gdpr_text():
     ops = {f.operator for f in formulae}
     assert OP_OBLIGATION in ops
     assert OP_PROHIBITION in ops
+    assert "R" not in ops
 
 
-# --- conflict detection ----------------------------------------------------
+# --- conflict detection (consumed grammar) ---------------------------------
 
 def test_detect_conflicts_flags_obligation_vs_prohibition():
     formulae = [
@@ -119,7 +149,8 @@ def test_detect_conflicts_flags_obligation_vs_prohibition():
     ]
     conflicts = detect_conflicts(formulae)
     assert len(conflicts) == 1
-    assert conflicts[0]["resolution"] == "genuine-conflict-escalate"
+    # the grammar flags candidates; it never resolves them
+    assert conflicts[0]["resolution"] == "candidate-escalate"
 
 
 def test_no_conflict_when_actions_differ():
@@ -138,44 +169,33 @@ def test_no_conflict_for_two_obligations():
     assert detect_conflicts(formulae) == []
 
 
-# --- ND dispatcher ---------------------------------------------------------
+# --- text -> ND pair dicts (RVND extractor; replaces the retired ND) -------
 
-def test_deontic_nd_handles_normative():
-    nd = DeonticFormulaND()
-    assert nd.can_handle(_normative_classification(["gdpr"])) is True
-
-
-def test_deontic_nd_emits_formula_pairs_with_edges():
-    nd = DeonticFormulaND()
+def test_extract_deontic_pairs_emits_formula_pairs_with_edges():
     content = "The controller shall implement appropriate measures where processing occurs."
-    pairs = nd.extract(content, _normative_classification(["gdpr"]),
-                       source_document="gdpr.txt")
+    pairs = extract_deontic_pairs(content, source_document="gdpr.txt")
     assert len(pairs) >= 1
     p = pairs[0]
     assert p["problem"]["kind"] == "deontic-formula"
-    assert p["solution"]["operator"] in (OP_OBLIGATION, OP_PERMISSION,
-                                         OP_PROHIBITION, OP_RIGHT)
+    assert p["solution"]["operator"] in (OP_OBLIGATION, OP_PERMISSION, OP_PROHIBITION)
     assert "formula" in p["solution"]
     assert p["edges"]
     # every edge carries a dimension
     assert all("dimension" in e for e in p["edges"])
 
 
-def test_deontic_nd_conflict_mode_emits_conflict_pair():
-    nd = DeonticFormulaND(detect_conflicts=True)
+def test_extract_deontic_pairs_conflict_mode_emits_conflict_pair():
     content = (
         "The provider shall disclose the data. "
         "The provider must not disclose the data."
     )
-    pairs = nd.extract(content, _normative_classification(["ai-act"]),
-                       source_document="x.txt")
+    pairs = extract_deontic_pairs(content, source_document="x.txt", detect_conflicts=True)
     kinds = {p["problem"].get("kind") for p in pairs}
     assert "deontic-conflict" in kinds
 
 
-def test_deontic_nd_pairs_are_idempotent_by_content():
-    nd = DeonticFormulaND()
+def test_extract_deontic_pairs_are_idempotent_by_content():
     content = "The controller shall act."
-    a = nd.extract(content, _normative_classification(["gdpr"]), source_document="d.txt")
-    b = nd.extract(content, _normative_classification(["gdpr"]), source_document="d.txt")
+    a = extract_deontic_pairs(content, source_document="d.txt")
+    b = extract_deontic_pairs(content, source_document="d.txt")
     assert [p["id"] for p in a] == [p["id"] for p in b]

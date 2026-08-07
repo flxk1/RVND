@@ -23,15 +23,21 @@ from loomground_ingest import (
     DeonticIngester,
 )
 
-from .policy import PolicyIngester
+from ..adapters.ingest.governance import GovernanceIngester
 
 
 def default_registry() -> IngesterRegistry:
-    """A registry carrying RVND's ingesters. Policy is the only instance today;
-    it is the best-guess fallback for governance text and self-quarantines a
-    court judgment."""
+    """The registry carries only consumed grammar ingesters. RVND has no ingest
+    of its own: DeonticIngester lowers general normative prose across the 5D, and
+    GovernanceIngester (the governance compiler, now owned by loomground-ingest
+    over loomground-governance + loomground-deontic) claims express governance —
+    reservations, prohibitions, obligations — and quarantines judgments. Both are
+    consumed from loomground_ingest; the RVND-grown twin is retired."""
     reg = IngesterRegistry()
-    reg.register(PolicyIngester())
+    # Order is dispatch precedence: GovernanceIngester is consulted first so it
+    # claims express governance (reservations/prohibitions) and quarantines
+    # judgments; general normative prose falls through to DeonticIngester.
+    reg.register(GovernanceIngester())
     reg.register(DeonticIngester())
     return reg
 
@@ -56,7 +62,7 @@ def ingest_file(file_path: str, folder_context: str, *,
 
 __all__ = [
     "default_registry", "ingest_text", "ingest_file", "ingest_artifact",
-    "PolicyIngester", "IngesterRegistry", "Ingester", "Subgraph",
+    "GovernanceIngester", "IngesterRegistry", "Ingester", "Subgraph",
     "Predicate", "Ctx", "Writer", "CollectingWriter", "versum_writer",
     "DeonticIngester",
 ]

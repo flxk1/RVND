@@ -36,8 +36,11 @@ from typing import Any, Iterable, Optional, Sequence
 from .oversight_extractor import OVERSIGHT_LEVELS, OversightFacet
 
 _LEVEL_ORDER = {lvl: i for i, lvl in enumerate(OVERSIGHT_LEVELS)}
-_GRADES = ("L0", "L1", "L2", "L3", "L4")
-_GRADE_ORDER = {g: i for i, g in enumerate(_GRADES)}
+from .adapters.policy_languages import (grade_index as _grade_index,
+                                         grade_levels as _grade_levels)
+
+_GRADES = _grade_levels()          # grade lattice consumed from governance's grammar
+_GRADE_ORDER = _grade_index()
 
 
 @dataclass

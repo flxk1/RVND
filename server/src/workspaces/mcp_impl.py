@@ -461,6 +461,33 @@ def recent(folder_context: str, limit: int = 20, actor: str = "") -> dict[str, A
         "results": pairs[:limit],
     }
 
+def lane_capabilities(
+    folder_context: str,
+    actor: str,
+    kinds: list[str] | None = None,
+    risks: list[str] | None = None,
+) -> dict[str, Any]:
+    """Read-only agent-facing projection of ONE agent's governance-lane
+    boundaries: per candidate (kind, risk) the verdict the gate would dispose,
+    the grade required, the escalation point, and the governing guard.
+
+    A projection of the same .lg policy the gate enforces — advisory, never
+    dispositive — stamped with the policy_fingerprint it reflects. Access-gated
+    like the other governed reads (check_access, fail-closed); appends nothing
+    to the mutation log. Fail-closed throughout: a denied or unreadable read
+    yields NO capabilities, never "everything allowed".
+    """
+    if not check_access(folder_context, actor, "read", log_root=_log_root()):
+        from .lane_capabilities import SCHEMA_KIND
+        return {"ok": False, "kind": SCHEMA_KIND,
+                "folder_context": str(Path(folder_context).expanduser().resolve()),
+                "actor": actor, "advisory": True, "readable": False,
+                "reason": "access denied", "capabilities": []}
+    from .lane_capabilities import lane_capabilities as _project
+    return _project(folder_context, actor, kinds=kinds, risks=risks,
+                    log_root=_log_root())
+
+
 _FS_SKIP_DIRS = {
     "__pycache__", ".pytest_cache", ".mypy_cache", "node_modules",
     ".git", ".idea", ".vscode", ".venv", "venv", ".tox",
@@ -758,6 +785,20 @@ def workspace_remember(
     }
     mem = WorkspaceMemory(folder_context, log_root=_log_root(), actor=_default_actor())
     pair_id = mem.remember(pair, channel="fact")
+    # Knowledge plane: the triple is a runtime fact — write it into the folder's
+    # Versum store so it is a first-class node/relation reachable by
+    # workspace_query / reason (closing the remember->query loop). The signed
+    # mutation-log event above remains the audit record; Versum holds the
+    # knowledge. Best-effort: a Versum write failure must not lose the audited
+    # remember.
+    try:
+        from .adapters.versum import append_fact as _append_fact
+        store = Path(folder_abs) / ".versum"
+        store.mkdir(parents=True, exist_ok=True)
+        _append_fact(store, subject=subject, predicate=predicate,
+                     object=object, dimension=dim, actor=_default_actor())
+    except Exception:
+        pass
     return {
         "remembered": True,
         "pair_id": pair_id,
@@ -792,7 +833,7 @@ def workspace_query(
     # Versum is the ONLY knowledge plane; fail-closed on an unindexed workspace
     # ("index the folder first") rather than serving a non-Versum overlay.
     knowledge = VersumKnowledgeStore(folder_context)
-    if not knowledge.available:
+    if not knowledge.has_records:
         return {
             "folder_context": str(Path(folder_context).expanduser().resolve()),
             "knowledge_backend": None,

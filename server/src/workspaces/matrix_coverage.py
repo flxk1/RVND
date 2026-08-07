@@ -21,8 +21,11 @@ from .governance_graph import governance_graph
 
 # Strictest-wins over an egress band, matching governance_graph's edge ranking
 # plus the two static dispositions (prohibited severs; unfired = no run yet).
-_RANK = {"unfired": 0, "auto": 1, "human": 2, "refused": 3,
-         "reserved": 4, "prohibited": 5}
+from .adapters.policy_languages import verdict_order as _verdict_order
+
+# 'unfired' is an RVND display state (rank 0); the verdict ranks are consumed from
+# governance's grammar so display and enforcement share one restrictiveness order.
+_RANK = {"unfired": 0, **{v: i + 1 for i, v in enumerate(_verdict_order())}}
 _LETTER = {"auto": "a", "human": "h", "refused": "f", "reserved": "r",
            "prohibited": "x", "unfired": "u", "none": "·"}
 

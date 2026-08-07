@@ -202,14 +202,19 @@ def _redacted_snippet(text: str, subject: str, n: int = 80) -> str:
     return _short(redacted, n)
 
 
-def _event_text_haystack(evt: LogEvent) -> str:
+def _event_text_haystack(evt: LogEvent, pair: dict | None = None) -> str:
     """Stitch together every text field on an event into one string we
     can search across. Conservative — better to over-match here (a
     SweepReport is just a preview) than to miss a hit.
+
+    ``pair`` is the resolved pair body: post body-drop a knowledge pair's body
+    lives in the versum sink, not the log event, so the caller resolves it (log
+    body or versum body) and passes it in; falls back to the log body otherwise.
     """
     parts: list[str] = []
-    # Pair body, if any.
-    pair = _pair_from_event(evt)
+    # Pair body (resolved from the log event, or the versum sink post body-drop).
+    if pair is None:
+        pair = _pair_from_event(evt)
     if isinstance(pair, dict):
         problem = pair.get("problem", {}) or {}
         if isinstance(problem, dict):
@@ -237,16 +242,17 @@ def _event_text_haystack(evt: LogEvent) -> str:
     return "\n".join(parts)
 
 
-def _classify_kind(evt: LogEvent) -> str:
+def _classify_kind(evt: LogEvent, pair: dict | None = None) -> str:
     """Best-effort kind label for the sweep report — what category of
-    event the subject was found in.
-    """
+    event the subject was found in. ``pair`` is the resolved body (log or versum
+    post body-drop); falls back to the log body."""
     channel = (evt.channel or "").lower()
     if channel == "llm_answer":
         return "capture_llm"
     if channel == "websearch":
         return "capture_web"
-    pair = _pair_from_event(evt)
+    if pair is None:
+        pair = _pair_from_event(evt)
     if pair is not None:
         problem = pair.get("problem", {}) if isinstance(pair, dict) else {}
         ptype = (problem.get("type") or "").lower() if isinstance(problem, dict) else ""
@@ -321,17 +327,30 @@ def sweep(
 
     for log in _logs_for_sweep(str(root), cascade, log_root):
         folder_str = log.folder_path
+        # post body-drop, a knowledge pair's body lives in the folder's versum
+        # sink, not the log event — load it so the sweep still sees body text/PII.
+        try:
+            from .adapters.versum import read_disk_versum_records
+            versum_bodies = {
+                b["id"]: b for b in
+                (r.get("properties", {}).get("record") for r in
+                 read_disk_versum_records(folder_str))
+                if isinstance(b, dict) and isinstance(b.get("id"), str)
+            }
+        except Exception:                                       # noqa: BLE001
+            versum_bodies = {}
         for evt in log.replay():
-            haystack = _event_text_haystack(evt).lower()
+            pair = _pair_from_event(evt) or versum_bodies.get(evt.pair_id)
+            haystack = _event_text_haystack(evt, pair).lower()
             if needle and needle in haystack:
-                kind = _classify_kind(evt)
+                kind = _classify_kind(evt, pair)
                 hit = SweepHit(
                     folder=folder_str,
                     pair_id=evt.pair_id,
                     kind=kind,
                     audit_id=evt.audit_id,
                     snippet=_redacted_snippet(
-                        _event_text_haystack(evt), subject_norm
+                        _event_text_haystack(evt, pair), subject_norm
                     ),
                 )
                 report.hits_by_kind.setdefault(kind, []).append(hit)
