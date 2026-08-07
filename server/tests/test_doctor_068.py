@@ -133,6 +133,43 @@ def test_doctor_sample_round_trip_appends_and_verifies(isolated_env):
     assert "appended + verified" in result["detail"]
 
 
+def test_doctor_sample_round_trip_ok_under_allowlist_enforcement(
+        isolated_env, monkeypatch):
+    """The probe goes green on an ENFORCING install — the profile every real
+    machine runs (conftest's suite-global opt-out masked this: the probe's
+    scratch folder is unregistered, so fresh installs saw [x] sample_round_trip
+    and doctor could never report a healthy engine). The probe must scope the
+    unregistered-allow to itself, restore the prior environment, and leave
+    enforcement intact for everything that is not the probe.
+    """
+    import os
+    import tempfile
+
+    from workspaces.folder_context import (
+        ALLOW_UNREGISTERED_ENV,
+        FolderContextNotAllowed,
+    )
+    from workspaces.mutation_log import MutationLog
+
+    monkeypatch.delenv(ALLOW_UNREGISTERED_ENV, raising=False)
+
+    result = _cli._doctor_check_sample_round_trip(isolated_env["log_root"])
+    assert result["level"] == _cli.DOCTOR_LEVEL_OK, (
+        f"probe must not depend on {ALLOW_UNREGISTERED_ENV}: {result}"
+    )
+    assert "appended + verified" in result["detail"]
+
+    # No leak: the probe restored the environment it found.
+    assert os.environ.get(ALLOW_UNREGISTERED_ENV) is None
+
+    # Enforcement is untouched outside the probe: an unregistered scratch
+    # folder (system TMPDIR — never under any registered root, including the
+    # hardened profile's per-test registration of tmp_path) is still refused.
+    with tempfile.TemporaryDirectory(prefix="doctor-a6-check-") as td:
+        with pytest.raises(FolderContextNotAllowed):
+            MutationLog(td, log_root=isolated_env["log_root"])
+
+
 # ---------------------------------------------------------------------------
 # 5. JSON output parses cleanly and carries the expected schema.
 # ---------------------------------------------------------------------------
