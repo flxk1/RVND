@@ -28,6 +28,7 @@ Sources:
 """
 from __future__ import annotations
 
+import json
 import time
 from collections import defaultdict
 from pathlib import Path
@@ -160,9 +161,18 @@ def _leases(folder_context: str, log_root: Optional[str],
 
 def _chain(folder_context: str, log_root: Optional[str],
            limit: int) -> list[dict[str, Any]]:
-    """Last ``limit`` chain entries, newest first. seq = replay index (the log
-    has no seq field); prev_hash is public; the entry's own hash is not."""
-    from .mutation_log import MutationLog
+    """The last ``limit`` chain entries as a CONTIGUOUS replay tail, newest
+    first — no filtering or sampling between adjacent entries. Contiguity is
+    load-bearing: it is what lets a consumer verify linearity, since each
+    entry's ``prev_hash`` is the ``hash`` of the entry immediately older than
+    it (so ``chain[i]["prev_hash"] == chain[i+1]["hash"]``). ``seq`` is the
+    replay index (the log has no seq field). ``hash`` is the canonical content
+    hash — a digest of an already-public audit event, identical to what the
+    next entry stored as its ``prev_hash`` — so exposing it leaks nothing and
+    makes the link checkable. Any filtered/per-actor view must be a SEPARATE
+    field, never this linkage-checked ``chain``.
+    """
+    from .mutation_log import MutationLog, _canonical_event_hash
     log = MutationLog(folder_context, log_root=_log_root_path(log_root))
     events = list(log.replay())
     start = max(0, len(events) - limit)
@@ -174,6 +184,7 @@ def _chain(folder_context: str, log_root: Optional[str],
             "actor": evt.actor,
             "event": evt.event,
             "extra": str((evt.extra or {}).get("kind") or ""),
+            "hash": _canonical_event_hash(json.loads(evt.to_jsonl())),
             "prev_hash": evt.prev_hash or "",
         })
     return out
