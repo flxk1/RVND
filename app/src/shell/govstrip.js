@@ -20,7 +20,14 @@ function mountGovStrip(){
   strip.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();openGovlivePanel();}});
   stage.appendChild(strip);
   loadGovStrip();
-  if(!_govStripTimer) _govStripTimer=setInterval(loadGovStrip,4000);
+  // Poll only while someone can see the readout: a hidden tab gets no
+  // interval (each governance_live is a full log replay server-side — a
+  // hidden console must not tax the server it watches). Refresh immediately
+  // on return to visibility.
+  const arm=()=>{ if(!_govStripTimer) _govStripTimer=setInterval(loadGovStrip,4000); };
+  const disarm=()=>{ if(_govStripTimer){ clearInterval(_govStripTimer); _govStripTimer=null; } };
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden') disarm(); else { loadGovStrip(); arm(); } });
+  if(document.visibilityState!=='hidden') arm();
 }
 async function loadGovStrip(){
   const strip=document.getElementById('govstrip'); if(!strip) return;
