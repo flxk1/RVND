@@ -108,13 +108,24 @@ def test_lease_projection_is_position_zero_holder(seeded):
     assert b["summary"]["run_leases_held"] == 0
 
 
-def test_chain_is_newest_first_and_monotonic(seeded):
+def test_chain_is_contiguous_newest_first_with_verifiable_linkage(seeded):
     b = _board(seeded)
-    seqs = [c["seq"] for c in b["chain"]]
+    chain = b["chain"]
+    seqs = [c["seq"] for c in chain]
     assert seqs == sorted(seqs, reverse=True)          # strictly newest-first
     assert len(set(seqs)) == len(seqs)                 # no duplicate indices
-    for node in b["chain"]:
-        assert set(node) == {"seq", "actor", "event", "extra", "prev_hash"}
+    for node in chain:
+        assert set(node) == {"seq", "actor", "event", "extra", "hash", "prev_hash"}
+    assert all(c["hash"] for c in chain)               # non-empty content hashes
+    # Contiguous replay tail (no filtering between adjacent entries) — the
+    # precondition for the linkage check below.
+    for older, newer in zip(chain[1:], chain[:-1]):
+        assert newer["seq"] == older["seq"] + 1
+    # Invariant 6 — real chain linearity, now verifiable because hash is
+    # exposed: each entry's prev_hash IS the content hash of the entry
+    # immediately older than it.
+    for older, newer in zip(chain[1:], chain[:-1]):
+        assert newer["prev_hash"] == older["hash"]
 
 
 def test_reachable_through_the_workspace_workflow_facade(seeded, monkeypatch):
