@@ -2339,6 +2339,9 @@ def workspace_workflow(op: str, params: dict[str, Any] | None = None) -> dict[st
             {"op": "governance_live", "required": ["folder_context"],
              "optional": ["chain_limit"], "mutates": False,
              "note": "read-only live-governance board: sessions (derived from the signed log's admission events; admitted = unexpired + unrevoked), per-agent verdict/grade/escalation from lane_capabilities, run-lease serialization (one holder per folder+workflow) from the queue, and the last N chain entries (seq = replay index, prev_hash). Pure projection — no chain append, no lease acquire. Honest-subset: session kind, autonomy decay, iteration budget and per-agent breaker have no folder-readable source yet and are omitted, never faked"},
+            {"op": "reasoning_check", "required": ["session_id"],
+             "optional": ["claim"],
+             "note": "T-cons: solver consistency over the session's recorded claims (session-scoped Versum working memory). With claim {atom, polarity, grounding, ts}: append it to the session's OWN store first (the op's only mutation — no chain append, no lease, no cross-session write), then check; without: pure read. Fail-closed verdict CONSISTENT | INCONSISTENT (clashing atoms carried) | OPEN — ungrounded or uncheckable claims are OPEN, never reported consistent"},
             {"op": "governance_lane_register", "required": ["folder_context", "lane_id", "agent", "max_grade", "action_classes", "approved_by", "rationale"],
              "optional": ["footprints", "use_cases", "connectors", "policy_fingerprint", "version"],
              "note": "approve a versioned governance lane on the signed chain; authority, autonomy, action, data, workspace, use-case, connector and policy scope are checked before live execution"},
@@ -2501,6 +2504,20 @@ def workspace_workflow(op: str, params: dict[str, Any] | None = None) -> dict[st
             from .governance_live import governance_live as _glive
             return _glive(p["folder_context"], log_root=_log_root(),
                           chain_limit=int(p.get("chain_limit", 20)))
+        if op == "reasoning_check":
+            from .reasoning_integrity import Claim, check_session, record_claim
+            sid = p["session_id"]
+            if p.get("claim") is not None:
+                c = p["claim"]
+                record_claim(sid, Claim(atom=str(c.get("atom", "")),
+                                        polarity=str(c.get("polarity", "+")),
+                                        grounding=c.get("grounding"),
+                                        ts=str(c.get("ts", ""))),
+                             log_root=_log_root())
+            v = check_session(sid, log_root=_log_root())
+            return {"ok": True, "session_id": sid, "verdict": v.verdict,
+                    "reasons": list(v.reasons), "clashing": list(v.clashing),
+                    "open_claims": list(v.open_claims)}
         if op == "loop_graph":
             from .loop_graph import graph_of_loops as _gl
             return _gl(p["folder_context"], log_root=_log_root(),
