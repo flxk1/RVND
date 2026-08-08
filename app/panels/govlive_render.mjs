@@ -129,9 +129,51 @@ async function main() {
     if (released) fail("verdict honesty: chain shows a released node for held-back party " + p + " (seq " + released.dataset.seq + ")");
   }
 
-  // ── read-only ──────────────────────────────────────────────────────
+  // ── I4 · step inspector: drill a real reserved step ────────────────
+  // Zero-mutation is asserted against the server itself: the chain head
+  // before and after the drill must be the same signed event.
+  const headBefore = (await window.tool("workspace_workflow", { op: "governance_live", params: { folder_context: F } })).chain[0].seq;
+  // The reserved step is the newest seeded event; its identity is proven by
+  // the RECORD the inspector fetches (pair approval:rq-quorum), not by text.
+  const target = nodes[0];
+  target.click();
+  let insp = null;
+  for (let i = 0; i < 50; i++) { await sleep(80); insp = root.querySelector(".gl-inspector"); if (insp && insp.querySelector(".gl-verify") && insp.querySelector(".gl-inspector-record")) break; }
+  if (!insp) fail("I4: inspector did not open on node activation");
+  if (insp.dataset.seq !== target.dataset.seq) fail("I4: inspector shows seq " + insp.dataset.seq + " but the drilled node is " + target.dataset.seq);
+  const itext = insp.textContent;
+  if (!(target.dataset.hash && itext.includes(target.dataset.hash))) fail("I4: inspector must show the step's full hash linkage");
+  const verify = insp.querySelector(".gl-verify");
+  if (!verify || verify.dataset.ok !== "true" || !/intact/.test(itext)) fail("I4: live verify_chain status missing or not intact: " + itext.slice(0, 160));
+  const recEl = insp.querySelector(".gl-inspector-record");
+  if (!recEl) fail("I4: the step's signed record section is missing — inspector says: " + itext.slice(0, 400));
+  if (recEl.dataset.pair !== "approval:rq-quorum") fail("I4: record pair is " + recEl.dataset.pair + ", expected approval:rq-quorum (the reserved step)");
+  if (!/✓ signed/.test(recEl.textContent)) fail("I4: record must state its signed status");
+  if (!/ApprovalRequested/.test(recEl.textContent)) fail("I4: record kind missing");
+  const iv = insp.querySelector(".gl-inspector-verdict");
+  if (!iv || !["prohibited", "refused", "reserved", "human", "auto", "unfired"].includes(iv.dataset.verdict))
+    fail("I4: actor's live lane verdict missing or out of vocabulary");
+  const bound = insp.querySelector('.gl-inspector-approval[data-request="rq-quorum"]');
+  if (!bound) fail("I4: the drilled reserved step must render its routed approval (rq-quorum)");
+  if (bound.dataset.quorum !== "2" || !/signed 0 of 2/.test(bound.textContent)) fail("I4: m-of-n quorum wrong: " + bound.textContent);
+  if (!/legal, finance, risk/.test(bound.textContent)) fail("I4: required competences missing: " + bound.textContent);
+  // Zero governance mutation: the AUDIT SURFACE RECORDS READS (the drill's
+  // verify_chain appends a verify_chain_read event — the server auditing its
+  // own reading, which is the protection working). So the honest assert is:
+  // every event the drill added must be a *_read audit entry — the inspector
+  // itself wrote NOTHING into governance state.
+  const after = await window.tool("workspace_workflow", { op: "governance_live", params: { folder_context: F } });
+  const added = (after.chain || []).filter((n) => Number(n.seq) > Number(headBefore));
+  const nonRead = added.filter((n) => !/_read$/.test(n.extra || ""));
+  if (nonRead.length)
+    fail("I4: drilling MUTATED the record — non-read event(s) appended: " + nonRead.map((n) => "#" + n.seq + " " + (n.extra || n.event)).join(", "));
+
+  // ── read-only (asserted with the inspector OPEN) ───────────────────
   const btns = [...gp.querySelectorAll("button")];
   if (btns.length) fail("govlive must be read-only — found button(s): " + btns.map((b) => b.textContent.trim()).join(","));
+  const xClose = insp.querySelector(".gl-inspector-x");
+  xClose.click(); await sleep(60);
+  if (root.querySelector(".gl-inspector")) fail("I4: inspector did not close");
 
   console.log("PASS: govlive drawer v2 — real-state board renders; admission honesty, refusal-serialization, chain linearity (recomputed content-hash linkage), verdict honesty all hold; read-only; modal dialog");
   process.exit(0);

@@ -2737,11 +2737,11 @@
    "status": "deferred",
    "gateway": false,
    "mutates": false,
-   "surface_state": "unsurfaced",
+   "surface_state": "surfaced",
    "route_tested": false,
    "callable": false,
    "transport_proven": null,
-   "basis": "deferred: no committed test crosses this operation's public transport (MCP host / HTTP /tool / gateway serving) for success and refusal. Read-only lane-boundary projection. Recorded evidence \u2014 no console surface binding; direct in-process unit test (test_lane_capabilities.py) passes but does not cross the facade route or the coverage matrix, so route/callable stay unproven. Promotion is separately scoped transport work."
+   "basis": "deferred: no committed test crosses this operation's public transport (MCP host / HTTP /tool / gateway serving) for success and refusal. Read-only lane-boundary projection. Recorded evidence \u2014 console binding present (Live Governance step inspector, app/src/panels/govlive.js, renders the actor's live lane verdict; render gate panels/govlive_render_test.py cross-checks it); direct in-process unit test (test_lane_capabilities.py) passes but does not cross the facade route or the coverage matrix, so route/callable stay unproven. Promotion is separately scoped transport work."
   },
   {
    "facade": "workspace_workflow",
