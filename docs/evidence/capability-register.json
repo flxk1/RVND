@@ -2589,11 +2589,11 @@
    "status": "deferred",
    "gateway": false,
    "mutates": false,
-   "surface_state": "unsurfaced",
+   "surface_state": "surfaced",
    "route_tested": true,
-   "callable": false,
+   "callable": true,
    "transport_proven": null,
-   "basis": "deferred: no committed test crosses this operation's public transport (MCP host / HTTP /tool / gateway serving) for success and refusal. Recorded evidence \u2014 no console surface binding yet (UI panel is separately scoped); op-route test present. Promotion is separately scoped transport work."
+   "basis": "deferred: no committed test crosses this operation's public transport (MCP host / HTTP /tool / gateway serving) for success and refusal. Recorded evidence \u2014 console binding present (Live Governance drawer, app/src/panels/govlive.js, render gate panels/govlive_render_test.py in verify_completeness); op-route test present; in-process callability proven by the coverage smoke matrix. Promotion is separately scoped transport work."
   },
   {
    "facade": "workspace_workflow",
