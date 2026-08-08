@@ -2336,6 +2336,9 @@ def workspace_workflow(op: str, params: dict[str, Any] | None = None) -> dict[st
             {"op": "loop_graph", "required": ["folder_context"],
              "optional": ["catalogue_fingerprint"],
              "note": "read-only graph of interacting execution, oversight, drift, recovery and policy loops, grounded in the signed governance graph and latest drift baseline"},
+            {"op": "governance_live", "required": ["folder_context"],
+             "optional": ["chain_limit"], "mutates": False,
+             "note": "read-only live-governance board: sessions (derived from the signed log's admission events; admitted = unexpired + unrevoked), per-agent verdict/grade/escalation from lane_capabilities, run-lease serialization (one holder per folder+workflow) from the queue, and the last N chain entries (seq = replay index, prev_hash). Pure projection — no chain append, no lease acquire. Honest-subset: session kind, autonomy decay, iteration budget and per-agent breaker have no folder-readable source yet and are omitted, never faked"},
             {"op": "governance_lane_register", "required": ["folder_context", "lane_id", "agent", "max_grade", "action_classes", "approved_by", "rationale"],
              "optional": ["footprints", "use_cases", "connectors", "policy_fingerprint", "version"],
              "note": "approve a versioned governance lane on the signed chain; authority, autonomy, action, data, workspace, use-case, connector and policy scope are checked before live execution"},
@@ -2494,6 +2497,10 @@ def workspace_workflow(op: str, params: dict[str, Any] | None = None) -> dict[st
                 from .governance_graph import governance_graph_v05 as _gg5
                 return _gg5(p["folder_context"], log_root=_log_root())
             return _gg(p["folder_context"], log_root=_log_root())
+        if op == "governance_live":
+            from .governance_live import governance_live as _glive
+            return _glive(p["folder_context"], log_root=_log_root(),
+                          chain_limit=int(p.get("chain_limit", 20)))
         if op == "loop_graph":
             from .loop_graph import graph_of_loops as _gl
             return _gl(p["folder_context"], log_root=_log_root(),
