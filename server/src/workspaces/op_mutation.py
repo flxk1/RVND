@@ -42,7 +42,7 @@ _READ_OPS = frozenset({
     "party_list", "use_case_list", "get_event", "facts.form", "card.form",
     "card.list", "card.load", "draft_load", "threshold_get", "budget_cap_get",
     "status_get", "verify_bytes", "template_list", "model_capability",
-    "security_dashboard", "track_strip", "matrix_coverage",
+    "security_dashboard", "track_strip", "matrix_coverage", "governance_live",
 })
 
 # Explicit writes that would otherwise match a read leaf (belt-and-braces).
