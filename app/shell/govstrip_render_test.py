@@ -94,7 +94,7 @@ def main() -> int:
         for attempt in range(3):
             try:
                 r = subprocess.run(["node", str(HERE / "govstrip_render.mjs"), str(PORT), F],
-                                   capture_output=True, text=True, timeout=30)
+                                   capture_output=True, text=True, timeout=40)
                 out = (r.stdout + r.stderr).strip()
                 if "PASS" in r.stdout:
                     print(out)

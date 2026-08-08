@@ -11,7 +11,7 @@ const PORT = process.argv[2], F = process.argv[3];
 const html = await fetchComposedPage(PORT);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const fail = (m) => { console.log("FAIL: " + m); process.exit(1); };
-setTimeout(() => fail("watchdog: strip gate did not finish in 20s"), 20000).unref();
+setTimeout(() => fail("watchdog: strip gate did not finish in 30s"), 30000).unref();
 const dom = new JSDOM(html, {
   runScripts: "dangerously",
   beforeParse(window) {
@@ -66,6 +66,26 @@ async function main() {
   // ── read-only: no write controls inside the strip ──────────────────
   if (strip.querySelectorAll("button").length)
     fail("strip must carry no write controls — found <button> inside #govstrip");
+
+  // ── visibility contract: hidden disarms the poll; visible re-arms and
+  //    refreshes IMMEDIATELY (no stale-while-visible). Asserted behaviorally
+  //    via a tool-call counter — a hidden console must not tax the server
+  //    with governance_live replays, and a shown one must not show stale. ──
+  const origTool = window.tool;
+  let liveCalls = 0;
+  window.tool = (n, a) => { if (a && a.op === "governance_live") liveCalls++; return origTool(n, a); };
+  let vis = "visible";
+  Object.defineProperty(window.document, "visibilityState", { configurable: true, get: () => vis });
+  vis = "hidden"; window.document.dispatchEvent(new window.Event("visibilitychange"));
+  const atHide = liveCalls;
+  await sleep(5200);   // > one 4s interval tick
+  if (liveCalls !== atHide)
+    fail("visibility contract: strip polled governance_live " + (liveCalls - atHide) + "x while the document was hidden");
+  vis = "visible"; window.document.dispatchEvent(new window.Event("visibilitychange"));
+  await sleep(400);    // the re-show refresh must be immediate, not next-tick
+  if (liveCalls <= atHide)
+    fail("visibility contract: no immediate refresh on return to visibility — the lights could show stale while the user is looking");
+  window.tool = origTool;
 
   // ── click-expands to the full v2 drawer ────────────────────────────
   strip.click(); await sleep(200);
