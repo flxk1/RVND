@@ -41,6 +41,7 @@ ITEMS = [
     ("Live Audit Ticker (workspace_audit tail)", "shell/ticker_render_test.py"),
     ("Workflow board (run/enqueue/cancel/resume)", "panels/workflow_render_test.py"),
     ("Live Governance (sessions · run-lease serialization · per-agent verdict · one chain)", "panels/govlive_render_test.py"),
+    ("Integral governance strip (always-on lights · HOTL alarm · expands to drawer)", "shell/govstrip_render_test.py"),
     ("Contract execution (reviews/ingest/state/resolve)", "panels/contract_render_test.py"),
     ("Policy lock-mode WRITE (tighten direct / loosen governed)", "panels/policy_write_render_test.py"),
     ("Workspace workspace-creator (create + switch)", "shell/workspace_render_test.py"),
