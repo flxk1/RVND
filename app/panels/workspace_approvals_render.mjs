@@ -37,5 +37,9 @@ async function main() {
   if (!/any of \{[^}]*legal[^}]*\}/.test(t)) fail("role set not shown (no identities expected): " + t.slice(0, 200));
   if (!/contract sign-offs/i.test(t)) fail("named-signer reviews should coexist in the same inbox: " + t.slice(0, 200));
   console.log("PASS: §1.5 reservation approval renders beside contract reviews — role quorum meter (0 of 2), role set shown, no identities");
+  // Explicit success exit (fleet convention): the composed page now carries
+  // always-on chrome with a live refresh interval, so node's event loop never
+  // drains on its own — without this the gate PASSES and then hangs to timeout.
+  process.exit(0);
 }
 main().catch((e) => fail(String((e && e.stack) || e)));

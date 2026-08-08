@@ -12,14 +12,6 @@ const P_ADMITTED = process.argv[4], P_EXPIRED = process.argv[5], P_SUSPENDED = p
 const html = await fetchComposedPage(PORT);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const fail = (m) => { console.log("FAIL: " + m); process.exit(1); };
-const TOKEN = process.env.RVND_BRIDGE_TOKEN || "";
-async function op(name, body) {
-  const r = await fetch(`http://127.0.0.1:${PORT}/tool`, {
-    method: "POST", headers: { "content-type": "application/json", "x-rvnd-bridge": TOKEN },
-    body: JSON.stringify({ tool: name, args: body }),
-  });
-  return r.json();
-}
 const dom = new JSDOM(html, {
   runScripts: "dangerously",
   beforeParse(window) {
@@ -58,17 +50,36 @@ async function main() {
     }
   }
 
-  // Verdict honesty vs the source: the multiset of rendered admitted verdicts
-  // must match lane_capabilities for the seeded parties (no invented mapping).
+  // Verdict honesty vs the source: each admitted session's rendered verdict
+  // must equal the STRICTEST-WINS collapse of that agent's raw
+  // lane_capabilities projection — the op's own documented derivation
+  // (_VERDICT_RANK: a board must not under-report the constraint). The reads
+  // go through the page's OWN bridge (same auth + prefix logic) and an
+  // unreadable or verdict-less source is a hard FAIL — a cross-check that
+  // can silently skip is a fake-partial-green.
+  const RANK = { prohibited: 5, refused: 4, reserved: 3, human: 2, auto: 1, unfired: 0 };
+  const collect = (x, out) => {
+    if (Array.isArray(x)) x.forEach((v) => collect(v, out));
+    else if (x && typeof x === "object") {
+      for (const [k, v] of Object.entries(x)) {
+        if (k === "verdict" && typeof v === "string" && v in RANK) out.push(v);
+        else collect(v, out);
+      }
+    }
+    return out;
+  };
   const lcap = {};
   for (const p of [P_ADMITTED, P_SUSPENDED]) {
-    const r = await op("workspace_workflow", { op: "lane_capabilities", params: { folder_context: F, actor: p } });
-    lcap[p] = (r && (r.verdict || (r.capabilities && r.capabilities.verdict))) || null;
+    const r = await window.tool("workspace_workflow", { op: "lane_capabilities", params: { folder_context: F, actor: p } })
+      .catch((e) => fail("lane_capabilities unreadable for " + p + ": " + ((e && e.message) || e)));
+    const vs = collect(r, []);
+    if (!vs.length) fail("lane_capabilities for " + p + " carries no verdict cells — cannot cross-check: " + JSON.stringify(r).slice(0, 160));
+    lcap[p] = vs.reduce((a, b) => (RANK[a] >= RANK[b] ? a : b));
   }
   const rendered = sessions.filter((s) => s.dataset.admitted === "true").map((s) => s.dataset.verdict).sort();
-  const source = Object.values(lcap).filter(Boolean).sort();
-  if (source.length && JSON.stringify(rendered) !== JSON.stringify(source))
-    fail("rendered admitted verdicts " + JSON.stringify(rendered) + " != lane_capabilities " + JSON.stringify(source));
+  const source = Object.values(lcap).sort();
+  if (JSON.stringify(rendered) !== JSON.stringify(source))
+    fail("rendered admitted verdicts " + JSON.stringify(rendered) + " != strictest-wins lane_capabilities " + JSON.stringify(source));
   const escalations = [...root.querySelectorAll(".gl-escalation")];
   if (!escalations.length) fail("no .gl-escalation rendered — lane_capabilities escalation flag must surface");
 
