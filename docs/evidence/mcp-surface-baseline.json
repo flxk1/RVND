@@ -908,6 +908,9 @@
           "max_grade",
           "rationale"
         ],
+        "governance_live": [
+          "folder_context"
+        ],
         "governance_map": [],
         "governance_netlist": [
           "folder_context"

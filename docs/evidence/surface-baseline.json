@@ -90,6 +90,7 @@
   "workspace_workflow.federation_override",
   "workspace_workflow.governance_kg",
   "workspace_workflow.governance_lane_register",
+  "workspace_workflow.governance_live",
   "workspace_workflow.lane_capabilities",
   "workspace_workflow.loop_graph",
   "workspace_workflow.mark_done",
