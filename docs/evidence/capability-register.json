@@ -2573,6 +2573,18 @@
   },
   {
    "facade": "workspace_workflow",
+   "op": "reasoning_check",
+   "status": "deferred",
+   "gateway": false,
+   "mutates": true,
+   "surface_state": "unsurfaced",
+   "route_tested": true,
+   "callable": false,
+   "transport_proven": null,
+   "basis": "deferred: no committed test crosses this operation's public transport (MCP host / HTTP /tool / gateway serving) for success and refusal. Recorded evidence — no console surface binding yet (the Live Governance per-session consistency lamp is separately scoped); op-route test present (test_reasoning_integrity_tcons.py). The only write is the append to the session's own reasoning store — no chain append. Promotion is separately scoped transport work."
+  },
+  {
+   "facade": "workspace_workflow",
    "op": "governance_live",
    "status": "deferred",
    "gateway": false,
