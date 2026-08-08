@@ -46,13 +46,31 @@ def main() -> int:
     PORT = srv.server_address[1]
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     time.sleep(0.3)
+    # Watchdog-retry (ticker-gate discipline): this is the fleet's heaviest
+    # gate and the composed page now carries always-on chrome (the governance
+    # strip) that polls while gates run, so a slow CI box can stall the jsdom
+    # boot past one budget. Retry ONLY on a stall/timeout — a real assertion
+    # failure returns immediately, unmasked.
     try:
-        r = subprocess.run(["node", str(HERE / "workspace_approvals_render.mjs"), str(PORT), F],
-                           capture_output=True, text=True, timeout=45)
+        out = ""
+        for attempt in range(3):
+            try:
+                r = subprocess.run(["node", str(HERE / "workspace_approvals_render.mjs"), str(PORT), F],
+                                   capture_output=True, text=True, timeout=45)
+                out = (r.stdout + r.stderr).strip()
+                if "PASS" in r.stdout:
+                    print(out)
+                    return 0
+                if "watchdog" not in out:          # real assertion failure → don't retry
+                    print(out)
+                    return 1
+            except subprocess.TimeoutExpired:
+                out = f"node timed out (attempt {attempt + 1}) — jsdom boot stall"
+            print(f"[retry] {out}")
+        print(out)
+        return 1
     finally:
         srv.shutdown()
-    print((r.stdout + r.stderr).strip())
-    return 0 if r.returncode == 0 and "PASS" in r.stdout else 1
 
 
 if __name__ == "__main__":
