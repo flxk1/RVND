@@ -975,6 +975,9 @@
           "folder_context"
         ],
         "queue": [],
+        "reasoning_check": [
+          "session_id"
+        ],
         "renew_lease": [
           "run_id"
         ],
