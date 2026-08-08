@@ -1,6 +1,6 @@
 {
  "schema": "coverage-matrix-1",
- "obligations": 280,
+ "obligations": 281,
  "deferred_leaks": [],
  "rows": [
   {
@@ -1915,7 +1915,7 @@
    "channel": "mcp",
    "valid_ok": true,
    "invalid_ok": false,
-   "reason": "invalid not refused: {'folder_context': '<COVERAGE_WORKSPACE>/ws', 'nodes': [{'id': 'party:svc-bot', 'kind': 'agent', 'agent_uid': '919c97db"
+   "reason": "invalid not refused: {'folder_context': '<COVERAGE_WORKSPACE>/ws', 'nodes': [{'id': 'party:svc-bot', 'kind': 'agent', 'agent_uid': 'aeac47ce"
   },
   {
    "facade": "workspace_workflow",
@@ -1928,6 +1928,14 @@
   {
    "facade": "workspace_workflow",
    "op": "governance_lane_list",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "governance_live",
    "channel": "ui",
    "valid_ok": true,
    "invalid_ok": true,

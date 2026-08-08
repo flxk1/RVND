@@ -302,6 +302,18 @@
         "label": "Local data",
         "detail": "memory & mirrors — what is stored locally"
       }
+    },
+    {
+      "id": "govlive",
+      "entry": "govlive.js",
+      "title": "Live governance — sessions · leases · decay · one chain",
+      "surface": "drawer",
+      "access": "read",
+      "menu": {
+        "section": "record",
+        "label": "Live governance",
+        "detail": "live sessions/loops/on-the-fly · lease · decay · one signed chain"
+      }
     }
   ]
 }
