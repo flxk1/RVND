@@ -67,6 +67,29 @@ def licence_text(metadata: dict[str, Any]) -> str:
     return " | ".join(part.strip() for part in parts if part and part.strip())
 
 
+def subject_component_version() -> str:
+    """rvnd's own version — the subject the SBOM describes (metadata.component).
+
+    rvnd is the install root, skipped from the dependency component list, but it
+    is what the document is ABOUT; a CycloneDX SBOM without metadata.component
+    leaves a consumer unable to tell what it describes. Read from the single
+    version source (server/src/workspaces/_version.py) so it matches the release
+    tag and is immune to how a given pip report represents the install root.
+    """
+    version_file = (
+        Path(__file__).resolve().parent.parent
+        / "server" / "src" / "workspaces" / "_version.py"
+    )
+    try:
+        text = version_file.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise ArtifactError(f"cannot read rvnd version source: {exc}") from exc
+    match = re.search(r'__version__\s*=\s*["\']([^"\']+)["\']', text)
+    if not match:
+        raise ArtifactError(f"no __version__ in {version_file}")
+    return match.group(1)
+
+
 def sha256_for(item: dict[str, Any]) -> str:
     archive = item.get("download_info", {}).get("archive_info", {})
     hashes = archive.get("hashes") or {}
@@ -140,7 +163,8 @@ def components(report: dict[str, Any]) -> list[dict[str, str]]:
     return sorted(result, key=lambda entry: entry["name"])
 
 
-def write_artifacts(entries: list[dict[str, str]], platform: str, output: Path) -> None:
+def write_artifacts(entries: list[dict[str, str]], platform: str, output: Path,
+                    subject_version: str) -> None:
     output.mkdir(parents=True, exist_ok=True)
     lock_lines = [
         "# Generated complete resolution lock.",
@@ -162,7 +186,15 @@ def write_artifacts(entries: list[dict[str, str]], platform: str, output: Path) 
         "bomFormat": "CycloneDX",
         "specVersion": "1.6",
         "version": 1,
-        "metadata": {"properties": [{"name": "rvnd:platform", "value": platform}]},
+        "metadata": {
+            "component": {
+                "type": "application",
+                "name": "rvnd",
+                "version": subject_version,
+                "purl": f"pkg:pypi/rvnd@{subject_version}",
+            },
+            "properties": [{"name": "rvnd:platform", "value": platform}],
+        },
         "components": [
             {
                 "type": "library",
@@ -217,7 +249,8 @@ def main(argv: list[str] | None = None) -> int:
     try:
         report = json.loads(args.pip_report.read_text(encoding="utf-8"))
         entries = components(report)
-        write_artifacts(entries, args.platform, args.output_dir)
+        write_artifacts(entries, args.platform, args.output_dir,
+                        subject_component_version())
     except (OSError, json.JSONDecodeError, ArtifactError) as exc:
         print(f"release-dependency-artifacts: FAIL — {exc}", file=sys.stderr)
         return 1
