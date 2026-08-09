@@ -89,6 +89,12 @@ def seed_fixture() -> None:
         "description": "render-gate seed"}))
     ok("enqueue#1", S.workspace_workflow("enqueue", {"folder_context": F, "name": "operate", "enqueued_by": "seed"}))
     ok("take_next", S.workspace_workflow("take_next", {"worker_id": "worker-1", "lease_seconds": 120}))
+    # A routed role-quorum reservation (I4): the step inspector drills a real
+    # reserved step into its routed approvers / m-of-n quorum / competences.
+    ok("approval_request", S.workspace_workflow("approval_request", {
+        "folder_context": F, "request_id": "rq-quorum", "form": "four_eyes",
+        "quorum": 2, "competences": ["legal", "finance", "risk"],
+        "requester": P_ADMITTED, "now": int(time.time())}))
     # Invariant 5 at the SOURCE (contract 2026-08-08): serialization is BY
     # REFUSAL — the run plane refuses a second concurrent run for the same
     # (folder, workflow), so the queued-contender state cannot exist and the
