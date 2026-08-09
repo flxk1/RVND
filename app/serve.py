@@ -212,6 +212,8 @@ def make_handler(session_token: str):
                 return
             if self.path == "/whoami" or self.path.startswith("/whoami?"):
                 return self._whoami()
+            if self.path.startswith("/govlive/stream"):
+                return self._govlive_stream()
             return self._send(404, {"error": "not found"})
 
         def _whoami(self):
@@ -256,6 +258,111 @@ def make_handler(session_token: str):
                 "trust_mode": True, "principal": principal or None,
                 "party": party, "role": role,
                 "units": units_for_role(role) if party else []})
+
+        def _govlive_stream(self):
+            """Read-only chain-tail long-poll (SSE-framed) of the govlive board's
+            chain steps for one folder — the live step-stream (I2).
+
+            A stream is a DATA EGRESS, so it is gated by the SAME stack as
+            POST /tool — proxy-proof + session token + request principal — and
+            the read is routed through _facade_call("workspace_workflow",
+            governance_live). That means apply_principal_to_params refuses an
+            unresolved consumer fail-closed (folder-addressed read included), and
+            a sealed folder yields NO plaintext chain (governance_live replays a
+            removed events.jsonl → empty). No control verbs; the handler only
+            reads — never appends or mutates. The consumer polls with
+            ?since=<last seq>; the next cursor rides X-Govlive-Tip.
+            """
+            from urllib.parse import parse_qs
+            q = parse_qs(urlparse(self.path).query)
+            folder = (q.get("folder") or [""])[0].strip()
+            if not folder:
+                return self._send(400, {"error": "folder required"})
+            # Unconditional containment: the user's folder string is NEVER used
+            # as a filesystem path — only as a lookup key against the trusted
+            # registered-workspace registry. The TRUSTED path from the registry
+            # is what flows onward (`trusted`), so the tainted value never reaches
+            # path resolution. A stream is a data egress; serving registered
+            # workspaces only is the correct posture (and matches the deployed
+            # bind, which already forbids the unregistered opt-out). Layered
+            # input hygiene: a cheap string guard first (no Path() on raw input).
+            if ".." in folder.split("/"):
+                return self._send(400, {"error": "folder must not contain '..'"})
+            from workspaces.mcp_serving import _log_root
+            from workspaces.workspace_registry import list_known_workspaces
+            _lr = _log_root()
+            _known = list_known_workspaces(log_root=str(_lr) if _lr else None)
+            _want = _os.path.realpath(folder)
+            trusted = next((w.get("path") for w in _known
+                            if _os.path.realpath(w.get("path", "")) == _want), None)
+            if not trusted:
+                return self._send(403, {"error":
+                    "refused: not a registered workspace"})
+            try:
+                since = int((q.get("since") or ["-1"])[0])
+            except ValueError:
+                since = -1
+            try:
+                limit = max(1, min(500, int((q.get("limit") or ["100"])[0])))
+            except ValueError:
+                limit = 100
+            # Identical egress authorization to POST /tool.
+            if _principal_config()[0] and not _proxy_proof_valid(self.headers):
+                return self._send(403, {"error":
+                    "refused: missing or invalid proxy identity proof"})
+            if not hmac.compare_digest(
+                    self.headers.get("X-Workspaces-Token", ""), session_token):
+                return self._send(403, {"error":
+                    "refused: missing or invalid session token"})
+            resolved = _resolve_principal(
+                self.headers, {"params": {"folder_context": trusted}})
+            principal = party = None
+            if resolved is not None:
+                principal, party = resolved
+                if not principal:
+                    return self._send(403, {"error":
+                        "refused: trust mode is declared but the request carries"
+                        " no principal header"})
+            from workspaces.mcp_serving import (clear_request_principal,
+                                                set_request_principal)
+            if resolved is not None:
+                set_request_principal(principal, party)
+            try:
+                board = _facade_call(
+                    "workspace_workflow",
+                    {"op": "governance_live",
+                     "params": {"folder_context": trusted, "chain_limit": limit}})
+            finally:
+                if resolved is not None:
+                    clear_request_principal()
+            # Fail-closed: anything that is not the honest board (a refusal from
+            # the principal gate, or an error) streams ZERO bytes.
+            if not (isinstance(board, dict) and board.get("ok") is True
+                    and isinstance(board.get("chain"), list)):
+                return self._send(
+                    403, board if isinstance(board, dict) else {"error": "refused"})
+            # New entries since `since`, in arrival (seq) order — same entry shape
+            # as the board chain[] (reused verbatim → one-contract by construction).
+            fresh = sorted(
+                (e for e in board["chain"]
+                 if isinstance(e.get("seq"), int) and e["seq"] > since),
+                key=lambda e: e["seq"])
+            tip = fresh[-1]["seq"] if fresh else since
+            lines = []
+            for e in fresh:
+                lines.append("data: " + json.dumps(e, separators=(",", ":")))
+                lines.append("")
+            lines.append(": tip " + str(tip))
+            body = ("\n".join(lines) + "\n").encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "text/event-stream")
+            self.send_header("Cache-Control", "no-cache")
+            self.send_header("X-Govlive-Tip", str(tip))
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Connection", "close")
+            self.end_headers()
+            self.wfile.write(body)
+            return None
 
         def do_POST(self):
             if not self._guard():
@@ -382,6 +489,17 @@ def make_server(host="127.0.0.1", port=8799):
                 "RVND_BIND leaves loopback but no"
                 " WORKSPACE_PROXY_SHARED_SECRET is configured — refusing to"
                 " trust an unauthenticated proxy identity header")
+        if (os.environ.get("WORKSPACES_ALLOW_UNREGISTERED") or "").strip():
+            # A6 is the boundary that keeps every folder-addressed read (and the
+            # govlive step-stream egress) inside a registered workspace. The dev
+            # opt-out disables it, so a network-exposed bridge with it set would
+            # let any authenticated consumer read/stream an ARBITRARY folder.
+            # Refuse to start: a deployed bridge serves registered workspaces only.
+            raise SystemExit(
+                "RVND_BIND leaves loopback but WORKSPACES_ALLOW_UNREGISTERED is"
+                " set — that dev opt-out disables the A6 known-workspaces"
+                " allowlist. Unset it; a deployed bridge serves registered"
+                " workspaces only.")
         host = deployed
     token = _session_token()
     try:
