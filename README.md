@@ -315,6 +315,6 @@ under separate commercial terms from the copyright holder. See
 components keep their own licences; see [`LICENSES/`](LICENSES/) and
 [`REUSE.toml`](REUSE.toml).
 
-Commercial offerings — certified builds, white-label branding, and licensed
+Commercial offerings — signed builds, white-label branding, and licensed
 design and policy content — are separate optional products; see
 [`LICENSING.md`](LICENSING.md).
