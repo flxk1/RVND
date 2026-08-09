@@ -117,13 +117,15 @@ Patchbay.register("govlive", {
 
       // ── the one chain (replay order; hash is a digest of already-public
       // audit data and appears as the next entry's prev_hash — exposed so the
-      // render gate can verify the linkage in the DOM) ──────────────────────
-      h += '<div style="font-size:9.5px;color:var(--txt-dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">one signed chain — newest first</div>';
+      // render gate can verify the linkage in the DOM). Each node drills into
+      // the step inspector (I4) — activation is a read, never a write. ──────
+      h += '<div style="font-size:9.5px;color:var(--txt-dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">one signed chain — newest first · activate a step to inspect it</div>';
       h += '<div class="gl-chain" style="border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:9px">';
       (b.chain || []).forEach((n) => {
-        h += '<div class="gl-node" data-seq="' + escA(n.seq) + '" data-actor="' + escA(n.actor || "") + '" data-event="' + escA(n.event || "") + '"' +
+        h += '<div class="gl-node" role="button" tabindex="0" data-seq="' + escA(n.seq) + '" data-actor="' + escA(n.actor || "") + '" data-event="' + escA(n.event || "") + '" data-extra="' + escA(n.extra || "") + '"' +
           (n.hash ? ' data-hash="' + escA(n.hash) + '"' : "") + (n.prev_hash ? ' data-prev="' + escA(n.prev_hash) + '"' : "") +
-          ' style="display:flex;gap:8px;align-items:center;padding:4px 9px;border-top:1px solid var(--line);font-size:10px">' +
+          ' aria-label="inspect step ' + escA(n.seq) + ' — ' + escA((n.actor || "") + " " + (n.event || "")) + '"' +
+          ' style="display:flex;gap:8px;align-items:center;padding:4px 9px;border-top:1px solid var(--line);font-size:10px;cursor:pointer">' +
           '<span style="' + MONO + ';color:' + SYS + '">#' + esc(n.seq) + "</span>" +
           '<span style="' + MONO + '">' + esc(n.actor || "") + "</span>" +
           '<span style="color:var(--txt)">' + esc(n.event || "") + "</span>" +
@@ -133,9 +135,138 @@ Patchbay.register("govlive", {
       if (!(b.chain || []).length) h += '<div style="padding:6px 9px;font-size:10px;color:var(--txt-dim)">no entries</div>';
       h += "</div>";
 
+      h += '<div class="gl-inspector-slot"></div>';
       h += '<div class="ro" style="font-size:10px;color:var(--txt-dim);margin-top:8px">Read-only. Admission, lanes and leases are the server’s protections — this board can only show them. Fields with no honest source (kind, decay, per-agent breaker) are not drawn.</div>';
       out.innerHTML = h;
+      const chainEl = out.querySelector(".gl-chain");
+      if (chainEl) {
+        const drill = (nd) => inspect(nd, out.querySelector(".gl-inspector-slot"));
+        chainEl.addEventListener("click", (ev) => { const nd = ev.target.closest(".gl-node"); if (nd) drill(nd.dataset); });
+        chainEl.addEventListener("keydown", (ev) => {
+          if (ev.key !== "Enter" && ev.key !== " ") return;
+          const nd = ev.target.closest(".gl-node"); if (!nd) return;
+          ev.preventDefault(); drill(nd.dataset);
+        });
+      }
     };
+
+    // ── Step inspector (I4) — read-only drill-down over data that already
+    // exists: the node's own signed-chain fields, the live verify_chain
+    // status, the actor's live lane verdict (strictest-wins over the raw
+    // lane_capabilities cells — the op's own derivation), and the approval /
+    // decision context. Disclosure principle: every section renders exactly
+    // what the governed read discloses — a refused read renders the server's
+    // words, and the inspector never adds a label (e.g. "sealed") the server
+    // did not state. Inspection, not action: no write controls. ─────────────
+    const RANK = { prohibited: 5, refused: 4, reserved: 3, human: 2, auto: 1, unfired: 0 };
+    const collectVerdicts = (x, out2) => {
+      if (Array.isArray(x)) x.forEach((v) => collectVerdicts(v, out2));
+      else if (x && typeof x === "object") {
+        for (const k of Object.keys(x)) {
+          if (k === "verdict" && typeof x[k] === "string" && x[k] in RANK) out2.push(x[k]);
+          else collectVerdicts(x[k], out2);
+        }
+      }
+      return out2;
+    };
+    const sect = (title, body) => '<div style="border-top:1px solid var(--line);padding:6px 0"><div style="font-size:9px;color:var(--txt-dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">' + title + "</div>" + body + "</div>";
+    const said = (e) => esc((e && e.message) || String(e));
+
+    async function inspect(d, slot) {
+      if (!slot) return;
+      let h = '<div class="gl-inspector" data-seq="' + escA(d.seq) + '" style="border:1px solid ' + SYS + '55;border-radius:8px;padding:8px 10px;margin-bottom:9px;background:var(--panel-2)">';
+      h += '<div style="display:flex;align-items:center;gap:7px"><b style="' + MONO + ';font-size:11px;color:' + SYS + '">step #' + esc(d.seq) + "</b>" +
+        '<span style="' + MONO + '">' + esc(d.actor || "") + '</span><span>' + esc(d.event || "") + '</span><span style="flex:1"></span>' +
+        '<span class="gl-inspector-x" role="button" tabindex="0" aria-label="Close inspector" style="cursor:pointer;color:var(--txt-dim)">✕</span></div>';
+      if (d.extra) h += '<div style="font-size:10px;color:var(--txt-dim);margin-top:3px">' + esc(d.extra) + "</div>";
+      h += sect("hash linkage", '<span style="' + MONO + ';word-break:break-all">' + esc(d.hash || "(none)") + '</span><br><span style="' + MONO + ';color:var(--txt-dim);word-break:break-all">← prev ' + esc(d.prev || "(none)") + "</span>");
+      slot.innerHTML = h + '<div class="gl-inspector-live" style="font-size:10px;color:var(--txt-dim)">reading the record…</div></div>';
+      const x = slot.querySelector(".gl-inspector-x");
+      const closeIt = () => { slot.innerHTML = ""; };
+      x.addEventListener("click", closeIt);
+      x.addEventListener("keydown", (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); closeIt(); } });
+
+      let live = "";
+      let rec = null;
+      // The step's FULL signed record, from the audit surface. Ordering is
+      // load-bearing: the AUDIT SURFACE RECORDS READS (verify_chain appends a
+      // verify_chain_read event — the audit auditing its own reading), so the
+      // log-size anchor and the tail must be fetched BEFORE any appending
+      // read. The board is the anchor (board reads append nothing): its head
+      // seq gives the log size the tail window is measured against. seq is
+      // the absolute replay index; row = seq − (total − N). The record row
+      // must agree with the board's node — on any misalignment the inspector
+      // says WHAT misaligned and binds nothing (never a guessed binding).
+      try {
+        const bh = await tool("workspace_workflow", { op: "governance_live", params: { folder_context: ctx.workspace.path, chain_limit: 1 } });
+        const total = bh && bh.chain && bh.chain.length ? Number(bh.chain[0].seq) + 1 : null;
+        const t = await tool("workspace_audit", { op: "tail", params: { folder_context: ctx.workspace.path, limit: 40 } });
+        const evs = (t && t.events) || [];
+        if (total != null && evs.length) {
+          const idx = Number(d.seq) - (total - evs.length);
+          const cand = idx >= 0 && idx < evs.length ? evs[idx] : null;
+          if (cand && cand.actor === (d.actor || "")) {
+            rec = cand;
+            live += sect("the step's signed record",
+              '<div class="gl-inspector-record" data-pair="' + escA(rec.pair_id || "") + '" style="font-size:10px;' + (rec.signed ? "" : "color:" + VC.refused) + '">' +
+              (rec.signed ? "✓ signed" : "⚠ UNSIGNED") + " · " + esc(rec.kind || rec.event || "") +
+              (rec.pair_id ? " · pair " + esc(rec.pair_id) : "") +
+              (rec.verdict ? " · verdict " + esc(rec.verdict) : "") +
+              (rec.channel ? ' · <span style="color:var(--txt-dim)">' + esc(rec.channel) + "</span>" : "") +
+              (rec.ts ? ' · <span style="color:var(--txt-dim)">' + esc(String(rec.ts).slice(0, 19)) + "</span>" : "") +
+              (rec.audit_id ? '<br><span style="' + MONO + ';color:var(--txt-dim)">audit ' + esc(rec.audit_id) + "</span>" : "") + "</div>");
+          } else if (cand) {
+            live += sect("the step's signed record", '<span style="color:var(--txt-dim)">record row does not align with the board’s replay index (row ' + esc(idx) + " of " + esc(evs.length) + " is " + esc(cand.actor || "?") + "/" + esc(cand.kind || cand.event || "?") + ", the step is " + esc(d.actor || "?") + ") — showing nothing rather than a guess</span>");
+          } else {
+            live += sect("the step's signed record", '<span style="color:var(--txt-dim)">outside the readable tail window (' + esc(evs.length) + " of " + esc(total) + " events)</span>");
+          }
+        }
+      } catch (e) { live += sect("the step's signed record", '<span style="color:var(--txt-dim)">not readable here — ' + said(e) + "</span>"); }
+      // Live chain verification — the record's own tamper check, run now.
+      // (An appending read: it lands AFTER the tail window above, by design.)
+      try {
+        const vc = await tool("workspace_audit", { op: "verify_chain", params: { folder_context: ctx.workspace.path } });
+        live += sect("record verification (live)", vc && vc.ok
+          ? '<span class="gl-verify" data-ok="true" style="color:#4fbe8b">✓ intact — ' + esc(vc.total_events || 0) + " signed events, no broken links</span>"
+          : '<span class="gl-verify" data-ok="false" style="color:' + VC.refused + '">✗ verification failed — broken links ' + esc(((vc || {}).broken_links || []).length) + ", signature failures " + esc(((vc || {}).signature_failures || []).length) + "</span>");
+      } catch (e) { live += sect("record verification (live)", '<span class="gl-verify" data-ok="unavailable" style="color:var(--txt-dim)">not readable here — ' + said(e) + "</span>"); }
+      // The actor's live lane verdict + why (strictest-wins, the op's rule).
+      try {
+        const lc = await tool("workspace_workflow", { op: "lane_capabilities", params: { folder_context: ctx.workspace.path, actor: d.actor || "" } });
+        const vs = collectVerdicts(lc, []);
+        if (vs.length) {
+          const strict = vs.reduce((a2, b2) => (RANK[a2] >= RANK[b2] ? a2 : b2));
+          live += sect("actor's live lane verdict", '<span class="gl-inspector-verdict" data-verdict="' + escA(strict) + '" style="color:' + (VC[strict] || "var(--txt-dim)") + '">' + esc(strict) + "</span>" +
+            '<span style="color:var(--txt-dim)"> — strictest of ' + esc(vs.length) + " boundary cell(s); the tightest constraint the agent faces</span>");
+        } else live += sect("actor's live lane verdict", '<span style="color:var(--txt-dim)">no lane cells surfaced for this actor</span>');
+      } catch (e) { live += sect("actor's live lane verdict", '<span style="color:var(--txt-dim)">not readable here — ' + said(e) + "</span>"); }
+      // Reservation / approval context. Bound = the item's request id equals
+      // the signed record's OWN pair reference (pair_id "approval:<id>") —
+      // binding comes from the record, never from text-matching a summary;
+      // anything else renders honestly as folder-scope.
+      try {
+        const al = await tool("workspace_workflow", { op: "approval_list", params: { folder_context: ctx.workspace.path, now: Math.floor(Date.now() / 1000) } });
+        if (al && al.error) throw new Error(al.error);
+        const items = (al && (al.approvals || al.items || al.rows)) || [];
+        const pairRef = rec && typeof rec.pair_id === "string" && rec.pair_id.indexOf("approval:") === 0
+          ? rec.pair_id.slice("approval:".length) : null;
+        const row = (a) => {
+          const needed = a.needed || a.quorum || 0, got = ((a.approvers) || []).length;
+          return '<div class="gl-inspector-approval" data-request="' + escA(a.request_id || "") + '" data-quorum="' + escA(needed) + '" style="font-size:10px;margin-top:2px">' +
+            '<b>' + esc(a.request_id || "approval") + "</b> · signed " + esc(got) + " of " + esc(needed) +
+            (((a.competences) || []).length ? ' · any of {' + esc(a.competences.join(", ")) + "}" : "") +
+            (a.requester ? ' <span style="color:var(--txt-dim)">· requested by ' + esc(a.requester) + "</span>" : "") + "</div>";
+        };
+        const bound = items.filter((a) => pairRef && a.request_id === pairRef);
+        const rest = items.filter((a) => !bound.includes(a));
+        if (bound.length) live += sect("this step's reservation — routed approval", bound.map(row).join(""));
+        if (rest.length) live += sect(bound.length ? "other open approvals in this folder" : "open approvals in this folder (this step names none)", rest.slice(0, 3).map(row).join(""));
+        if (!items.length) live += sect("reservation / approvals", '<span style="color:var(--txt-dim)">none open in this folder</span>');
+      } catch (e) { live += sect("reservation / approvals", '<span style="color:var(--txt-dim)">not readable here — ' + said(e) + "</span>"); }
+      live += '<div style="font-size:9.5px;color:var(--txt-dim);border-top:1px solid var(--line);padding-top:5px">Inspection, not action — acting on a step goes through the governed surfaces, never this monitor.</div>';
+      const liveEl = slot.querySelector(".gl-inspector-live");
+      if (liveEl) liveEl.innerHTML = live;
+    }
 
     await load();
   },
