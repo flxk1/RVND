@@ -33,14 +33,10 @@ async function ready(window) {
   if (!window._ready) fail("the widget did not finish booting");
 }
 
-async function bridge(tool, args) {
-  const r = await fetch(`http://127.0.0.1:${PORT}/tool`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json",
-               "X-Workspaces-Token": process.env.RVND_BRIDGE_TOKEN || "" },
-    body: JSON.stringify({ tool, args }) });
-  return r.json();
-}
+// Server reads go through the page's OWN bridge (window.tool) — same auth +
+// prefix logic as the app, and it throws loudly on failure. No gate carries a
+// private /tool fetch: a private bridge with a silent failure mode is how a
+// cross-check falls asleep (fleet rule, test_gate_fleet_discipline).
 
 async function main() {
   // 1 — a valid token renders exactly the bound decision
@@ -62,7 +58,7 @@ async function main() {
   for (let i = 0; i < 50; i++) { await sleep(80); text = D.getElementById("card").textContent; if (/Recorded, signed/.test(text)) break; }
   if (!/Recorded, signed/.test(text)) fail("approve did not record — got: " + text.slice(0, 300));
   if (!/Erase everything now/.test(text)) fail("the outcome does not state the recorded choice");
-  const pending = await bridge("workspace_dispatch", { op: "decision_pending", params: { folder_context: F } });
+  const pending = await window.tool("workspace_dispatch", { op: "decision_pending", params: { folder_context: F } });
   if ((pending.pending || []).some((p) => p.query === Q.bound)) fail("the decision is still pending on the server after the recorded approval");
 
   // 3 — an invalid token renders a refusal, never a list

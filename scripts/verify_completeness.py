@@ -85,15 +85,16 @@ ITEMS = [
 ]
 
 
-def run_gate(test: str) -> tuple[bool, str]:
-    p = APP / test
-    if not p.exists():
-        return False, "MISSING TEST FILE"
+def _run_gate_once(p) -> tuple[bool, str, bool]:
+    """One gate run → (passed, summary line, stall). A stall is a hang-shaped
+    outcome (harness timeout, in-gate watchdog, jsdom boot stall) — the only
+    class the fleet runner may retry. A real assertion failure is never one."""
     try:
         r = subprocess.run([sys.executable, str(p)], capture_output=True, text=True, timeout=90)
     except subprocess.TimeoutExpired:
-        return False, "timed out"
-    lines = [ln.strip() for ln in (r.stdout + r.stderr).splitlines() if ln.strip()]
+        return False, "timed out", True
+    out = r.stdout + r.stderr
+    lines = [ln.strip() for ln in out.splitlines() if ln.strip()]
     line = ""
     for ln in lines:
         if "PASS:" in ln or "FAIL:" in ln:
@@ -101,7 +102,25 @@ def run_gate(test: str) -> tuple[bool, str]:
             break
     if r.returncode != 0 and not line:
         line = lines[-1] if lines else f"exited {r.returncode} without output"
-    return (r.returncode == 0 and "PASS" in r.stdout), line[:90]
+    passed = r.returncode == 0 and "PASS" in r.stdout
+    stall = (not passed) and any(k in out for k in ("watchdog", "timed out", "boot stall"))
+    return passed, line[:90], stall
+
+
+def run_gate(test: str) -> tuple[bool, str]:
+    p = APP / test
+    if not p.exists():
+        return False, "MISSING TEST FILE"
+    # Fleet-level stall-retry: one retry, ONLY for hang-shaped outcomes, and
+    # always visibly annotated — a retried pass must never read as a clean
+    # first-try pass, and a real assertion failure returns immediately. This
+    # is the shared layer for all 68 gates; per-runner retry loops stay
+    # optional extra armor for the heaviest ones.
+    passed, line, stall = _run_gate_once(p)
+    if passed or not stall:
+        return passed, line
+    passed, line, _ = _run_gate_once(p)
+    return passed, ("[stall-retry] " + line)[:90]
 
 
 def main() -> int:
