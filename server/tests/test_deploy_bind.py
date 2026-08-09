@@ -88,6 +88,9 @@ def test_deployed_guard_same_origin_and_principal_with_proof(env):  # D4
     env.setenv("RVND_BIND", "0.0.0.0")
     env.setenv("WORKSPACE_PRINCIPAL_HEADER", "X-Auth-Request-Email")
     env.setenv("WORKSPACE_PROXY_SHARED_SECRET", "deployment-proof")
+    # A deployed bridge serves registered workspaces only — clear the suite-wide
+    # dev opt-out (D5 pins that a deployed bind refuses to start with it set).
+    env.delenv("WORKSPACES_ALLOW_UNREGISTERED", raising=False)
     srv = serve.make_server(port=0)
     port = srv.server_address[1]
     threading.Thread(target=srv.serve_forever, daemon=True).start()
@@ -112,3 +115,16 @@ def test_deployed_guard_same_origin_and_principal_with_proof(env):  # D4
         assert status == 200
     finally:
         srv.shutdown()
+
+
+def test_deployed_refuses_allow_unregistered(env):               # D5
+    # A network-exposed bridge must not run with the A6 allowlist disabled: the
+    # dev opt-out would let any authenticated consumer read/stream an arbitrary
+    # folder. Deployed bind + full trust proof + WORKSPACES_ALLOW_UNREGISTERED
+    # → refuse to start.
+    env.setenv("RVND_BIND", "0.0.0.0")
+    env.setenv("WORKSPACE_PRINCIPAL_HEADER", "X-Auth-Request-Email")
+    env.setenv("WORKSPACE_PROXY_SHARED_SECRET", "deployment-proof")
+    env.setenv("WORKSPACES_ALLOW_UNREGISTERED", "1")
+    with pytest.raises(SystemExit, match="ALLOW_UNREGISTERED"):
+        serve.make_server(port=0)
