@@ -31,6 +31,28 @@ const srlive = () => (D.getElementById("srlive") || {}).textContent || "";
 // The bring-in submits announce their own text and never swap the panel's
 // nodes, so the announce alone proves a write completed before the next one.
 async function waitAnnounce(re, label) { let t = ""; for (let i = 0; i < 100; i++) { await sleep(80); t = srlive(); if (re.test(t)) return t; } fail(label + " — announce: " + t.slice(0, 200)); }
+
+// Completion of a URL ingest is asserted on the SERVER LEDGER, never the
+// announce region: the announce is a shared single-slot live region, so any
+// later announce overwrites it between polls — exactly how this gate flaked
+// on CI ("ingested — 2 pair(s), signed" displaced "URL fetched, signed"). The
+// ledger row is durable single-writer truth; the announce text rides along
+// only as evidence in the failure message. A terminal non-success state stops
+// the poll early and fails loud — a genuinely failed ingest can NEVER pass
+// this helper (the negative probe below proves it). Siblings that poll
+// waitAnnounce for completion should adopt this shape if they ever flake.
+async function waitLedgerRow(url, wantState, budgetMs, label) {
+  const t0 = Date.now();
+  let last = null;
+  while (Date.now() - t0 < budgetMs) {
+    const led = await call("workspace_ingest", "list_urls", {});
+    last = ((led && led.urls) || []).find((u) => u.url === url) || null;
+    if (last && last.state === wantState) return last;
+    if (last && /error|failed|refused|denied/.test(String(last.state || ""))) break;
+    await sleep(200);
+  }
+  fail(label + " — ledger row: " + JSON.stringify(last).slice(0, 160) + " · announce: " + srlive().slice(0, 120));
+}
 async function main() {
   for (let i = 0; i < 80 && !window._ready; i++) await sleep(25);
   if (!window._ready) fail("patchbay did not boot");
@@ -65,15 +87,26 @@ async function main() {
   let led = await call("workspace_ingest", "list_urls", {});
   if (((led && led.urls) || []).some((u) => u.url === URL_INGEST)) fail("a declined confirm still landed a URL ledger row");
 
-  // accepted fetch: signed announce + a fetched ledger row
+  // accepted fetch: completion bound to the ledger row (structured signal),
+  // signed-ness bound to the row's recorded pair ids.
   urlConfirms = [];
   window.confirm = (m) => { urlConfirms.push(String(m || "")); return true; };
   click("ingurlbtn");
-  await waitAnnounce(/URL fetched, signed/, "URL ingest did not complete");
+  const row = await waitLedgerRow(URL_INGEST, "fetched", 12000, "URL ingest did not complete");
   if (urlConfirms.length !== 1) fail("accepted URL fetch must confirm exactly once — got " + urlConfirms.length);
+  if (!((row.pair_ids || []).length)) fail("fetched URL row carries no recorded pair ids — fetched but unsigned? " + JSON.stringify(row).slice(0, 160));
+
+  // NEGATIVE PROBE — a genuinely failed ingest must still FAIL: submit a URL
+  // whose fetch cannot succeed (connection refused instantly) and assert the
+  // ledger NEVER reports it fetched. A completion check that cannot fail is
+  // not a check; this proves the helper's failure direction stays live.
+  const URL_DEAD = "http://public.test:1/unreachable.html";
+  window.confirm = () => true;
+  set("ingUrl", URL_DEAD);
+  click("ingurlbtn"); await sleep(1500);
   led = await call("workspace_ingest", "list_urls", {});
-  const row = ((led && led.urls) || []).find((u) => u.url === URL_INGEST);
-  if (!row || row.state !== "fetched") fail("URL ledger row missing or not fetched: " + JSON.stringify(row));
+  const dead = ((led && led.urls) || []).find((u) => u.url === URL_DEAD);
+  if (dead && dead.state === "fetched") fail("negative probe: an unreachable URL reported state=fetched — the completion signal can false-green");
 
   // skill ingest round-trip from the textarea — signed, id announced
   set("ingSkill", [
