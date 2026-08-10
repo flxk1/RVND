@@ -12,7 +12,8 @@ a missing feature.
 ## Why there is no time-based retention job
 
 A naive "purge everything older than N days" scheduler is the wrong instrument
-for this system, and adding one would actively break its core guarantee:
+for this system, and adding one would actively break the tamper-evidence the
+whole record rests on:
 
 - The audit chain is append-only by design — *"checks (chain) always run over
   the whole log; tampering does not expire"* (`incidents.py`). Deleting old
