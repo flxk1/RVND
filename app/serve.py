@@ -80,6 +80,13 @@ def _principal_config():
     return (h or None), (g or None)
 
 
+# Stable public contract version for the read-only govlive board API (I3).
+# Rides the X-Govlive-Contract response header — kept OUT of the body so the
+# body stays the same board dict the MCP governance_live op returns (one
+# contract, no privileged view). Bump only on a breaking board-shape change.
+GOVLIVE_CONTRACT_VERSION = "1"
+
+
 def _proxy_proof_config():
     """Return the configured proxy proof header and shared secret.
 
@@ -214,6 +221,8 @@ def make_handler(session_token: str):
                 return self._whoami()
             if self.path.startswith("/govlive/stream"):
                 return self._govlive_stream()
+            if self.path.startswith("/govlive/board"):
+                return self._govlive_board()
             return self._send(404, {"error": "not found"})
 
         def _whoami(self):
@@ -259,35 +268,29 @@ def make_handler(session_token: str):
                 "party": party, "role": role,
                 "units": units_for_role(role) if party else []})
 
-        def _govlive_stream(self):
-            """Read-only chain-tail long-poll (SSE-framed) of the govlive board's
-            chain steps for one folder — the live step-stream (I2).
+        def _govlive_read(self, q):
+            """Shared read gate for BOTH govlive egress surfaces — the I2 stream
+            and the I3 board API. One gate, never two that could drift.
 
-            A stream is a DATA EGRESS, so it is gated by the SAME stack as
-            POST /tool — proxy-proof + session token + request principal — and
-            the read is routed through _facade_call("workspace_workflow",
-            governance_live). That means apply_principal_to_params refuses an
-            unresolved consumer fail-closed (folder-addressed read included), and
-            a sealed folder yields NO plaintext chain (governance_live replays a
-            removed events.jsonl → empty). No control verbs; the handler only
-            reads — never appends or mutates. The consumer polls with
-            ?since=<last seq>; the next cursor rides X-Govlive-Tip.
-            """
-            from urllib.parse import parse_qs
-            q = parse_qs(urlparse(self.path).query)
+            folder -> registered-workspace containment (the user's string is
+            ONLY a lookup key against the trusted registry; the TRUSTED registry
+            path flows onward, so the tainted value never reaches path
+            resolution) -> the IDENTICAL POST /tool authorization (proxy-proof +
+            session token + request principal, apply_principal_to_params refuses
+            an unresolved consumer fail-closed) -> _facade_call(governance_live).
+            A sealed folder yields NO plaintext chain (governance_live replays a
+            removed events.jsonl -> empty). Read-only: never appends or mutates.
+
+            Returns the honest board dict, or None after sending a fail-closed
+            error response (the caller must `return None` on None)."""
             folder = (q.get("folder") or [""])[0].strip()
             if not folder:
-                return self._send(400, {"error": "folder required"})
-            # Unconditional containment: the user's folder string is NEVER used
-            # as a filesystem path — only as a lookup key against the trusted
-            # registered-workspace registry. The TRUSTED path from the registry
-            # is what flows onward (`trusted`), so the tainted value never reaches
-            # path resolution. A stream is a data egress; serving registered
-            # workspaces only is the correct posture (and matches the deployed
-            # bind, which already forbids the unregistered opt-out). Layered
-            # input hygiene: a cheap string guard first (no Path() on raw input).
+                self._send(400, {"error": "folder required"})
+                return None
+            # Cheap string guard first (no Path() on raw input); containment below.
             if ".." in folder.split("/"):
-                return self._send(400, {"error": "folder must not contain '..'"})
+                self._send(400, {"error": "folder must not contain '..'"})
+                return None
             from workspaces.mcp_serving import _log_root
             from workspaces.workspace_registry import list_known_workspaces
             _lr = _log_root()
@@ -296,33 +299,32 @@ def make_handler(session_token: str):
             trusted = next((w.get("path") for w in _known
                             if _os.path.realpath(w.get("path", "")) == _want), None)
             if not trusted:
-                return self._send(403, {"error":
-                    "refused: not a registered workspace"})
-            try:
-                since = int((q.get("since") or ["-1"])[0])
-            except ValueError:
-                since = -1
+                self._send(403, {"error": "refused: not a registered workspace"})
+                return None
             try:
                 limit = max(1, min(500, int((q.get("limit") or ["100"])[0])))
             except ValueError:
                 limit = 100
             # Identical egress authorization to POST /tool.
             if _principal_config()[0] and not _proxy_proof_valid(self.headers):
-                return self._send(403, {"error":
-                    "refused: missing or invalid proxy identity proof"})
+                self._send(403, {"error":
+                                 "refused: missing or invalid proxy identity proof"})
+                return None
             if not hmac.compare_digest(
                     self.headers.get("X-Workspaces-Token", ""), session_token):
-                return self._send(403, {"error":
-                    "refused: missing or invalid session token"})
+                self._send(403, {"error":
+                                 "refused: missing or invalid session token"})
+                return None
             resolved = _resolve_principal(
                 self.headers, {"params": {"folder_context": trusted}})
             principal = party = None
             if resolved is not None:
                 principal, party = resolved
                 if not principal:
-                    return self._send(403, {"error":
-                        "refused: trust mode is declared but the request carries"
-                        " no principal header"})
+                    self._send(403, {"error":
+                                     "refused: trust mode is declared but the"
+                                     " request carries no principal header"})
+                    return None
             from workspaces.mcp_serving import (clear_request_principal,
                                                 set_request_principal)
             if resolved is not None:
@@ -336,13 +338,30 @@ def make_handler(session_token: str):
                 if resolved is not None:
                     clear_request_principal()
             # Fail-closed: anything that is not the honest board (a refusal from
-            # the principal gate, or an error) streams ZERO bytes.
+            # the principal gate, or an error) is refused with ZERO board data.
             if not (isinstance(board, dict) and board.get("ok") is True
                     and isinstance(board.get("chain"), list)):
-                return self._send(
-                    403, board if isinstance(board, dict) else {"error": "refused"})
+                self._send(403, board if isinstance(board, dict)
+                           else {"error": "refused"})
+                return None
+            return board
+
+        def _govlive_stream(self):
+            """Read-only chain-tail long-poll (SSE-framed) of the govlive board's
+            chain steps for one folder — the live step-stream (I2). Shares the
+            _govlive_read gate; the consumer polls with ?since=<last seq> and the
+            next cursor rides X-Govlive-Tip. No control verbs; read only."""
+            from urllib.parse import parse_qs
+            q = parse_qs(urlparse(self.path).query)
+            board = self._govlive_read(q)
+            if board is None:
+                return None
+            try:
+                since = int((q.get("since") or ["-1"])[0])
+            except ValueError:
+                since = -1
             # New entries since `since`, in arrival (seq) order — same entry shape
-            # as the board chain[] (reused verbatim → one-contract by construction).
+            # as the board chain[] (reused verbatim -> one-contract by construction).
             fresh = sorted(
                 (e for e in board["chain"]
                  if isinstance(e.get("seq"), int) and e["seq"] > since),
@@ -358,6 +377,34 @@ def make_handler(session_token: str):
             self.send_header("Content-Type", "text/event-stream")
             self.send_header("Cache-Control", "no-cache")
             self.send_header("X-Govlive-Tip", str(tip))
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Connection", "close")
+            self.end_headers()
+            self.wfile.write(body)
+            return None
+
+        def _govlive_board(self):
+            """Read-only egress-governed board API (I3): the §1 governance_live
+            board published as a stable, versioned HTTP/JSON contract.
+
+            GET /govlive/board?folder=<registered> returns the board dict — the
+            SAME dict the MCP governance_live op returns and the panel renders
+            (one contract, no privileged view). The contract version rides the
+            X-Govlive-Contract header, kept OUT of the body so the body stays
+            identical to the MCP board. Same _govlive_read gate as the stream:
+            unauthorized / unregistered / sealed -> refused with ZERO board data.
+            Read-only: no control verbs, and there is no POST route to this path
+            (a mutation attempt -> 404), so the API cannot change governance."""
+            from urllib.parse import parse_qs
+            q = parse_qs(urlparse(self.path).query)
+            board = self._govlive_read(q)
+            if board is None:
+                return None
+            body = json.dumps(board, separators=(",", ":")).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Cache-Control", "no-cache")
+            self.send_header("X-Govlive-Contract", GOVLIVE_CONTRACT_VERSION)
             self.send_header("Content-Length", str(len(body)))
             self.send_header("Connection", "close")
             self.end_headers()
