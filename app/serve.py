@@ -86,6 +86,15 @@ def _principal_config():
 # contract, no privileged view). Bump only on a breaking board-shape change.
 GOVLIVE_CONTRACT_VERSION = "1"
 
+# The ONLY facade ops the govlive act route (I5) may dispatch. The monitor
+# hands an interaction intent to the GATED governance surface — it is never a
+# general write proxy, so this is a closed allowlist, not a filter: an op not
+# named here is refused before any dispatch. `approval_decide` is the reserved/
+# red-step CLEAR path — the vote is recorded on the signed chain and whether it
+# COUNTS is decided by the competence-matched quorum (resolve_approval), the
+# same real gate T-own proves. Add an op here only with a test that exercises it.
+_GOVLIVE_ACT_OPS = frozenset({"approval_decide"})
+
 
 def _proxy_proof_config():
     """Return the configured proxy proof header and shared secret.
@@ -268,22 +277,23 @@ def make_handler(session_token: str):
                 "party": party, "role": role,
                 "units": units_for_role(role) if party else []})
 
-        def _govlive_read(self, q):
-            """Shared read gate for BOTH govlive egress surfaces — the I2 stream
-            and the I3 board API. One gate, never two that could drift.
+        def _govlive_authorize(self, folder_raw):
+            """The ONE govlive gate — shared by every govlive surface: the I2
+            stream, the I3 board API, and the I5 act route. One gate, never
+            surfaces that could drift on containment or authorization.
 
-            folder -> registered-workspace containment (the user's string is
+            folder -> registered-workspace containment (the caller's string is
             ONLY a lookup key against the trusted registry; the TRUSTED registry
             path flows onward, so the tainted value never reaches path
             resolution) -> the IDENTICAL POST /tool authorization (proxy-proof +
-            session token + request principal, apply_principal_to_params refuses
-            an unresolved consumer fail-closed) -> _facade_call(governance_live).
-            A sealed folder yields NO plaintext chain (governance_live replays a
-            removed events.jsonl -> empty). Read-only: never appends or mutates.
-
-            Returns the honest board dict, or None after sending a fail-closed
-            error response (the caller must `return None` on None)."""
-            folder = (q.get("folder") or [""])[0].strip()
+            session token + request principal). Returns ``(trusted, resolved)``
+            on success — ``resolved`` is None (trust off) or ``(principal,
+            party)``; a trust-declared request with no principal is refused
+            here. Returns None after sending a fail-closed error (the caller
+            must `return None`). Does NOT bind the principal — the caller sets/
+            clears it around its own facade call, so the read (no mutation) and
+            the act (a signed write) each own an explicit, symmetric lifecycle."""
+            folder = (folder_raw or "").strip()
             if not folder:
                 self._send(400, {"error": "folder required"})
                 return None
@@ -301,10 +311,6 @@ def make_handler(session_token: str):
             if not trusted:
                 self._send(403, {"error": "refused: not a registered workspace"})
                 return None
-            try:
-                limit = max(1, min(500, int((q.get("limit") or ["100"])[0])))
-            except ValueError:
-                limit = 100
             # Identical egress authorization to POST /tool.
             if _principal_config()[0] and not _proxy_proof_valid(self.headers):
                 self._send(403, {"error":
@@ -317,18 +323,32 @@ def make_handler(session_token: str):
                 return None
             resolved = _resolve_principal(
                 self.headers, {"params": {"folder_context": trusted}})
-            principal = party = None
-            if resolved is not None:
-                principal, party = resolved
-                if not principal:
-                    self._send(403, {"error":
-                                     "refused: trust mode is declared but the"
-                                     " request carries no principal header"})
-                    return None
+            if resolved is not None and not resolved[0]:
+                self._send(403, {"error":
+                                 "refused: trust mode is declared but the"
+                                 " request carries no principal header"})
+                return None
+            return trusted, resolved
+
+        def _govlive_read(self, q):
+            """Read-only projection egress for the I2 stream and the I3 board.
+            Passes _govlive_authorize, then reads governance_live under the
+            resolved principal. A sealed folder yields NO plaintext chain
+            (governance_live replays a removed events.jsonl -> empty). Read-only:
+            never appends or mutates. Returns the honest board dict, or None
+            after a fail-closed error (the caller must `return None` on None)."""
+            auth = self._govlive_authorize((q.get("folder") or [""])[0])
+            if auth is None:
+                return None
+            trusted, resolved = auth
+            try:
+                limit = max(1, min(500, int((q.get("limit") or ["100"])[0])))
+            except ValueError:
+                limit = 100
             from workspaces.mcp_serving import (clear_request_principal,
                                                 set_request_principal)
             if resolved is not None:
-                set_request_principal(principal, party)
+                set_request_principal(resolved[0], resolved[1])
             try:
                 board = _facade_call(
                     "workspace_workflow",
@@ -411,11 +431,63 @@ def make_handler(session_token: str):
             self.wfile.write(body)
             return None
 
+        def _govlive_act(self):
+            """I5 — interact through the GOVERNED surface, never the monitor.
+
+            The monitor OBSERVES (the read-only board/stream/inspector). To act
+            on a reserved/red step it hands the intent HERE, and this route is
+            not a bypass: it binds the request principal and dispatches to the
+            SAME governance facade the CLI uses (``approval_decide``), where the
+            competence-matched quorum (``resolve_approval``) decides whether the
+            vote COUNTS and ``MutationLog`` signs the ``ApprovalDecision`` onto
+            the chain. The route adds NO enforcement of its own — a second,
+            route-local gate would be one more thing to forge; the real gate
+            (competence quorum + signed chain) is the only one. It pins
+            ``folder_context`` to the trusted registry path and stamps ``now``
+            server-side (the monitor never forges the folder or the clock), and
+            only a closed allowlist of governed-interaction ops is dispatchable.
+            The board (/govlive/board, /govlive/stream) stays read-only: there
+            is no write route to those paths."""
+            n = int(self.headers.get("Content-Length", 0))
+            try:
+                req = json.loads(self.rfile.read(n) or b"{}")
+            except Exception:
+                return self._send(400, {"error": "bad json"})
+            op = (req.get("op") or "").strip()
+            # Closed allowlist, checked before any store touch: the monitor can
+            # only reach the governed-interaction surface, never an arbitrary op.
+            if op not in _GOVLIVE_ACT_OPS:
+                return self._send(403, {
+                    "error": f"refused: {op!r} is not a governed-interaction op",
+                    "allowed": sorted(_GOVLIVE_ACT_OPS)})
+            auth = self._govlive_authorize(req.get("folder") or "")
+            if auth is None:
+                return None
+            trusted, resolved = auth
+            import time as _time
+            # Pin the trusted folder and the server clock; the acting party is
+            # injected as `actor` by the principal seam inside _facade_call.
+            params = dict(req.get("params") or {})
+            params["folder_context"] = trusted
+            params["now"] = _time.time()
+            from workspaces.mcp_serving import (clear_request_principal,
+                                                set_request_principal)
+            if resolved is not None:
+                set_request_principal(resolved[0], resolved[1])
+            try:
+                out = _facade_call("workspace_workflow", {"op": op, "params": params})
+            finally:
+                if resolved is not None:
+                    clear_request_principal()
+            return self._send(200, out)
+
         def do_POST(self):
             if not self._guard():
                 return
             if self.path == "/decision/respond":
                 return self._decision_respond()
+            if self.path == "/govlive/act":
+                return self._govlive_act()
             if self.path != "/tool":
                 return self._send(404, {"error": "not found"})
             if _principal_config()[0] and not _proxy_proof_valid(self.headers):
