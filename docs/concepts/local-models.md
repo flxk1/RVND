@@ -31,8 +31,8 @@ for onboarding and tests; it never loads weights and is not a real semantic pass
 Both real backends load in-process — no daemon, no HTTP. They share one prompt
 template and answer format, and both **fail closed**: if the dependency is
 missing, the path is wrong, or inference errors, the classifier flags the text
-rather than passing it unscanned, so the boundary never leaks on a broken
-validator.
+rather than passing it unscanned — a broken validator refuses instead of
+leaking.
 
 ## A worked example — ONNX Runtime GenAI (Phi-3.5-mini, MIT)
 
