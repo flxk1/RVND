@@ -447,7 +447,11 @@ def make_handler(session_token: str):
             server-side (the monitor never forges the folder or the clock), and
             only a closed allowlist of governed-interaction ops is dispatchable.
             The board (/govlive/board, /govlive/stream) stays read-only: there
-            is no write route to those paths."""
+            is no write route to those paths. For a decision, the response
+            carries the honest OUTCOME — ``counted`` (did this actor's vote
+            count toward the quorum) and ``state`` (granted/pending/…) — so the
+            monitor never reads a bare ``ok`` as a governance change that did
+            not happen."""
             n = int(self.headers.get("Content-Length", 0))
             try:
                 req = json.loads(self.rfile.read(n) or b"{}")
@@ -476,6 +480,26 @@ def make_handler(session_token: str):
                 set_request_principal(resolved[0], resolved[1])
             try:
                 out = _facade_call("workspace_workflow", {"op": op, "params": params})
+                # Operator-honest outcome: a RECORDED vote is not a governance
+                # change. A bare `ok` would let the monitor read "success" when
+                # an under-competent or short-of-quorum vote left the step
+                # `pending`. So report whether THIS actor's vote counted and the
+                # resulting quorum state (resolve_approval is a read-only
+                # projection, run under the same principal binding).
+                if (op == "approval_decide" and isinstance(out, dict)
+                        and out.get("ok")):
+                    res = _facade_call("workspace_workflow", {
+                        "op": "approval_resolve",
+                        "params": {"folder_context": trusted,
+                                   "request_id": params.get("request_id"),
+                                   "now": _time.time()}})
+                    if isinstance(res, dict) and res.get("state"):
+                        approvers = res.get("approvers") or []
+                        actor = resolved[1] if resolved else params.get("actor")
+                        out = {**out, "state": res.get("state"),
+                               "counted": actor in approvers,
+                               "approvers": approvers,
+                               "needed": res.get("needed")}
             finally:
                 if resolved is not None:
                     clear_request_principal()
