@@ -1,9 +1,11 @@
 # Air-gap enforcement tiers
 
 A folder whose policy sets `local_llm.mode = local-only` is air-gapped: no text
-from that workspace may leave the machine for a cloud LLM. That guarantee is
+from that workspace is to leave the machine for a cloud LLM. That protection is
 enforced at three tiers of increasing strength. Each tier catches what the one
-below cannot; only the strongest binds every process on the host.
+below cannot; only the strongest — the OS-level egress lock — binds every
+process on the host, so the protection is as strong as the highest tier you
+actually enable.
 
 ## Tier 1 — code-path enforcement (weakest)
 
