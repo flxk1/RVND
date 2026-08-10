@@ -135,6 +135,9 @@ def test_competence_matched_quorum_clears_from_the_monitor(env):
                   params={"request_id": "clear-1", "decision": "approve"},
                   principal="lara")                                     # legal ✓
     assert s1 == 200 and b1.get("ok") is True
+    # Operator-honest outcome: lara's vote COUNTED, but the quorum is not met —
+    # the response says exactly that, not a bare ok that reads as "cleared".
+    assert b1["counted"] is True and b1["state"] == "pending"
     assert resolve_approval(f, "clear-1", now=time.time() + 60,
                             log_root=log)["state"] == "pending"
     # Second competent hand tips the competence-matched quorum -> granted.
@@ -142,6 +145,7 @@ def test_competence_matched_quorum_clears_from_the_monitor(env):
                   params={"request_id": "clear-1", "decision": "approve"},
                   principal="finn")                                     # finance ✓
     assert s2 == 200 and b2.get("ok") is True
+    assert b2["counted"] is True and b2["state"] == "granted"           # honest: cleared
     r = resolve_approval(f, "clear-1", now=time.time() + 60, log_root=log)
     assert r["state"] == "granted"
     assert set(r["approvers"]) == {"lara", "finn"}
@@ -175,7 +179,11 @@ def test_under_competent_hand_does_not_clear(env):
     s, b = _act(env["port"], f, principal="mara",
                 params={"request_id": "clear-1", "decision": "approve"})
     assert s == 200 and b.get("ok") is True
-    # ...but the competence gate does not COUNT it: the step stays pending.
+    # ...and the RESPONSE says so honestly: the vote did not count and the step
+    # is still pending — the monitor cannot misread "ok" as a governance change.
+    assert b["counted"] is False and b["state"] == "pending"
+    assert "mara" not in (b.get("approvers") or [])
+    # ...and the competence gate did not COUNT it: the step stays pending.
     r = resolve_approval(f, "clear-1", now=time.time() + 60, log_root=log)
     assert r["state"] == "pending"
     assert "mara" not in set(r.get("approvers", []))
