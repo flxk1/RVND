@@ -5,6 +5,23 @@ dates are ISO.
 
 ## [Unreleased]
 
+## [0.6.9.4] - 2026-08-11
+
+### Fixed
+
+- **`workspaces init` is now the full first-run wizard it was meant to be —
+  local-model choice and skills selection are wired in, not just described.**
+  Two components that already shipped in the tree were never invoked from the
+  wizard: the guided model wizard (`workspaces.lock.run_wizard` — the
+  bundled/download/pick-existing/skip flow) and the companion/skills multi-select
+  (`workspaces pin --interactive`). `init` §5 (Local model) now offers to launch
+  the real model wizard, and a new §6 (Skills) reuses the same picker to pin
+  starter skills to the default workspace — rather than printing commands and
+  omitting skills entirely. `--yes` / `--dry-run` keep the non-interactive
+  guidance (they cannot prompt). No new code paths for either capability: the
+  wizard now *consumes* the built ones, consistent with the no-parallel-structures
+  gate. Sections renumbered (oversight → §7, connect → §8).
+
 ## [0.6.9.3] - 2026-08-11
 
 ### Fixed
