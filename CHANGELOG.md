@@ -5,6 +5,17 @@ dates are ISO.
 
 ## [Unreleased]
 
+## [0.6.9.2] - 2026-08-11
+
+### Dependencies
+
+- Retired the last branch-pin: `loomground-deontic` re-pinned from an immutable
+  commit to released tag `deontic-v0.1.4` (same content, unique version, kept
+  in the 0.1.x line so `loomground-solver`'s `loomground-deontic>=0.1,<0.2`
+  constraint holds). **All nine plane dependencies are now released version
+  tags — zero branch-pins** — closing the pip wheel-cache version-collision
+  class for every plane (see 0.6.9.1).
+
 ## [0.6.9.1] - 2026-08-11
 
 ### Fixed
