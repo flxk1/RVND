@@ -55,10 +55,54 @@ source .venv/bin/activate
 #    run needs network and a working `git`.
 echo "› installing workspace + dependencies (this pulls mcp, cryptography, anyascii…)"
 python -m pip install --upgrade pip >/dev/null
+# pip caches built wheels by (name, VERSION), not by git commit. RVND pins each
+# Loomground plane to an exact commit, but if this machine holds a stale cached
+# wheel of a version that the pinned commit also declares, pip reuses that stale
+# wheel and installs the WRONG build — the failure that could break a fresh
+# install (a stale loomground_solver-0.2.0 lacking ESCALATE). Dropping the plane
+# wheels forces pip to rebuild every git pin from its pinned commit, so the
+# collision cannot occur. Third-party wheels stay cached for speed.
+python -m pip cache remove 'loomground_*' >/dev/null 2>&1 || true
 python -m pip install -e ".[test]"
 
-# 4. Verify: import works without PYTHONPATH, and the demo runs.
+# 4. Verify: the consumed planes installed with their REAL surface, import works
+#    without PYTHONPATH, and the demo runs.
 echo "› verifying install"
+# Prove each consumed plane installed with its real surface BEFORE importing
+# RVND. A stale or wrong plane wheel (a pip version-cache collision) is caught
+# here with a one-line fix, instead of a cryptic downstream ImportError — or,
+# worse, an engine that imports but is hollow. These are the exact symbols a
+# fresh install must expose (the ones a stale wheel was missing).
+python - <<'PYCHECK'
+import importlib, sys
+REQUIRED = {
+    "loomground_solver": ("ESCALATE", "Dimension", "RelationAlgebra"),
+    "loomground_ingest": ("Subgraph", "versum_writer", "RequiredArtifact", "EnrichingWriter"),
+    "deontic": ("classify_incident",),
+    "versum": ("DimensionedSubgraphSink", "load_dimensioned_subgraphs"),
+    "loomground_legal": ("connection",),
+}
+missing = []
+for mod, syms in REQUIRED.items():
+    try:
+        m = importlib.import_module(mod)
+    except Exception as exc:  # noqa: BLE001
+        missing.append("%s: not importable (%s)" % (mod, exc))
+        continue
+    for s in syms:
+        if not hasattr(m, s):
+            missing.append("%s.%s is missing" % (mod, s))
+if missing:
+    sys.stderr.write("  x consumed-plane surface check FAILED "
+                     "— a stale or wrong plane wheel is installed:\n")
+    for item in missing:
+        sys.stderr.write("      - %s\n" % item)
+    sys.stderr.write("    This is a pip wheel-cache version collision. Fix:\n"
+                     "      python -m pip cache purge && ./server/install.sh\n")
+    sys.exit(1)
+print("  consumed-plane surfaces OK "
+      "(solver ESCALATE/RelationAlgebra, ingest, deontic, versum, legal)")
+PYCHECK
 python -c "import workspaces; assert hasattr(workspaces,'assess'); print('  workspaces importable:', len(workspaces.__all__), 'exports')"
 if [ -f server/examples/oversight_demo.py ]; then
   echo "› running the oversight demo (proof the engine works end-to-end):"
