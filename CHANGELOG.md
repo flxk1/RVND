@@ -5,6 +5,21 @@ dates are ISO.
 
 ## [Unreleased]
 
+## [0.6.9.3] - 2026-08-11
+
+### Fixed
+
+- **Hardened the installer so a stale pip wheel cache can no longer produce a
+  wrong install.** `server/install.sh` now (1) drops all `loomground_*` plane
+  wheels from pip's cache before installing, forcing every git pin to rebuild
+  from its exact commit — pip caches wheels by version, not commit, so a stale
+  wheel of a shared version could otherwise shadow a pin; and (2) verifies each
+  consumed plane's real surface (`loomground_solver.ESCALATE` / `RelationAlgebra`
+  / `Dimension`, ingest/deontic/versum/legal symbols) and **fails loudly with
+  the one-line fix** (`pip cache purge && ./server/install.sh`) instead of a
+  cryptic downstream `ImportError` — or an engine that imports but is hollow.
+  Defence-in-depth behind the unique-version pins from 0.6.9.1/0.6.9.2.
+
 ## [0.6.9.2] - 2026-08-11
 
 ### Dependencies
