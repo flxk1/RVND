@@ -5,6 +5,36 @@ dates are ISO.
 
 ## [Unreleased]
 
+## [0.6.9.0] - 2026-08-10
+
+### Added
+
+- **Live Governance ("govlive") — a read-only operational dashboard over the
+  signed governance log.** The honest-subset v2 `governance_live` board op
+  (sessions derived by replay, per-agent lane verdicts, run-lease
+  serialization, the one signed chain; fields with no honest source are omitted,
+  never faked), plus its surfaces: the always-on integral governance strip with
+  the HOTL alarm (I1), the live read-only step-stream (I2), the egress-governed
+  board API `GET /govlive/board` (I3), the step inspector drill-down (I4), and
+  the governed interaction route `POST /govlive/act` (I5) — acting on a reserved
+  step routes through the same approval facade the CLI uses, never a bypass.
+- **Governance-enforcement proofs.** Reserved-to-agent ownership enforced at
+  four independent layers (T-own); session-scoped Versum plus solver
+  consistency, fail-closed (T-cons).
+
+### Changed
+
+- `POST /govlive/act` reports the honest outcome (`counted` / `state`) rather
+  than a bare `ok`, so a monitor never reads success when a vote did not count.
+- Runtime-claim and guarantee wording scoped to what each mechanism actually
+  enforces ("signed builds").
+
+### Dependencies
+
+- Re-pinned `loomground-versum` to the released `loomground-versum-v0.13.0`
+  tag (previously a branch-pin). solver, ingest, and deontic remain pinned to
+  immutable commits pending their own releases.
+
 ## [0.6.8.9] - 2026-08-02
 
 ### Documentation
