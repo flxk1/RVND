@@ -5,6 +5,24 @@ dates are ISO.
 
 ## [Unreleased]
 
+## [0.6.9.1] - 2026-08-11
+
+### Fixed
+
+- **Clean installs of 0.6.9.0 could fail with `ImportError: cannot import name
+  'ESCALATE' from 'loomground_solver'`.** solver and ingest were pinned to
+  immutable commits whose package version (solver `0.2.0`, ingest `0.1.1`) was
+  shared with earlier commits. pip caches wheels by *version*, not by commit, so
+  a machine holding a stale wheel of that version installed the wrong build —
+  one predating the symbols RVND imports. Re-pinned both to uniquely-versioned
+  release tags so the pin resolves unambiguously.
+
+### Dependencies
+
+- Re-pinned `loomground-solver` to released tag `solver-v0.4.0` and
+  `loomground-ingest` to released tag `ingest-v0.2.0` (both were branch-pins to
+  immutable commits). Only `loomground-deontic` remains an immutable-commit pin.
+
 ## [0.6.9.0] - 2026-08-10
 
 ### Added
