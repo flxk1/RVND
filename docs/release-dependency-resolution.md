@@ -22,7 +22,7 @@ Current tag-to-commit mapping:
 | `loomground-solver` | `solver-v0.2.1` | `f8ac006de541215dc82a4cbd5bbd1497a4e658d1` |
 | `loomground-versum` | `loomground-versum-v0.13.0` | `1147d7fecd7b991ed87809fae263839ed92372ee` |
 | `loomground-governance` | `loomground-governance-v0.8.2` | `b69e0e17b8ab313f9ec0303523deeffdfe7ff115` |
-| `loomground-deontic` | `main` | `e346601a5d09d53cee410e22973ff1ec52246338` |
+| `loomground-deontic` |  `deontic-v0.1.4` | `c93f4de657f04546f687966d4978d40e25693c2d` |
 | `loomground-ingest` | `ingest-v0.2.0` | `dd277ef5c967b86f05ee0fa45c29634836affad0` |
 | `loomground-legal` | `legal-v0.2.1` | `3638910292886b7812cac0c3a6b5d1e954522fc3` |
 | `loomground-norm` | `norm-v0.1.0` | `72f3962e0495027b083c66962b4de78198bea7a4` |
@@ -30,16 +30,18 @@ Current tag-to-commit mapping:
 | `loomground-epistemic` | `epistemic-v0.1.0` | `2c1dc8ea8278fe3d1aeffa470319573c53dee932` |
 | `loomground-patchbay` | `v0.1.0` | `36e70ada8d51583b7071a51edf12e6d65b1a0cc5` |
 
-The Release-tag column is of two kinds. A **version tag** (`legal-v0.2.1`,
-`norm-v0.1.0`, `loomground-governance-v0.8.2`, …) names an immutable release
-tag that must resolve to the pinned commit. A **branch** (`feat/…`, `main`) is
-a branch-pin: the plane has no release tag at the pinned commit yet, so the
-immutable commit itself is the whole contract and the branch names only where
-that work lives. deontic is pinned to `main` at a commit that is ahead of the last
-`loomground-deontic-v0.1.3` tag (an unreleased feature sits on top), so it is a
-branch-pin until release-please cuts the next version. `scripts/verify_pin_tags.py`
-(a step in the `resolve-pins` job) enforces the distinction: for every row whose
-Release-tag column names a version tag, it asserts `git ls-remote` resolves that
+Every row now names an immutable **version tag** that must resolve to the
+pinned commit — there are **no branch-pins**. A commit pinned by SHA is
+immutable either way, but a released version tag additionally carries a
+**unique version**: pip caches wheels by version (not by commit), so a plane
+whose pinned commit shared a version with another commit could have a stale
+wheel of that version shadow the pin and break a fresh install. Each pin
+therefore points at a tag whose version is unique to that commit (e.g.
+`solver-v0.2.1`, `ingest-v0.2.0`, `deontic-v0.1.4` — cut in-range so the
+consuming planes' constraints, e.g. `loomground-solver>=0.2,<0.3` and
+`loomground-deontic>=0.1,<0.2`, still hold). `scripts/verify_pin_tags.py`
+(a step in the `resolve-pins` job) enforces this: for every row it asserts
+`git ls-remote` resolves the named tag
 tag, on that plane's repo, to exactly the pinned commit — so a mislabelled or
 moved tag fails ci instead of silently misleading. Branch-pins are exempt by
 construction: a branch is not a release claim.
