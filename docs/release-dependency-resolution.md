@@ -19,11 +19,11 @@ Current tag-to-commit mapping:
 
 | Package | Release tag | Pinned commit |
 |---|---|---|
-| `loomground-solver` | `feat/scale-reasoning` | `2129b64c03bf91fd86792333cae1164626cae62a` |
+| `loomground-solver` | `solver-v0.2.1` | `f8ac006de541215dc82a4cbd5bbd1497a4e658d1` |
 | `loomground-versum` | `loomground-versum-v0.13.0` | `1147d7fecd7b991ed87809fae263839ed92372ee` |
 | `loomground-governance` | `loomground-governance-v0.8.2` | `b69e0e17b8ab313f9ec0303523deeffdfe7ff115` |
 | `loomground-deontic` | `main` | `e346601a5d09d53cee410e22973ff1ec52246338` |
-| `loomground-ingest` | `feat/governance-compiler` | `1b276389c22835563c0f1dec573ac627694cc6e9` |
+| `loomground-ingest` | `ingest-v0.2.0` | `dd277ef5c967b86f05ee0fa45c29634836affad0` |
 | `loomground-legal` | `legal-v0.2.1` | `3638910292886b7812cac0c3a6b5d1e954522fc3` |
 | `loomground-norm` | `norm-v0.1.0` | `72f3962e0495027b083c66962b4de78198bea7a4` |
 | `loomground-factual` | `factual-v0.1.0` | `db60a0592eb7741732944f05279b27def0c9685b` |
@@ -35,8 +35,7 @@ The Release-tag column is of two kinds. A **version tag** (`legal-v0.2.1`,
 tag that must resolve to the pinned commit. A **branch** (`feat/…`, `main`) is
 a branch-pin: the plane has no release tag at the pinned commit yet, so the
 immutable commit itself is the whole contract and the branch names only where
-that work lives. solver and ingest are branch-pinned to feature
-branches; deontic is pinned to `main` at a commit that is ahead of the last
+that work lives. deontic is pinned to `main` at a commit that is ahead of the last
 `loomground-deontic-v0.1.3` tag (an unreleased feature sits on top), so it is a
 branch-pin until release-please cuts the next version. `scripts/verify_pin_tags.py`
 (a step in the `resolve-pins` job) enforces the distinction: for every row whose
