@@ -13,11 +13,16 @@
 # non-interactive and idempotent — safe to re-run; re-running updates in place.
 #
 # Where it installs (first match wins):
-#   $RVND_DIR   →   first argument   →   $HOME/rvnd
+#   $RVND_DIR   →   first argument   →   ASK (default $HOME/rvnd)   →   $HOME/rvnd
+#
+# If neither $RVND_DIR nor an argument is given, it ASKS where to install —
+# reading the controlling terminal (/dev/tty), which works even under
+# `curl … | sh` because only stdin is the script, not the tty. A truly
+# non-interactive run (CI, no tty) falls through to $HOME/rvnd without asking.
 #
 # It will NOT touch a non-empty directory that isn't already an RVND clone.
-# The interactive first-run setup (`workspaces init`) is a separate step it
-# prints at the end — a piped bootstrap cannot prompt (stdin is the script).
+# The deeper first-run setup (`workspaces init`) is still a separate step it
+# prints at the end.
 
 set -eu
 
@@ -27,6 +32,27 @@ say()  { printf '%s\n' "$*"; }
 die()  { printf 'error: %s\n' "$*" >&2; exit 1; }
 have() { command -v "$1" >/dev/null 2>&1; }
 
+# Branding — a proper installer banner. Colour only on a real terminal, and
+# honour NO_COLOR.
+if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
+  c_accent=$(printf '\033[38;5;39m'); c_dim=$(printf '\033[2m'); c_reset=$(printf '\033[0m')
+else
+  c_accent=''; c_dim=''; c_reset=''
+fi
+
+banner() {
+  printf '\n%s' "$c_accent"
+  printf '%s\n' \
+'   ██████╗ ██╗   ██╗███╗   ██╗██████╗ ' \
+'   ██╔══██╗██║   ██║████╗  ██║██╔══██╗' \
+'   ██████╔╝██║   ██║██╔██╗ ██║██║  ██║' \
+'   ██╔══██╗╚██╗ ██╔╝██║╚██╗██║██║  ██║' \
+'   ██║  ██║ ╚████╔╝ ██║ ╚████║██████╔╝' \
+'   ╚═╝  ╚═╝  ╚═══╝  ╚═╝  ╚═══╝╚═════╝ '
+  printf '%s' "$c_reset"
+  printf '   %slocal-first governance for agentic AI · loomground%s\n\n' "$c_dim" "$c_reset"
+}
+
 main() {
   case "${1:-}" in
     -h|--help)
@@ -35,8 +61,7 @@ main() {
       return 0 ;;
   esac
 
-  say "RVND bootstrap"
-  say "========================================"
+  banner
 
   if [ "$(id -u 2>/dev/null || echo 1)" = "0" ]; then
     say "! running as root — RVND is a user tool; installing into root's home."
@@ -47,8 +72,28 @@ main() {
   have git  || die "git not found. macOS: xcode-select --install  ·  Linux: install 'git', then re-run."
   have curl || die "curl not found — required to fetch. Install curl and re-run."
 
-  # Resolve the target: env, then arg, then default. Expand ~ lazily via HOME.
-  TARGET="${RVND_DIR:-${1:-$HOME/rvnd}}"
+  # Resolve the target: env, then arg, then ASK (default $HOME/rvnd). The prompt
+  # reads /dev/tty — the controlling terminal — so it works even under
+  # `curl | sh`, where stdin is the script, not the keyboard. No tty (CI /
+  # non-interactive) → the default, no prompt. A leading ~ is expanded here
+  # because a value from `read` is not word-expanded by the shell.
+  TARGET="${RVND_DIR:-${1:-}}"
+  if [ -z "$TARGET" ]; then
+    default_dir="$HOME/rvnd"
+    reply=""
+    # Prompt ONLY if the tty is actually usable. The write attempt lives in the
+    # `if` condition so that, under `set -e`, a present-but-dead /dev/tty (some
+    # containers/CI) fails the test and falls through to the default instead of
+    # aborting the install. Both write and read are error-tolerant.
+    if [ -c /dev/tty ] && { printf 'Install RVND to [%s]: ' "$default_dir" >/dev/tty; } 2>/dev/null; then
+      { IFS= read -r reply </dev/tty; } 2>/dev/null || reply=""
+      case "$reply" in
+        "~")    reply="$HOME" ;;
+        "~/"*)  reply="$HOME/${reply#\~/}" ;;
+      esac
+    fi
+    TARGET="${reply:-$default_dir}"
+  fi
 
   # Clone, or update in place — but never clobber someone else's directory.
   if [ -d "$TARGET/.git" ]; then
@@ -94,19 +139,46 @@ main() {
   fi
 
   say ""
-  say "========================================"
-  say "✓ RVND is installed at $TARGET"
-  say ""
-  say "Next:"
-  say "  cd $TARGET"
-  say "  source .venv/bin/activate"
-  say "  workspaces init                 # guided first-run setup"
-  say "  workspaces guide                # what every command does"
-  case "$(uname -s 2>/dev/null || echo '')" in
-    Darwin) say "  open 'app/Open Rvnd.command'    # launch the console" ;;
-    *)      say "  python app/serve.py             # launch the console → http://127.0.0.1:8799" ;;
-  esac
-  say "  ./scripts/connect-agent-hub.sh  # let Claude Code / Codex drive RVND"
+  say "${c_accent}✓ RVND installed at $TARGET${c_reset}"
+
+  # One flow: when a terminal is attached (works under `curl | sh` via /dev/tty),
+  # go straight into the guided multi-step setup (folder, local model, skills,
+  # oversight), then show the command overview and offer the console. A
+  # non-interactive run (no usable tty) prints the steps instead.
+  if [ -c /dev/tty ] && [ -x .venv/bin/python ] && { : </dev/tty; } 2>/dev/null; then
+    say ""
+    say "› guided first-run setup"
+    .venv/bin/python -m workspaces init </dev/tty \
+      || say "  (setup exited — re-run anytime with: workspaces init)"
+    say ""
+    say "› your commands"
+    .venv/bin/python -m workspaces guide </dev/tty 2>/dev/null || true
+    say ""
+    { printf 'Open the RVND console in your browser now? [y/N]: ' >/dev/tty; } 2>/dev/null || true
+    { IFS= read -r _open </dev/tty; } 2>/dev/null || _open=""
+    case "$_open" in
+      [Yy]*)
+        case "$(uname -s 2>/dev/null || echo '')" in
+          Darwin) open "app/Open Rvnd.command" 2>/dev/null \
+                    || .venv/bin/python app/serve.py </dev/tty ;;
+          *)      say "  console → http://127.0.0.1:8799  (Ctrl-C to stop)"
+                  .venv/bin/python app/serve.py </dev/tty ;;
+        esac ;;
+      *) say "  Later:  cd $TARGET && python app/serve.py   →  http://127.0.0.1:8799" ;;
+    esac
+  else
+    say ""
+    say "Next:"
+    say "  cd $TARGET"
+    say "  source .venv/bin/activate"
+    say "  workspaces init                 # guided first-run setup"
+    say "  workspaces guide                # what every command does"
+    case "$(uname -s 2>/dev/null || echo '')" in
+      Darwin) say "  open 'app/Open Rvnd.command'    # launch the console" ;;
+      *)      say "  python app/serve.py             # launch the console → http://127.0.0.1:8799" ;;
+    esac
+    say "  ./scripts/connect-agent-hub.sh  # let Claude Code / Codex drive RVND"
+  fi
 }
 
 main "$@"
