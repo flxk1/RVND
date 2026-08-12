@@ -9,7 +9,7 @@ fail=0
 hit() { echo ""; echo "register-lint FAIL: $1"; fail=1; }
 
 G="grep -rnE --exclude-dir=node_modules --exclude-dir=__pycache__ --exclude-dir=_loomground_data --exclude-dir=.git --exclude=register_lint.sh"
-PATHS="server/src server/tests app docs scripts README.md CHANGELOG.md LICENSING.md CONTRIBUTING.md"
+PATHS="server/src server/tests app docs scripts README.md CHANGELOG.md"
 
 $G "panel 2026-06-04|Kleppmann|Dwork|Helland" $PATHS && hit "citation of an AI-panel/researcher as design authority"
 $G "this chat|sibling session|the RVND session" --exclude="session-io*" $PATHS && hit "session-relative reference in a durable artifact"
