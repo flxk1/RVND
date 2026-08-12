@@ -37,8 +37,7 @@ SPDX-License-Identifier = "OFL-1.1"
 
 [[annotations]]
 path = [
-  "README.md", "NOTICE.md", "CONTRIBUTING.md", "CLA.md",
-  "COMMERCIAL-LICENSE.md", "pyproject.toml", ".gitignore", "docs/**/*.md",
+  "README.md", "pyproject.toml", ".gitignore", "docs/**/*.md",
 ]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 flxk1"
@@ -49,7 +48,7 @@ SPDX-License-Identifier = "AGPL-3.0-only"
 [[annotations]]
 path = [
   ".github/**/*.yml",
-  "CHANGELOG.md", "LICENSING.md",
+  "CHANGELOG.md",
   "deploy/.env.example", "models/**/*.md",
   "docs/**/*.json", "docs/**/*.html", "scripts/**/*.sh",
   "scripts/builder_visual_verdict.py",
