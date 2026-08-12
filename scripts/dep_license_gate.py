@@ -116,7 +116,7 @@ def main() -> int:
         for name, text in sorted(hits):
             print(f"unapproved dependency licence: {name} — {text}")
         print("dep-license-gate: FAIL — every dependency needs recognized,"
-              " compatible licence metadata (LICENSING.md); correct upstream"
+              " compatible licence metadata; correct upstream"
               " metadata, replace it, or allowlist it here with its reason")
         return 1
     print("dep-license-gate: clean (all installed dependency licences are"
