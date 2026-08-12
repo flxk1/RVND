@@ -61,7 +61,11 @@ function render(){
     else if(n.kind==='human') meta='in the loop';
     else if(n.kind==='use_case'){const g=Math.max(0,Math.min(4,n.grade||0)); meta='<span class="gradechip" style="background:'+GHEX[g]+'">L'+g+'</span><span>risk '+esc(n.risk||'?')+'</span>'+(reserved?'<span style="color:#a33;font-weight:600">'+esc(reservedPhrase(n))+'</span>':'');}
     else if(n.kind==='master') meta=boundaryReserved?'<span style="color:#e2877f;font-weight:600">limited at the boundary</span> · see each gate':'edge of what’s allowed out';
-    else if(n.kind==='connector') meta='<span>'+esc(n.role||'')+' · '+esc(n.channel||'')+'</span>';
+    else if(n.kind==='connector'){ meta='<span>'+esc(n.role||'')+' · '+esc(n.channel||'')+'</span>';
+      // C1: an egress connector IS a boundary — show the gate it enforces (floor
+      // · group-bus · destination-class) so the N egress boundaries read at a
+      // glance, not just the single master. Fields come from governance_graph.
+      if(n.is_boundary){ meta+='<span style="color:#7fb3e0;font-weight:600">boundary · floor '+esc(n.floor||'permit')+(n.group?' · group '+esc(n.group):'')+(n.destination_class?' · '+esc(n.destination_class):'')+'</span>'; } }
     else if(n.kind==='router'){
       const DEST={auto:'proceeds · runs',human:'a person signs off',reserved:'a person signs off · reserved by law',refused:'logged · stopped',prohibited:'severed · no route',unfired:'not run yet'};
       const VN={auto:'auto',human:'needs a person',reserved:'reserved',refused:'refused',prohibited:'not allowed',unfired:'unfired'};
