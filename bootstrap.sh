@@ -13,11 +13,16 @@
 # non-interactive and idempotent — safe to re-run; re-running updates in place.
 #
 # Where it installs (first match wins):
-#   $RVND_DIR   →   first argument   →   $HOME/rvnd
+#   $RVND_DIR   →   first argument   →   ASK (default $HOME/rvnd)   →   $HOME/rvnd
+#
+# If neither $RVND_DIR nor an argument is given, it ASKS where to install —
+# reading the controlling terminal (/dev/tty), which works even under
+# `curl … | sh` because only stdin is the script, not the tty. A truly
+# non-interactive run (CI, no tty) falls through to $HOME/rvnd without asking.
 #
 # It will NOT touch a non-empty directory that isn't already an RVND clone.
-# The interactive first-run setup (`workspaces init`) is a separate step it
-# prints at the end — a piped bootstrap cannot prompt (stdin is the script).
+# The deeper first-run setup (`workspaces init`) is still a separate step it
+# prints at the end.
 
 set -eu
 
@@ -47,8 +52,28 @@ main() {
   have git  || die "git not found. macOS: xcode-select --install  ·  Linux: install 'git', then re-run."
   have curl || die "curl not found — required to fetch. Install curl and re-run."
 
-  # Resolve the target: env, then arg, then default. Expand ~ lazily via HOME.
-  TARGET="${RVND_DIR:-${1:-$HOME/rvnd}}"
+  # Resolve the target: env, then arg, then ASK (default $HOME/rvnd). The prompt
+  # reads /dev/tty — the controlling terminal — so it works even under
+  # `curl | sh`, where stdin is the script, not the keyboard. No tty (CI /
+  # non-interactive) → the default, no prompt. A leading ~ is expanded here
+  # because a value from `read` is not word-expanded by the shell.
+  TARGET="${RVND_DIR:-${1:-}}"
+  if [ -z "$TARGET" ]; then
+    default_dir="$HOME/rvnd"
+    reply=""
+    # Prompt ONLY if the tty is actually usable. The write attempt lives in the
+    # `if` condition so that, under `set -e`, a present-but-dead /dev/tty (some
+    # containers/CI) fails the test and falls through to the default instead of
+    # aborting the install. Both write and read are error-tolerant.
+    if [ -c /dev/tty ] && { printf 'Install RVND to [%s]: ' "$default_dir" >/dev/tty; } 2>/dev/null; then
+      { IFS= read -r reply </dev/tty; } 2>/dev/null || reply=""
+      case "$reply" in
+        "~")    reply="$HOME" ;;
+        "~/"*)  reply="$HOME/${reply#\~/}" ;;
+      esac
+    fi
+    TARGET="${reply:-$default_dir}"
+  fi
 
   # Clone, or update in place — but never clobber someone else's directory.
   if [ -d "$TARGET/.git" ]; then
