@@ -86,8 +86,9 @@ def test_console_paints_and_is_operable_in_a_real_browser(server, engine):
         page.goto(url, wait_until="networkidle")
 
         # 1. the front door painted — title + the five-widget frames present
+        # (surfaces de-numbered — facets of one desk, not a numbered sequence)
         assert "Rvnd — Console" in page.title() or page.locator("text=Rvnd — Console").count()
-        for frag in ("1 · Search/Chat", "2 · Build", "4 · Read"):
+        for frag in ("Search/Chat", "Build", "Read"):
             assert page.get_by_text(frag, exact=False).first.is_visible(), f"frame {frag} not visible"
 
         # 2. real layout: the chat bar has a non-zero paint box (jsdom can't prove this)
