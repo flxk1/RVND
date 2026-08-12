@@ -33,6 +33,28 @@ def _fp(itype):
     return {"issue_type": itype, "profile": "legal-de"}
 
 
+def test_c1_egress_boundaries_grouped_by_destination_class(env):
+    """C1: egress connectors are surfaced as N boundaries grouped by
+    destination-class, each carrying its floor + group-bus; the single master
+    stays (additive — nothing that reads it breaks)."""
+    from workspaces.connectors import register_connector
+    ws, lr = env["ws"], env["lr"]
+    register_connector(ws, connector_id="llm-out", role="egress", channel="api",
+                       use_cases=["u"], floor="hold", group="company",
+                       destination_class="llm", actor="alex", log_root=lr)
+    register_connector(ws, connector_id="mail-out", role="egress", channel="email",
+                       use_cases=["u"], floor="permit", group="company",
+                       destination_class="message", actor="alex", log_root=lr)
+    g = governance_graph(ws, log_root=lr)
+    assert {b["destination_class"] for b in g["egress_boundaries"]} == {"llm", "message"}
+    assert g["summary"]["egress_boundaries"] == 2
+    bnodes = {n["id"]: n for n in g["nodes"] if n.get("is_boundary")}
+    assert bnodes["conn:llm-out"]["floor"] == "hold"
+    assert bnodes["conn:llm-out"]["group"] == "company"
+    assert bnodes["conn:mail-out"]["destination_class"] == "message"
+    assert any(n["id"] == "master" for n in g["nodes"])  # additive; master stays
+
+
 def test_nodes_edges_verdicts(env):
     ws, lr = env["ws"], env["lr"]
     register_use_case(ws, use_case_id="uc-draft", name="Draft", fingerprint=_fp("liability_cap"),
