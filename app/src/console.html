@@ -102,6 +102,9 @@
   .rn-run{font-family:inherit;font-size:11px;border:1px solid #2f4a3a;color:#8fd1ad;background:transparent;border-radius:var(--r);padding:4px 10px;cursor:pointer}
   .rn-dim{font-size:10.5px;color:var(--txt-dim)}
   .rn-runh{font-size:10.5px;color:var(--txt-dim);margin-top:8px}
+  .rn-sec{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--txt-dim);padding:10px 14px 4px}
+  .rn-laneform{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+  .rn-laneform input,.rn-laneform select{font-family:inherit;font-size:11px;background:#171c24;border:1px solid var(--line);color:inherit;border-radius:var(--r);padding:4px 8px}
   .rn-step{display:flex;align-items:center;gap:6px;margin:5px 0;font-size:11px;color:var(--txt)}
   .rn-step-dot{width:8px;height:8px;border-radius:2px;flex:0 0 auto}
   .rn-step-lbl{flex:1}
@@ -203,26 +206,26 @@
     <select id="ws" aria-label="active workspace"><option>loading…</option></select>
     <button class="chat-icon" id="ws-add" type="button" title="Create or open a workspace" aria-label="Create or open a workspace">+</button>
     <div class="toggle" role="radiogroup" aria-label="centre view">
-      <button class="on" data-centre="build" role="radio" aria-checked="true">2 · Build</button>
-      <button data-centre="run" role="radio" aria-checked="false">3 · Run</button>
+      <button class="on" data-centre="build" role="radio" aria-checked="true">Build</button>
       <button data-centre="matrix" role="radio" aria-checked="false">Matrix</button>
+      <button data-centre="run" role="radio" aria-checked="false">Run</button>
     </div>
     <span class="env" id="env" aria-live="polite" title="every workspace you can see — console_snapshot">—</span>
     <span class="spacer"></span>
     <button class="rec" id="record-settings" type="button" title="Recording detail and activity display">Record · Minimal</button>
     <button class="rec" id="settings-open" type="button" title="Settings — setup, backup, upgrade and uninstall commands" aria-label="Settings">⚙ Settings</button>
     <button class="rec" id="server-open" type="button" title="About this server — version, tools, signing key" aria-label="About this server">ⓘ About</button>
-    <a class="rec" href="/sign" title="open the human sign-off page">5 · Sign</a>
+    <a class="rec" href="/sign" title="open the human sign-off page">Sign</a>
     <span class="skel">Phase 1</span>
   </header>
 
   <div class="body">
     <section class="frame centre" aria-label="build and run">
-      <span class="tag" id="centre-tag">2 · Build — the patchbay</span>
+      <span class="tag" id="centre-tag">Build — the patchbay</span>
       <div class="hollow" id="centre-body">the patchbay composes here (Phase 2)</div>
     </section>
     <section class="frame screen" aria-label="read">
-      <span class="tag">4 · Read — the screen</span>
+      <span class="tag">Read — the screen</span>
       <div class="rd">
         <div class="q"><span class="k">Allowed</span><span class="v" id="rd-allowed">—</span></div>
         <div class="q"><span class="k">Waiting</span><span class="v" id="rd-waiting">—</span></div>
@@ -233,7 +236,7 @@
 
   <div id="say-out" role="status" aria-live="polite" aria-label="Search/Chat — result, confirm-card, or the drafted control patch"></div>
   <div class="chat">
-    <span class="tag2">1 · Search/Chat</span>
+    <span class="tag2">Search/Chat</span>
     <div class="chat-intake">
       <button class="chat-icon" id="say-plus" type="button" title="Add — a file, a web page, or an LLM connection" aria-label="Add intake or a connection">+</button>
       <input type="file" id="say-file" accept=".txt,.md,.markdown,.csv,.tsv,.json,.lg,text/plain,text/markdown,text/csv" style="display:none">
@@ -336,7 +339,7 @@
 
   // centre toggle: Build and Run mount real widget units (units/patchbay.mjs,
   // units/run.mjs) keyed off the store's centreView; Matrix has no unit yet.
-  var TAGS={build:"2 · Build — the patchbay",run:"3 · Run — the mixdesk",matrix:"Matrix — the coverage lens"};
+  var TAGS={build:"Build — the patchbay",run:"Run — the mixdesk",matrix:"Matrix — the coverage lens"};
   var btns=document.querySelectorAll('.toggle button');
   var lastCentre=null;
   function showCentre(view,patchbay,run,matrix){

@@ -25,10 +25,8 @@ export function createPatchbay(store, call, doc) {
   let loadError = '';
   let authStale = false; // true when /tool returned 403 — the page's session token
                          // predates a server restart; only a reload recovers it
-  let lanes = {};        // agent id (bare, no party: prefix) -> latest governance lane, or absent
   let sel = null;        // selected node id
-  let addOpen = null;    // 'agent' | 'human' | 'use_case' | null — which add-form is open
-  let laneFormFor = null; // agent id (bare) whose "register a lane" form is open, or null
+  let boundaryFormFor = null; // boundary node id whose routing form is open, or null
   let unsub = null;
 
   function focus() { return store.getState().activeWorkspace || ''; }
@@ -60,11 +58,6 @@ export function createPatchbay(store, call, doc) {
       }
     }
     loading = false;
-    lanes = {};
-    if (g) {
-      const r = await call('workspace_workflow', { op: 'governance_lane_list', params: { folder_context: fc } }).catch(() => null);
-      (r && Array.isArray(r.lanes) ? r.lanes : []).forEach((l) => { lanes[l.agent] = l; });
-    }
     paint();
   }
 
@@ -132,12 +125,9 @@ export function createPatchbay(store, call, doc) {
 
     root.innerHTML =
       '<div class="pb-toolbar">'
-      + '<button class="pb-add" data-add="agent">+ Agent</button>'
-      + '<button class="pb-add" data-add="human">+ Person</button>'
-      + '<button class="pb-add" data-add="use_case">+ Task</button>'
+      + '<span class="pb-hint">inspect only — this patch reflects the activated policy; agents arrive at the handshake, not here</span>'
       + '<span class="pb-hint">' + (g.nodes.length ? g.nodes.length + ' node' + (g.nodes.length === 1 ? '' : 's') : 'this patch is empty') + '</span>'
       + '</div>'
-      + (addOpen ? addFormHtml(addOpen) : '')
       + '<div class="pb-stage" style="width:' + stageW + 'px;height:' + stageH + 'px">'
       + '<svg class="pb-cords" width="' + stageW + '" height="' + stageH + '">' + cords + '</svg>'
       + nodesHtml
@@ -148,7 +138,12 @@ export function createPatchbay(store, call, doc) {
   }
 
   function nodeHtml(n, p) {
-    const kindLabel = { agent: 'Agent', human: 'Person', use_case: 'Task', master: 'Boundary', connector: 'Connector', router: 'Routing' }[n.kind] || n.kind;
+    // An egress connector that carries a policy-derived gate renders AS a
+    // boundary (label + gate meta), so N boundaries stand in a row alongside
+    // the single master edge. The gate fields (floor/group/destination_class)
+    // come from governance_graph's egress_boundaries projection.
+    const kindLabel = n.is_boundary ? 'Boundary'
+      : ({ agent: 'Agent', human: 'Person', use_case: 'Task', master: 'Boundary', connector: 'Connector', router: 'Routing' }[n.kind] || n.kind);
     let meta = '';
     if (n.kind === 'agent') meta = esc(n.grade || '') + (n.status && n.status !== 'active' ? ' · ' + esc(n.status) : '');
     else if (n.kind === 'human') meta = n.role ? esc(n.role) : 'in the loop';
@@ -156,8 +151,13 @@ export function createPatchbay(store, call, doc) {
       const grade = Math.max(0, Math.min(4, n.grade || 0));
       const ev = g.edges.find((e) => e.kind === 'egress' && e.from === n.id);
       const v = ev ? VINFO(effVerdict(byId, ev)) : null;
-      meta = 'L' + grade + ' · ' + esc(n.risk || 'low') + (v && v.label ? ' · ' + esc(v.label) : '');
+      // Oversight mode is server-composed (governance_graph); rendered, never computed here.
+      const ov = n.oversight && n.oversight.mode ? ' · ' + esc(n.oversight.mode) : '';
+      meta = 'L' + grade + ' · ' + esc(n.risk || 'low') + ov + (v && v.label ? ' · ' + esc(v.label) : '');
     } else if (n.kind === 'master') meta = 'edge of what’s allowed out';
+    if (n.is_boundary) meta = 'floor ' + esc(n.floor || 'permit')
+      + (n.group ? ' · group ' + esc(n.group) : '')
+      + (n.destination_class ? ' · ' + esc(n.destination_class) : '');
     const w = nodeWidth(n);
     return '<div class="pb-node pb-' + n.kind + (sel === n.id ? ' sel' : '') + '" data-id="' + esc(n.id)
       + '" style="left:' + p.x + 'px;top:' + p.y + 'px;width:' + w + 'px" tabindex="0" role="button">'
@@ -166,69 +166,53 @@ export function createPatchbay(store, call, doc) {
       + '<div class="pb-nm">' + meta + '</div></div>';
   }
 
-  function addFormHtml(kind) {
-    const label = kind === 'use_case' ? 'Task' : kind === 'agent' ? 'Agent' : 'Person';
-    return '<div class="pb-form">'
-      + '<span class="pb-form-h">New ' + label + '</span>'
-      + '<input id="pb-name" placeholder="name" aria-label="name">'
-      + (kind === 'use_case' ? '<select id="pb-risk"><option value="low">low</option><option value="medium">medium</option><option value="high">high</option><option value="critical">critical</option></select>' : '')
-      + '<button class="pb-form-ok" id="pb-create">Create</button>'
-      + '<button class="pb-form-cancel" id="pb-cancel">Cancel</button>'
-      + '</div>';
-  }
-
   function inspectHtml() {
     const n = sel ? byId(sel) : null;
     if (!n) return '<div class="pb-empty">select a node to inspect it</div>';
     if (n.kind === 'agent' || n.kind === 'human') return inspectParty(n);
     if (n.kind === 'use_case') return inspectUseCase(n);
+    if (n.is_boundary) return inspectBoundary(n);
     if (n.kind === 'master') return inspectMaster();
     return '<div class="pb-empty">' + esc(n.label || n.id) + '</div>';
   }
 
   function inspectParty(n) {
-    const killed = n.kind === 'agent' && n.status && n.status !== 'active';
     let h = '<div class="pb-i-h">' + esc(n.label || n.id) + '</div>';
     h += '<div class="pb-i-row">' + (n.kind === 'agent' ? 'grade <b>' + esc(n.grade || '—') + '</b> · status <b>' + esc(n.status || 'active') + '</b>' : 'a person in the loop' + (n.role ? ' · ' + esc(n.role) : '')) + '</div>';
-    if (n.kind === 'agent') h += '<button class="pb-kill" data-id="' + esc(n.id) + '" data-want="' + (killed ? 'active' : 'killed') + '">' + (killed ? 'Revive agent' : 'Kill agent') + '</button>';
-    if (n.kind === 'agent') h += inspectLane(n.id.replace(/^party:/, ''));
+    // Oversight (kill/revive) is not performed here — it is decided in the
+    // oversight repo and arrives as a governed, translated act on the chain.
+    // The governance lane (the channel strip) is set on Run (the mixdesk), not here.
     return h;
   }
 
-  // A governed run (operate) now needs a live session capability, and
-  // opening one (governance_open) needs an approved governance lane for the
-  // agent — a separate durable approval, not implied by an authority cord.
-  // No op computes a "current policy fingerprint" yet, so it's a plain field
-  // here; Run reads it back off the same lane record it registers, so any
-  // value round-trips correctly as long as it's non-empty.
-  function inspectLane(agentId) {
-    const lane = lanes[agentId];
-    let h = '<div class="pb-i-sub">Governance lane</div>';
-    if (lane) {
-      h += '<div class="pb-i-row">' + esc(lane.lane_id) + ' · max <b>' + esc(lane.max_grade) + '</b> · v' + esc(lane.version) + '</div>';
-      h += '<div class="pb-i-row pb-i-dim">' + esc((lane.action_classes || []).join(', ') || 'no action classes') + '</div>';
-      h += '<div class="pb-i-row pb-i-dim">approved by ' + esc(lane.approved_by) + ' — ' + esc(lane.rationale) + '</div>';
-      h += '<button class="pb-lane-open" data-agent="' + esc(agentId) + '">Renew (new version)</button>';
-    } else {
-      h += '<div class="pb-i-row pb-i-warn">no approved lane — this agent cannot open a governed run session</div>';
-      h += '<button class="pb-lane-open" data-agent="' + esc(agentId) + '">Register a lane</button>';
-    }
-    if (laneFormFor === agentId) h += laneFormHtml(agentId, lane);
+  // A boundary is the editable routing point of the patch: which bus/class it
+  // routes to (group) and its own gate (floor). Editing re-versions the egress
+  // connector — the same op the policy used to create it. No node is minted;
+  // the destination-class comes from the policy and stays read-only.
+  function inspectBoundary(n) {
+    const cid = n.id.replace(/^conn:/, '');
+    let h = '<div class="pb-i-h">' + esc(n.label || cid) + '</div>';
+    h += '<div class="pb-i-row">egress · ' + esc(n.channel || 'channel')
+      + (n.destination_class ? ' · ' + esc(n.destination_class) : '') + '</div>';
+    if (boundaryFormFor === n.id) { h += boundaryFormHtml(n); return h; }
+    h += '<div class="pb-i-row">floor <b>' + esc(n.floor || 'permit') + '</b>'
+      + (n.group ? ' · bus <b>' + esc(n.group) + '</b>' : ' · <span class="pb-i-warn">no bus</span>') + '</div>';
+    h += '<button class="pb-bnd-open" data-id="' + esc(n.id) + '">Route this boundary</button>';
     return h;
   }
 
-  function laneFormHtml(agentId, existing) {
-    const nextVersion = existing ? existing.version + 1 : 1;
+  function boundaryFormHtml(n) {
+    const floors = ['permit', 'hold', 'deny'];
+    const opt = (f, cur) => '<option value="' + f + '"' + (cur === f ? ' selected' : '') + '>' + f + '</option>';
     return '<div class="pb-form" style="flex-direction:column;align-items:stretch;gap:6px;margin-top:6px">'
-      + '<input id="pb-lane-id" placeholder="lane id" value="' + escA(existing ? existing.lane_id : 'lane-' + agentId) + '">'
-      + '<select id="pb-lane-grade">' + ['L0', 'L1', 'L2', 'L3', 'L4'].map((g) => '<option value="' + g + '"' + (existing && existing.max_grade === g ? ' selected' : '') + '>' + g + '</option>').join('') + '</select>'
-      + '<input id="pb-lane-actions" placeholder="action classes, comma-separated" value="' + escA(existing ? (existing.action_classes || []).join(', ') : '') + '">'
-      + '<input id="pb-lane-fpr" placeholder="policy fingerprint (any stable label)" value="' + escA(existing ? existing.policy_fingerprint : '') + '">'
-      + '<input id="pb-lane-approver" placeholder="approved by" value="' + escA(existing ? existing.approved_by : 'app-user') + '">'
-      + '<input id="pb-lane-rationale" placeholder="rationale (required)" value="' + escA(existing ? existing.rationale : '') + '">'
-      + '<div class="pb-i-dim">version ' + nextVersion + (existing ? ' (widening this lane)' : '') + '</div>'
-      + '<div style="display:flex;gap:8px"><button class="pb-form-ok" id="pb-lane-save" data-agent="' + esc(agentId) + '" data-version="' + nextVersion + '">Save</button>'
-      + '<button class="pb-form-cancel" id="pb-lane-cancel">Cancel</button></div></div>';
+      + '<label class="pb-i-dim">floor — this channel’s own gate</label>'
+      + '<select id="pb-bnd-floor">' + floors.map((f) => opt(f, n.floor || 'permit')).join('') + '</select>'
+      + '<label class="pb-i-dim">bus / class — the group this boundary routes to</label>'
+      + '<input id="pb-bnd-group" placeholder="group id (e.g. company, finance)" value="' + escA(n.group || '') + '">'
+      + '<label class="pb-i-dim">bus floor — binds every boundary on this group (strictest-wins); leave to keep</label>'
+      + '<select id="pb-bnd-busfloor"><option value="">— leave —</option>' + floors.map((f) => opt(f, '')).join('') + '</select>'
+      + '<div style="display:flex;gap:8px"><button class="pb-form-ok" id="pb-bnd-save" data-id="' + esc(n.id) + '">Save routing</button>'
+      + '<button class="pb-form-cancel" id="pb-bnd-cancel">Cancel</button></div></div>';
   }
 
   function inspectUseCase(n) {
@@ -239,6 +223,9 @@ export function createPatchbay(store, call, doc) {
     let h = '<div class="pb-i-h">' + esc(n.label || n.id) + '</div>';
     h += '<div class="pb-i-row">risk <b>' + esc(n.risk || 'low') + '</b> · L' + Math.max(0, Math.min(4, n.grade || 0)) + (v ? ' · <span style="color:' + v.col + '">' + esc(v.label) + '</span>' : '') + '</div>';
     if (n.reserved && n.reserved.length) h += '<div class="pb-i-row pb-i-warn">reserved: ' + esc(n.reserved.join(', ')) + '</div>';
+    if (n.oversight && n.oversight.mode) h += '<div class="pb-i-row">oversight <b>' + esc(n.oversight.mode) + '</b>'
+      + (n.oversight.overseers && n.oversight.overseers.length ? ' · ' + esc(n.oversight.overseers.join(', ')) : '')
+      + ' · caps L' + esc(n.oversight.grade_ceiling) + '</div>';
     h += '<div class="pb-i-sub">Authority</div>';
     h += allowed.length
       ? allowed.map((a) => '<div class="pb-i-row">' + esc(a) + ' <button class="pb-revoke" data-uc="' + esc(n.id) + '" data-agent="' + esc(a) + '">Revoke</button></div>').join('')
@@ -295,45 +282,27 @@ export function createPatchbay(store, call, doc) {
     await store.hydrate();
   }
 
-  async function toggleKill(agentId, want) {
-    await call('workspace_policy', { op: 'party_status', params: { folder_context: focus(), party_id: agentId.replace(/^party:/, ''), status: want, actor: 'app-user' } }).catch(() => null);
-    await load();
-    await store.hydrate();
-  }
-
-  async function registerLane(agentId, version, fields) {
+  // Route a boundary: re-version its egress connector with a new floor/group.
+  // Preserve the connector's real fields from the chain — re-registering from
+  // the graph node alone would blank use_cases/tags/tool_ref. Optionally set the
+  // group's bus floor (the master fader) in the same gesture.
+  async function saveBoundary(nodeId, floor, group, busFloor) {
     const fc = focus(); if (!fc) return;
-    const actionClasses = fields.actions.split(',').map((s) => s.trim()).filter(Boolean);
-    if (!fields.laneId || !actionClasses.length || !fields.approver || !fields.rationale) return;
-    const r = await call('workspace_workflow', {
-      op: 'governance_lane_register',
-      params: {
-        folder_context: fc, lane_id: fields.laneId, agent: agentId, max_grade: fields.grade,
-        action_classes: actionClasses, policy_fingerprint: fields.fingerprint,
-        version, approved_by: fields.approver, rationale: fields.rationale,
-      },
-    }).catch((e) => ({ error: String(e && e.message || e) }));
-    if (r && r.error) { doc.defaultView.alert('Lane registration failed: ' + r.error); return; }
-    laneFormFor = null;
-    await load();
-  }
-
-  async function create(kind, name, risk) {
-    const fc = focus(); if (!fc || !name) return;
-    let r;
-    if (kind === 'use_case') {
-      const id = 'uc-' + (Date.now() % 100000);
-      r = await call('workspace_workflow', { op: 'use_case_register', params: { folder_context: fc, use_case_id: id, name, fingerprint: {}, risk: risk || 'low', allowed_agents: [], actor: 'app-user' } }).catch((e) => ({ error: String(e && e.message || e) }));
-    } else {
-      const id = (kind === 'agent' ? 'agent-' : 'human-') + (Date.now() % 100000);
-      r = await call('workspace_policy', { op: 'party_register', params: { folder_context: fc, party_id: id, kind, name, actor: 'app-user' } }).catch((e) => ({ error: String(e && e.message || e) }));
+    const cid = nodeId.replace(/^conn:/, '');
+    const list = await call('workspace_workflow', { op: 'connector_list', params: { folder_context: fc } }).catch(() => null);
+    const cur = ((list && list.connectors) || []).find((c) => c.connector_id === cid) || {};
+    const r = await call('workspace_workflow', { op: 'connector_register', params: {
+      folder_context: fc, connector_id: cid, role: cur.role || 'egress', channel: cur.channel || '',
+      use_cases: cur.use_cases || [], name: cur.name || '', tags: cur.tags || [],
+      floor, group, credential_ref: cur.credential_ref,
+      destination_class: cur.destination_class || '', tool_ref: cur.tool_ref, actor: 'app-user',
+    } }).catch((e) => ({ error: String(e && e.message || e) }));
+    if (r && r.error) { doc.defaultView.alert('Routing failed: ' + r.error); return; }
+    if (busFloor && group) {
+      const gr = await call('workspace_workflow', { op: 'group_floor', params: { folder_context: fc, group_id: group, floor: busFloor, actor: 'app-user' } }).catch((e) => ({ error: String(e && e.message || e) }));
+      if (gr && gr.error) { doc.defaultView.alert('Bus floor failed: ' + gr.error); return; }
     }
-    if (!r || r.error || r.ok === false) {
-      const detail = r && (r.error || r.message);
-      doc.defaultView.alert('Create failed' + (detail ? ': ' + detail : ': the server did not accept the request.'));
-      return;
-    }
-    addOpen = null;
+    boundaryFormFor = null;
     await load();
     await store.hydrate();
   }
@@ -342,35 +311,22 @@ export function createPatchbay(store, call, doc) {
 
   function wireEvents() {
     if (!root) return;
-    root.querySelectorAll('[data-add]').forEach((b) => b.addEventListener('click', () => { addOpen = b.dataset.add; sel = null; paint(); }));
-    const cancel = root.querySelector('#pb-cancel'); if (cancel) cancel.addEventListener('click', () => { addOpen = null; paint(); });
-    const okBtn = root.querySelector('#pb-create');
-    if (okBtn) okBtn.addEventListener('click', () => {
-      const nm = (root.querySelector('#pb-name').value || '').trim();
-      const risk = addOpen === 'use_case' ? root.querySelector('#pb-risk').value : undefined;
-      if (nm) create(addOpen, nm, risk);
-    });
-    root.querySelectorAll('.pb-node').forEach((el) => el.addEventListener('click', () => { sel = el.dataset.id; addOpen = null; laneFormFor = null; paint(); }));
-    root.querySelectorAll('.pb-kill').forEach((b) => b.addEventListener('click', (ev) => { ev.stopPropagation(); toggleKill(b.dataset.id, b.dataset.want); }));
+    root.querySelectorAll('.pb-node').forEach((el) => el.addEventListener('click', () => { sel = el.dataset.id; boundaryFormFor = null; paint(); }));
     root.querySelectorAll('.pb-grant').forEach((b) => b.addEventListener('click', (ev) => {
       ev.stopPropagation();
       const sel2 = root.querySelector('#pb-grant-agent');
       if (sel2 && sel2.value) grant(b.dataset.uc, sel2.value);
     }));
     root.querySelectorAll('.pb-revoke').forEach((b) => b.addEventListener('click', (ev) => { ev.stopPropagation(); revoke(b.dataset.uc, b.dataset.agent); }));
-    root.querySelectorAll('.pb-lane-open').forEach((b) => b.addEventListener('click', (ev) => { ev.stopPropagation(); laneFormFor = b.dataset.agent; paint(); }));
-    const laneCancel = root.querySelector('#pb-lane-cancel'); if (laneCancel) laneCancel.addEventListener('click', (ev) => { ev.stopPropagation(); laneFormFor = null; paint(); });
-    const laneSave = root.querySelector('#pb-lane-save');
-    if (laneSave) laneSave.addEventListener('click', (ev) => {
+    root.querySelectorAll('.pb-bnd-open').forEach((b) => b.addEventListener('click', (ev) => { ev.stopPropagation(); boundaryFormFor = b.dataset.id; paint(); }));
+    const bndCancel = root.querySelector('#pb-bnd-cancel'); if (bndCancel) bndCancel.addEventListener('click', (ev) => { ev.stopPropagation(); boundaryFormFor = null; paint(); });
+    const bndSave = root.querySelector('#pb-bnd-save');
+    if (bndSave) bndSave.addEventListener('click', (ev) => {
       ev.stopPropagation();
-      registerLane(laneSave.dataset.agent, Number(laneSave.dataset.version), {
-        laneId: (root.querySelector('#pb-lane-id').value || '').trim(),
-        grade: root.querySelector('#pb-lane-grade').value,
-        actions: root.querySelector('#pb-lane-actions').value || '',
-        fingerprint: (root.querySelector('#pb-lane-fpr').value || '').trim(),
-        approver: (root.querySelector('#pb-lane-approver').value || '').trim(),
-        rationale: (root.querySelector('#pb-lane-rationale').value || '').trim(),
-      });
+      saveBoundary(bndSave.dataset.id,
+        root.querySelector('#pb-bnd-floor').value,
+        (root.querySelector('#pb-bnd-group').value || '').trim(),
+        root.querySelector('#pb-bnd-busfloor').value);
     });
   }
 

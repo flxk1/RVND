@@ -136,6 +136,24 @@ def governance_graph(
             ceiling = min(ceiling, 2)
         if prohibited:
             ceiling = 0
+        # Oversight mode — the human-involvement the policy ALREADY bound, synthesized
+        # from the same server-decided data this node carries (reservations + composed
+        # ceiling + prohibited). NOT recomputed via a model call (the projection
+        # contract forbids that): who must act (reserved_to), the dial (review), and the
+        # autonomy cap (grade_ceiling). The console renders this badge; it composes nothing.
+        _overseers = sorted({a.get("reserved_to", "") for a in reserved if a.get("reserved_to")})
+        if prohibited:
+            _mode = "severed"
+        elif reserved:
+            _mode = "human decision"      # a named role must act (review) before egress
+        elif ceiling <= 2:
+            _mode = "human-in-the-loop"   # a person must sign (L2 cap)
+        elif ceiling == 3:
+            _mode = "on-the-loop"
+        else:
+            _mode = "autonomous"
+        oversight = {"mode": _mode, "level": "REVIEW" if reserved else "",
+                     "overseers": _overseers, "grade_ceiling": ceiling}
         nodes.append({
             "id": f"uc:{uid}", "kind": "use_case",
             "label": uc.get("name") or uid,
@@ -143,6 +161,7 @@ def governance_graph(
             "issue_type": (uc.get("fingerprint") or {}).get("issue_type", ""),
             "grade": contract.get("grade", 0),
             "grade_ceiling": ceiling,
+            "oversight": oversight,
             "prohibited": prohibited,
             "contract_id": uc.get("contract_id", ""),
             "reserved": [a.get("act_type", "") for a in reserved],
@@ -215,6 +234,15 @@ def governance_graph(
         nodes.append({
             "id": f"conn:{cid}", "kind": "connector", "role": role,
             "channel": c.get("channel", ""), "label": c.get("name") or cid,
+            # C1: an EGRESS connector is a boundary in its own right — carry the
+            # gate it enforces so the UI can render N boundaries (one per
+            # destination-class) instead of only the single master. floor = the
+            # channel's self-governance minimum; group = the group-bus it belongs
+            # to (that floor binds every member, strictest-wins); destination_class
+            # = the axis egress is worded by (llm|tool_api|message|file). Additive.
+            **({"floor": c.get("floor", ""), "group": c.get("group", ""),
+                "destination_class": c.get("destination_class", ""),
+                "is_boundary": True} if role == "egress" else {}),
         })
         targets = [f"uc:{u}" for u in (c.get("use_cases") or [])]
         if role == "ingress":
@@ -226,15 +254,31 @@ def governance_graph(
         elif role == "egress":
             edges.append({"from": "master", "to": f"conn:{cid}", "kind": "deliver"})
 
+    # C1: the egress boundaries the policies group into — one per destination-class
+    # (the axis egress is worded by), each listing the channels that reach it with
+    # their per-channel floor and the group-bus they belong to (the group floor is
+    # the DEFAULT gate binding every member strictest-wins; a per-channel floor is
+    # a SPECIALISED gate). Additive — the single `master` stays as the undeclared
+    # world-touch, so every existing reader keeps working.
+    _egress = [c for c in conns if c.get("role") == "egress"]
+    _by_class: dict[str, list] = {}
+    for c in _egress:
+        _by_class.setdefault(c.get("destination_class") or "undeclared", []).append(
+            {"connector_id": c.get("connector_id"), "floor": c.get("floor", ""),
+             "group": c.get("group", "")})
+    egress_boundaries = [{"destination_class": k, "channels": v}
+                         for k, v in sorted(_by_class.items())]
+
     summary = {
         "agents": n_agents, "humans": n_humans,
         "use_cases": len([u for u in use_cases if u.get("use_case_id")]),
         "runs": len(runs), "reserved_use_cases": n_reserved_uc,
-        "connectors": n_conn,
+        "connectors": n_conn, "egress_boundaries": len(egress_boundaries),
         "nodes": len(nodes), "edges": len(edges),
     }
     return {"folder_context": folder_context, "nodes": nodes,
-            "edges": edges, "verdicts": verdicts, "summary": summary}
+            "edges": edges, "verdicts": verdicts,
+            "egress_boundaries": egress_boundaries, "summary": summary}
 
 
 # --------------------------------------------------------- v0.5 projection ----
