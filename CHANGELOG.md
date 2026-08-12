@@ -5,6 +5,22 @@ dates are ISO.
 
 ## [Unreleased]
 
+## [0.6.9.8] - 2026-08-12
+
+### Added
+
+- **The governance graph surfaces the N egress boundaries the enforcement
+  already computes (C1).** `governance_graph` now marks each **egress** connector
+  as a boundary carrying its gate (`floor`, `group`, `destination_class`,
+  `is_boundary`) and adds an `egress_boundaries` grouping — one per
+  destination-class (`llm|tool_api|message|file`, the axis egress is worded by) —
+  so a UI can render **N adjustable egress boundaries** instead of the single
+  `master`. A group floor is the DEFAULT gate binding every member
+  (strictest-wins); a per-channel floor is a SPECIALISED gate. **Additive**: the
+  single `master` world-touch stays, so every existing reader keeps working. The
+  patchbay render (drawing the N boundaries + the lanes) is the visible half,
+  next. (Stacks after C3 / 0.6.9.7.)
+
 ## [0.6.9.6] - 2026-08-12
 
 ### Changed
