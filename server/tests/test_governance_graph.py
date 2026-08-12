@@ -55,6 +55,36 @@ def test_c1_egress_boundaries_grouped_by_destination_class(env):
     assert any(n["id"] == "master" for n in g["nodes"])  # additive; master stays
 
 
+def test_oversight_mode_projected_per_use_case(env):
+    """The projection folds the server-decided reservation + composed ceiling +
+    prohibited into ONE renderable oversight mode per use-case — pure synthesis,
+    no model call (the projection contract forbids one). The console badge / Matrix
+    read this field; they compose nothing themselves."""
+    ws, lr = env["ws"], env["lr"]
+    # clean low-risk act -> autonomous (L4, no human bound)
+    register_use_case(ws, use_case_id="uc-auto", name="Auto", fingerprint=_fp("liability_cap"),
+                      risk="low", allowed_agents=["bot-7"], actor="alex", log_root=lr)
+    # a reserved act -> a named role must act (human decision), REVIEW dial, capped L2
+    register_use_case(ws, use_case_id="uc-rev", name="Review", fingerprint=_fp("automated_decision"),
+                      risk="high", allowed_agents=["bot-7"], actor="alex", log_root=lr,
+                      policy_reservations={"uc-rev": {
+                          "reserved_to": "data-protection", "act_type": "review",
+                          "source": "policy clause 7.1"}})
+    # a prohibited act -> severed (L0)
+    register_use_case(ws, use_case_id="uc-no", name="Severed", fingerprint=_fp("liability_cap"),
+                      risk="low", allowed_agents=["bot-7"], actor="alex", prohibited=True, log_root=lr)
+    ucn = {n["id"]: n for n in governance_graph(ws, log_root=lr)["nodes"] if n["kind"] == "use_case"}
+    assert ucn["uc:uc-auto"]["oversight"]["mode"] == "autonomous"
+    assert ucn["uc:uc-auto"]["oversight"]["overseers"] == []
+    rev = ucn["uc:uc-rev"]["oversight"]
+    assert rev["mode"] == "human decision"
+    assert rev["level"] == "REVIEW"
+    assert rev["overseers"] == ["data-protection"]
+    assert rev["grade_ceiling"] == 2
+    assert ucn["uc:uc-no"]["oversight"]["mode"] == "severed"
+    assert ucn["uc:uc-no"]["oversight"]["grade_ceiling"] == 0
+
+
 def test_nodes_edges_verdicts(env):
     ws, lr = env["ws"], env["lr"]
     register_use_case(ws, use_case_id="uc-draft", name="Draft", fingerprint=_fp("liability_cap"),
