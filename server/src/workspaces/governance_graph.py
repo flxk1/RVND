@@ -136,6 +136,24 @@ def governance_graph(
             ceiling = min(ceiling, 2)
         if prohibited:
             ceiling = 0
+        # Oversight mode — the human-involvement the policy ALREADY bound, synthesized
+        # from the same server-decided data this node carries (reservations + composed
+        # ceiling + prohibited). NOT recomputed via a model call (the projection
+        # contract forbids that): who must act (reserved_to), the dial (review), and the
+        # autonomy cap (grade_ceiling). The console renders this badge; it composes nothing.
+        _overseers = sorted({a.get("reserved_to", "") for a in reserved if a.get("reserved_to")})
+        if prohibited:
+            _mode = "severed"
+        elif reserved:
+            _mode = "human decision"      # a named role must act (review) before egress
+        elif ceiling <= 2:
+            _mode = "human-in-the-loop"   # a person must sign (L2 cap)
+        elif ceiling == 3:
+            _mode = "on-the-loop"
+        else:
+            _mode = "autonomous"
+        oversight = {"mode": _mode, "level": "REVIEW" if reserved else "",
+                     "overseers": _overseers, "grade_ceiling": ceiling}
         nodes.append({
             "id": f"uc:{uid}", "kind": "use_case",
             "label": uc.get("name") or uid,
@@ -143,6 +161,7 @@ def governance_graph(
             "issue_type": (uc.get("fingerprint") or {}).get("issue_type", ""),
             "grade": contract.get("grade", 0),
             "grade_ceiling": ceiling,
+            "oversight": oversight,
             "prohibited": prohibited,
             "contract_id": uc.get("contract_id", ""),
             "reserved": [a.get("act_type", "") for a in reserved],
