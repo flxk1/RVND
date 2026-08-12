@@ -99,6 +99,29 @@ def test_cell_is_engine_verdict(env):                            # C2
     assert reserved["refs"][0]["id"] == "uc:uc-decide-hi"
 
 
+def test_task_oversight_lens(env):                               # oversight lens
+    m = _m(env, preset="task_oversight")
+    assert m["col_axis"] == "oversight"
+    assert m["cols"] == ["severed", "human decision", "human-in-the-loop",
+                         "on-the-loop", "autonomous"]
+
+    def cell(task, mode):
+        ri, ci = m["rows"].index(task), m["cols"].index(mode)
+        return m["cells"][ri][ci]
+
+    # a reserved act -> human decision, carrying its overseer role
+    hd = cell("uc-decide-hi", "human decision")
+    assert hd["count"] == 1 and "data-protection" in hd["why"]
+    # a high-risk act (capped L2), no reservation -> human-in-the-loop
+    assert cell("uc-send-hi", "human-in-the-loop")["count"] == 1
+    # a low-risk act -> autonomous, and THAT is the finding (runs with no human)
+    auto = cell("uc-send-lo", "autonomous")
+    assert auto["count"] == 1 and auto["finding"] is True
+    assert m["findings"] >= 1
+    # one-hot: a task sits in exactly its mode column, nowhere else
+    assert cell("uc-send-lo", "human-in-the-loop")["count"] == 0
+
+
 def test_finding_parity_with_query(env):                         # C3
     m = _m(env)
     finding_labels = {ref["id"].replace("uc:", "")
