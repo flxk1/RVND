@@ -5,7 +5,28 @@ dates are ISO.
 
 ## [Unreleased]
 
-## [0.6.9.5] - 2026-08-12
+## [0.6.9.6] - 2026-08-12
+
+### Changed
+
+- **`bootstrap.sh` is now a single branded guided install.** It opens with an
+  `RVND` banner, and on a real terminal (works under `curl … | sh` via
+  `/dev/tty`) flows straight from install into the guided first-run wizard
+  (`workspaces init` — folder, local model, skills, oversight), then prints the
+  command overview (`workspaces guide`) and offers to open the local console.
+  A non-interactive run (no usable tty) prints the manual steps instead, exactly
+  as before. Reuses the already-ported wizard — no new setup logic.
+
+### Fixed
+
+- **`bootstrap.sh` now asks where to install instead of silently defaulting to
+  `~/rvnd`.** When neither `$RVND_DIR` nor a path argument is given, it prompts
+  for the install directory (default `~/rvnd`) by reading the controlling
+  terminal `/dev/tty` — which works even under `curl … | sh`, where stdin is the
+  script, not the keyboard. The prompt is fully guarded: a present-but-dead
+  `/dev/tty` (some containers/CI) can't abort the install under `set -e` and
+  falls through to the default with no stray output; a truly non-interactive run
+  never prompts. `$RVND_DIR` and the positional argument still bypass the prompt.
 
 ### Fixed
 
