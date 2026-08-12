@@ -25,9 +25,7 @@ export function createPatchbay(store, call, doc) {
   let loadError = '';
   let authStale = false; // true when /tool returned 403 — the page's session token
                          // predates a server restart; only a reload recovers it
-  let lanes = {};        // agent id (bare, no party: prefix) -> latest governance lane, or absent
   let sel = null;        // selected node id
-  let laneFormFor = null; // agent id (bare) whose "register a lane" form is open, or null
   let boundaryFormFor = null; // boundary node id whose routing form is open, or null
   let unsub = null;
 
@@ -60,11 +58,6 @@ export function createPatchbay(store, call, doc) {
       }
     }
     loading = false;
-    lanes = {};
-    if (g) {
-      const r = await call('workspace_workflow', { op: 'governance_lane_list', params: { folder_context: fc } }).catch(() => null);
-      (r && Array.isArray(r.lanes) ? r.lanes : []).forEach((l) => { lanes[l.agent] = l; });
-    }
     paint();
   }
 
@@ -188,7 +181,7 @@ export function createPatchbay(store, call, doc) {
     h += '<div class="pb-i-row">' + (n.kind === 'agent' ? 'grade <b>' + esc(n.grade || '—') + '</b> · status <b>' + esc(n.status || 'active') + '</b>' : 'a person in the loop' + (n.role ? ' · ' + esc(n.role) : '')) + '</div>';
     // Oversight (kill/revive) is not performed here — it is decided in the
     // oversight repo and arrives as a governed, translated act on the chain.
-    if (n.kind === 'agent') h += inspectLane(n.id.replace(/^party:/, ''));
+    // The governance lane (the channel strip) is set on Run (the mixdesk), not here.
     return h;
   }
 
@@ -220,42 +213,6 @@ export function createPatchbay(store, call, doc) {
       + '<select id="pb-bnd-busfloor"><option value="">— leave —</option>' + floors.map((f) => opt(f, '')).join('') + '</select>'
       + '<div style="display:flex;gap:8px"><button class="pb-form-ok" id="pb-bnd-save" data-id="' + esc(n.id) + '">Save routing</button>'
       + '<button class="pb-form-cancel" id="pb-bnd-cancel">Cancel</button></div></div>';
-  }
-
-  // A governed run (operate) now needs a live session capability, and
-  // opening one (governance_open) needs an approved governance lane for the
-  // agent — a separate durable approval, not implied by an authority cord.
-  // No op computes a "current policy fingerprint" yet, so it's a plain field
-  // here; Run reads it back off the same lane record it registers, so any
-  // value round-trips correctly as long as it's non-empty.
-  function inspectLane(agentId) {
-    const lane = lanes[agentId];
-    let h = '<div class="pb-i-sub">Governance lane</div>';
-    if (lane) {
-      h += '<div class="pb-i-row">' + esc(lane.lane_id) + ' · max <b>' + esc(lane.max_grade) + '</b> · v' + esc(lane.version) + '</div>';
-      h += '<div class="pb-i-row pb-i-dim">' + esc((lane.action_classes || []).join(', ') || 'no action classes') + '</div>';
-      h += '<div class="pb-i-row pb-i-dim">approved by ' + esc(lane.approved_by) + ' — ' + esc(lane.rationale) + '</div>';
-      h += '<button class="pb-lane-open" data-agent="' + esc(agentId) + '">Renew (new version)</button>';
-    } else {
-      h += '<div class="pb-i-row pb-i-warn">no approved lane — this agent cannot open a governed run session</div>';
-      h += '<button class="pb-lane-open" data-agent="' + esc(agentId) + '">Register a lane</button>';
-    }
-    if (laneFormFor === agentId) h += laneFormHtml(agentId, lane);
-    return h;
-  }
-
-  function laneFormHtml(agentId, existing) {
-    const nextVersion = existing ? existing.version + 1 : 1;
-    return '<div class="pb-form" style="flex-direction:column;align-items:stretch;gap:6px;margin-top:6px">'
-      + '<input id="pb-lane-id" placeholder="lane id" value="' + escA(existing ? existing.lane_id : 'lane-' + agentId) + '">'
-      + '<select id="pb-lane-grade">' + ['L0', 'L1', 'L2', 'L3', 'L4'].map((g) => '<option value="' + g + '"' + (existing && existing.max_grade === g ? ' selected' : '') + '>' + g + '</option>').join('') + '</select>'
-      + '<input id="pb-lane-actions" placeholder="action classes, comma-separated" value="' + escA(existing ? (existing.action_classes || []).join(', ') : '') + '">'
-      + '<input id="pb-lane-fpr" placeholder="policy fingerprint (any stable label)" value="' + escA(existing ? existing.policy_fingerprint : '') + '">'
-      + '<input id="pb-lane-approver" placeholder="approved by" value="' + escA(existing ? existing.approved_by : 'app-user') + '">'
-      + '<input id="pb-lane-rationale" placeholder="rationale (required)" value="' + escA(existing ? existing.rationale : '') + '">'
-      + '<div class="pb-i-dim">version ' + nextVersion + (existing ? ' (widening this lane)' : '') + '</div>'
-      + '<div style="display:flex;gap:8px"><button class="pb-form-ok" id="pb-lane-save" data-agent="' + esc(agentId) + '" data-version="' + nextVersion + '">Save</button>'
-      + '<button class="pb-form-cancel" id="pb-lane-cancel">Cancel</button></div></div>';
   }
 
   function inspectUseCase(n) {
@@ -325,23 +282,6 @@ export function createPatchbay(store, call, doc) {
     await store.hydrate();
   }
 
-  async function registerLane(agentId, version, fields) {
-    const fc = focus(); if (!fc) return;
-    const actionClasses = fields.actions.split(',').map((s) => s.trim()).filter(Boolean);
-    if (!fields.laneId || !actionClasses.length || !fields.approver || !fields.rationale) return;
-    const r = await call('workspace_workflow', {
-      op: 'governance_lane_register',
-      params: {
-        folder_context: fc, lane_id: fields.laneId, agent: agentId, max_grade: fields.grade,
-        action_classes: actionClasses, policy_fingerprint: fields.fingerprint,
-        version, approved_by: fields.approver, rationale: fields.rationale,
-      },
-    }).catch((e) => ({ error: String(e && e.message || e) }));
-    if (r && r.error) { doc.defaultView.alert('Lane registration failed: ' + r.error); return; }
-    laneFormFor = null;
-    await load();
-  }
-
   // Route a boundary: re-version its egress connector with a new floor/group.
   // Preserve the connector's real fields from the chain — re-registering from
   // the graph node alone would blank use_cases/tags/tool_ref. Optionally set the
@@ -371,14 +311,13 @@ export function createPatchbay(store, call, doc) {
 
   function wireEvents() {
     if (!root) return;
-    root.querySelectorAll('.pb-node').forEach((el) => el.addEventListener('click', () => { sel = el.dataset.id; laneFormFor = null; boundaryFormFor = null; paint(); }));
+    root.querySelectorAll('.pb-node').forEach((el) => el.addEventListener('click', () => { sel = el.dataset.id; boundaryFormFor = null; paint(); }));
     root.querySelectorAll('.pb-grant').forEach((b) => b.addEventListener('click', (ev) => {
       ev.stopPropagation();
       const sel2 = root.querySelector('#pb-grant-agent');
       if (sel2 && sel2.value) grant(b.dataset.uc, sel2.value);
     }));
     root.querySelectorAll('.pb-revoke').forEach((b) => b.addEventListener('click', (ev) => { ev.stopPropagation(); revoke(b.dataset.uc, b.dataset.agent); }));
-    root.querySelectorAll('.pb-lane-open').forEach((b) => b.addEventListener('click', (ev) => { ev.stopPropagation(); laneFormFor = b.dataset.agent; paint(); }));
     root.querySelectorAll('.pb-bnd-open').forEach((b) => b.addEventListener('click', (ev) => { ev.stopPropagation(); boundaryFormFor = b.dataset.id; paint(); }));
     const bndCancel = root.querySelector('#pb-bnd-cancel'); if (bndCancel) bndCancel.addEventListener('click', (ev) => { ev.stopPropagation(); boundaryFormFor = null; paint(); });
     const bndSave = root.querySelector('#pb-bnd-save');
@@ -388,19 +327,6 @@ export function createPatchbay(store, call, doc) {
         root.querySelector('#pb-bnd-floor').value,
         (root.querySelector('#pb-bnd-group').value || '').trim(),
         root.querySelector('#pb-bnd-busfloor').value);
-    });
-    const laneCancel = root.querySelector('#pb-lane-cancel'); if (laneCancel) laneCancel.addEventListener('click', (ev) => { ev.stopPropagation(); laneFormFor = null; paint(); });
-    const laneSave = root.querySelector('#pb-lane-save');
-    if (laneSave) laneSave.addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      registerLane(laneSave.dataset.agent, Number(laneSave.dataset.version), {
-        laneId: (root.querySelector('#pb-lane-id').value || '').trim(),
-        grade: root.querySelector('#pb-lane-grade').value,
-        actions: root.querySelector('#pb-lane-actions').value || '',
-        fingerprint: (root.querySelector('#pb-lane-fpr').value || '').trim(),
-        approver: (root.querySelector('#pb-lane-approver').value || '').trim(),
-        rationale: (root.querySelector('#pb-lane-rationale').value || '').trim(),
-      });
     });
   }
 
