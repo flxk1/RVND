@@ -2907,8 +2907,9 @@ def cmd_init(args: argparse.Namespace) -> int:
     _wsay(out, "How much a person is in the loop, per workspace (loosest → strictest):")
     for i, (label, desc) in enumerate(_OVERSIGHT_LADDER):
         _wsay(out, f"  {i}  {label:11s} {desc}")
-    _wsay(out, "You set this per workspace; the console's first-run wizard picks it")
-    _wsay(out, "when you create your first one (start at 'approve' if unsure).")
+    _wsay(out, "Set it per workspace with:  workspaces oversight <level>")
+    _wsay(out, "(the console's first-run wizard also tightens autonomy when you")
+    _wsay(out, "create your first workspace; start at 'approve' if unsure).")
 
     # §8 Connect to an agent hub
     _wsay(out, "\n§8  Connect to your AI agent")

@@ -21,6 +21,20 @@ dates are ISO.
   guidance (they cannot prompt). No new code paths for either capability: the
   wizard now *consumes* the built ones, consistent with the no-parallel-structures
   gate. Sections renumbered (oversight → §7, connect → §8).
+- **`init` §7 oversight copy corrected.** It claimed the console's first-run
+  wizard "picks" the oversight level; that step only tightens the autonomy
+  matrix. §7 now names the real setter (`workspaces oversight <level>`) and
+  describes the console wizard accurately.
+
+### Removed
+
+- Retired two genuinely dead modules surfaced by a build-vs-wired audit
+  (imported by no live code, no tests): `workspaces/navigate_folder.py` (a
+  superseded substrate op) and `lock/backends/ollama_http.py` (the ollama
+  backend the factory has rejected since 0.6.5). Unrelated unwired modules that
+  are legitimate dev/eval tools (e.g. `grounder_eval`) or front-ends of a
+  partly-live subsystem (`issue_token` → the live `case_index` CBR memory) were
+  deliberately KEPT, not deleted.
 
 ## [0.6.9.3] - 2026-08-11
 
