@@ -64,33 +64,34 @@ async function main() {
     fail("activity visibility toggle did not hide Read activity");
   }
   D.querySelector("#record-close").click();
-  await until(() => D.querySelector(".pb-add[data-add=agent]"), "Build did not render its controls");
+  // Build renders inspect-only now — it mints nothing (agents arrive at the
+  // handshake; tasks come from the activated policy). Wait for the patch to
+  // paint, then register the agent through the backend, exactly as the
+  // handshake's ensure_party would, and set its governance lane on Run (the
+  // mixdesk), where the channel strips now live.
+  await until(() => D.querySelector(".pb-toolbar"), "Build did not render the patch");
 
-  D.querySelector(".pb-add[data-add=agent]").click();
-  const name = D.querySelector("#pb-name");
-  if (!name) fail("Add Agent did not open a form");
-  name.value = "Release Bot";
-  D.querySelector("#pb-create").click();
+  const reg = await window.__RVND.call("workspace_policy", {
+    op: "party_register",
+    params: { folder_context: fc, party_id: "release-bot", kind: "agent", name: "Release Bot", actor: "release-owner" },
+  });
+  if (!reg || reg.ok === false) fail("backend party_register did not accept the agent" + (reg && reg.error ? ": " + reg.error : ""));
+
+  // Switch to Run; it projects the agent as a lane strip with a register action.
+  D.querySelector("[data-centre=run]").click();
+  await until(() => D.querySelector(".rn-lane-open"), "Run did not render a governance-lane strip for the agent");
+  D.querySelector(".rn-lane-open").click();
+
+  D.querySelector("#rn-lane-grade").value = "L2";
+  D.querySelector("#rn-lane-actions").value = "summarise, classify";
+  D.querySelector("#rn-lane-fpr").value = "sha256:release-walk";
+  D.querySelector("#rn-lane-approver").value = "release-owner";
+  D.querySelector("#rn-lane-rationale").value = "Bounded release verification";
+  D.querySelector(".rn-lane-save").click();
 
   await until(
-    () => [...D.querySelectorAll(".pb-node.pb-agent")].some((node) => /Release Bot/.test(node.textContent)),
-    "created agent never appeared in Build" + (window.__lastAlert ? ": " + window.__lastAlert : ""),
-  );
-  const agentNode = [...D.querySelectorAll(".pb-node.pb-agent")].find((node) => /Release Bot/.test(node.textContent));
-  agentNode.click();
-  await until(() => D.querySelector(".pb-lane-open"), "agent inspector has no governance-lane action");
-  D.querySelector(".pb-lane-open").click();
-
-  D.querySelector("#pb-lane-grade").value = "L2";
-  D.querySelector("#pb-lane-actions").value = "summarise, classify";
-  D.querySelector("#pb-lane-fpr").value = "sha256:release-walk";
-  D.querySelector("#pb-lane-approver").value = "release-owner";
-  D.querySelector("#pb-lane-rationale").value = "Bounded release verification";
-  D.querySelector("#pb-lane-save").click();
-
-  await until(
-    () => /max L2/.test((D.querySelector(".pb-inspect") || {}).textContent || ""),
-    "saved governance lane never appeared in the inspector" + (window.__lastAlert ? ": " + window.__lastAlert : ""),
+    () => /max L2/.test((D.querySelector(".rn-strip") || {}).textContent || ""),
+    "saved governance lane never appeared on the Run strip" + (window.__lastAlert ? ": " + window.__lastAlert : ""),
   );
 
   const parties = await window.__RVND.call("workspace_policy", {

@@ -36,7 +36,9 @@ def main() -> int:
         # the frames: search/chat bar, build + run (centre toggle), read (screen).
         # Frame 1 was renamed "Say" → "Search/Chat" when the console landed its
         # search integration; the chat-bar ids (#say, #say-out) kept their names.
-        for frag in ("1 · Search/Chat", "2 · Build", "4 · Read"):
+        # The surfaces were de-numbered (facets of one desk, not a sequence), so
+        # the labels dropped their "N · " prefix.
+        for frag in ("Search/Chat", "Build", "Read"):
             assert frag in root, f"front door missing frame {frag!r}"
         assert 'data-centre="run"' in root, "no Run toggle in the centre"
         # the persistent chat bar with its input and All-Stop
