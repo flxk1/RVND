@@ -48,3 +48,11 @@ def grounder_gold_path(template: bool = False) -> Path:
 
 def manifest() -> dict:
     return conformance_manifest()
+
+
+def llms_txt() -> str:
+    """The governance language guide (``llms.txt``), consumed byte-for-byte from
+    loomground-governance through this seam — never copied, so it cannot drift.
+    The front door hands this to an agent (the ``governance://llms.txt`` resource
+    and ``GET /llms.txt``)."""
+    return Path(str(artifact_path("llms.txt"))).read_text(encoding="utf-8")

@@ -232,7 +232,28 @@ def make_handler(session_token: str):
                 return self._govlive_stream()
             if self.path.startswith("/govlive/board"):
                 return self._govlive_board()
+            if self.path == "/llms.txt":
+                return self._llms_txt()
             return self._send(404, {"error": "not found"})
+
+        def _llms_txt(self):
+            """The governance language guide, CONSUMED from loomground-governance
+            (never a copy). The front-door grounding: the vocabulary this server
+            speaks, that every action is gated, and that refusal is valid. Served
+            here so a browser/agent can read the same language the MCP handshake
+            hands over as the ``governance://llms.txt`` resource."""
+            try:
+                from workspaces.loomground_assets import llms_txt
+                body = llms_txt().encode("utf-8")
+            except Exception as e:  # noqa: BLE001 — surface, never fake the language
+                return self._send(500, {"error": f"governance language unavailable: {e}"})
+            self.send_response(200)
+            self.send_header("Content-Type", "text/markdown; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Cache-Control", "no-cache")
+            self.send_header("Connection", "close")
+            self.end_headers()
+            self.wfile.write(body)
 
         def _whoami(self):
             """Who the server believes is calling, and which console units
