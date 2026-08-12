@@ -13,10 +13,13 @@ import { VINFO, effVerdict, allowedFor, fetchGraph } from './verdict.mjs';
 
 export function createRun(store, call, doc) {
   const esc = (s) => { const e = doc.createElement('div'); e.textContent = String(s == null ? '' : s); return e.innerHTML; };
+  const escA = (s) => String(s == null ? '' : s).replace(/"/g, '&quot;');
 
   let root = null;
   let g = null;       // {nodes, edges}
   let runs = [];       // workspace_workflow runs — latest per use_case wins
+  let lanes = {};      // agent id (bare) -> latest governance lane (the channel strip)
+  let laneFormFor = null; // agent id whose register/renew lane form is open, or null
   let unsub = null;
   const sessionMsg = {}; // use_case node id -> transient session/run status or refusal reason
 
@@ -29,7 +32,10 @@ export function createRun(store, call, doc) {
     if (fc) {
       const r = await call('workspace_workflow', { op: 'runs', params: { folder_context: fc } }).catch(() => null);
       runs = (r && Array.isArray(r.runs)) ? r.runs : [];
-    } else runs = [];
+      const ll = await call('workspace_workflow', { op: 'governance_lane_list', params: { folder_context: fc } }).catch(() => null);
+      lanes = {};
+      (ll && Array.isArray(ll.lanes) ? ll.lanes : []).forEach((l) => { lanes[l.agent] = l; });
+    } else { runs = []; lanes = {}; }
     paint();
   }
 
@@ -44,13 +50,74 @@ export function createRun(store, call, doc) {
 
   function paint() {
     if (!root) return;
-    if (!focus()) { root.innerHTML = '<div class="rn-empty">open a workspace to see its tasks</div>'; return; }
+    if (!focus()) { root.innerHTML = '<div class="rn-empty">open a workspace to see its mixdesk</div>'; return; }
     if (!g) { root.innerHTML = '<div class="rn-empty">loading…</div>'; return; }
+    const agents = g.nodes.filter((n) => n.kind === 'agent');
     const tasks = g.nodes.filter((n) => n.kind === 'use_case');
-    root.innerHTML = tasks.length
+    // The mixdesk: a governance-lane channel strip per agent, then a task strip
+    // per governed act. Agents arrive at the handshake; tasks arrive from the
+    // activated policy — the console mints neither.
+    let h = '<div class="rn-sec">Governance lanes</div>';
+    h += agents.length
+      ? agents.map(laneStripHtml).join('')
+      : '<div class="rn-dim" style="padding:8px 14px">no agents yet — they identify themselves at the handshake</div>';
+    h += '<div class="rn-sec">Tasks</div>';
+    h += tasks.length
       ? tasks.map(stripHtml).join('')
-      : '<div class="rn-empty">no tasks in this patch yet — add one in Build</div>';
+      : '<div class="rn-dim" style="padding:8px 14px">no tasks in this patch yet — they arrive from the activated policy</div>';
+    root.innerHTML = h;
     wireEvents();
+  }
+
+  function laneStripHtml(n) {
+    const agentId = n.id.replace(/^party:/, '');
+    const lane = lanes[agentId];
+    let h = '<div class="rn-strip" data-agent="' + esc(agentId) + '">';
+    h += '<div class="rn-top"><span class="rn-label">' + esc(n.label || agentId) + '</span>'
+      + (lane ? '<span class="rn-v">max ' + esc(lane.max_grade) + ' · v' + esc(lane.version) + '</span>'
+              : '<span class="rn-v" style="color:#d98b8b">no lane</span>') + '</div>';
+    if (lane) {
+      h += '<div class="rn-meta">' + esc((lane.action_classes || []).join(', ') || 'no action classes') + '</div>';
+      h += '<div class="rn-dim">approved by ' + esc(lane.approved_by) + ' — ' + esc(lane.rationale) + '</div>';
+      h += '<button class="rn-run rn-lane-open" data-agent="' + esc(agentId) + '">Renew (new version)</button>';
+    } else {
+      h += '<div class="rn-dim">no approved lane — this agent cannot open a governed run session</div>';
+      h += '<button class="rn-run rn-lane-open" data-agent="' + esc(agentId) + '">Register a lane</button>';
+    }
+    if (laneFormFor === agentId) h += laneFormHtml(agentId, lane);
+    h += '</div>';
+    return h;
+  }
+
+  function laneFormHtml(agentId, existing) {
+    const nextVersion = existing ? existing.version + 1 : 1;
+    return '<div class="rn-laneform">'
+      + '<input id="rn-lane-id" placeholder="lane id" value="' + escA(existing ? existing.lane_id : 'lane-' + agentId) + '">'
+      + '<select id="rn-lane-grade">' + ['L0', 'L1', 'L2', 'L3', 'L4'].map((gr) => '<option value="' + gr + '"' + (existing && existing.max_grade === gr ? ' selected' : '') + '>' + gr + '</option>').join('') + '</select>'
+      + '<input id="rn-lane-actions" placeholder="action classes, comma-separated" value="' + escA(existing ? (existing.action_classes || []).join(', ') : '') + '">'
+      + '<input id="rn-lane-fpr" placeholder="policy fingerprint (any stable label)" value="' + escA(existing ? existing.policy_fingerprint : '') + '">'
+      + '<input id="rn-lane-approver" placeholder="approved by" value="' + escA(existing ? existing.approved_by : 'app-user') + '">'
+      + '<input id="rn-lane-rationale" placeholder="rationale (required)" value="' + escA(existing ? existing.rationale : '') + '">'
+      + '<div class="rn-dim">version ' + nextVersion + (existing ? ' (widening this lane)' : '') + '</div>'
+      + '<div style="display:flex;gap:8px"><button class="rn-run rn-lane-save" data-agent="' + esc(agentId) + '" data-version="' + nextVersion + '">Save</button>'
+      + '<button class="rn-run rn-lane-cancel">Cancel</button></div></div>';
+  }
+
+  async function registerLane(agentId, version, fields) {
+    const fc = focus(); if (!fc) return;
+    const actionClasses = fields.actions.split(',').map((s) => s.trim()).filter(Boolean);
+    if (!fields.laneId || !actionClasses.length || !fields.approver || !fields.rationale) return;
+    const r = await call('workspace_workflow', {
+      op: 'governance_lane_register',
+      params: {
+        folder_context: fc, lane_id: fields.laneId, agent: agentId, max_grade: fields.grade,
+        action_classes: actionClasses, policy_fingerprint: fields.fingerprint,
+        version, approved_by: fields.approver, rationale: fields.rationale,
+      },
+    }).catch((e) => ({ error: String(e && e.message || e) }));
+    if (r && r.error) { doc.defaultView.alert('Lane registration failed: ' + r.error); return; }
+    laneFormFor = null;
+    await load();
   }
 
   function stripHtml(n) {
@@ -141,8 +208,23 @@ export function createRun(store, call, doc) {
 
   function wireEvents() {
     if (!root) return;
-    root.querySelectorAll('.rn-run').forEach((b) => b.addEventListener('click', () => runUC(b.dataset.uc)));
+    // rn-run is a shared button style; the task-run handler must target only the
+    // task buttons (data-uc), never the lane buttons that reuse the same class.
+    root.querySelectorAll('.rn-run[data-uc]').forEach((b) => b.addEventListener('click', () => runUC(b.dataset.uc)));
     root.querySelectorAll('.rn-ov').forEach((b) => b.addEventListener('click', () => overrideStep(b.dataset.i, b.dataset.v)));
+    root.querySelectorAll('.rn-lane-open').forEach((b) => b.addEventListener('click', () => { laneFormFor = b.dataset.agent; paint(); }));
+    const lc = root.querySelector('.rn-lane-cancel'); if (lc) lc.addEventListener('click', () => { laneFormFor = null; paint(); });
+    const ls = root.querySelector('.rn-lane-save');
+    if (ls) ls.addEventListener('click', () => {
+      registerLane(ls.dataset.agent, Number(ls.dataset.version), {
+        laneId: (root.querySelector('#rn-lane-id').value || '').trim(),
+        grade: root.querySelector('#rn-lane-grade').value,
+        actions: root.querySelector('#rn-lane-actions').value || '',
+        fingerprint: (root.querySelector('#rn-lane-fpr').value || '').trim(),
+        approver: (root.querySelector('#rn-lane-approver').value || '').trim(),
+        rationale: (root.querySelector('#rn-lane-rationale').value || '').trim(),
+      });
+    });
   }
 
   return { mount, unmount, refresh };
