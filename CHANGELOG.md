@@ -5,6 +5,37 @@ dates are ISO.
 
 ## [Unreleased]
 
+## [0.6.9.4] - 2026-08-11
+
+### Fixed
+
+- **`workspaces init` is now the full first-run wizard it was meant to be —
+  local-model choice and skills selection are wired in, not just described.**
+  Two components that already shipped in the tree were never invoked from the
+  wizard: the guided model wizard (`workspaces.lock.run_wizard` — the
+  bundled/download/pick-existing/skip flow) and the companion/skills multi-select
+  (`workspaces pin --interactive`). `init` §5 (Local model) now offers to launch
+  the real model wizard, and a new §6 (Skills) reuses the same picker to pin
+  starter skills to the default workspace — rather than printing commands and
+  omitting skills entirely. `--yes` / `--dry-run` keep the non-interactive
+  guidance (they cannot prompt). No new code paths for either capability: the
+  wizard now *consumes* the built ones, consistent with the no-parallel-structures
+  gate. Sections renumbered (oversight → §7, connect → §8).
+- **`init` §7 oversight copy corrected.** It claimed the console's first-run
+  wizard "picks" the oversight level; that step only tightens the autonomy
+  matrix. §7 now names the real setter (`workspaces oversight <level>`) and
+  describes the console wizard accurately.
+
+### Removed
+
+- Retired two genuinely dead modules surfaced by a build-vs-wired audit
+  (imported by no live code, no tests): `workspaces/navigate_folder.py` (a
+  superseded substrate op) and `lock/backends/ollama_http.py` (the ollama
+  backend the factory has rejected since 0.6.5). Unrelated unwired modules that
+  are legitimate dev/eval tools (e.g. `grounder_eval`) or front-ends of a
+  partly-live subsystem (`issue_token` → the live `case_index` CBR memory) were
+  deliberately KEPT, not deleted.
+
 ## [0.6.9.3] - 2026-08-11
 
 ### Fixed

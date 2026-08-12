@@ -2862,18 +2862,57 @@ def cmd_init(args: argparse.Namespace) -> int:
         _wsay(out, "    • or point at a local endpoint (BYOK):")
         _wsay(out, "        workspaces models config --local-url <url> --local-model <id>")
         _wsay(out, "  Details: docs/concepts/local-models.md")
+        # A real choice, not just printed commands: interactively hand off to the
+        # already-built guided model wizard (lock.run_wizard — the bundled/
+        # download/pick-existing/skip flow). Interactive-only: --yes / --dry-run
+        # can't prompt, so they keep the printed paths above.
+        if not yes and not dry and _wask_yn(
+                inp, out, "\n  Set one up now with the guided model wizard?", False):
+            try:
+                from ..lock import run_wizard
+                res = run_wizard(stdin=inp, stdout=out)
+                _wsay(out, "  ✓ model wizard finished."
+                      if getattr(res, "completed", False)
+                      else "  (model wizard did not finish — the commands above "
+                           "set one up later)")
+            except Exception as e:  # noqa: BLE001 — optional; never abort init
+                _wsay(out, f"  (could not launch the model wizard: {e})")
 
-    # §6 Human oversight (per-workspace; explain the ladder)
-    _wsay(out, "\n§6  Human oversight")
+    # §6 Skills (companions) — pin starter skills to the default workspace.
+    # Reuses the SAME multi-select as `workspaces pin --interactive`
+    # (_cmd_pin_interactive, a consumer of pinned_skills.load_companion_catalogue)
+    # rather than a second parallel picker. Interactive-only.
+    _wsay(out, "\n§6  Skills")
+    _wsay(out, "-" * 52)
+    _wsay(out, "Skills (companions) are capabilities you pin to a workspace — the")
+    _wsay(out, "governed toolset an agent may use there.")
+    if yes or dry:
+        _wsay(out, "  Pin them anytime:  workspaces pin --interactive")
+    elif _wask_yn(inp, out, "  Pick starter skills now?", False):
+        try:
+            pin_args = argparse.Namespace(
+                filter=None, by="init-wizard",
+                note="pinned during first-run setup",
+                log_root=getattr(args, "log_root", None))
+            _cmd_pin_interactive(Path(ws_home), pin_args)
+        except Exception as e:  # noqa: BLE001 — optional; never abort init
+            _wsay(out, f"  (skill picker unavailable: {e}; "
+                       "use 'workspaces pin --interactive')")
+    else:
+        _wsay(out, "  Skipped — pin anytime:  workspaces pin --interactive")
+
+    # §7 Human oversight (per-workspace; explain the ladder)
+    _wsay(out, "\n§7  Human oversight")
     _wsay(out, "-" * 52)
     _wsay(out, "How much a person is in the loop, per workspace (loosest → strictest):")
     for i, (label, desc) in enumerate(_OVERSIGHT_LADDER):
         _wsay(out, f"  {i}  {label:11s} {desc}")
-    _wsay(out, "You set this per workspace; the console's first-run wizard picks it")
-    _wsay(out, "when you create your first one (start at 'approve' if unsure).")
+    _wsay(out, "Set it per workspace with:  workspaces oversight <level>")
+    _wsay(out, "(the console's first-run wizard also tightens autonomy when you")
+    _wsay(out, "create your first workspace; start at 'approve' if unsure).")
 
-    # §7 Connect to an agent hub
-    _wsay(out, "\n§7  Connect to your AI agent")
+    # §8 Connect to an agent hub
+    _wsay(out, "\n§8  Connect to your AI agent")
     _wsay(out, "-" * 52)
     _wsay(out, "To let Claude Code / Codex drive RVND, run:")
     _wsay(out, "  ./scripts/connect-agent-hub.sh")
