@@ -52,9 +52,8 @@ def test_discover_skips_dirs_without_skill_md(monkeypatch, tmp_path):
     root = _make_host(tmp_path, {"p@m": ["good"]})
     ip = json.loads((tmp_path / ".claude" / "plugins" / "installed_plugins.json"
                      ).read_text())["plugins"]["p@m"][0]["installPath"]
-    (tmp_path / ".claude" / "plugins")  # noqa
     from pathlib import Path
-    (Path(ip) / "skills" / "notaskill").mkdir()   # no SKILL.md inside
+    (Path(ip) / "skills" / "notaskill").mkdir()   # a skills dir with no SKILL.md
     monkeypatch.setenv("WORKSPACE_HOST_PLUGIN_DIRS", root)
     assert ps.discover_installed_skills()["p"]["skills"] == ["p:good"]
 
