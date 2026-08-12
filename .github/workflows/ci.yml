@@ -58,7 +58,7 @@ jobs:
           bad=0
           git log --no-merges --format='%s' $range | awk 'length($0)>72 {print "subject >72 chars: " $0; bad=1} END {exit bad}' || bad=1
           if git log --no-merges --format='%(trailers)' $range | grep -iE '^Co-Authored-By:.*(claude|codex|openai|anthropic|copilot|gemini)'; then
-            echo "AI co-author trailer found — record assistance in NOTICE.md instead"; bad=1
+            echo "AI co-author trailer found — record assistance in the commit body instead"; bad=1
           fi
           exit $bad
 
