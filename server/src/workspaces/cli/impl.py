@@ -662,13 +662,16 @@ def _cmd_pin_interactive(folder: Path, args: argparse.Namespace) -> int:
     Terminal-native (no TUI library): numbered list, comma-separated input,
     optional `all` keyword for an entire family.
     """
-    from ..pinned_skills import load_companion_catalogue, pin_skill, list_pinned
+    from ..pinned_skills import discover_pinnable_families, pin_skill, list_pinned
 
-    catalogue = load_companion_catalogue()
-    families = catalogue.get("families", {})
+    # Live source: skills the host (Claude Code / Codex) has actually installed,
+    # unioned with any static catalogue that ships. Nothing installed → nothing
+    # to pin, so point the user at the install path instead of a dead catalogue.
+    families = discover_pinnable_families()
     if not families:
-        print("No skill catalogue found. Falling back to direct mode:",
-              file=sys.stderr)
+        print("No installed skills found. Install a marketplace plugin first "
+              "(e.g. ./scripts/connect-agent-hub.sh), then re-run — or pin one "
+              "directly:", file=sys.stderr)
         print("  workspaces pin --folder <folder> <plugin>:<skill>", file=sys.stderr)
         return 2
 

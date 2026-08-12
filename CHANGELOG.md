@@ -5,6 +5,22 @@ dates are ISO.
 
 ## [Unreleased]
 
+## [0.6.9.5] - 2026-08-12
+
+### Fixed
+
+- **The skill-pin picker now reads host-INSTALLED plugins instead of a static
+  catalogue that never shipped.** `workspaces pin --interactive` and the `init`
+  wizard's §6 read a companion catalogue (`plugin/references/skill-companions.json`)
+  that is generated from nothing, so the picker was dark for everyone. Skills are
+  authored per plugin repo and installed via the marketplaces (`claude`/`codex
+  plugin install`); the picker now enumerates what the host has actually
+  installed — reading `~/.claude/plugins/installed_plugins.json` (+ Codex) and
+  scanning each install's `skills/` dir — and offers canonical `<plugin>:<skill>`
+  ids. `WORKSPACE_HOST_PLUGIN_DIRS` overrides the search roots. Any static
+  catalogue that does ship is still unioned in (back-compat). `load_companion_catalogue`
+  and companion-suggestion are untouched.
+
 ## [0.6.9.4] - 2026-08-11
 
 ### Fixed
