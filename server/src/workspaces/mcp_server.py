@@ -63,7 +63,24 @@ from .web_capture import (
 # Server setup
 # ---------------------------------------------------------------------------
 
-mcp = FastMCP("workspace")
+# The front door. An agent connecting here is IDENTIFIED (its principal → party →
+# competences) and GOVERNED: its actions are sorted through the boundaries this
+# workspace has set. The handshake hands it the governance LANGUAGE up front
+# (llms.txt, consumed from loomground-governance) so it grounds every action in
+# that language before it acts — and every tool call is planned + gated; RVND
+# plans, the host executes and reports back; an ungoverned action is refused.
+_FRONT_DOOR = (
+    "RVND — a local-first governance server. When you connect you are IDENTIFIED "
+    "and GOVERNED: your actions are sorted through the boundaries (gates) this "
+    "workspace has set for the agents it admits. Every tool call is planned and "
+    "gated (GO / CONDITIONAL / NO-GO): RVND plans the call, you execute it and "
+    "report the outcome back — an unplanned or refused action must not proceed, "
+    "and refusal (NO-GO) is a valid, expected outcome. Before acting, read the "
+    "governance LANGUAGE this server speaks — the `governance://llms.txt` resource "
+    "(the vocabulary, the gates, how citations and refusals work) — and ground "
+    "every governance action in it."
+)
+mcp = FastMCP("workspace", instructions=_FRONT_DOOR)
 
 # FastMCP leaves the low-level server's version unset; mcp >= 1.28 rejects a
 # None server_version when the streamable-http host initializes, so the host and
@@ -79,6 +96,19 @@ try:
     mcp._mcp_server.version = _server_version
 except AttributeError:
     pass
+
+
+@mcp.resource("governance://llms.txt")
+def governance_language() -> str:
+    """The governance LANGUAGE the agent is handed at the front door — the
+    vocabulary, the gates, how citations and refusals work. CONSUMED from
+    loomground-governance (``artifact_path``), never a copy, so it cannot drift
+    from the canonical language. This is what makes governance effective: the
+    agent grounds every action in the language before it can act, and every
+    action is gated at this handshake."""
+    from pathlib import Path as _Path
+    from loomground_governance import artifact_path
+    return _Path(str(artifact_path("llms.txt"))).read_text(encoding="utf-8")
 
 # Implementation handlers (split to mcp_impl.py; this file is the surface).
 from .mcp_impl import (
