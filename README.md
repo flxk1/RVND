@@ -302,19 +302,11 @@ environment paths and does not support the Finder launcher.
 ## Authorship
 
 Copyright in the project is held by its identified human author or authors.
-Generative AI tools assisted parts of development. See [`NOTICE.md`](NOTICE.md)
-for the authorship and provenance statement.
+Generative AI tools assisted parts of development.
 
 ## License
 
 Rvnd is available under the
-[GNU Affero General Public License v3.0 only](LICENSES/AGPL-3.0-only.txt), or
-under separate commercial terms from the copyright holder. See
-[LICENSING.md](LICENSING.md) and
-[COMMERCIAL-LICENSE.md](COMMERCIAL-LICENSE.md). Third-party
-components keep their own licences; see [`LICENSES/`](LICENSES/) and
+[GNU Affero General Public License v3.0 only](LICENSES/AGPL-3.0-only.txt).
+Third-party components keep their own licences; see [`LICENSES/`](LICENSES/) and
 [`REUSE.toml`](REUSE.toml).
-
-Commercial offerings — signed builds, white-label branding, and licensed
-design and policy content — are separate optional products; see
-[`LICENSING.md`](LICENSING.md).
