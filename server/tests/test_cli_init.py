@@ -119,6 +119,8 @@ def test_init_pins_skills_via_real_picker_when_accepted(monkeypatch, tmp_path):
     monkeypatch.setattr(mr, "models_for_role", lambda role: [])
     monkeypatch.setattr(ps, "load_companion_catalogue", lambda: {
         "families": {"ai-gov": {"label": "AI Gov", "skills": ["watch"]}}})
+    # keep the picker deterministic: no host-installed plugins in scope
+    monkeypatch.setenv("WORKSPACE_HOST_PLUGIN_DIRS", str(tmp_path / "no-host"))
     monkeypatch.setattr(ps, "list_pinned", lambda *a, **k: [])
     pinned: list = []
     monkeypatch.setattr(ps, "pin_skill",

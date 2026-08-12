@@ -350,6 +350,88 @@ def load_companion_catalogue() -> dict[str, Any]:
     return _COMPANION_CATALOGUE_CACHE
 
 
+# ---------------------------------------------------------------------------
+# Installed-plugin discovery — the pin picker's live source of truth.
+#
+# Skills are not authored in RVND; each plane/plugin repo carries its own, and
+# users install them via `claude plugin install` / `codex plugin install`. So
+# the pinnable menu is whatever the host has ACTUALLY installed, not a static
+# catalogue we have to regenerate. We read the host's install manifest and scan
+# each install's skills/ dir. Everything is best-effort: a missing or corrupt
+# manifest yields no families rather than an error.
+# ---------------------------------------------------------------------------
+
+def _host_plugin_manifests() -> list[Path]:
+    """installed_plugins.json for each host we know about. Override the search
+    roots with WORKSPACE_HOST_PLUGIN_DIRS (os.pathsep-separated) — used by tests
+    and operators pointing at a non-default install location."""
+    override = os.environ.get("WORKSPACE_HOST_PLUGIN_DIRS")
+    if override:
+        roots = [Path(p) for p in override.split(os.pathsep) if p]
+    else:
+        home = Path.home()
+        roots = [home / ".claude" / "plugins", home / ".codex" / "plugins"]
+    return [r / "installed_plugins.json" for r in roots
+            if (r / "installed_plugins.json").is_file()]
+
+
+def discover_installed_skills() -> dict[str, Any]:
+    """Enumerate skills from host-installed marketplace plugins.
+
+    Returns ``{plugin: {"label": "<plugin>@<marketplace>", "skills":
+    ["<plugin>:<skill>", ...]}}`` — the shape the pin picker consumes. Skill ids
+    are canonical ``<plugin>:<skill>``. A plugin installed from several hosts is
+    merged (union of skills). Best-effort throughout."""
+    families: dict[str, Any] = {}
+    for manifest in _host_plugin_manifests():
+        try:
+            data = json.loads(manifest.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        for key, installs in (data.get("plugins") or {}).items():
+            plugin = key.split("@", 1)[0]
+            if not isinstance(installs, list) or not installs:
+                continue
+            # newest install record wins (lastUpdated, then installedAt)
+            rec = sorted(
+                installs,
+                key=lambda r: (r.get("lastUpdated") or r.get("installedAt") or ""),
+                reverse=True,
+            )[0]
+            install_path = rec.get("installPath")
+            if not install_path:
+                continue
+            skills_dir = Path(install_path) / "skills"
+            if not skills_dir.is_dir():
+                continue
+            found = [f"{plugin}:{sd.name}" for sd in sorted(skills_dir.iterdir())
+                     if (sd / "SKILL.md").is_file()]
+            if not found:
+                continue
+            fam = families.setdefault(plugin, {"label": key, "skills": []})
+            for s in found:
+                if s not in fam["skills"]:
+                    fam["skills"].append(s)
+    return families
+
+
+def discover_pinnable_families() -> dict[str, Any]:
+    """The pin picker's family set: host-installed skills unioned with any
+    static companion catalogue that ships (usually none). Installed plugins are
+    the live source; the static catalogue is a back-compat fallback."""
+    families: dict[str, Any] = dict(load_companion_catalogue().get("families") or {})
+    for plugin, fam in discover_installed_skills().items():
+        if plugin in families:
+            merged = list(families[plugin].get("skills") or [])
+            for s in fam["skills"]:
+                if s not in merged:
+                    merged.append(s)
+            families[plugin] = {**families[plugin], "skills": merged}
+        else:
+            families[plugin] = fam
+    return families
+
+
 def suggest_companions(skill_id: str,
                        *,
                        exclude: Optional[list[str]] = None) -> dict[str, Any]:
