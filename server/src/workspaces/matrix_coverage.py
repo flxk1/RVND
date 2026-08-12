@@ -34,6 +34,11 @@ _LETTER = {"auto": "a", "human": "h", "refused": "f", "reserved": "r",
 _RISK_COLS = ("low", "medium", "high", "critical")
 _HIGH_BAND = ("high", "critical")
 
+# The oversight ladder, most human involvement first. A task lands one-hot in the
+# column its server-composed mode names (governance_graph's `oversight` field).
+_OVERSIGHT_COLS = ("severed", "human decision", "human-in-the-loop",
+                   "on-the-loop", "autonomous")
+
 
 def _strictest(verdicts: list[str]) -> str:
     """The governing verdict for a band: the strictest present, or "none"."""
@@ -224,12 +229,63 @@ def _task_agent(g: dict, *, folder_context: str, log_root, tags) -> dict[str, An
     }
 
 
+def _task_oversight(g: dict, *, folder_context: str, log_root, tags) -> dict[str, Any]:
+    """Task x Oversight: how much human involvement each governed act carries,
+    read as a shape. Columns are the oversight ladder (severed -> autonomous);
+    each task sits one-hot in the mode its policy already bound — the composed
+    `oversight` field on the node, never recomputed here. A finding is an act
+    that runs with NO human in the loop (autonomous) — the inverse of a sign-off
+    card, surfaced so a hands-off act is visible, not buried."""
+    nodes, edges = g["nodes"], g["edges"]
+    egress = {e["from"]: e for e in edges if e["kind"] == "egress"}
+    ucs = [n for n in nodes if n["kind"] == "use_case"]
+    if tags:
+        want = set(tags)
+        ucs = [u for u in ucs if want & set(u.get("tags") or [])]
+    cols = list(_OVERSIGHT_COLS)
+    rows_out, cells, findings = [], [], 0
+    for u in ucs:
+        rows_out.append(u["label"])
+        ov = u.get("oversight") or {}
+        mode = ov.get("mode", "")
+        overseers = ov.get("overseers") or []
+        row = []
+        for c in cols:
+            if c != mode:
+                row.append({"row": u["label"], "col": c, "verdict": "none",
+                            "letter": "·", "count": 0, "refs": [],
+                            "finding": False, "why": ""})
+                continue
+            verdict = _uc_verdict(u, egress)
+            finding = mode == "autonomous"
+            if finding:
+                findings += 1
+            row.append({
+                "row": u["label"], "col": c, "verdict": verdict,
+                "letter": _LETTER.get(verdict, "?"), "count": 1,
+                "refs": [{"id": u["id"], "label": u["label"]}],
+                "finding": finding,
+                "why": ("runs with no human in the loop" if finding
+                        else (f"overseer: {', '.join(overseers)}" if overseers else "")),
+            })
+        cells.append(row)
+    return {
+        "preset": "task_oversight", "title": "Task × Oversight", "editable": False,
+        "row_axis": "task", "col_axis": "oversight",
+        "rows": rows_out, "cols": cols, "cells": cells,
+        "findings": findings, "empty": not ucs,
+        "note": ("the human involvement each act carries, from the policy's own "
+                 "oversight — read-only; change it in the policy, not here"),
+    }
+
+
 # preset key -> (builder, one-line gap question). New presets register here; the
 # facade lists them from this table so a new lens is never silently unreachable.
 _PRESETS = {
     "kind_risk": (_kind_risk, "where is autonomy weak in the high-risk band?"),
     "task_role": (_task_role, "is any reserved act left with no role to discharge it?"),
     "task_agent": (_task_agent, "who may run what, and where is authority too wide?"),
+    "task_oversight": (_task_oversight, "which acts need a human, and which run with none?"),
 }
 
 
