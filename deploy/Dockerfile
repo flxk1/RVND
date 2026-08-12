@@ -15,7 +15,7 @@ WORKDIR /opt/rvnd
 RUN apt-get update \
     && apt-get install -y --no-install-recommends git \
     && rm -rf /var/lib/apt/lists/*
-COPY pyproject.toml README.md LICENSING.md NOTICE.md ./
+COPY pyproject.toml README.md ./
 COPY LICENSES ./LICENSES
 COPY server/src ./server/src
 COPY app ./app
