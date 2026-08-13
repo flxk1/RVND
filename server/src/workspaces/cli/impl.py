@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import IO, Any
 from ..folder_context import (
     ALLOW_UNREGISTERED_ENV,
+    FolderContextNotAllowed,
     NoFolderContextError,
     resolve_folder_context,
 )
@@ -350,9 +351,35 @@ def cmd_licence(args: argparse.Namespace) -> int:
             print(f"Within capacity:         {'yes' if report['within_capacity'] else 'no'}")
     return 0 if report["verified"] else 2
 
+def _resolve_ingest_folder(args: argparse.Namespace) -> str:
+    """Resolve an ingest/watch target, accepting a folder that is NOT a registered
+    workspace.
+
+    Policy documents usually live in an ordinary folder on disk; ingesting them so
+    they become grounded — and, once ratified, enforceable — must not require
+    workspace ceremony. Governance is global-default (a workspace only REFINES it,
+    per ``decide_action``/``govern_egress``), so a folder need not be a workspace to
+    be a policy source. A registered workspace resolves exactly as before; an
+    unregistered folder is accepted with a visible notice, using the same
+    ``WORKSPACES_ALLOW_UNREGISTERED`` switch the test-suite and the hook already use.
+    ``NoFolderContextError`` (no folder given at all) still propagates to the caller.
+    """
+    try:
+        return resolve_folder_context(
+            args.folder, allow_unscoped=False, log_root=_log_root(args))
+    except FolderContextNotAllowed:
+        os.environ.setdefault(ALLOW_UNREGISTERED_ENV, "1")
+        folder = resolve_folder_context(
+            args.folder, allow_unscoped=False, log_root=_log_root(args))
+        print(f"note: {folder} is not a registered workspace — ingesting it as a "
+              f"global policy source (workspaces refine global policy).",
+              file=sys.stderr)
+        return folder
+
+
 def cmd_watch(args: argparse.Namespace) -> int:
     try:
-        folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
+        folder = _resolve_ingest_folder(args)
     except NoFolderContextError as e:
         print(f"error: {e}", file=sys.stderr)
         return 3
@@ -403,7 +430,7 @@ def cmd_watch(args: argparse.Namespace) -> int:
 
 def cmd_ingest(args: argparse.Namespace) -> int:
     try:
-        folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
+        folder = _resolve_ingest_folder(args)
     except NoFolderContextError as e:
         print(f"error: {e}", file=sys.stderr)
         return 3
@@ -2918,10 +2945,63 @@ def cmd_init(args: argparse.Namespace) -> int:
     _wsay(out, "(the console's first-run wizard also tightens autonomy when you")
     _wsay(out, "create your first workspace; start at 'approve' if unsure).")
 
-    # §8 Connect to an agent hub — the 99% path: without this, RVND is installed
+    # §8 Policy sources (optional) — turn a folder of existing rule documents into
+    # governance. Grounds each document into versum (every requirement keeps a
+    # citation to its source); the extracted norms are PROPOSED, never auto-applied
+    # (governance-by-design). A human ratifies (rvnd-decide) and applies
+    # (rvnd-govern) — then it is enforceable for every agent at global scope. The
+    # folder need NOT be a workspace: ingest is folder-agnostic and governance is
+    # global-default. Skips cleanly when no folder is set up.
+    policy_src: str | None = None
+    _wsay(out, "\n§8  Policy sources  (optional)")
+    _wsay(out, "-" * 52)
+    _wsay(out, "If your rules already live as documents — contracts, regulations,")
+    _wsay(out, "house policy — point RVND at the folder holding them. It grounds")
+    _wsay(out, "each into versum (every requirement keeps a citation to its source),")
+    _wsay(out, "then proposes the extracted norms. Nothing is enforced until you")
+    _wsay(out, "ratify: review the proposal (rvnd-decide), apply it (rvnd-govern).")
+    _wsay(out, "Applied policy governs every agent at global scope; a workspace can")
+    _wsay(out, "only tighten it. The folder need NOT be a workspace.")
+    if yes or dry:
+        _wsay(out, "  Set one up anytime:  workspaces watch <policy-folder>")
+    else:
+        src = _wask(inp, out,
+                    "  Folder of policy documents (blank to skip)", "").strip()
+        if not src:
+            _wsay(out, "  No policy folder set up — skipping. Add one anytime:")
+            _wsay(out, "    workspaces watch  <policy-folder>    (background grounding)")
+            _wsay(out, "    workspaces ingest <policy-folder> <file>   (one document)")
+        else:
+            src_path = Path(src).expanduser()
+            if not src_path.is_dir():
+                _wsay(out, f"  (not a folder: {src_path} — skipping; add later with "
+                           "'workspaces watch <folder>')")
+            else:
+                # ingest is folder-agnostic; relax the workspace allowlist for this
+                # local, user-chosen folder the same way the CLI helper does.
+                os.environ.setdefault(ALLOW_UNREGISTERED_ENV, "1")
+                _wsay(out, f"  grounding documents under {src_path} …")
+                try:
+                    watcher = InboxWatcher(str(src_path), log_root=_log_root(args))
+                    new_ids = watcher.run_once()
+                    if new_ids:
+                        _wsay(out, f"  ✓ grounded {len(new_ids)} document(s) into versum.")
+                    else:
+                        _wsay(out, "  (no new documents found to ground.)")
+                    _wsay(out, "  Next — turn grounded norms into enforced policy:")
+                    _wsay(out, "    ask your agent to run the RVND governance skills")
+                    _wsay(out, "    (extract-policy-norms → compile-loomground-policy →")
+                    _wsay(out, "     rvnd-decide → rvnd-govern), or keep it grounding")
+                    _wsay(out, f"    in the background:  workspaces watch {src_path}")
+                    policy_src = str(src_path)
+                except Exception as e:  # noqa: BLE001 — optional; never abort init
+                    _wsay(out, f"  (could not ground the folder: {e}; add later "
+                               "with 'workspaces watch <folder>')")
+
+    # §9 Connect to an agent hub — the 99% path: without this, RVND is installed
     # but no agent can drive it. Offer to run the connector inline (idempotent,
     # self-detecting Claude Code / Codex) rather than only printing the command.
-    _wsay(out, "\n§8  Connect to your AI agent")
+    _wsay(out, "\n§9  Connect to your AI agent")
     _wsay(out, "-" * 52)
     _wsay(out, "Let Claude Code / Codex drive RVND — registers the governance MCP")
     _wsay(out, "server and installs the governance skills (idempotent, self-detecting).")
@@ -2939,10 +3019,11 @@ def cmd_init(args: argparse.Namespace) -> int:
         _wsay(out, "  Skipped — connect anytime:  ./scripts/connect-agent-hub.sh")
 
     if not dry:
-        marker.write_text(
-            json.dumps({"initialized_at": ts, "workspaces_home": ws_home,
-                        "promise_accepted": True}, indent=2) + "\n",
-            encoding="utf-8")
+        _marker: dict[str, Any] = {"initialized_at": ts, "workspaces_home": ws_home,
+                                   "promise_accepted": True}
+        if policy_src:
+            _marker["policy_source"] = policy_src
+        marker.write_text(json.dumps(_marker, indent=2) + "\n", encoding="utf-8")
 
     _wsay(out, "\nSetup complete.")
     _wsay(out, "Next — start the console:")
