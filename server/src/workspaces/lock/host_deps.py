@@ -25,6 +25,9 @@ list_models: Optional[Callable[[], Any]] = None
 registry_models_for_role: Optional[Callable[[str], Any]] = None
 capability_verifier_factory: Optional[Callable[[], Any]] = None
 record_capability_refusal: Optional[Callable[..., Any]] = None
+# Workspace-hierarchy policy composition for egress (decide_action via
+# govern_egress) — injected so the lock never imports governance directly.
+govern_egress: Optional[Callable[..., Any]] = None
 
 _wired = False
 

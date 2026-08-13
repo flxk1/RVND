@@ -151,6 +151,13 @@ def _record_capability_refusal(folder_context, *, reason, path, log_root=None):
     ))
 
 
+def _govern_egress(folder, **kwargs):
+    # Lazy import at call time (like every hook here) so the lock's outbound
+    # channel stays a single wiring edge, not a static lock→governance import.
+    from .governance import govern_egress
+    return govern_egress(folder, **kwargs)
+
+
 host_deps.models_for_role = _models_for_role
 host_deps.llm_classify = _llm_classify
 host_deps.key_root_dir = _key_root_dir
@@ -163,3 +170,4 @@ host_deps.list_models = _list_models
 host_deps.registry_models_for_role = _registry_models_for_role
 host_deps.capability_verifier_factory = _capability_verifier_factory
 host_deps.record_capability_refusal = _record_capability_refusal
+host_deps.govern_egress = _govern_egress
