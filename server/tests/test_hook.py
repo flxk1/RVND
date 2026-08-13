@@ -342,6 +342,48 @@ def test_predicate_carries_grounding_signal_and_traffic_light():
         assert pred["risk"]["traffic_light"] == light
 
 
+# ── universal-proxy unification: egress governs through the one chokepoint ───
+def test_govern_egress_composes_through_chokepoint(tmp_path, monkeypatch):
+    monkeypatch.setenv("WORKSPACES_ALLOW_UNREGISTERED", "1")
+    from workspaces.governance import govern_egress
+    clean = govern_egress(str(tmp_path), actor="a", log_root=tmp_path)
+    conf = govern_egress(str(tmp_path), actor="a", confidential=True, pii=True, log_root=tmp_path)
+    # both flow through decide_action → carry the unified signal (loomground verdict,
+    # grounding, traffic light) — same chokepoint as the hook
+    for g in (clean, conf):
+        assert {"verdict", "grounded", "traffic_light"} <= set(g)
+    # confidential egress is never LESS strict than clean (monotone)
+    order = {"permit": 0, "hold": 1, "deny": 2}
+    assert order[conf["verdict"]] >= order[clean["verdict"]]
+
+
+def test_permit_egress_cert_has_no_human_pillar_but_is_enforcement_bound():
+    from workspaces import governance_cert as gc
+    pred = gc.build_predicate({"action_class": "egress.cloud-llm", "at": "t",
+                               "verdict": "permit", "mechanism": "egress-proxy",
+                               "grounded": False, "traffic_light": "amber"})
+    assert pred["verdict"] == "permit"
+    assert pred["overseen"]["required"] is False
+    assert "disposition" not in pred["overseen"]           # no human decided
+    assert pred["enforced"]["blocked_unless_permitted"] is True  # still enforcement-bound
+
+
+def test_govern_egress_mints_verifiable_permit_cert(tmp_path, monkeypatch):
+    monkeypatch.setenv("WORKSPACES_ALLOW_UNREGISTERED", "1")
+    monkeypatch.setenv("WORKSPACE_KEY_DIR", str(tmp_path / "keys"))
+    from workspaces import governance_cert as gc
+    marker = {"at": "2026-01-01T00:00:00Z", "agent": "a", "folder": str(tmp_path),
+              "action_class": "egress.cloud-llm", "audit_id": "eg1", "verdict": "permit",
+              "mechanism": "egress-proxy", "grounded": False, "traffic_light": "amber"}
+    env = gc.emit_governance_certification(str(tmp_path), marker=marker, log_root=tmp_path)
+    assert env is not None
+    rep = gc.verify_governance_certification(env)
+    assert rep["ok"], rep["findings"]
+    pred = rep["statement"]["predicate"]
+    assert pred["verdict"] == "permit" and pred["overseen"]["required"] is False
+    assert pred["enforced"]["mechanism"] == "egress-proxy"
+
+
 def test_posttooluse_without_marker_is_noop(tmp_path, monkeypatch):
     monkeypatch.setenv("RVND_HOOK_LOG_ROOT", str(tmp_path))
     called = {"n": 0}
