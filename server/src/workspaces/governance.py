@@ -218,6 +218,62 @@ def permits(decision: dict[str, Any]) -> bool:
     return decision.get("verdict") == "permit"
 
 
+def govern_egress(
+    folder: str | Path,
+    *,
+    actor: str = "agent",
+    confidential: bool = False,
+    pii: bool = False,
+    action_class: str = "egress.cloud-llm",
+    at: str = "",
+    log_root: Optional[Path] = None,
+    mint_cert: bool = False,
+) -> dict[str, Any]:
+    """Compose an egress DATA-signal with policy through the ONE chokepoint — the
+    universal-proxy unification.
+
+    The proxy contributes the data signal (its tier-cascade scan: was confidential
+    or personal data about to leave?); :func:`decide_action` composes it with the
+    workspace-hierarchy policy (matrix × grade × oversight × privacy floor) into ONE
+    verdict — the same loomground language + grounded policy + risk traffic light
+    every other RVND caller speaks. Host-level: ``folder`` may be ANY directory
+    (global-default policy); a workspace only REFINES it, so the proxy stops being
+    workspace-gated.
+
+    ``mint_cert`` issues a GovernanceCertification for a PERMITTED egress (the
+    enforcement-bound proof that this data left only after passing the gate). A HELD
+    egress is routed to a human first (the caller mints on approval, like the
+    PreToolUse/PostToolUse loop); a blocked egress mints nothing — a refusal is not
+    a certificate. Returns :func:`decide_action`'s dict, plus ``certificate`` when
+    minted."""
+    footprint = ("personal-data",) if pii else ()
+    privacy_class = "regulated" if (confidential or pii) else None
+    gov = decide_action(folder, action_class=action_class, footprint=footprint,
+                        privacy_class=privacy_class, actor=actor, log_root=log_root)
+    if mint_cert and gov.get("light") == "go":
+        try:
+            if not at:
+                from datetime import datetime, timezone
+                at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            from .governance_cert import emit_governance_certification
+            marker = {
+                "at": at, "agent": actor, "folder": str(folder),
+                "action_class": action_class, "audit_id": gov.get("audit_id", ""),
+                "action_digest": "", "evidence": [], "verdict": "permit",
+                "mechanism": "egress-proxy",
+                "oversight_level": gov.get("oversight_level"), "grade": gov.get("grade"),
+                "gate_verdict": gov.get("gate_verdict"),
+                "obligation_pairs": gov.get("obligation_pairs") or [],
+                "policy_digest": gov.get("policy_digest", ""),
+                "grounded": gov.get("grounded"), "traffic_light": gov.get("traffic_light"),
+            }
+            gov["certificate"] = emit_governance_certification(
+                str(folder), marker=marker, log_root=log_root)
+        except Exception:  # noqa: BLE001 — a witness must never break egress
+            gov["certificate"] = None
+    return gov
+
+
 def _band(ov: str) -> str:
     i = _pm.OVERSIGHT.index(ov)
     return "HITL" if i >= 3 else ("HIC" if i == 0 else "HOTL")
