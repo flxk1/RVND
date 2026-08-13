@@ -82,11 +82,23 @@ def dsse_wrap(statement: dict, sign: Callable[[bytes], bytes], keyid: str) -> di
 
 
 def build_predicate(marker: dict) -> dict:
-    """Assemble the 5-pillar GovernanceCertification predicate from the gate event
-    the PreToolUse hook recorded when it HELD the action."""
+    """Assemble the 5-pillar GovernanceCertification predicate from a gate event.
+
+    ``verdict`` is ``hold-approved`` (a held action a human then approved — the
+    PreToolUse/PostToolUse loop) or ``permit`` (a governed action the gate allowed
+    with no human step required — e.g. a policy-cleared egress). The ``overseen``
+    pillar reflects that: a permitted action required no human oversight."""
     evidence = marker.get("evidence") or []
+    verdict = marker.get("verdict") or "hold-approved"
+    overseen: dict[str, Any] = {
+        "required": verdict != "permit",
+        "qualifier": marker.get("qualification", "unspecified"),
+    }
+    if verdict != "permit":
+        overseen["disposition"] = "DECIDED"   # a human approved the held action
+        # oversight_certificate embedded by emit_* iff the [oversight-cert] extra is present
     return {
-        "verdict": "hold-approved",
+        "verdict": verdict,
         "action_class": marker.get("action_class", ""),
         "issued_at": marker.get("at", ""),
         # grounding SIGNAL + human-facing risk traffic light. Grounding grounds the
@@ -102,12 +114,7 @@ def build_predicate(marker: dict) -> dict:
             "blocked_unless_permitted": True,
             "decision_ref": marker.get("audit_id", ""),
         },
-        "overseen": {
-            "required": True,
-            "disposition": "DECIDED",   # the human approved the held action
-            "qualifier": marker.get("qualification", "unspecified"),
-            # oversight_certificate embedded below iff the [oversight-cert] extra is present
-        },
+        "overseen": overseen,
         "grounded": {
             "scheme": ACTION_EVIDENCE_SCHEME,
             "ref": evidence,            # the matched command spans that triggered the footprint
@@ -143,9 +150,12 @@ def emit_governance_certification(folder_context: str, *, marker: dict,
                                              marker.get("agent", ""), log_root))
         predicate = build_predicate(marker)
 
-        # overseen pillar: embed a full portable oversight-certificate when the
-        # optional extra is installed; otherwise carry the disposition alone.
+        # overseen pillar: embed a full portable oversight-certificate when a human
+        # was actually required AND the optional extra is installed; otherwise the
+        # pillar carries the disposition (or, for a permit, nothing) alone.
         try:
+            if not predicate["overseen"].get("required"):
+                raise RuntimeError("no human step — nothing to certify")
             from .oversight_cert import certify_decision
             ev = tuple(f"span:{e.get('matched', '')}"
                        for e in (marker.get("evidence") or []) if e.get("matched")) \
