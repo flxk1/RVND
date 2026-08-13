@@ -87,6 +87,10 @@ workspaces-gateway-verify = "workspaces.gateway_verify:main"
 workspaces-doctor         = "workspaces_doctor_bootstrap:main"
 workspace-lock            = "workspaces.lock.__main__:main"
 rvnd-visual-verdict       = "workspaces.release.visual_verdict:main"
+# The PreToolUse enforcement hook (the teeth). With no args it runs AS the hook
+# (reads a PreToolUse event on stdin, emits a binding verdict); with --install /
+# --uninstall it manages its own .claude/settings.json entry.
+rvnd-hook                 = "workspaces.hook:main"
 # Compatibility aliases.
 workspace                 = "workspaces.cli:main"
 workspace-mcp             = "workspaces.mcp_server:main"
