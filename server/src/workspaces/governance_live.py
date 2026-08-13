@@ -190,6 +190,35 @@ def _chain(folder_context: str, log_root: Optional[str],
     return out
 
 
+def _certificates(folder_context: str, log_root: Optional[str],
+                  limit: int) -> list[dict[str, Any]]:
+    """Portable oversight certificates persisted BESIDE the chain (the
+    ``oversight_certs.jsonl`` sidecar), newest first and bounded — a SEPARATE
+    field from the linkage-checked ``chain`` (never mixed into it). Each row is
+    ``{audit_id, certificate}`` linking a certificate to the decision's own audit
+    event, so a returned human decision carries its proof on the same board that
+    already tracks it — no new surface, no second courier. Read-only; empty when
+    the sidecar (or the [oversight-cert] extra) is absent. Never raises."""
+    try:
+        from .mutation_log import MutationLog
+        log = MutationLog(folder_context, log_root=_log_root_path(log_root))
+        path = log.log_dir / "oversight_certs.jsonl"
+        if not path.exists():
+            return []
+        rows: list[dict[str, Any]] = []
+        for line in path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                rows.append(json.loads(line))
+            except (ValueError, TypeError):
+                continue
+        return rows[-limit:][::-1]
+    except Exception:
+        return []
+
+
 def governance_live(folder_context: str, *, log_root: Optional[str] = None,
                     chain_limit: int = 20,
                     now: Optional[float] = None) -> dict[str, Any]:
@@ -203,6 +232,7 @@ def governance_live(folder_context: str, *, log_root: Optional[str] = None,
     sessions = _sessions(folder_context, log_root, now, revoked)
     leases = _leases(folder_context, log_root, now)
     chain = _chain(folder_context, log_root, chain_limit)
+    certificates = _certificates(folder_context, log_root, chain_limit)
     summary = {
         "sessions_open": len(sessions),
         "admitted": sum(1 for s in sessions if s.get("admitted")),
@@ -218,4 +248,5 @@ def governance_live(folder_context: str, *, log_root: Optional[str] = None,
         "sessions": sessions,
         "leases": leases,
         "chain": chain,
+        "certificates": certificates,
     }

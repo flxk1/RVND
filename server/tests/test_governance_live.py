@@ -63,7 +63,7 @@ def test_op_is_read_only_classified():
 def test_board_shape(seeded):
     b = _board(seeded)
     assert b["ok"] is True
-    assert set(b) == {"ok", "summary", "sessions", "leases", "chain"}
+    assert set(b) == {"ok", "summary", "sessions", "leases", "chain", "certificates"}
     assert set(b["summary"]) == {
         "sessions_open", "admitted", "run_leases_held", "escalations"}
     assert isinstance(b["sessions"], list)
