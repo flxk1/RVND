@@ -90,6 +90,17 @@ def test_evaluate_decide_error_fails_closed():
     assert "engine down" in d.reason
 
 
+def test_evaluate_block_reason_is_actionable(monkeypatch):
+    monkeypatch.delenv("RVND_HOOK_STRICT", raising=False)
+    gov = {"light": "block", "reason": "gate NO-GO",
+           "gate_reason": "grade L2 below required for irreversible (needs grade >= 3)"}
+    d = H.evaluate({"tool_name": "Bash", "tool_input": {"command": "rm -rf /x"}, "cwd": "."},
+                   decide=lambda *a, **k: gov)
+    assert d.kind == "deny"
+    assert "below required for irreversible" in d.reason   # structural, not "gate NO-GO"
+    assert "raise the autonomy grade" in d.reason           # what would unblock
+
+
 def test_evaluate_benign_short_circuits_without_calling_decide(monkeypatch):
     monkeypatch.delenv("RVND_HOOK_STRICT", raising=False)
 
