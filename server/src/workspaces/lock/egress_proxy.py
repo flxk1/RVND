@@ -321,14 +321,21 @@ def _compose_egress_policy(decision: GateDecision, folder: str, actor: str) -> G
     policy can only tighten the data gate's action (allow→ask_user→refuse), never
     relax it — so the load-bearing privacy guarantee is preserved by construction.
     A confidential egress the policy then permits mints a GovernanceCertification.
-    Best-effort: if policy is unavailable, the data gate stands unchanged."""
+
+    Reached through the lock's INJECTED ``host_deps.govern_egress`` hook — the lock
+    never imports governance directly (boundary discipline). Unwired (the
+    extraction case) or any error → the data gate stands unchanged."""
     from dataclasses import replace
+
+    from . import host_deps
+    host_deps.ensure_wired()
+    if host_deps.govern_egress is None:
+        return decision
     try:
-        from ..governance import govern_egress
         confidential = decision.action in ("minimise", "refuse", "ask_user")
-        gov = govern_egress(folder, actor=actor, confidential=confidential,
-                            pii=confidential, action_class="egress.cloud-llm",
-                            mint_cert=confidential)
+        gov = host_deps.govern_egress(folder, actor=actor, confidential=confidential,
+                                      pii=confidential, action_class="egress.cloud-llm",
+                                      mint_cert=confidential)
         light = gov.get("light")
     except Exception:  # noqa: BLE001 — policy must never relax the data gate
         return decision

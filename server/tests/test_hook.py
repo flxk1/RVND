@@ -385,17 +385,18 @@ def test_govern_egress_mints_verifiable_permit_cert(tmp_path, monkeypatch):
 
 
 def test_egress_policy_composition_is_escalate_only(monkeypatch):
-    from workspaces.lock import egress_proxy as ep
+    from workspaces.lock import egress_proxy as ep, host_deps
     from workspaces.lock.gate import GateDecision
+    monkeypatch.setattr(host_deps, "_wired", True)   # skip real wiring; inject our stub
     # policy says BLOCK → escalate a permissive data gate to refuse
-    monkeypatch.setattr("workspaces.governance.govern_egress",
+    monkeypatch.setattr(host_deps, "govern_egress",
                         lambda *a, **k: {"light": "block", "reason": "policy denies"})
     assert ep._compose_egress_policy(GateDecision(action="allow"), "/tmp", "a").action == "refuse"
     # policy PERMITS → can NEVER relax a stricter data gate (the privacy guarantee)
-    monkeypatch.setattr("workspaces.governance.govern_egress", lambda *a, **k: {"light": "go"})
+    monkeypatch.setattr(host_deps, "govern_egress", lambda *a, **k: {"light": "go"})
     assert ep._compose_egress_policy(GateDecision(action="refuse"), "/tmp", "a").action == "refuse"
     # policy says HOLD but data gate already refuses → stays refuse (strictest wins)
-    monkeypatch.setattr("workspaces.governance.govern_egress", lambda *a, **k: {"light": "ask"})
+    monkeypatch.setattr(host_deps, "govern_egress", lambda *a, **k: {"light": "ask"})
     assert ep._compose_egress_policy(GateDecision(action="refuse"), "/tmp", "a").action == "refuse"
 
 
