@@ -39,6 +39,10 @@ drive it from the workspace policy.
 This module is ALSO its own installer: ``rvnd-hook --install`` merges the
 PreToolUse entry into a ``.claude/settings.json`` (idempotent, backed up), and
 ``rvnd-hook --uninstall`` removes it. With no arguments it runs as the hook.
+
+Internal by design: run by the host as a PreToolUse/PostToolUse hook (and as its
+own ``rvnd-hook`` installer CLI); it is not part of the MCP tool surface that
+``verify_surface`` tracks.
 """
 from __future__ import annotations
 
