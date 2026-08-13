@@ -5,6 +5,22 @@ dates are ISO.
 
 ## [Unreleased]
 
+## [0.6.9.9] - 2026-08-13
+
+### Added
+
+- **The front door hands the agent the governance language (C3).** An agent
+  connecting over MCP now receives the governance language at the handshake
+  instead of having to discover it: the `FastMCP` server `instructions` present
+  it up front (you are IDENTIFIED and GOVERNED; every tool call is planned +
+  gated GO/CONDITIONAL/NO-GO; refusal is valid), and it is exposed as the
+  `governance://llms.txt` MCP resource. The console also serves it at
+  `GET /llms.txt` (`text/markdown`). The language is **consumed from
+  loomground-governance** via `artifact_path("llms.txt")` — byte-for-byte, never
+  copied, so it cannot drift from the canonical source. `connect-agent-hub`
+  points at it. Backed by `tool_call_plan`'s existing fail-closed contract: no
+  agent reaches a tool call without first being handed the language.
+
 ## [0.6.9.8] - 2026-08-12
 
 ### Added
@@ -19,7 +35,7 @@ dates are ISO.
   (strictest-wins); a per-channel floor is a SPECIALISED gate. **Additive**: the
   single `master` world-touch stays, so every existing reader keeps working. The
   patchbay render (drawing the N boundaries + the lanes) is the visible half,
-  next. (Stacks after C3 / 0.6.9.7.)
+  next.
 
 ## [0.6.9.6] - 2026-08-12
 
