@@ -194,6 +194,15 @@ def _log_root() -> Optional[Path]:
     return Path(v) if v else None
 
 
+def _unblock_hint(footprint: tuple[str, ...]) -> str:
+    """A short, honest 'what would let this through' for a blocked action, so the
+    gate reads as a door with a key, not a dead end."""
+    if not footprint:
+        return ""
+    return ("to proceed: raise the autonomy grade (RVND_AUTONOMY_GRADE), add a "
+            "standing approval for this action class, or run it yourself")
+
+
 def evaluate(evt: dict[str, Any],
              *, decide: Optional[Callable[..., dict[str, Any]]] = None) -> Decision:
     """Classify the call and resolve it to a :class:`Decision`.
@@ -225,6 +234,9 @@ def evaluate(evt: dict[str, Any],
                      actor=_agent(evt), log_root=_log_root())
         light = str(gov.get("light") or "")
         reason = str(gov.get("reason") or "")
+        # The STRUCTURAL reason (grade/footprint) is the actionable one — "grade L2
+        # below required for irreversible (needs grade ≥ 3)" beats "gate NO-GO".
+        why = str(gov.get("gate_reason") or "") or reason
         detail = {"action_class": action_class, "footprint": list(footprint),
                   "evidence": evidence, "verdict": gov.get("verdict"),
                   "audit_id": gov.get("audit_id"),
@@ -235,11 +247,14 @@ def evaluate(evt: dict[str, Any],
                   "obligation_pairs": gov.get("obligation_pairs") or [],
                   "policy_digest": gov.get("policy_digest", "")}
         if light == "go":
-            return Decision("allow", reason or "permitted", detail)
+            return Decision("allow", why or "permitted", detail)
         if light == "ask":
-            return Decision("ask", reason or "requires human sign-off", detail)
+            return Decision("ask", (why or "requires human sign-off")
+                            + " — approve to proceed, or decline", detail)
         if light == "block":
-            return Decision("deny", reason or "blocked by policy", detail)
+            hint = _unblock_hint(footprint)
+            return Decision("deny", f"{why or 'blocked by policy'}"
+                            + (f". {hint}" if hint else ""), detail)
         # Unrecognised verdict → fail closed, never guess "allow".
         return Decision("fail", f"unrecognised verdict {light!r}", detail)
     except SystemExit:
