@@ -851,6 +851,7 @@
         "cancel": [
           "run_id"
         ],
+        "connected_agents": [],
         "connector_list": [
           "folder_context"
         ],
@@ -963,6 +964,9 @@
           "issues",
           "now_epoch",
           "use_case_id"
+        ],
+        "oversight_cert_verify": [
+          "envelope"
         ],
         "patch_apply": [
           "actor",
