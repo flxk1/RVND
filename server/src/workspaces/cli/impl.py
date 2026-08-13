@@ -718,7 +718,7 @@ def _cmd_pin_interactive(folder: Path, args: argparse.Namespace) -> int:
 
     # Prompt for selection.
     print("Pick: numbers separated by commas (e.g. 3,7,12),")
-    print("      or 'all:<plugin>' for a whole family (e.g. all:ai-governance-watch),")
+    print("      'all' for everything, or 'all:<plugin>' for a whole family,")
     print("      or 'q' / empty to cancel.")
     try:
         choice = input("> ").strip()
@@ -735,7 +735,11 @@ def _cmd_pin_interactive(folder: Path, args: argparse.Namespace) -> int:
     for token in (t.strip() for t in choice.split(",")):
         if not token:
             continue
-        if token.startswith("all:"):
+        if token.lower() == "all":
+            for rows in grouped.values():
+                for _, sid in rows:
+                    to_pin.append(sid)
+        elif token.startswith("all:"):
             plugin = token[4:]
             if plugin not in grouped:
                 print(f"  ! 'all:{plugin}' — no such plugin in catalogue, skipping",
@@ -2914,11 +2918,25 @@ def cmd_init(args: argparse.Namespace) -> int:
     _wsay(out, "(the console's first-run wizard also tightens autonomy when you")
     _wsay(out, "create your first workspace; start at 'approve' if unsure).")
 
-    # §8 Connect to an agent hub
+    # §8 Connect to an agent hub — the 99% path: without this, RVND is installed
+    # but no agent can drive it. Offer to run the connector inline (idempotent,
+    # self-detecting Claude Code / Codex) rather than only printing the command.
     _wsay(out, "\n§8  Connect to your AI agent")
     _wsay(out, "-" * 52)
-    _wsay(out, "To let Claude Code / Codex drive RVND, run:")
-    _wsay(out, "  ./scripts/connect-agent-hub.sh")
+    _wsay(out, "Let Claude Code / Codex drive RVND — registers the governance MCP")
+    _wsay(out, "server and installs the governance skills (idempotent, self-detecting).")
+    _hub = Path(__file__).resolve().parents[4] / "scripts" / "connect-agent-hub.sh"
+    if yes or dry or not _hub.exists():
+        _wsay(out, "  Connect anytime:  ./scripts/connect-agent-hub.sh")
+    elif _wask_yn(inp, out, "  Connect your AI agent now?", False):
+        try:
+            import subprocess as _sp
+            _sp.run(["bash", str(_hub), "--yes"], check=False)
+        except Exception as e:  # noqa: BLE001 — optional; never abort init
+            _wsay(out, f"  (couldn't run the connector: {e}; "
+                       "run ./scripts/connect-agent-hub.sh)")
+    else:
+        _wsay(out, "  Skipped — connect anytime:  ./scripts/connect-agent-hub.sh")
 
     if not dry:
         marker.write_text(
