@@ -22,6 +22,7 @@ already gate (the workflow runner) may delegate here later — this is the seam.
 """
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 from typing import Any, Optional
 
@@ -170,6 +171,25 @@ def decide_action(
 
     canon = _vd.from_light(eff["light"])
     audit_id = log_gate_decision(folder, decision, log_root=log_root, actor=actor)
+    # A reproducible digest of the EFFECTIVE policy this verdict used (matrix cell ×
+    # oversight row × effective grade × gate verdict × posture) — a stable
+    # fingerprint a certification cites for its `legitimate` pillar. ``obligation_
+    # pairs`` are the grounded policy references the gate rested on (the span-norm
+    # anchors, when a standing approval applied); surfaced so downstream can cite
+    # what the verdict was grounded IN, not just that a verdict happened.
+    policy_digest = hashlib.sha256(
+        f"{ov}|{g}|{eff['light']}|{decision.verdict.value}|{posture}".encode("utf-8")
+    ).hexdigest()[:16]
+    # Grounding SIGNAL (not the exact grounding, and NOT itself a decision): does
+    # the verdict rest on grounded policy anchors — specific obligations — or run on
+    # the bare default posture? It grounds the POLICY. Feeds a human-facing risk
+    # traffic light (green/amber/red); grounding modulates the verdict's risk — an
+    # ungrounded PERMIT is amber (governed, but not on a grounded policy), never
+    # green. This organises risk for a human; it automates nothing.
+    grounded = bool(decision.obligation_pairs)
+    traffic_light = ("red" if eff["light"] == "block"
+                     else "amber" if eff["light"] == "ask"
+                     else ("green" if grounded else "amber"))
     return {
         "verdict": canon.value,             # permit | hold | deny
         "light": eff["light"],              # go | ask | block
@@ -181,15 +201,77 @@ def decide_action(
         "gate_verdict": decision.verdict.value,
         "privacy_class": privacy_class,
         "reason": eff["reason"] or decision.reason,
+        "gate_reason": decision.reason,     # the STRUCTURAL reason (grade/footprint),
+                                            # more actionable than the composed reason
         "audit_id": audit_id,
         "action_class": action_class,
         "actor": actor,
         "governance_lane": lane_result.to_dict() if lane_result else None,
+        "obligation_pairs": list(decision.obligation_pairs),
+        "policy_digest": policy_digest,
+        "grounded": grounded,
+        "traffic_light": traffic_light,
     }
 
 
 def permits(decision: dict[str, Any]) -> bool:
     return decision.get("verdict") == "permit"
+
+
+def govern_egress(
+    folder: str | Path,
+    *,
+    actor: str = "agent",
+    confidential: bool = False,
+    pii: bool = False,
+    action_class: str = "egress.cloud-llm",
+    at: str = "",
+    log_root: Optional[Path] = None,
+    mint_cert: bool = False,
+) -> dict[str, Any]:
+    """Compose an egress DATA-signal with policy through the ONE chokepoint — the
+    universal-proxy unification.
+
+    The proxy contributes the data signal (its tier-cascade scan: was confidential
+    or personal data about to leave?); :func:`decide_action` composes it with the
+    workspace-hierarchy policy (matrix × grade × oversight × privacy floor) into ONE
+    verdict — the same loomground language + grounded policy + risk traffic light
+    every other RVND caller speaks. Host-level: ``folder`` may be ANY directory
+    (global-default policy); a workspace only REFINES it, so the proxy stops being
+    workspace-gated.
+
+    ``mint_cert`` issues a GovernanceCertification for a PERMITTED egress (the
+    enforcement-bound proof that this data left only after passing the gate). A HELD
+    egress is routed to a human first (the caller mints on approval, like the
+    PreToolUse/PostToolUse loop); a blocked egress mints nothing — a refusal is not
+    a certificate. Returns :func:`decide_action`'s dict, plus ``certificate`` when
+    minted."""
+    footprint = ("personal-data",) if pii else ()
+    privacy_class = "regulated" if (confidential or pii) else None
+    gov = decide_action(folder, action_class=action_class, footprint=footprint,
+                        privacy_class=privacy_class, actor=actor, log_root=log_root)
+    if mint_cert and gov.get("light") == "go":
+        try:
+            if not at:
+                from datetime import datetime, timezone
+                at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            from .governance_cert import emit_governance_certification
+            marker = {
+                "at": at, "agent": actor, "folder": str(folder),
+                "action_class": action_class, "audit_id": gov.get("audit_id", ""),
+                "action_digest": "", "evidence": [], "verdict": "permit",
+                "mechanism": "egress-proxy",
+                "oversight_level": gov.get("oversight_level"), "grade": gov.get("grade"),
+                "gate_verdict": gov.get("gate_verdict"),
+                "obligation_pairs": gov.get("obligation_pairs") or [],
+                "policy_digest": gov.get("policy_digest", ""),
+                "grounded": gov.get("grounded"), "traffic_light": gov.get("traffic_light"),
+            }
+            gov["certificate"] = emit_governance_certification(
+                str(folder), marker=marker, log_root=log_root)
+        except Exception:  # noqa: BLE001 — a witness must never break egress
+            gov["certificate"] = None
+    return gov
 
 
 def _band(ov: str) -> str:
