@@ -245,7 +245,10 @@ def evaluate(evt: dict[str, Any],
                   "grade": gov.get("grade"),
                   "gate_verdict": gov.get("gate_verdict"),
                   "obligation_pairs": gov.get("obligation_pairs") or [],
-                  "policy_digest": gov.get("policy_digest", "")}
+                  "policy_digest": gov.get("policy_digest", ""),
+                  # grounding SIGNAL + risk traffic light (green/amber/red)
+                  "grounded": bool(gov.get("grounded")),
+                  "traffic_light": gov.get("traffic_light") or "amber"}
         if light == "go":
             return Decision("allow", why or "permitted", detail)
         if light == "ask":
@@ -377,6 +380,8 @@ def _mark_held(evt: dict[str, Any], decision: Decision) -> None:
             "gate_verdict": detail.get("gate_verdict") or "",
             "obligation_pairs": detail.get("obligation_pairs") or [],
             "policy_digest": detail.get("policy_digest") or "",
+            "grounded": bool(detail.get("grounded")),
+            "traffic_light": detail.get("traffic_light") or "amber",
         }
         _marker_path(tuid).write_text(json.dumps(marker), encoding="utf-8")
     except Exception:
