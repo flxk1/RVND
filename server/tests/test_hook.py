@@ -303,6 +303,25 @@ def test_cert_loop_marks_then_mints_on_approval(tmp_path, monkeypatch):
     assert captured["marker"]["action_digest"]         # action bound by digest
 
 
+def test_governance_cert_predicate_is_grounded_both_sides():
+    from workspaces import governance_cert as gc
+    marker = {
+        "action_class": "shell.exec", "audit_id": "a1", "at": "2026-01-01T00:00:00Z",
+        "evidence": [{"tag": "security-control", "matched": "sudo", "start": 0, "end": 4}],
+        "policy_digest": "deadbeef16chars0", "oversight_level": "approve",
+        "grade": "L2", "gate_verdict": "CONDITIONAL", "obligation_pairs": ["pair-1"],
+    }
+    pred = gc.build_predicate(marker)
+    # the invention's load-bearing claim
+    assert pred["enforced"]["blocked_unless_permitted"] is True
+    # action-side grounding: the flag rests on the command fragment
+    assert pred["grounded"]["ref"][0]["matched"] == "sudo"
+    # policy-side grounding: real fingerprint + anchored to basis/policy/rule
+    assert pred["legitimate"]["policy_fingerprint"] == "deadbeef16chars0"
+    roles = {a["role"] for a in pred["legitimate"]["anchors"]}
+    assert {"oversight-obligation", "effective-policy", "policy-rule"} <= roles
+
+
 def test_posttooluse_without_marker_is_noop(tmp_path, monkeypatch):
     monkeypatch.setenv("RVND_HOOK_LOG_ROOT", str(tmp_path))
     called = {"n": 0}

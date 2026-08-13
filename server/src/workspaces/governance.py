@@ -22,6 +22,7 @@ already gate (the workflow runner) may delegate here later — this is the seam.
 """
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 from typing import Any, Optional
 
@@ -170,6 +171,15 @@ def decide_action(
 
     canon = _vd.from_light(eff["light"])
     audit_id = log_gate_decision(folder, decision, log_root=log_root, actor=actor)
+    # A reproducible digest of the EFFECTIVE policy this verdict used (matrix cell ×
+    # oversight row × effective grade × gate verdict × posture) — a stable
+    # fingerprint a certification cites for its `legitimate` pillar. ``obligation_
+    # pairs`` are the grounded policy references the gate rested on (the span-norm
+    # anchors, when a standing approval applied); surfaced so downstream can cite
+    # what the verdict was grounded IN, not just that a verdict happened.
+    policy_digest = hashlib.sha256(
+        f"{ov}|{g}|{eff['light']}|{decision.verdict.value}|{posture}".encode("utf-8")
+    ).hexdigest()[:16]
     return {
         "verdict": canon.value,             # permit | hold | deny
         "light": eff["light"],              # go | ask | block
@@ -185,6 +195,8 @@ def decide_action(
         "action_class": action_class,
         "actor": actor,
         "governance_lane": lane_result.to_dict() if lane_result else None,
+        "obligation_pairs": list(decision.obligation_pairs),
+        "policy_digest": policy_digest,
     }
 
 
