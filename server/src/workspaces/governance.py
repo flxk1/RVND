@@ -191,6 +191,8 @@ def decide_action(
         "gate_verdict": decision.verdict.value,
         "privacy_class": privacy_class,
         "reason": eff["reason"] or decision.reason,
+        "gate_reason": decision.reason,     # the STRUCTURAL reason (grade/footprint),
+                                            # more actionable than the composed reason
         "audit_id": audit_id,
         "action_class": action_class,
         "actor": actor,
