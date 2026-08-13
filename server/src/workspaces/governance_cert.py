@@ -36,6 +36,26 @@ _DSSE_PAYLOAD_TYPE = "application/vnd.in-toto+json"
 # in the action's own text (the matched command fragment) — a real, checkable
 # grounding, distinct from the policy-side versum/5d+nd grounding.
 ACTION_EVIDENCE_SCHEME = "https://loomground.org/grounding/action-evidence/v1"
+# EU AI Act (Reg. (EU) 2024/1689) Article 14 — human oversight of high-risk AI:
+# the meta-obligation the oversight requirement itself rests on.
+DEFAULT_BASIS = "eu-ai-act-2024-1689-art-14"
+
+
+def _legitimate_anchors(marker: dict) -> list[dict]:
+    """Policy-side grounding: what the verdict was evaluated AGAINST, anchored to
+    its sources — the oversight requirement's legal basis, the effective policy
+    the matrix applied, and any grounded rule references (span-norm obligation
+    pairs) the gate rested on."""
+    anchors: list[dict] = [
+        {"role": "oversight-obligation", "basis": marker.get("basis") or DEFAULT_BASIS},
+        {"role": "effective-policy",
+         "oversight_level": marker.get("oversight_level", ""),
+         "grade": marker.get("grade", ""),
+         "gate_verdict": marker.get("gate_verdict", "")},
+    ]
+    for op in marker.get("obligation_pairs") or []:
+        anchors.append({"role": "policy-rule", "obligation_pair": str(op)})
+    return anchors
 
 
 def _sha256_hex(b: bytes) -> str:
@@ -94,8 +114,8 @@ def build_predicate(marker: dict) -> dict:
             "algorithm": "ed25519+sha256",
         },
         "legitimate": {
-            "policy_fingerprint": marker.get("policy_fingerprint", ""),
-            "anchors": marker.get("anchors", []),
+            "policy_fingerprint": marker.get("policy_digest", ""),
+            "anchors": _legitimate_anchors(marker),
         },
     }
 
