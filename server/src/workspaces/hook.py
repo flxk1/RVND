@@ -227,7 +227,13 @@ def evaluate(evt: dict[str, Any],
         reason = str(gov.get("reason") or "")
         detail = {"action_class": action_class, "footprint": list(footprint),
                   "evidence": evidence, "verdict": gov.get("verdict"),
-                  "audit_id": gov.get("audit_id")}
+                  "audit_id": gov.get("audit_id"),
+                  # policy-side grounding for the certification's `legitimate` pillar
+                  "oversight_level": gov.get("oversight_level"),
+                  "grade": gov.get("grade"),
+                  "gate_verdict": gov.get("gate_verdict"),
+                  "obligation_pairs": gov.get("obligation_pairs") or [],
+                  "policy_digest": gov.get("policy_digest", "")}
         if light == "go":
             return Decision("allow", reason or "permitted", detail)
         if light == "ask":
@@ -350,6 +356,12 @@ def _mark_held(evt: dict[str, Any], decision: Decision) -> None:
             "evidence": detail.get("evidence") or [],
             "reason": decision.reason,
             "mechanism": "claude-code:PreToolUse",
+            # policy-side grounding → the certification's `legitimate` pillar
+            "oversight_level": detail.get("oversight_level") or "",
+            "grade": detail.get("grade") or "",
+            "gate_verdict": detail.get("gate_verdict") or "",
+            "obligation_pairs": detail.get("obligation_pairs") or [],
+            "policy_digest": detail.get("policy_digest") or "",
         }
         _marker_path(tuid).write_text(json.dumps(marker), encoding="utf-8")
     except Exception:
