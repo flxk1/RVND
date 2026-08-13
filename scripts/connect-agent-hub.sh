@@ -79,6 +79,16 @@ if [ -d "$HOME/.codex" ]; then
 EOF
 fi
 
+# ---- The governance language (handed at the front door) ------------------
+say "The governance language (the machine-readable policy your agent is bound by):"
+cat <<'EOF'
+The MCP handshake hands it to the agent as the `governance://llms.txt` resource
+(consumed from loomground-governance, never copied). You can also read it from
+the console at http://127.0.0.1:8799/llms.txt .
+Every tool call the agent makes is planned + gated (GO / CONDITIONAL / NO-GO);
+an ungoverned action is refused, and refusal is a valid outcome.
+EOF
+
 # ---- No known hub --------------------------------------------------------
 if [ "$did" = 0 ]; then
   say "No Claude Code or Codex install detected."
