@@ -2369,6 +2369,11 @@ def workspace_workflow(op: str, params: dict[str, Any] | None = None) -> dict[st
             {"op": "governance_live", "required": ["folder_context"],
              "optional": ["chain_limit"], "mutates": False,
              "note": "read-only live-governance board: sessions (derived from the signed log's admission events; admitted = unexpired + unrevoked), per-agent verdict/grade/escalation from lane_capabilities, run-lease serialization (one holder per folder+workflow) from the queue, and the last N chain entries (seq = replay index, prev_hash). Pure projection — no chain append, no lease acquire. Honest-subset: session kind, autonomy decay, iteration budget and per-agent breaker have no folder-readable source yet and are omitted, never faked"},
+            {"op": "oversight_cert_verify", "required": ["envelope"],
+             "optional": ["now", "required_basis", "public_key_pem"], "mutates": False,
+             "note": "read-only offline re-check of a portable oversight certificate (the oversight-certificate package's DSSE envelope): verifies signature, canonical form, disposition shape and credential-at-decision-time, returning {ok, findings:[{code, detail}]}. Verifies against a supplied PEM public key, else this host's identity key. No folder, no chain, no key generation"},
+            {"op": "connected_agents", "required": [], "mutates": False,
+             "note": "read-only, SERVER-LEVEL: agents that completed the MCP handshake with this server, independent of any workspace — who is CONNECTED (vs the per-workspace board's who is ADMITTED to act here). Presence, not authority; liveness is the connecting process. No folder."},
             {"op": "reasoning_check", "required": ["session_id"],
              "optional": ["claim"],
              "note": "T-cons: solver consistency over the session's recorded claims (session-scoped Versum working memory). With claim {atom, polarity, grounding, ts}: append it to the session's OWN store first (the op's only mutation — no chain append, no lease, no cross-session write), then check; without: pure read. Fail-closed verdict CONSISTENT | INCONSISTENT (clashing atoms carried) | OPEN — ungrounded or uncheckable claims are OPEN, never reported consistent"},
@@ -2534,6 +2539,20 @@ def workspace_workflow(op: str, params: dict[str, Any] | None = None) -> dict[st
             from .governance_live import governance_live as _glive
             return _glive(p["folder_context"], log_root=_log_root(),
                           chain_limit=int(p.get("chain_limit", 20)))
+        if op == "oversight_cert_verify":
+            import datetime as _dt
+
+            from .oversight_cert import verify_certificate
+            _now = str(p.get("now") or _dt.datetime.now(_dt.timezone.utc)
+                       .isoformat().replace("+00:00", "Z"))
+            return verify_certificate(
+                p.get("envelope") or {}, now=_now,
+                required_basis=p.get("required_basis"),
+                public_key_pem=p.get("public_key_pem"))
+        if op == "connected_agents":
+            from .connected_agents import list_connected
+            agents = list_connected()
+            return {"ok": True, "count": len(agents), "agents": agents}
         if op == "reasoning_check":
             from .reasoning_integrity import Claim, check_session, record_claim
             sid = p["session_id"]
@@ -3209,7 +3228,20 @@ def main():
               f"arguments from an MCP client config; this binary serves "
               f"a session over stdin/stdout.")
         return
-    mcp.run()
+    # Server-level presence: record this connection (post-handshake) so the agent
+    # shows as CONNECTED independent of any workspace, and deregister on disconnect.
+    # Identity comes from how the agent was registered (connect-agent-hub passes
+    # RVND_AGENT); no folder is involved.
+    import os as _os
+
+    from .connected_agents import deregister_connection, register_connection
+    _connid = register_connection(
+        agent=(_os.environ.get("RVND_AGENT") or _os.environ.get("RVND_AGENT_NAME") or ""),
+        transport="stdio")
+    try:
+        mcp.run()
+    finally:
+        deregister_connection(_connid)
 
 
 if __name__ == "__main__":

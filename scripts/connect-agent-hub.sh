@@ -50,7 +50,7 @@ if command -v claude >/dev/null 2>&1; then
     echo "  ✓ MCP server 'rvnd-governance' already registered."
   else
     echo "  • registering the RVND governance MCP server…"
-    run claude mcp add -e "$MCP_ENV" rvnd-governance -- "$MCP_CMD" $MCP_ARGS
+    run claude mcp add -e "$MCP_ENV" -e "RVND_AGENT=claude-code" rvnd-governance -- "$MCP_CMD" $MCP_ARGS
   fi
   # 2. Marketplace + skills (idempotent: check the installed list first)
   if claude plugin list 2>/dev/null | grep -q "rvnd-governance"; then
@@ -72,7 +72,7 @@ if [ -d "$HOME/.codex" ]; then
       "rvnd-governance": {
         "command": "$MCP_CMD",
         "args": ["-m", "workspaces.mcp_server"],
-        "env": { "RVND_GOVERNANCE_LAYER": "on" }
+        "env": { "RVND_GOVERNANCE_LAYER": "on", "RVND_AGENT": "codex" }
       }
   • Enable the plugin manifest at:
       $REPO/.codex-plugin/plugin.json
@@ -96,7 +96,7 @@ if [ "$did" = 0 ]; then
 Point any MCP-capable host at this local stdio server:
     command: $MCP_CMD
     args:    -m workspaces.mcp_server
-    env:     RVND_GOVERNANCE_LAYER=on
+    env:     RVND_GOVERNANCE_LAYER=on RVND_AGENT=<your-agent-name>
 A ready-made descriptor lives at:
     $REPO/plugin/rvnd-governance/mcp/rvnd.mcp.json
 EOF
