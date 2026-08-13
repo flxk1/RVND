@@ -213,13 +213,36 @@ def make_handler(session_token: str):
         token = session_token
 
         def head_inject(self) -> str:
-            """The bridge transport wiring HostRoutes leaves to a consumer:
-            the /tool path and the per-session token this page must present
-            on POST /tool."""
+            """The bridge transport wiring HostRoutes leaves to a consumer: the
+            /tool path and the per-session token this page must present on POST
+            /tool. Plus RVND's server-level 'Connected agents' panel, INJECTED
+            here rather than edited into the vendored console — app/src/console.html
+            is consumed from loomground-patchbay under a pinned contract, so RVND
+            layers its own governance surfaces on top instead of drifting it."""
+            # Server-level presence (GET /agents), added to the READ panel next to
+            # the per-workspace board. Defensive + self-contained; a fetch failure
+            # is silent and never touches the vendored console's own logic.
+            panel = (
+                "<script>(function(){function boot(){"
+                "var a=document.getElementById('rd-allowed');if(!a){return setTimeout(boot,300);}"
+                "var row=a.closest('.q');if(!row||document.getElementById('rd-connected'))return;"
+                "var e=document.createElement('div');e.className='q';"
+                "e.innerHTML='<span class=\"k\">Connected</span><span class=\"v\" id=\"rd-connected\">—</span>';"
+                "row.parentNode.insertBefore(e,row);"
+                "function poll(){fetch('/agents',{headers:{'X-Workspaces-Token':window.__WORKSPACES_TOKEN__||''}})"
+                ".then(function(r){return r.ok?r.json():null;})"
+                ".then(function(j){var c=document.getElementById('rd-connected');if(!c)return;"
+                "var g=(j&&j.agents)||[];"
+                "c.innerHTML=g.length?('<b>'+g.length+'</b> connected · '+"
+                "g.map(function(x){return String(x.agent||'agent');}).join(', ')):'no agents connected';})"
+                ".catch(function(){});}poll();setInterval(poll,4000);}"
+                "if(document.readyState!=='loading'){boot();}else{document.addEventListener('DOMContentLoaded',boot);}"
+                "})();</script>"
+            )
             return ("<script>window.__WORKSPACES_HTTP__='/tool';"
                     f"window.__WORKSPACES_TOKEN__={json.dumps(session_token)};"
                     f"window.SETTINGS_CMDS={json.dumps(_SETTINGS_CMDS)};"
-                    "</script>")
+                    "</script>" + panel)
 
         def do_GET(self):
             if not self._guard():
@@ -234,7 +257,16 @@ def make_handler(session_token: str):
                 return self._govlive_board()
             if self.path == "/llms.txt":
                 return self._llms_txt()
+            if self.path == "/agents" or self.path.startswith("/agents?"):
+                return self._connected_agents()
             return self._send(404, {"error": "not found"})
+
+        def _connected_agents(self):
+            """Server-level: agents CONNECTED to this RVND via the MCP handshake,
+            independent of any workspace (presence, not per-folder authority).
+            Read-only; loopback-guarded like the other GET surfaces."""
+            from workspaces.connected_agents import list_connected
+            return self._send(200, {"ok": True, "agents": list_connected()})
 
         def _llms_txt(self):
             """The governance language guide, CONSUMED from loomground-governance
