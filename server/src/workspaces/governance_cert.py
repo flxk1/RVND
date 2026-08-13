@@ -89,6 +89,13 @@ def build_predicate(marker: dict) -> dict:
         "verdict": "hold-approved",
         "action_class": marker.get("action_class", ""),
         "issued_at": marker.get("at", ""),
+        # grounding SIGNAL + human-facing risk traffic light. Grounding grounds the
+        # POLICY (is the verdict on a grounded policy, or the bare default?); the
+        # light organises risk for a human — it is not an automated decision.
+        "risk": {
+            "grounded": bool(marker.get("grounded")),
+            "traffic_light": marker.get("traffic_light") or "amber",
+        },
         # THE load-bearing pillar: the action was blocked-unless-permitted.
         "enforced": {
             "mechanism": marker.get("mechanism", "claude-code:PreToolUse"),

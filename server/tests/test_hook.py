@@ -333,6 +333,15 @@ def test_governance_cert_predicate_is_grounded_both_sides():
     assert {"oversight-obligation", "effective-policy", "policy-rule"} <= roles
 
 
+def test_predicate_carries_grounding_signal_and_traffic_light():
+    from workspaces import governance_cert as gc
+    for grounded, light in [(False, "amber"), (True, "green")]:
+        pred = gc.build_predicate({"action_class": "shell.exec", "at": "t",
+                                   "grounded": grounded, "traffic_light": light})
+        assert pred["risk"]["grounded"] is grounded
+        assert pred["risk"]["traffic_light"] == light
+
+
 def test_posttooluse_without_marker_is_noop(tmp_path, monkeypatch):
     monkeypatch.setenv("RVND_HOOK_LOG_ROOT", str(tmp_path))
     called = {"n": 0}
