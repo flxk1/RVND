@@ -384,6 +384,30 @@ def test_govern_egress_mints_verifiable_permit_cert(tmp_path, monkeypatch):
     assert pred["enforced"]["mechanism"] == "egress-proxy"
 
 
+def test_egress_policy_composition_is_escalate_only(monkeypatch):
+    from workspaces.lock import egress_proxy as ep
+    from workspaces.lock.gate import GateDecision
+    # policy says BLOCK → escalate a permissive data gate to refuse
+    monkeypatch.setattr("workspaces.governance.govern_egress",
+                        lambda *a, **k: {"light": "block", "reason": "policy denies"})
+    assert ep._compose_egress_policy(GateDecision(action="allow"), "/tmp", "a").action == "refuse"
+    # policy PERMITS → can NEVER relax a stricter data gate (the privacy guarantee)
+    monkeypatch.setattr("workspaces.governance.govern_egress", lambda *a, **k: {"light": "go"})
+    assert ep._compose_egress_policy(GateDecision(action="refuse"), "/tmp", "a").action == "refuse"
+    # policy says HOLD but data gate already refuses → stays refuse (strictest wins)
+    monkeypatch.setattr("workspaces.governance.govern_egress", lambda *a, **k: {"light": "ask"})
+    assert ep._compose_egress_policy(GateDecision(action="refuse"), "/tmp", "a").action == "refuse"
+
+
+def test_egress_policy_folder_opt_in(monkeypatch):
+    from workspaces.lock import egress_proxy as ep
+    monkeypatch.delenv("RVND_EGRESS_POLICY", raising=False)
+    assert ep._egress_policy_folder(object()) is None          # default: off → unchanged
+    monkeypatch.setenv("RVND_EGRESS_POLICY", "1")
+    monkeypatch.setenv("AGENT_TOOL_LOCK_PROXY_TRACK_FOLDER", "/ws")
+    assert ep._egress_policy_folder(object()) == "/ws"         # on → composes policy
+
+
 def test_posttooluse_without_marker_is_noop(tmp_path, monkeypatch):
     monkeypatch.setenv("RVND_HOOK_LOG_ROOT", str(tmp_path))
     called = {"n": 0}

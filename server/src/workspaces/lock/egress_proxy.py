@@ -303,6 +303,45 @@ def scan_prompt(text: str) -> list[Finding]:
     return findings
 
 
+def _egress_policy_folder(proxy) -> str | None:
+    """The folder to compose workspace-hierarchy policy against, or ``None`` to
+    skip (the default — so existing behaviour is unchanged). Opt-in via
+    ``RVND_EGRESS_POLICY``; when on, HOST-LEVEL by default (the process cwd →
+    global-default policy) unless a workspace is bound, which only REFINES it."""
+    if os.environ.get("RVND_EGRESS_POLICY", "").strip().lower() not in (
+            "1", "on", "true", "yes"):
+        return None
+    return (os.environ.get("AGENT_TOOL_LOCK_PROXY_TRACK_FOLDER")
+            or getattr(proxy, "track_folder", None) or os.getcwd())
+
+
+def _compose_egress_policy(decision: GateDecision, folder: str, actor: str) -> GateDecision:
+    """Compose the workspace-hierarchy POLICY (``decide_action`` via
+    ``govern_egress``) with the DATA gate, **strictest-wins / escalate-only**: the
+    policy can only tighten the data gate's action (allow→ask_user→refuse), never
+    relax it — so the load-bearing privacy guarantee is preserved by construction.
+    A confidential egress the policy then permits mints a GovernanceCertification.
+    Best-effort: if policy is unavailable, the data gate stands unchanged."""
+    from dataclasses import replace
+    try:
+        from ..governance import govern_egress
+        confidential = decision.action in ("minimise", "refuse", "ask_user")
+        gov = govern_egress(folder, actor=actor, confidential=confidential,
+                            pii=confidential, action_class="egress.cloud-llm",
+                            mint_cert=confidential)
+        light = gov.get("light")
+    except Exception:  # noqa: BLE001 — policy must never relax the data gate
+        return decision
+    rank = {"allow": 0, "minimise": 1, "ask_user": 2, "refuse": 3}
+    want = {"go": "allow", "ask": "ask_user", "block": "refuse"}.get(light)
+    if want and rank.get(want, 0) > rank.get(decision.action, 0):
+        extra = str(gov.get("reason") or "").strip()
+        return replace(decision, action=want,
+                       reason=(decision.reason + (f" | policy: {extra}" if extra else "")
+                               ).strip(" |"))
+    return decision
+
+
 def gate_prompt(
     text: str,
     *,
@@ -312,6 +351,8 @@ def gate_prompt(
     audit: AuditLog | None = None,
     source: str = "cloud_llm_request",
     task_id: str | None = None,
+    folder: str | None = None,
+    actor: str = "agent",
 ) -> GateDecision:
     """Run the full minimisation gate on prompt text destined for a cloud LLM.
 
@@ -320,11 +361,14 @@ def gate_prompt(
       - lock_text (Tier B regex + Tier C semantic)
       - persisted-decisions short-circuit (via DecisionsStore.recall)
       - oversight-aware action translation (refuse vs ask_user)
+      - (when ``folder`` is given) the workspace-hierarchy POLICY, strictest-wins —
+        so the egress boundary speaks the SAME ``decide_action`` verdict as the
+        hook. ``folder`` absent → unchanged (the default).
 
     Returns a ``GateDecision`` with action ∈ {allow, minimise, refuse, ask_user}.
     Never raises — fail-closed (refuse) on any internal error.
     """
-    return gate_for_cloud(
+    decision = gate_for_cloud(
         text,
         vault_path=vault_path,
         oversight=oversight,
@@ -334,6 +378,9 @@ def gate_prompt(
         source=source,
         task_id=task_id,
     )
+    if folder:
+        decision = _compose_egress_policy(decision, str(folder), actor)
+    return decision
 
 
 def redact_body_in_place(body: bytes, host: str) -> bytes:
@@ -947,6 +994,8 @@ def _make_handler(proxy: EgressProxy):
                     audit=proxy._lock_audit,
                     source="cloud_llm_request",
                     task_id=request_id,
+                    folder=_egress_policy_folder(proxy),          # None unless RVND_EGRESS_POLICY
+                    actor=os.environ.get("RVND_AGENT", "agent"),
                 )
 
             # Translate gate -> final action. Defaults match gate.action 1:1 except
