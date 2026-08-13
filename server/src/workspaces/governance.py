@@ -180,6 +180,16 @@ def decide_action(
     policy_digest = hashlib.sha256(
         f"{ov}|{g}|{eff['light']}|{decision.verdict.value}|{posture}".encode("utf-8")
     ).hexdigest()[:16]
+    # Grounding SIGNAL (not the exact grounding, and NOT itself a decision): does
+    # the verdict rest on grounded policy anchors — specific obligations — or run on
+    # the bare default posture? It grounds the POLICY. Feeds a human-facing risk
+    # traffic light (green/amber/red); grounding modulates the verdict's risk — an
+    # ungrounded PERMIT is amber (governed, but not on a grounded policy), never
+    # green. This organises risk for a human; it automates nothing.
+    grounded = bool(decision.obligation_pairs)
+    traffic_light = ("red" if eff["light"] == "block"
+                     else "amber" if eff["light"] == "ask"
+                     else ("green" if grounded else "amber"))
     return {
         "verdict": canon.value,             # permit | hold | deny
         "light": eff["light"],              # go | ask | block
@@ -199,6 +209,8 @@ def decide_action(
         "governance_lane": lane_result.to_dict() if lane_result else None,
         "obligation_pairs": list(decision.obligation_pairs),
         "policy_digest": policy_digest,
+        "grounded": grounded,
+        "traffic_light": traffic_light,
     }
 
 
