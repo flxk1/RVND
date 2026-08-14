@@ -23,6 +23,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
+from email.message import Message
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -47,15 +48,18 @@ from workspaces.lock import Finding, OversightLevel
 from workspaces.lock.egress_proxy import (
     ApprovalDecision,
     EgressProxy,
+    GateDecision,
     PendingRequest,
     _credential_binding_violation,
     _block_all_callback,
+    _sanitise_agent_id,
     _upstream_request_url,
     autonomous_callback,
     block_on_findings_callback,
     extract_prompt_text,
     make_default_callback,
     notify_callback,
+    request_agent_identity,
     scan_prompt,
 )
 
@@ -1009,3 +1013,131 @@ def test_credential_binding_no_credential_is_ok():
 def test_credential_binding_unknown_upstream_fails_closed():
     # an upstream with no declared credential set accepts no credential header
     assert _credential_binding_violation({"x-api-key": "k"}, "evil.example.com") == "x-api-key"
+
+
+# ---------------------------------------------------------------------------
+# Per-request agent identity — a shared proxy attributes each request to the
+# agent that made it (Web Bot Auth Signature-Agent / the X-Lock-Agent alias),
+# replacing one process-wide RVND_AGENT. Safe by construction: the actor flows
+# only into escalate-only policy composition (can only tighten) and attribution,
+# never into a durable clearance (those carry the operator's identity).
+# ---------------------------------------------------------------------------
+
+
+def _hdrs(**pairs) -> Message:
+    """A case-insensitive header object like BaseHTTPRequestHandler.headers.
+    Underscores map to hyphens (Signature_Agent -> 'Signature-Agent')."""
+    m = Message()
+    for k, v in pairs.items():
+        m[k.replace("_", "-")] = v
+    return m
+
+
+def test_agent_identity_prefers_signature_agent_header(monkeypatch):
+    monkeypatch.setenv("RVND_AGENT", "env-agent")
+    # Web Bot Auth Signature-Agent wins over the alias and the env default.
+    assert request_agent_identity(
+        _hdrs(Signature_Agent="agent-alpha", X_Lock_Agent="beta")) == "agent-alpha"
+
+
+def test_agent_identity_alias_then_env_then_default(monkeypatch):
+    monkeypatch.delenv("RVND_AGENT", raising=False)
+    assert request_agent_identity(_hdrs(X_Lock_Agent="beta")) == "beta"
+    monkeypatch.setenv("RVND_AGENT", "env-agent")
+    assert request_agent_identity(_hdrs()) == "env-agent"      # process default
+    monkeypatch.delenv("RVND_AGENT", raising=False)
+    assert request_agent_identity(_hdrs()) == "agent"          # generic fallback
+
+
+def test_agent_identity_header_beats_env_is_per_request(monkeypatch):
+    """The core of the gap: two requests in ONE process (one RVND_AGENT) are
+    attributed to DIFFERENT agents by their per-request header."""
+    monkeypatch.setenv("RVND_AGENT", "one-and-only")
+    assert request_agent_identity(_hdrs(Signature_Agent="alpha")) == "alpha"
+    assert request_agent_identity(_hdrs(Signature_Agent="beta")) == "beta"
+
+
+def test_agent_identity_header_lookup_is_case_insensitive(monkeypatch):
+    monkeypatch.delenv("RVND_AGENT", raising=False)
+    assert request_agent_identity(_hdrs(**{"signature-agent": "lower"})) == "lower"
+
+
+def test_agent_identity_sanitises_quotes_control_chars_and_length():
+    assert _sanitise_agent_id('"https://bot.example"') == "https://bot.example"
+    assert _sanitise_agent_id("a\x00b\x07") == "ab"        # control chars stripped
+    assert _sanitise_agent_id("a   b") == "a b"            # whitespace collapsed
+    assert len(_sanitise_agent_id("x" * 400)) == 128       # length capped
+
+
+def test_agent_identity_never_raises(monkeypatch):
+    monkeypatch.setenv("RVND_AGENT", "fallback")
+
+    class Boom:
+        def get(self, _name):
+            raise RuntimeError("header store broke")
+
+    assert request_agent_identity(Boom()) == "fallback"
+    assert request_agent_identity(None) == "fallback"
+
+
+def test_proxy_attributes_agent_identity_per_request(monkeypatch):
+    """End-to-end: a shared proxy attributes each request to its declared agent,
+    and the RVND-internal identity header never leaks to the upstream."""
+    seen_actors: list = []
+
+    def spy_gate(text, **kw):
+        seen_actors.append(kw.get("actor"))
+        return GateDecision(action="allow", reason="test", source="cloud_llm_request")
+
+    monkeypatch.setattr("workspaces.lock.egress_proxy.gate_prompt", spy_gate)
+
+    upstream_port = _free_port()
+    proxy_port = _free_port()
+    upstream_header_sets: list = []
+
+    class StubHandler(BaseHTTPRequestHandler):
+        def log_message(self, *a, **k):
+            return
+
+        def do_POST(self):
+            length = int(self.headers.get("Content-Length", "0"))
+            self.rfile.read(length)
+            upstream_header_sets.append({k.lower() for k in self.headers.keys()})
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(b'{"ok": true}')
+
+    upstream = ThreadingHTTPServer(("127.0.0.1", upstream_port), StubHandler)
+    threading.Thread(target=upstream.serve_forever, daemon=True).start()
+    proxy = EgressProxy(
+        port=proxy_port,
+        oversight=OversightLevel.AUTONOMOUS,
+        approval_callback=autonomous_callback,
+        upstream_overrides={"stub.test": f"http://127.0.0.1:{upstream_port}"},
+    )
+    proxy.start()
+    try:
+        for who, header in (("agent-alpha", "Signature-Agent"),
+                            ("agent-beta", "X-Lock-Agent")):
+            body = json.dumps({"messages": [{"role": "user", "content": "hi"}]}).encode()
+            req = urllib.request.Request(
+                f"http://127.0.0.1:{proxy_port}/v1/messages",
+                data=body,
+                headers={"X-Lock-Upstream": "stub.test",
+                         "Content-Type": "application/json",
+                         header: who},
+                method="POST",
+            )
+            urllib.request.urlopen(req, timeout=3).read()
+    finally:
+        proxy.stop()
+        upstream.shutdown()
+        upstream.server_close()
+
+    # per-request attribution — one process, two agents, distinguished by header
+    assert seen_actors == ["agent-alpha", "agent-beta"], seen_actors
+    # the RVND-internal identity headers are stripped before the upstream forward
+    for received in upstream_header_sets:
+        assert "signature-agent" not in received
+        assert "x-lock-agent" not in received
