@@ -32,6 +32,17 @@ Pointing an agent at the proxy:
     ANTHROPIC_BASE_URL=http://localhost:8443   # for Anthropic SDK
     OPENAI_BASE_URL=http://localhost:8443/v1   # for OpenAI SDK
 
+Declaring which agent is calling (per-request identity): a shared proxy may front
+MANY agents, so each declares itself via a header set once through the SDK's
+default-headers mechanism — ``Signature-Agent: <id>`` (Web Bot Auth) or the alias
+``X-Lock-Agent: <id>``. Egress is then attributed to that agent and the
+workspace-hierarchy policy composes per agent, replacing a single process-wide
+``RVND_AGENT``. The header is a transport-declared CLAIM used only for attribution
+and escalate-only policy (which can only tighten the gate), and it is stripped
+before the request is forwarded upstream. Cryptographic verification of the claim
+(RFC 9421 / Web Bot Auth signature) is the next trust layer. See
+``request_agent_identity``.
+
 Broker mode (per-track credential injection): when bound to a workspace folder,
 every request must declare its egress track via ``X-Lock-Track: <connector_id>``
 (set once through the SDK's default-headers mechanism). The proxy resolves the
@@ -313,6 +324,56 @@ def _egress_policy_folder(proxy) -> str | None:
         return None
     return (os.environ.get("AGENT_TOOL_LOCK_PROXY_TRACK_FOLDER")
             or getattr(proxy, "track_folder", None) or os.getcwd())
+
+
+# Per-request agent identity -------------------------------------------------
+# One shared proxy may front MANY agents. Each declares WHO it is per request via
+# a header set once through the SDK's default-headers mechanism — the same way
+# broker mode declares its egress track (``X-Lock-Track``). This replaces a single
+# process-wide ``RVND_AGENT`` so egress is attributed to the agent that made it and
+# workspace-hierarchy policy composes per agent ("every agent", not one).
+#
+# TRUST: this is a TRANSPORT-DECLARED identity — a CLAIM. It is used only for
+# (a) per-agent ATTRIBUTION and (b) escalate-only policy composition, which can
+# only TIGHTEN the egress gate (see :func:`_compose_egress_policy`). So a spoofed
+# value cannot loosen egress, and it cannot forge a durable clearance — those carry
+# the operator's identity and reject anonymous, fail-closed (CL3). Cryptographic
+# verification of the claim (an RFC 9421 / Web Bot Auth message signature over the
+# request, against a registered agent key) is the NEXT trust layer; it is not
+# required for the egress guarantee, which holds by construction.
+_AGENT_ID_HEADERS = ("Signature-Agent", "X-Lock-Agent")
+_MAX_AGENT_ID = 128
+
+
+def _sanitise_agent_id(raw: str) -> str:
+    """Make a header-supplied agent id safe to use as an actor and to echo in the
+    audit: drop the Web Bot Auth optional surrounding quotes, strip control
+    characters, collapse whitespace, and cap the length."""
+    s = raw.strip().strip('"').strip()
+    s = "".join(ch for ch in s if ch >= " " and ch != "\x7f")
+    return " ".join(s.split())[:_MAX_AGENT_ID]
+
+
+def request_agent_identity(headers, *, env_default: Optional[str] = None) -> str:
+    """Resolve the calling agent's identity for THIS request (per-connection).
+
+    Priority: a per-request header — Web Bot Auth ``Signature-Agent`` or the RVND
+    alias ``X-Lock-Agent`` — then the ``RVND_AGENT`` process default, then the
+    generic ``"agent"``. Header lookup is case-insensitive (the headers object is an
+    ``email.message.Message``). See the module note above on why a transport-declared
+    identity is safe here. Never raises — identity resolution must not break egress."""
+    try:
+        for name in _AGENT_ID_HEADERS:
+            raw = headers.get(name) if headers is not None else None
+            if raw:
+                ident = _sanitise_agent_id(raw)
+                if ident:
+                    return ident
+    except Exception:  # noqa: BLE001 — a header hiccup falls back, never raises
+        pass
+    env = (env_default if env_default is not None
+           else os.environ.get("RVND_AGENT", "")).strip()
+    return env or "agent"
 
 
 def _compose_egress_policy(decision: GateDecision, folder: str, actor: str) -> GateDecision:
@@ -1002,7 +1063,7 @@ def _make_handler(proxy: EgressProxy):
                     source="cloud_llm_request",
                     task_id=request_id,
                     folder=_egress_policy_folder(proxy),          # None unless RVND_EGRESS_POLICY
-                    actor=os.environ.get("RVND_AGENT", "agent"),
+                    actor=request_agent_identity(self.headers),   # per-request, not one env
                 )
 
             # Translate gate -> final action. Defaults match gate.action 1:1 except
@@ -1155,7 +1216,10 @@ def _make_handler(proxy: EgressProxy):
                 # declaration plus every client credential header — the track's own
                 # credential is injected below; the agent never holds the key).
                 _hop_by_hop = {"host", "x-lock-upstream", "content-length", "connection",
-                               "transfer-encoding"}
+                               "transfer-encoding",
+                               # RVND-internal identity declarations — consumed here
+                               # for attribution, never leaked to the cloud LLM.
+                               "signature-agent", "x-lock-agent"}
                 if binding is not None:
                     _hop_by_hop = _hop_by_hop | {"x-lock-track"} | _CREDENTIAL_HEADERS
                 for k, v in self.headers.items():
