@@ -5,9 +5,41 @@ dates are ISO.
 
 ## [Unreleased]
 
-## [0.6.9.9] - 2026-08-13
+## [0.6.9.9] - 2026-08-14
 
 ### Added
+
+- **Verified agent identity at the egress boundary (Web Bot Auth / RFC 9421).**
+  RVND can now cryptographically verify *which* agent is behind a request before
+  it governs egress, composing on the Web Bot Auth profile of RFC 9421 HTTP
+  Message Signatures with in-tree Ed25519 (`cryptography`) — no new dependency.
+  A per-file public-key registry (`agent_keys.py`, under `~/.workspace/agents/keys/`,
+  path-traversal-safe, fail-closed, non-Ed25519 refused) backs a pure verifier
+  (`web_bot_auth.py`: `build_signature_base` + `sign` + `verify`, covering
+  `@authority` + `signature-agent`). The egress proxy reads the `Signature-Agent`
+  header and upgrades the agent identity **DECLARED → VERIFIED** (audited; no
+  verdict change on its own), through a `host_deps` injection that keeps the
+  `lock/` boundary clean. An opt-in `RVND_REQUIRE_VERIFIED_EGRESS` mode refuses
+  unverified egress outright — fail-closed and downgrade-proof. Interop is proven
+  against a golden vector produced by the conformant `http-message-signatures`
+  library, so the in-tree verifier cannot silently diverge from the spec.
+
+- **A PreToolUse enforcement hook gives the governance teeth.** The governance
+  language stops being advisory: a PreToolUse gate plans every tool call and
+  gates it **GO / CONDITIONAL / NO-GO** against the compiled policy, minting an
+  oversight certification on approval and looping the agent back with an
+  actionable block reason (the cause **and** how to unblock) when a call is held.
+  Each verdict carries a grounding signal and a risk traffic light (green / amber
+  / red). Egress is unified onto the same core: `govern_egress` runs the proxy's
+  world-touch through `decide_action` (opt-in), so a network call is gated by the
+  identical policy that gates a tool call, and the certificate is exported at the
+  server level alongside the connected-agents surface.
+
+- **Policy ingest no longer requires a registered workspace.** The ingest/policy
+  pipeline can compile a policy folder standalone — it is no longer bound to a
+  registered workspace — and the first-run wizard's policy step skips gracefully
+  when no folder is set instead of blocking. Egress is attributed **per agent**
+  rather than to a single process-wide environment variable.
 
 - **The front door hands the agent the governance language (C3).** An agent
   connecting over MCP now receives the governance language at the handshake
