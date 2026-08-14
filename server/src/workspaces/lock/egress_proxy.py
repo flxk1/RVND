@@ -326,6 +326,19 @@ def _egress_policy_folder(proxy) -> str | None:
             or getattr(proxy, "track_folder", None) or os.getcwd())
 
 
+def _require_verified_egress() -> bool:
+    """Whether egress REQUIRES a cryptographically verified agent identity (P4).
+
+    Opt-in via ``RVND_REQUIRE_VERIFIED_EGRESS`` (off by default — a DECLARED
+    identity is safe on its own because the gate is escalate-only). When ON, any
+    request whose identity is not VERIFIED — unsigned, or a bad / stale / unknown /
+    revoked signature — is REFUSED before it can egress. Fail-closed, and
+    downgrade-proof by construction: stripping the signature only makes the request
+    unverified, which is precisely what this refuses."""
+    return os.environ.get(
+        "RVND_REQUIRE_VERIFIED_EGRESS", "").strip().lower() in ("1", "on", "true", "yes")
+
+
 # Per-request agent identity -------------------------------------------------
 # One shared proxy may front MANY agents. Each declares WHO it is per request via
 # a header set once through the SDK's default-headers mechanism — the same way
@@ -1117,7 +1130,20 @@ def _make_handler(proxy: EgressProxy):
                     "path": self.path,
                 })
 
-            if not text.strip() and len(body.strip()) > 2:
+            if _require_verified_egress() and not identity.verified:
+                # P4 — require-verified mode: this operator has opted every egress
+                # into a cryptographically VERIFIED agent identity, so a merely
+                # declared one is refused before it can leave. Downgrade-proof:
+                # stripping the signature only yields an unverified request, which
+                # is exactly what this refuses.
+                gate = GateDecision(
+                    action="refuse",
+                    reason=("verified agent identity required "
+                            "(RVND_REQUIRE_VERIFIED_EGRESS), but this request is "
+                            f"{identity.reason}"),
+                    source="cloud_llm_request",
+                )
+            elif not text.strip() and len(body.strip()) > 2:
                 # Non-trivial body but nothing scannable extracted — unparseable
                 # JSON, or a content shape we don't understand (image/binary/an
                 # unknown block). We cannot verify what would leave the machine,
