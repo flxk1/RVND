@@ -131,3 +131,39 @@ def test_signature_base_is_rfc9421_shaped(tmp_path):
         '"signature-agent": "crawler-x"\n'
         f'"@signature-params": {params}'
     )
+
+
+def test_verify_accepts_a_conformant_third_party_signature():
+    """Interop conformance — a golden vector produced by the CONFORMANT
+    ``http-message-signatures`` library (RFC 9421 profile, Ed25519), NOT by this
+    module's own signer. Proves ``verify`` interoperates with an independent,
+    spec-conformant signer (the same core cloudflare/web-bot-auth and pyauth use),
+    guarding against a hand-rolled base/parse divergence that a self-round-trip
+    would miss. The vector is baked in (fixed key + fixed ``created``), so there is
+    no runtime dependency; ``now`` is pinned to the signature's ``created`` so the
+    freshness window holds. Regenerate with ``http-message-signatures`` if the
+    profile changes."""
+    pub_pem = (
+        "-----BEGIN PUBLIC KEY-----\n"
+        "MCowBQYDK2VwAyEAA6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg=\n"
+        "-----END PUBLIC KEY-----\n"
+    )
+    headers = {
+        "signature-input": (
+            'sig1=("@authority" "signature-agent");created=1700000000;'
+            'keyid="k1";alg="ed25519"'
+        ),
+        "signature": (
+            "sig1=:QL91idKX1FczmlUMBAfkNsoqarhXFPoCRkHORyc4HGnjuWrGM7S99Hqo"
+            "MvTv92RMCI1eHsT3LTy7LMe6SPtaAg==:"
+        ),
+        "signature-agent": '"crawler-x"',
+    }
+    ctx = W.RequestContext(authority="api.example.com", method="POST",
+                           path="/v1/messages",
+                           headers={"signature-agent": '"crawler-x"'})
+    v = W.verify(headers, ctx=ctx,
+                 key_lookup=lambda k: {"agent": "crawler-x", "public_key_pem": pub_pem},
+                 now=1700000000)
+    assert v.verified, v.reason
+    assert v.keyid == "k1" and v.agent == "crawler-x"
