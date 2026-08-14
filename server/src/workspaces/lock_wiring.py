@@ -158,6 +158,20 @@ def _govern_egress(folder, **kwargs):
     return govern_egress(folder, **kwargs)
 
 
+def _verify_agent_identity(headers, *, authority="", method="", path="",
+                           expected_agent=None, now=None):
+    # Cryptographically verify a per-request agent identity (Web Bot Auth /
+    # RFC 9421). Lazy import so lock→web_bot_auth stays a wiring edge. Returns a
+    # plain dict so the lock never handles the verifier's own types.
+    from .web_bot_auth import RequestContext, verify
+    hlow = {str(k).lower(): v for k, v in dict(headers).items()}
+    ctx = RequestContext(authority=authority, method=method, path=path,
+                         headers=hlow)
+    v = verify(hlow, ctx=ctx, expected_agent=expected_agent, now=now)
+    return {"verified": v.verified, "agent": v.agent,
+            "keyid": v.keyid, "reason": v.reason}
+
+
 host_deps.models_for_role = _models_for_role
 host_deps.llm_classify = _llm_classify
 host_deps.key_root_dir = _key_root_dir
@@ -171,3 +185,4 @@ host_deps.registry_models_for_role = _registry_models_for_role
 host_deps.capability_verifier_factory = _capability_verifier_factory
 host_deps.record_capability_refusal = _record_capability_refusal
 host_deps.govern_egress = _govern_egress
+host_deps.verify_agent_identity = _verify_agent_identity
