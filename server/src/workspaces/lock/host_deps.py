@@ -28,6 +28,10 @@ record_capability_refusal: Optional[Callable[..., Any]] = None
 # Workspace-hierarchy policy composition for egress (decide_action via
 # govern_egress) — injected so the lock never imports governance directly.
 govern_egress: Optional[Callable[..., Any]] = None
+# Web Bot Auth / RFC 9421 signature verification for per-request agent identity —
+# injected so the lock never imports the verifier or the key registry directly.
+# Absent (extraction case) → the proxy keeps the DECLARED identity, never fails open.
+verify_agent_identity: Optional[Callable[..., Any]] = None
 
 _wired = False
 

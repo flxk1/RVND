@@ -376,6 +376,60 @@ def request_agent_identity(headers, *, env_default: Optional[str] = None) -> str
     return env or "agent"
 
 
+@dataclass
+class AgentIdentity:
+    """A request's resolved identity: the ``actor`` to govern by, and whether that
+    identity was cryptographically VERIFIED (a valid Web Bot Auth signature over
+    the request, against a registered key) or merely DECLARED. The ``verified``
+    flag is recorded for attribution; it does NOT change the verdict here — the
+    egress gate stays escalate-only. ``keyid``/``reason`` say which key answered
+    and why verification did or didn't hold."""
+
+    actor: str
+    verified: bool = False
+    keyid: Optional[str] = None
+    reason: str = ""
+
+
+def resolve_agent_identity(headers, *, authority: str = "", method: str = "",
+                           path: str = "",
+                           now: Optional[float] = None) -> AgentIdentity:
+    """Resolve a request's agent identity, upgrading a DECLARED claim to VERIFIED
+    when the request carries a valid Web Bot Auth signature.
+
+    The declared actor is always :func:`request_agent_identity`. When the request
+    carries ``Signature``/``Signature-Input``, the INJECTED verifier
+    (``host_deps.verify_agent_identity``) checks them against the agent-key
+    registry and, on success, marks the identity verified. FAIL-SOFT: a missing
+    verifier, an absent signature, or a bad/stale/unknown signature all fall back
+    to the declared identity — safe, because the egress gate is escalate-only —
+    never an exception. Verification here only ANSWERS "is this really that
+    agent?"; it does not (yet) grant the agent any latitude.
+    """
+    declared = request_agent_identity(headers)
+    try:
+        h = {str(k).lower(): v for k, v in dict(headers).items()}
+    except Exception:  # noqa: BLE001 — unreadable headers → declared, never raise
+        return AgentIdentity(declared, reason="declared (unreadable headers)")
+    if not h.get("signature") or not h.get("signature-input"):
+        return AgentIdentity(declared, reason="declared (no signature)")
+    from . import host_deps
+    host_deps.ensure_wired()
+    verifier = host_deps.verify_agent_identity
+    if verifier is None:
+        return AgentIdentity(declared, reason="declared (verifier not wired)")
+    try:
+        res = verifier(h, authority=authority, method=method, path=path,
+                       expected_agent=declared, now=now) or {}
+    except Exception:  # noqa: BLE001 — a verifier fault must not break egress
+        return AgentIdentity(declared, reason="declared (verify error)")
+    if res.get("verified"):
+        return AgentIdentity(actor=(res.get("agent") or declared), verified=True,
+                             keyid=res.get("keyid"), reason="verified")
+    return AgentIdentity(declared, verified=False, keyid=res.get("keyid"),
+                         reason=f"declared ({res.get('reason') or 'unverified'})")
+
+
 def _compose_egress_policy(decision: GateDecision, folder: str, actor: str) -> GateDecision:
     """Compose the workspace-hierarchy POLICY (``decide_action`` via
     ``govern_egress``) with the DATA gate, **strictest-wins / escalate-only**: the
@@ -1041,6 +1095,28 @@ def _make_handler(proxy: EgressProxy):
             text = extract_prompt_text(upstream_host, body)
             request_id = f"req-{int(time.time()*1000)}-{proxy.stats['received']}"
 
+            # Per-request agent identity — DECLARED (Signature-Agent / X-Lock-Agent)
+            # and, when the request is signed, cryptographically VERIFIED against the
+            # agent-key registry. The verified flag is AUDITED; it does not change the
+            # verdict here (the egress gate stays escalate-only). A signed request that
+            # fails verification is audited too — a refused claim is security-relevant.
+            identity = resolve_agent_identity(
+                self.headers,
+                authority=self.headers.get("Host", ""),
+                method=self.command,
+                path=self.path,
+            )
+            if self.headers.get("Signature-Input"):
+                proxy.audit_log({
+                    "kind": "agent_identity",
+                    "ts": time.time(),
+                    "agent": identity.actor,
+                    "verified": identity.verified,
+                    "keyid": identity.keyid,
+                    "reason": identity.reason,
+                    "path": self.path,
+                })
+
             if not text.strip() and len(body.strip()) > 2:
                 # Non-trivial body but nothing scannable extracted — unparseable
                 # JSON, or a content shape we don't understand (image/binary/an
@@ -1063,7 +1139,7 @@ def _make_handler(proxy: EgressProxy):
                     source="cloud_llm_request",
                     task_id=request_id,
                     folder=_egress_policy_folder(proxy),          # None unless RVND_EGRESS_POLICY
-                    actor=request_agent_identity(self.headers),   # per-request, not one env
+                    actor=identity.actor,                         # per-request; verified when signed
                 )
 
             # Translate gate -> final action. Defaults match gate.action 1:1 except
