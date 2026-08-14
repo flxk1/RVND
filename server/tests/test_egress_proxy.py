@@ -1261,3 +1261,107 @@ def test_proxy_audits_verified_identity_end_to_end(monkeypatch, tmp_path):
     ev = identity_events[0]
     assert ev["verified"] is True and ev["keyid"] == keyid and ev["agent"] == "crawler-x"
     assert upstream_hits == ["/v1/messages"], "verdict unchanged — still forwarded"
+
+
+# ---------------------------------------------------------------------------
+# P4 — require-verified egress. With RVND_REQUIRE_VERIFIED_EGRESS on, an
+# unverified request (unsigned, or a bad/stale signature) is REFUSED before it
+# can egress; a validly-signed one still forwards. Off by default (no
+# regression). Downgrade-proof: stripping the signature only makes the request
+# unverified — which is exactly what this refuses.
+# ---------------------------------------------------------------------------
+
+
+def test_require_verified_env_parsing(monkeypatch):
+    from workspaces.lock.egress_proxy import _require_verified_egress
+    monkeypatch.delenv("RVND_REQUIRE_VERIFIED_EGRESS", raising=False)
+    assert _require_verified_egress() is False
+    for on in ("1", "on", "true", "YES"):
+        monkeypatch.setenv("RVND_REQUIRE_VERIFIED_EGRESS", on)
+        assert _require_verified_egress() is True
+    monkeypatch.setenv("RVND_REQUIRE_VERIFIED_EGRESS", "0")
+    assert _require_verified_egress() is False
+
+
+def _egress_forwarded(proxy_port, upstream_port, headers):
+    """Fire one request through a live proxy + stub upstream; return whether it
+    was FORWARDED (reached the upstream) or refused before egress."""
+    hits = []
+
+    class Stub(BaseHTTPRequestHandler):
+        def log_message(self, *a, **k):
+            return
+
+        def do_POST(self):
+            self.rfile.read(int(self.headers.get("Content-Length", "0")))
+            hits.append(self.path)
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(b'{"ok": true}')
+
+    upstream = ThreadingHTTPServer(("127.0.0.1", upstream_port), Stub)
+    threading.Thread(target=upstream.serve_forever, daemon=True).start()
+    proxy = EgressProxy(
+        port=proxy_port,
+        oversight=OversightLevel.AUTONOMOUS,
+        approval_callback=autonomous_callback,
+        upstream_overrides={"stub.test": f"http://127.0.0.1:{upstream_port}"},
+    )
+    proxy.start()
+    try:
+        req = urllib.request.Request(
+            f"http://127.0.0.1:{proxy_port}/v1/messages",
+            data=json.dumps({"messages": [{"role": "user", "content": "hi"}]}).encode(),
+            headers={"X-Lock-Upstream": "stub.test",
+                     "Content-Type": "application/json", **headers},
+            method="POST",
+        )
+        try:
+            urllib.request.urlopen(req, timeout=3).read()
+        except urllib.error.HTTPError:
+            pass          # a refusal surfaces as a non-2xx; we assert on forwarding
+    finally:
+        proxy.stop()
+        upstream.shutdown()
+        upstream.server_close()
+    return hits == ["/v1/messages"]
+
+
+def test_require_verified_refuses_unsigned(monkeypatch, tmp_path):
+    monkeypatch.setenv("RVND_REQUIRE_VERIFIED_EGRESS", "1")
+    monkeypatch.setenv("WORKSPACE_AGENTS_DIR", str(tmp_path))
+    forwarded = _egress_forwarded(_free_port(), _free_port(),
+                                  {"Signature-Agent": '"unsigned-agent"'})
+    assert forwarded is False, "an unverified request must be refused before egress"
+
+
+def test_require_verified_allows_signed(monkeypatch, tmp_path):
+    monkeypatch.setenv("RVND_REQUIRE_VERIFIED_EGRESS", "1")
+    proxy_port, upstream_port = _free_port(), _free_port()
+    msg, _, _ = _register_and_sign(monkeypatch, tmp_path,
+                                   authority=f"127.0.0.1:{proxy_port}")
+    forwarded = _egress_forwarded(proxy_port, upstream_port, {
+        "Signature-Agent": msg["Signature-Agent"],
+        "Signature-Input": msg["Signature-Input"],
+        "Signature": msg["Signature"]})
+    assert forwarded is True, "a validly-signed request must pass require-verified"
+
+
+def test_require_verified_refuses_tampered_signature(monkeypatch, tmp_path):
+    monkeypatch.setenv("RVND_REQUIRE_VERIFIED_EGRESS", "1")
+    proxy_port, upstream_port = _free_port(), _free_port()
+    # signed over a DIFFERENT authority than the proxy presents → won't verify
+    msg, _, _ = _register_and_sign(monkeypatch, tmp_path, authority="attacker.example")
+    forwarded = _egress_forwarded(proxy_port, upstream_port, {
+        "Signature-Agent": msg["Signature-Agent"],
+        "Signature-Input": msg["Signature-Input"],
+        "Signature": msg["Signature"]})
+    assert forwarded is False, "a signature that does not verify must be refused"
+
+
+def test_require_verified_off_allows_unsigned(monkeypatch, tmp_path):
+    monkeypatch.delenv("RVND_REQUIRE_VERIFIED_EGRESS", raising=False)
+    forwarded = _egress_forwarded(_free_port(), _free_port(),
+                                  {"Signature-Agent": '"whoever"'})
+    assert forwarded is True, "off by default — a declared identity still egresses"
