@@ -60,8 +60,14 @@ from workspaces.lock.egress_proxy import (
     make_default_callback,
     notify_callback,
     request_agent_identity,
+    resolve_agent_identity,
     scan_prompt,
 )
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+
+from workspaces import agent_keys as _agent_keys
+from workspaces import web_bot_auth as _wba
 
 
 # ---------------------------------------------------------------------------
@@ -1141,3 +1147,117 @@ def test_proxy_attributes_agent_identity_per_request(monkeypatch):
     for received in upstream_header_sets:
         assert "signature-agent" not in received
         assert "x-lock-agent" not in received
+
+
+# ---------------------------------------------------------------------------
+# P3 — verified agent identity wired into the proxy. A signed request upgrades
+# the DECLARED identity to VERIFIED (recorded in the audit); an unsigned or
+# bad-signature request falls back to declared and is NOT rejected here (the
+# escalate-only gate is unchanged). Exercises the real host_deps-injected
+# verifier (agent_keys registry + web_bot_auth).
+# ---------------------------------------------------------------------------
+
+
+def _register_and_sign(monkeypatch, tmp_path, *, agent="crawler-x",
+                       authority="localhost:8443", created=None):
+    """Register an agent key (in a temp registry) and return an email headers
+    object carrying Host + a valid Web Bot Auth signature over @authority."""
+    monkeypatch.setenv("WORKSPACE_AGENTS_DIR", str(tmp_path))
+    priv = Ed25519PrivateKey.generate()
+    pem = priv.public_key().public_bytes(
+        Encoding.PEM, PublicFormat.SubjectPublicKeyInfo).decode()
+    keyid = _agent_keys.register_agent_key(agent, pem)["keyid"]
+    now = int(time.time()) if created is None else created
+    ctx = _wba.RequestContext(authority=authority,
+                              headers={"signature-agent": f'"{agent}"'})
+    hdrs = _wba.sign(priv, agent=agent, keyid=keyid,
+                     covered=["@authority", "signature-agent"], ctx=ctx, created=now)
+    msg = Message()
+    msg["Host"] = authority
+    for k, v in hdrs.items():
+        msg[k] = v
+    return msg, keyid, now
+
+
+def test_resolve_identity_verified_for_signed_request(monkeypatch, tmp_path):
+    msg, keyid, now = _register_and_sign(monkeypatch, tmp_path)
+    ident = resolve_agent_identity(msg, authority=msg.get("Host", ""),
+                                   method="POST", path="/v1/messages", now=now)
+    assert ident.verified is True
+    assert ident.actor == "crawler-x" and ident.keyid == keyid
+
+
+def test_resolve_identity_declared_when_unsigned(monkeypatch, tmp_path):
+    monkeypatch.setenv("WORKSPACE_AGENTS_DIR", str(tmp_path))
+    msg = Message()
+    msg["Signature-Agent"] = '"solo-agent"'
+    ident = resolve_agent_identity(msg)
+    assert ident.verified is False and ident.actor == "solo-agent"
+    assert "no signature" in ident.reason
+
+
+def test_resolve_identity_bad_signature_falls_back_to_declared(monkeypatch, tmp_path):
+    # signed over authority "localhost:8443" but verified against a different one
+    msg, _, now = _register_and_sign(monkeypatch, tmp_path, authority="localhost:8443")
+    ident = resolve_agent_identity(msg, authority="evil.example",
+                                   method="POST", path="/v1/messages", now=now)
+    assert ident.verified is False          # signature does not verify
+    assert ident.actor == "crawler-x"       # but the claim is still attributed
+    assert "declared" in ident.reason       # and the request is NOT rejected here
+
+
+def test_proxy_audits_verified_identity_end_to_end(monkeypatch, tmp_path):
+    """A signed request through the live proxy is recorded verified in the audit
+    and still forwarded — P3 changes attribution, not the verdict."""
+    upstream_port = _free_port()
+    proxy_port = _free_port()
+    authority = f"127.0.0.1:{proxy_port}"           # what the agent signs @authority over
+    msg, keyid, _ = _register_and_sign(monkeypatch, tmp_path, authority=authority)
+
+    upstream_hits = []
+
+    class StubHandler(BaseHTTPRequestHandler):
+        def log_message(self, *a, **k):
+            return
+
+        def do_POST(self):
+            self.rfile.read(int(self.headers.get("Content-Length", "0")))
+            upstream_hits.append(self.path)
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(b'{"ok": true}')
+
+    upstream = ThreadingHTTPServer(("127.0.0.1", upstream_port), StubHandler)
+    threading.Thread(target=upstream.serve_forever, daemon=True).start()
+    proxy = EgressProxy(
+        port=proxy_port,
+        oversight=OversightLevel.AUTONOMOUS,
+        approval_callback=autonomous_callback,
+        upstream_overrides={"stub.test": f"http://127.0.0.1:{upstream_port}"},
+    )
+    events = []
+    monkeypatch.setattr(proxy, "audit_log", lambda ev: events.append(ev))
+    proxy.start()
+    try:
+        req = urllib.request.Request(
+            f"http://127.0.0.1:{proxy_port}/v1/messages",
+            data=json.dumps({"messages": [{"role": "user", "content": "hi"}]}).encode(),
+            headers={"X-Lock-Upstream": "stub.test",
+                     "Content-Type": "application/json",
+                     "Signature-Agent": msg["Signature-Agent"],
+                     "Signature-Input": msg["Signature-Input"],
+                     "Signature": msg["Signature"]},
+            method="POST",
+        )
+        urllib.request.urlopen(req, timeout=3).read()
+    finally:
+        proxy.stop()
+        upstream.shutdown()
+        upstream.server_close()
+
+    identity_events = [e for e in events if e.get("kind") == "agent_identity"]
+    assert identity_events, "a signed request must emit an agent_identity audit event"
+    ev = identity_events[0]
+    assert ev["verified"] is True and ev["keyid"] == keyid and ev["agent"] == "crawler-x"
+    assert upstream_hits == ["/v1/messages"], "verdict unchanged — still forwarded"
