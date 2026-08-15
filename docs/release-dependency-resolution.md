@@ -4,7 +4,9 @@
 
 As of 2026-08-02, RVND installs the five Loomground plane packages from exact
 Git commits. RVND also consumes a pinned, hash-verified subset of Patchbay's
-presentation contract. Each commit is the target of the release tag named in
+presentation contract, and pins the evidence-layer package `enforcement-posture`
+the same way — an immutable commit targeted by a version tag (P0a). Each commit
+is the target of the release tag named in
 `pyproject.toml`; using the commit prevents a moved tag from changing an RVND
 build.
 
@@ -29,6 +31,7 @@ Current tag-to-commit mapping:
 | `loomground-factual` | `factual-v0.1.0` | `db60a0592eb7741732944f05279b27def0c9685b` |
 | `loomground-epistemic` | `epistemic-v0.1.0` | `2c1dc8ea8278fe3d1aeffa470319573c53dee932` |
 | `loomground-patchbay` | `v0.1.0` | `36e70ada8d51583b7071a51edf12e6d65b1a0cc5` |
+| `enforcement-posture` | `v0.3.0` | `fdd143a2a853fdba980dc45fbd6e69199ad5598c` |
 
 Every row now names an immutable **version tag** that must resolve to the
 pinned commit — there are **no branch-pins**. A commit pinned by SHA is
