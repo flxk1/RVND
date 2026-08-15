@@ -120,3 +120,80 @@ def test_enforcement_posture_is_immutably_commit_pinned():
     assert len(lines) == 1
     rev = lines[0].rsplit("@", 1)[-1].split('"', 1)[0]
     assert len(rev) == 40 and all(c in "0123456789abcdef" for c in rev)
+
+
+# ── Stage 2: evidence_pack projects the posture + coverage verdict ────────────
+
+from workspaces.conformity import evidence_pack
+
+
+def _attest(folder, lr):
+    B._ATTESTED_THIS_PROCESS.clear()
+    return B.attest_posture(folder, log_root=lr)
+
+
+def test_coverage_is_covered_for_a_single_posture(tmp_path, monkeypatch):
+    monkeypatch.setenv("WORKSPACE_KEY_DIR", str(tmp_path / "keys"))
+    d, lr = str(tmp_path / "ws"), str(tmp_path / "logs")
+    _attest(d, lr)
+    pack = evidence_pack(d, log_root=lr)
+    assert pack["coverage"]["verdict"] == "covered"
+    assert pack["effective_posture"] is not None
+    assert pack["exposure"] == {"reason": "baseline-intent undeclared"}
+
+
+def test_coverage_is_split_across_a_posture_change(tmp_path, monkeypatch):
+    monkeypatch.setenv("WORKSPACE_KEY_DIR", str(tmp_path / "keys"))
+    monkeypatch.setenv("RVND_REQUIRE_VERIFIED_EGRESS", "0")
+    d, lr = str(tmp_path / "ws"), str(tmp_path / "logs")
+    _attest(d, lr)
+    monkeypatch.setenv("RVND_REQUIRE_VERIFIED_EGRESS", "1")   # posture hardened
+    _attest(d, lr)
+    pack = evidence_pack(d, log_root=lr)
+    assert pack["coverage"]["verdict"] == "split"
+    assert len(pack["coverage"]["segments"]) == 2
+    assert pack["effective_posture"] is None                 # no single posture on a split
+
+
+def test_coverage_is_uncovered_when_evidence_predates_attestation(tmp_path, monkeypatch):
+    monkeypatch.setenv("WORKSPACE_KEY_DIR", str(tmp_path / "keys"))
+    d, lr = str(tmp_path / "ws"), str(tmp_path / "logs")
+    from workspaces.mutation_log import LogEvent, MutationLog
+    MutationLog(d, log_root=lr).append(LogEvent(
+        event="system", folder_path=d, pair_id="pre", channel="system",
+        actor="system", extra={"kind": "gate-verdict"}))     # evidence, no posture yet
+    _attest(d, lr)                                            # posture attested AFTER it
+    pack = evidence_pack(d, log_root=lr)
+    assert pack["coverage"]["verdict"] == "uncovered"        # fail-closed on the gap
+    assert pack["coverage"]["gaps"]                          # and the gap is named
+
+
+def test_exposure_computed_only_with_a_declared_baseline(tmp_path, monkeypatch):
+    monkeypatch.setenv("WORKSPACE_KEY_DIR", str(tmp_path / "keys"))
+    monkeypatch.setenv("RVND_REQUIRE_VERIFIED_EGRESS", "1")
+    d, lr = str(tmp_path / "ws"), str(tmp_path / "logs")
+    _attest(d, lr)
+    base = evidence_pack(d, log_root=lr)["effective_posture"]
+    assert base is not None
+    assert "reason" in evidence_pack(d, log_root=lr)["exposure"]          # omitted
+    exp = evidence_pack(d, log_root=lr, intended_posture=base)["exposure"]  # computed
+    assert "clean_fraction" in exp and "episodes" in exp
+
+
+def test_evidence_pack_coverage_is_env_independent(tmp_path, monkeypatch):
+    # A pure projection: the pack reflects the ATTESTED posture, never the live env.
+    monkeypatch.setenv("WORKSPACE_KEY_DIR", str(tmp_path / "keys"))
+    monkeypatch.setenv("RVND_REQUIRE_VERIFIED_EGRESS", "0")
+    d, lr = str(tmp_path / "ws"), str(tmp_path / "logs")
+    _attest(d, lr)
+    before = evidence_pack(d, log_root=lr)["effective_posture"]
+    monkeypatch.setenv("RVND_REQUIRE_VERIFIED_EGRESS", "1")   # flip the live env
+    assert evidence_pack(d, log_root=lr)["effective_posture"] == before
+
+
+def test_mode_order_ranks_an_autonomy_grade_change():
+    from enforcement_posture import Change, Control, Posture, compare
+    lo = Posture("rvnd", (Control("autonomy_ceiling", True, "L2"),), "2026-01-01T00:00:00+00:00")
+    hi = Posture("rvnd", (Control("autonomy_ceiling", True, "L1"),), "2026-01-02T00:00:00+00:00")
+    # L2 -> L1 (lower grade = more restrictive) is a HARDENING, not INCOMPARABLE.
+    assert compare(lo, hi, mode_order=B._MODE_ORDER) == Change.HARDENED

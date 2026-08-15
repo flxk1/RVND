@@ -130,7 +130,8 @@ def _window(log: MutationLog, since: Optional[float],
 def evidence_pack(folder: str | Path, *, log_root: Optional[Path] = None,
                   since: Optional[float] = None,
                   until: Optional[float] = None,
-                  regime: Optional[dict] = None) -> dict[str, Any]:
+                  regime: Optional[dict] = None,
+                  intended_posture: Optional[dict] = None) -> dict[str, Any]:
     """Period export: every recorded operation with actor, initiation kind,
     signature presence, and its place in the verified chain.
 
@@ -183,6 +184,26 @@ def evidence_pack(folder: str | Path, *, log_root: Optional[Path] = None,
         elif kind in ("incident", "drift-finding", "drift-baseline"):
             rec["detail"] = {k: v for k, v in x.items() if k != "kind"}
         records.append(rec)
+    # Stage 2 (P0a): project the attested enforcement posture over this window —
+    # the configuration the evidence was recorded under, plus a coverage verdict.
+    # A pure projection of the same chain: the posture was captured as signed events
+    # at record time; the baseline, when supplied, arrives as a parameter, never
+    # read from the environment here.
+    from . import enforcement_posture_binding as _pb
+    posture_events = []
+    first_ts = last_ts = None
+    for e in log.replay():
+        first_ts = e.ts if first_ts is None else min(first_ts, e.ts)
+        last_ts = e.ts if last_ts is None else max(last_ts, e.ts)
+        if (e.extra or {}).get("kind") == _pb.POSTURE_EVENT_KIND and (until is None or e.ts <= until):
+            posture_events.append(e)
+    posture = _pb.posture_projection(
+        posture_events,
+        since_ts=since if since is not None else (first_ts if first_ts is not None else 0.0),
+        until_ts=until if until is not None else (last_ts if last_ts is not None else 0.0),
+        log_id=log.folder_id, digest=log.head_hash(),
+        intended_posture=_pb._posture_from_dict(intended_posture) if intended_posture else None,
+    )
     return {
         "op": "evidence_pack",
         "folder": str(folder),
@@ -195,6 +216,9 @@ def evidence_pack(folder: str | Path, *, log_root: Optional[Path] = None,
                   "purged_with_tombstone": chain.purged_with_tombstone,
                   "key_pin": getattr(chain, "key_pin", None)},
         "counts_by_kind": dict(sorted(counts.items())),
+        "effective_posture": posture["effective_posture"],
+        "coverage": posture["coverage"],
+        "exposure": posture["exposure"],
         "records": records,
         "regime": _regime_id(regime),
         "basis": _basis("evidence_pack", regime),
