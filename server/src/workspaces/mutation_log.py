@@ -485,6 +485,21 @@ class MutationLog:
     def log_file(self) -> Path:
         return self._log_file
 
+    def head_hash(self) -> str:
+        """The chain's current head (tail) hash, from the signed head anchor;
+        ``GENESIS_HASH`` when the chain is empty or has no anchor yet. A public
+        read so an external artifact can be content-bound to the chain's current
+        state (e.g. a posture attestation) without re-scanning the whole log."""
+        af = self._anchor_file()
+        try:
+            if af.exists():
+                head = str(json.loads(af.read_text(encoding="utf-8")).get("head_hash", ""))
+                if head:
+                    return head
+        except Exception:
+            pass
+        return GENESIS_HASH
+
     def _is_sealed(self) -> bool:
         """True if this workspace's memory store is sealed (a ``.sealed`` blob exists
         for the primary or legacy folder hash)."""

@@ -135,6 +135,15 @@ def operate(
     RunStarted, a RunStep per issue, RunOutcome (or RunRefused) — so the run
     is auditable and replayable. Auto steps are journalled but never become
     human-closed evidence; that separation is the calibration ledger's."""
+    if journal:
+        # Attest the effective enforcement posture onto this folder's chain before
+        # its evidence — idempotent + process-memoised (a no-op after the first run
+        # per folder+posture). Evidence only; a failure never blocks the run.
+        try:
+            from .enforcement_posture_binding import attest_posture
+            attest_posture(folder_context, log_root=log_root)
+        except Exception:                    # noqa: BLE001
+            pass
     from .session_admission import verify_operation_session
     from .session_capability import CapabilityError
     try:
