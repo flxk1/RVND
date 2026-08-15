@@ -1,6 +1,6 @@
 ---
 name: resolve-rule-conflicts
-description: Surface conflicting RVND governance rules and obtain a server-validated resolution or residual decision. Use when active rules, exceptions, or authorities point to incompatible outcomes. Never choose a winner in the host.
+description: Surface conflicting RVND governance rules and obtain a server-validated resolution or residual decision - read the graph, lanes, and netlist, identify the incompatible typed constructs, and patch_validate a candidate resolving delta; route ratification through rvnd-decide. Never chooses a winner in the host; if no operation resolves it, marks it unavailable and stops. Triggers - "these rules conflict", "resolve the rule conflict", "which authority wins here", "two policies contradict each other".
 ---
 
 # Resolve rule conflicts

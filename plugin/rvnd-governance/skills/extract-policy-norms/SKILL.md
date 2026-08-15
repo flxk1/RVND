@@ -1,6 +1,6 @@
 ---
 name: extract-policy-norms
-description: Extract grounded policy requirements through the RVND governance MCP server. Use when a regulation, contract, or policy must become reviewable governance input before validation or application. Never infer authority or compute a verdict in the host.
+description: Extract grounded policy requirements from a regulation, contract, or policy text through the RVND governance MCP server (policy_ingest), preserving source spans and residual meaning as reviewable input - the entry step of the policy pipeline, handed on to compile-loomground-policy. Never infers authority, invents a norm, or computes a verdict in the host. Triggers - "ingest this policy", "extract the rules from this regulation", "turn this contract into governance input", "lower this policy text into RVND".
 ---
 
 # Extract policy norms
