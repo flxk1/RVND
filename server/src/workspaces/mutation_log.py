@@ -497,6 +497,10 @@ class MutationLog:
                 if head:
                     return head
         except Exception:
+            # A missing, unreadable, or malformed anchor is not an error here:
+            # fall through to GENESIS_HASH (an empty / unanchored chain reads as
+            # genesis). verify_chain re-derives the authoritative head, so this
+            # fast convenience read never has to be — hence the broad swallow.
             pass
         return GENESIS_HASH
 
