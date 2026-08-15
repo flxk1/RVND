@@ -26,6 +26,9 @@ VCS_FIRST_PARTY = {
     "loomground-norm",
     "loomground-factual",
     "loomground-epistemic",
+    # Evidence layer (P0a): git-pinned like the planes, so it carries an exact
+    # commit rather than a PyPI sha256.
+    "enforcement-posture",
 }
 COPYLEFT = re.compile(r"\b(?:AGPL|GPL|LGPL|SSPL|EUPL|OSL|CECILL)\b", re.I)
 KNOWN_LICENSES = (
