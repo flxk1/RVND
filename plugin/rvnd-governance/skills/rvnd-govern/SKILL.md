@@ -1,6 +1,6 @@
 ---
 name: rvnd-govern
-description: Run a consequential agent action through RVND's governance cycle - query the lane, propose it as a typed Loomground envelope, let the server validate it, preview the effect, confirm, apply, display the verdict. Drives the RVND governance MCP server; never writes .lg or computes a verdict itself; keeps unexpressible meaning residual; fail-closed. Triggers - "govern this action", "is this allowed under policy", "run this through RVND", "gate this against the lane", "can the agent do this".
+description: Run a consequential agent action through RVND's governance cycle - query the lane, propose it as a typed Loomground envelope, let the server validate it, preview the effect, confirm, apply, display the verdict. Drives the RVND governance MCP server; never writes .lg or computes a verdict itself; keeps unexpressible meaning residual; fail-closed. For a read-only verdict without proposing a change, use reason-governance-rules. Triggers - "govern this action", "is this allowed under policy", "run this through RVND", "gate this against the lane", "can the agent do this".
 ---
 
 # rvnd-govern

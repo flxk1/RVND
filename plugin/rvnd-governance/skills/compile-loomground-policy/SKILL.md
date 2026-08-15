@@ -1,6 +1,6 @@
 ---
 name: compile-loomground-policy
-description: Validate extracted policy material as a typed RVND governance patch. Use after policy ingestion when proposed constructs must be checked against the live graph before human ratification. Never write grammar or apply a patch in the host.
+description: Validate extracted policy material as a typed RVND governance patch - read the current governance_netlist, assemble a GovernanceDelta from grounded ingestion only, and patch_validate it against the live graph before human ratification. The compile step after extract-policy-norms; hands valid output to rvnd-decide. Never writes grammar or applies a patch in the host. Triggers - "validate this policy", "compile the extracted policy", "check these constructs against the graph", "is this policy patch well-formed".
 ---
 
 # Compile a Loomground policy

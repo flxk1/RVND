@@ -1,6 +1,6 @@
 ---
 name: reason-governance-rules
-description: Ask the RVND server for the governed outcome of a concrete action. Use when a case must be checked against the active governance lane and returned with the server's discrete verdict and evidence. Never calculate or soften a verdict in the host.
+description: Ask the RVND server for the governed outcome of a concrete action (operate) - check the case against the active lane and return the server's discrete verdict, residual, and evidence. Read-only disposition; for the full propose-validate-confirm-apply cycle that can change authority, use rvnd-govern instead. Never calculates or softens a verdict in the host. Triggers - "what is the verdict for this action", "check this case against the lane", "what does policy say about this".
 ---
 
 # Reason over governance rules
