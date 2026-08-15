@@ -43,7 +43,7 @@ def test_loomground_toolchain_is_release_pinned():
     """
     text = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     direct_urls = [line for line in text.splitlines()
-                   if "git+https://github.com/flxk1/" in line]
+                   if "git+https://github.com/flxk1/loomground-" in line]
     assert len(direct_urls) == 9
     for line in direct_urls:
         revision = line.rsplit("@", 1)[-1].split('"', 1)[0]
