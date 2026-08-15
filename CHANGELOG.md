@@ -177,9 +177,10 @@ dates are ISO.
 
 ### Dependencies
 
-- Re-pinned `loomground-solver` to released tag `solver-v0.4.0` and
-  `loomground-ingest` to released tag `ingest-v0.2.0` (both were branch-pins to
-  immutable commits). Only `loomground-deontic` remains an immutable-commit pin.
+- Re-pinned `loomground-solver` to released tag `solver-v0.2.1` (the 0.2.x line
+  `legal`/`norm` require) and `loomground-ingest` to released tag `ingest-v0.2.0`
+  (both were branch-pins to immutable commits). Only `loomground-deontic` remains
+  an immutable-commit pin.
 
 ## [0.6.9.0] - 2026-08-10
 
