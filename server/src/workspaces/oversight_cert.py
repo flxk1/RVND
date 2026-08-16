@@ -67,6 +67,23 @@ def _canonicalizer() -> Callable[[dict], bytes]:
     return rfc8785.dumps
 
 
+def _assistance_from_dict(declared: Optional[dict]) -> object | None:
+    """Build an ``Assistance`` from a REVIEWER-DECLARED dict, or ``None`` when the
+    reviewer declared nothing. The runtime never infers this: an absent declaration
+    stays ``None`` (independence reads ``UNDECLARED``, never ``UNAIDED``). The
+    certificate may attest that the reviewer SAID they were unaided — never that they
+    WERE. ``declared`` = ``{"aid": "unaided"|"deterministic"|"model", "system"?: str,
+    "same_model_family"?: bool}``."""
+    if not declared:
+        return None
+    from oversight_certificate import Aid, Assistance
+    return Assistance(
+        aid=Aid(declared["aid"]),
+        system=declared.get("system", ""),
+        same_model_family=declared.get("same_model_family"),
+    )
+
+
 def certify_decision(
     *,
     decision_id: str,
@@ -80,6 +97,7 @@ def certify_decision(
     sign: Callable[[bytes], bytes],
     keyid: str = "",
     canonicalize: Optional[Callable[[dict], bytes]] = None,
+    assistance: Optional[dict] = None,
 ) -> Envelope:
     """A qualified human RULED on a held action → a signed DECIDED certificate,
     returned as a DSSE envelope ``dict`` ready to store or hand to an auditor.
@@ -97,6 +115,7 @@ def certify_decision(
         id=decision_id, action=action, disposition=Disposition.DECIDED, at=at,
         basis=basis, evidence=tuple(evidence),
         human=Human(human_id, qualification, credential_not_after),
+        assistance=_assistance_from_dict(assistance),
     )
     return issue(cert, canonicalize=canonicalize or _canonicalizer(),
                  sign=sign, keyid=keyid).to_dict()
@@ -244,6 +263,7 @@ def _persist_certificate(folder_context: str, audit_id: str, envelope: dict,
 def emit_decision_certificate(folder_context: str, *, actor: str, action: str,
                               evidence_refs: Sequence[str], at: str,
                               audit_id: str = "", basis: str = DEFAULT_BASIS,
+                              assistance: Optional[dict] = None,
                               log_root=None) -> Optional[dict]:
     """Emit + persist the portable oversight certificate for a just-recorded human
     DECISION, returning the DSSE envelope dict — or ``None`` on any failure (a
@@ -266,7 +286,7 @@ def emit_decision_certificate(folder_context: str, *, actor: str, action: str,
             human_id=str(actor),
             qualification=_qualification_for(folder_context, actor, log_root),
             evidence=ev, at=str(at), credential_not_after=None,
-            basis=basis, sign=sign, keyid=keyid)
+            basis=basis, sign=sign, keyid=keyid, assistance=assistance)
         _persist_certificate(folder_context, str(audit_id or ""), env, log_root)
         return env
     except Exception:
