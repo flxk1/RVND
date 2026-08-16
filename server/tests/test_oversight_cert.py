@@ -214,3 +214,36 @@ def test_govlive_board_carries_certificates(tmp_path, monkeypatch):
     assert board["ok"]
     assert len(board.get("certificates", [])) == 1
     assert any(c.get("audit_id") == "evt-9" for c in board.get("certificates", []))
+
+
+# ── 0.2.0: assistance / independence — reviewer-declared, never runtime-inferred ──
+
+def test_assistance_undeclared_reads_undeclared_never_unaided():
+    # The runtime NEVER infers how the human reviewed: with no declaration the
+    # certificate is UNDECLARED, never UNAIDED. A system-minted "unaided" would be an
+    # unfalsifiable claim about a human's private conduct — worse than absent.
+    sign, verify_sig = _ephemeral_signer()
+    env = oc.certify_decision(
+        decision_id="dec-u", action="act", human_id="h", qualification="controller",
+        evidence=("sha256:x",), at="2026-08-13T10:00:00Z", sign=sign)
+    rep = oc.recheck(env, verify_sig=verify_sig, now="2026-08-13T10:05:00Z")
+    assert rep.ok
+    assert rep.independence.value == "undeclared"
+    assert rep.independence.value != "unaided"          # the load-bearing guarantee
+
+
+def test_reviewer_declared_assistance_is_recorded():
+    sign, verify_sig = _ephemeral_signer()
+
+    def indep(assistance):
+        env = oc.certify_decision(
+            decision_id="dec-a", action="act", human_id="h", qualification="controller",
+            evidence=("sha256:x",), at="2026-08-13T10:00:00Z", sign=sign,
+            assistance=assistance)
+        return oc.recheck(env, verify_sig=verify_sig,
+                          now="2026-08-13T10:05:00Z").independence.value
+
+    assert indep({"aid": "unaided"}) == "unaided"                     # reviewer said unaided
+    assert indep({"aid": "model", "system": "gpt",
+                  "same_model_family": True}) == "model-correlated"    # correlated failure
+    assert indep({"aid": "model", "system": "gpt"}) == "model-undetermined"  # not a guess
