@@ -61,6 +61,9 @@ test = [
   # plugin/tests validates package.json against the vendored Loomground schema;
   # the linter's structural floor is still proven without it (RVND_LINT_NO_JSONSCHEMA=1).
   "jsonschema>=4.0",
+  # so CI exercises the portable-oversight-certificate surface (else its tests
+  # importorskip and never run). The pin is declared once, in [oversight-cert].
+  "rvnd[oversight-cert]",
 ]
 # `mcp` is a REQUIRED runtime dependency (the product IS the MCP server); it lives
 # in `dependencies` above. The `[mcp]` extra is a no-op alias so existing
@@ -78,6 +81,11 @@ browser = ["playwright>=1.62"]
 # Format-aware extractors. Without these, PDF/DOCX/Pages files get a metadata-only
 # stub. Apple Pages parses with stdlib zipfile + xml.etree; no extra dep needed.
 extractors = ["pypdf>=4.0", "python-docx>=1.0"]
+# Portable oversight certificates (Art. 14): the DSSE/in-toto certificate package,
+# consumed behind the lazy imports in workspaces/oversight_cert.py. MIT, stdlib-only
+# core (crypto + rfc8785 caller-injected). Git-pinned like the planes; provenance-
+# tracked in docs/release-dependency-resolution.md + release_dependency_artifacts.py.
+oversight-cert = ["oversight-certificate @ git+https://github.com/flxk1/oversight-certificate@8dbb4fa46042f12eeecaf37cb1ad095b838d7185"]
 
 [project.urls]
 Homepage = "https://github.com/flxk1/rvnd"
