@@ -401,16 +401,30 @@ def _gate_base(
 
     risk_tags = [t for t in req.footprint if t in _RISK_MIN_GRADE]
 
-    # Fast path: benign action.
+    # Fast path: no RECOGNISED risk tag. But footprint can carry tags the risk
+    # ontology (_RISK_MIN_GRADE) never classified — that is UNREGULATED, not benign.
+    # Riding the fast path silently would make a policy hole invisible AND fail open
+    # (an unclassified risk permitted as benign). Mark it distinctly — the verdict is
+    # UNCHANGED, so this only SURFACES the hole for policy review, never re-gates it —
+    # so an unregulated action is visible and countable, not laundered as benign.
+    # (An empty footprint is genuinely benign and keeps the "benign" code.)
     if not risk_tags:
+        unregulated = [t for t in req.footprint if t not in _RISK_MIN_GRADE]
         if grade >= 1:
-            d = GateDecision(Verdict.GO, True, "benign action; grade permits",
-                             _triple(req, Verdict.GO, "benign", []))
-            return d
+            reason = ("benign action; grade permits" if not unregulated else
+                      f"unregulated footprint {unregulated} — no rule in the risk "
+                      "ontology; permitted as benign, flagged for policy review")
+            triple = _triple(req, Verdict.GO,
+                             "unregulated" if unregulated else "benign", [])
+            if unregulated:
+                triple["unregulated"] = unregulated
+            return GateDecision(Verdict.GO, True, reason, triple)
         # L0 = interactive: even benign needs a human.
+        triple = _triple(req, Verdict.CONDITIONAL, "L0-interactive", [])
+        if unregulated:
+            triple["unregulated"] = unregulated
         return GateDecision(Verdict.CONDITIONAL, True,
-                            "L0 interactive: human approves every step",
-                            _triple(req, Verdict.CONDITIONAL, "L0-interactive", []))
+                            "L0 interactive: human approves every step", triple)
 
     # A frozen agent gets no pre-authorised autonomy. At L0 (interactive —
     # set by a Breaker quarantine/decay, or an L0 grant) a standing approval
