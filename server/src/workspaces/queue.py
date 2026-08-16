@@ -612,6 +612,33 @@ def cancel_run(run_id: str,
         return True
 
 
+def _journal_effect(entry, outcome: str, error: str,
+                    log_root: Optional[Path]) -> None:
+    """Record the run's OUTCOME on its folder's signed chain — the *effect ledger*,
+    the counter-entry to the authorising ``RunOutcome`` decision, cross-referenced
+    by ``run_id``. RVND's chain has recorded what was *decided*, never what actually
+    *happened*; this is the second entry that lets the two be reconciled.
+
+    Best-effort: a witness never breaks the run it records, so a journalling failure
+    surfaces later as an unreconciled gap, never a crash. Called OUTSIDE the queue
+    lock — a chain append must not serialise the whole queue."""
+    folder = getattr(entry, "folder_path", "")
+    if not folder:
+        return
+    try:
+        from .mutation_log import LogEvent, MutationLog
+        MutationLog(folder, log_root=Path(log_root) if log_root else None).append(
+            LogEvent(event="system", folder_path=folder,
+                     pair_id=f"run:{entry.run_id}", channel="system",
+                     actor="system:effect",
+                     extra={"kind": "effect-observed", "run_id": entry.run_id,
+                            "outcome": outcome,
+                            "workflow": getattr(entry, "workflow_name", ""),
+                            "error": error or ""}))
+    except Exception:                     # noqa: BLE001 — evidence, never breaks the run
+        pass
+
+
 def _finalise(run_id: str,
               new_state: str,
               error: str,
@@ -628,7 +655,10 @@ def _finalise(run_id: str,
         state[run_id] = entry
         _save_state(state, log_root)
         _drop_lease(run_id, log_root)
-        return True
+    # Effect ledger: journal the outcome onto the folder chain AFTER releasing the
+    # queue lock, so a chain write never serialises the whole queue.
+    _journal_effect(entry, new_state, error, log_root)
+    return True
 
 
 # ---------------------------------------------------------------------------
