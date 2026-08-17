@@ -27,8 +27,6 @@ from __future__ import annotations
 import ast
 import pathlib
 
-import pytest
-
 WORKSPACES = pathlib.Path(__file__).resolve().parents[1] / "src" / "workspaces"
 
 #: A module consults a cap if it reaches any of these. ``cap_grade`` and
