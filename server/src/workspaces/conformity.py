@@ -213,6 +213,18 @@ def evidence_pack(folder: str | Path, *, log_root: Optional[Path] = None,
         log_id=log.folder_id, digest=log.head_hash(),
         intended_posture=_pb._posture_from_dict(intended_posture) if intended_posture else None,
     )
+    # P0b: complete-mediation reconciliation — project the authorisation ledger
+    # (per-step gate verdicts) against the effect ledger (observed step outcomes)
+    # and MEASURE unauthorised_rate, rather than assert coverage. Pure projection
+    # over the same chain; the upper bound is padded one second past the last
+    # event so a final effect at the boundary is still reconciled (the package's
+    # window is half-open).
+    from . import reconciliation_binding as _rb
+    reconciliation = _rb.reconcile_projection(
+        log.replay(),
+        since_ts=since if since is not None else (first_ts if first_ts is not None else 0.0),
+        until_ts=until if until is not None else ((last_ts + 1.0) if last_ts is not None else 1.0),
+    )
     return {
         "op": "evidence_pack",
         "folder": str(folder),
@@ -228,6 +240,7 @@ def evidence_pack(folder: str | Path, *, log_root: Optional[Path] = None,
         "effective_posture": posture["effective_posture"],
         "coverage": posture["coverage"],
         "exposure": posture["exposure"],
+        "reconciliation": reconciliation,
         "records": records,
         "regime": _regime_id(regime),
         "basis": _basis("evidence_pack", regime),

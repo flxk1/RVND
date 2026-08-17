@@ -31,6 +31,8 @@ VCS_FIRST_PARTY = {
     "enforcement-posture",
     # Portable oversight certificate (Art. 14) — same git-pin discipline.
     "oversight-certificate",
+    # Complete-mediation evidence (P0b) — reconciles decisions vs effects; same git-pin discipline.
+    "effect-reconciliation",
 }
 COPYLEFT = re.compile(r"\b(?:AGPL|GPL|LGPL|SSPL|EUPL|OSL|CECILL)\b", re.I)
 KNOWN_LICENSES = (
