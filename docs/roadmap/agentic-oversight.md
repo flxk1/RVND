@@ -185,7 +185,16 @@ Workstream E applies that same discipline symmetrically, to agents.
 
 ## 4. Workstreams
 
-### A — The mandate
+**Landed so far.** A1–A2 (mandate + attenuation), B1–B3 (`reversibility`,
+`uncertainty`, re-grading as a fresh activation) and a new J (consignment and
+transfer) are in the governance language, exercised by 14 conformance vectors.
+F1 (the intervention profile) is in the deontic plane, D3 (root-presupposition
+ordering) in the solver, and H1 (the MHC coordinate system) in versum. **A3 and
+F2 remain**, and F2 is blocked on a design decision recorded in the governance
+slice — a grant is over a `kind` at a gate and a `kind` has no target, so the
+invariant as written has nothing to range over.
+
+### A — The mandate  ·  A1–A2 landed, A3 open
 
 *Problems 3, 5, 9; unblocks 1 and 2.*
 
@@ -207,7 +216,7 @@ Workstream E applies that same discipline symmetrically, to agents.
   beyond the mandate. Legal supplies doctrine as data and a bridge; the solver
   does the reasoning; legal grows none of its own.
 
-### B — Dynamic autonomy, without computed guards
+### B — Dynamic autonomy, without computed guards  ·  B1–B3 landed
 
 *Problem 2.*
 
@@ -284,7 +293,7 @@ Workstream E applies that same discipline symmetrically, to agents.
   family as the system it monitors is a correlated-failure risk. Record it as a
   declaration; never infer it. Direct extension of the oversight certificate.
 
-### F — Corrigibility
+### F — Corrigibility  ·  F1 landed, F2 blocked
 
 *Problem 7.*
 
@@ -323,7 +332,7 @@ Workstream E applies that same discipline symmetrically, to agents.
   that produced it**. That property, not the format, is what makes it the
   equivalent of a chain of custody.
 
-### H — Meaningful human control, measured
+### H — Meaningful human control, measured  ·  H1 landed
 
 *Problem 9.*
 
@@ -348,6 +357,28 @@ typed, namespaced, versioned nD systems are for.
 - **H4 · Comprehensibility is not self-measurable.** It is the one axis that
   cannot be computed from the system alone, because it is a property of the
   human. It is measured through C4 or it is not measured at all.
+
+### J — Consignment and transfer  ·  landed
+
+*Problem 6; found by testing the language against a real protocol.*
+
+A handoff moves material from one governed domain to another. The language
+could say whether an action released and not **to whom**, so every governance
+question about a handoff was a question about an absent term — while §6 already
+spoke of "where the party differs *across a boundary*", naming a boundary it
+never defined.
+
+- **J1 · `consign`** on a terminal gate — where that gate's release goes. A
+  consignee is a declared id, not a node: the four node classes stand, and no
+  second master is introduced, because §7.3 already decides each egress path
+  independently.
+- **J2 · `transfer <kind> to <consignee> within {purposes}`** — what the
+  material travels under, with an attenuation invariant that is the mandate
+  rule on a **lateral** relation: a transfer is not a delegation, no principal
+  chain forms, but an actor still cannot hand on a purpose it was not given.
+
+*Limit, stated.* It records the purposes and bounds them by what the releaser
+held. Whether a recipient honours them is conduct, outside the language.
 
 ### I — The regress floor
 
