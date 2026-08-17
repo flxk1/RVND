@@ -144,3 +144,25 @@ def test_noop_finalise_journals_nothing(tmp_path, monkeypatch):
     assert mark_done(entry.run_id, log_root=log_root) is True
     assert mark_done(entry.run_id, log_root=log_root) is False
     assert len(_effects(folder, log_root)) == 1
+
+
+def test_evidence_pack_lifts_the_effect_detail(tmp_path, monkeypatch):
+    # Legibility: the pack must show the OUTCOME, not just the kind label — a
+    # reviewer reads done/failed + the run cross-reference line by line, without
+    # re-opening the raw chain event.
+    monkeypatch.setenv("WORKSPACE_KEY_DIR", str(tmp_path / "keys"))
+    log_root = tmp_path
+    folder = tmp_path / "folder"
+    folder.mkdir()
+    entry = _lease(folder, log_root)
+    mark_run_failed(entry.run_id, "worker-A", "disk full", log_root=log_root)
+
+    from workspaces import conformity
+    pack = conformity.evidence_pack(folder, log_root=log_root)
+    assert pack["counts_by_kind"].get("effect-observed") == 1
+    rec = next(r for r in pack["records"] if r["record_kind"] == "effect-observed")
+    assert rec["detail"]["outcome"] == "failed"
+    assert rec["detail"]["run_id"] == entry.run_id
+    assert rec["detail"]["workflow"] == "wf-1"
+    assert rec["detail"]["error"] == "disk full"
+    assert rec["pair_id"] == f"run:{entry.run_id}"
