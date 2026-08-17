@@ -33,6 +33,7 @@ Current tag-to-commit mapping:
 | `loomground-patchbay` | `v0.1.0` | `36e70ada8d51583b7071a51edf12e6d65b1a0cc5` |
 | `enforcement-posture` | `v0.3.0` | `fdd143a2a853fdba980dc45fbd6e69199ad5598c` |
 | `oversight-certificate` | `v0.2.0` | `8dbb4fa46042f12eeecaf37cb1ad095b838d7185` |
+| `effect-reconciliation` | `v0.1.0` | `b2b3f995c0d9f9cca9bbabdf628d88cda26c91d2` |
 
 Every row now names an immutable **version tag** that must resolve to the
 pinned commit — there are **no branch-pins**. A commit pinned by SHA is
