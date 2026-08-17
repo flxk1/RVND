@@ -204,17 +204,43 @@ informative than a row that no longer says anything was missing.
 
 ## 4. Workstreams
 
-**Landed so far.** A1–A2 (mandate + attenuation), B1–B3 (`reversibility`,
-`uncertainty`, re-grading as a fresh activation) and a new J (consignment and
-transfer) are in the governance language, exercised by 14 conformance vectors.
-F1 (the intervention profile) is in the deontic plane, D3 (root-presupposition
-ordering) in the solver, and H1 (the MHC coordinate system) in versum. **A3
-remains.** F2 is closed, and it closed by being re-read rather than built: the
-invariant quantified over addressees, which needs the act to name its target;
-stated over the intervener instead it is already governance §7.1, and RVND's
-Breaker is the enforcement. See F below.
+**Phases 0 and 1 are complete.** Every item in both carries a commit:
 
-### A — The mandate  ·  A1–A2 landed, A3 open
+| | Item | Plane | What landed |
+|---|---|---|---|
+| **0** | A1–A2 | governance | `mandate` and the mandate-attenuation invariant |
+| | A3 | versum | a mandate read from the document that conferred it |
+| | B1–B3 | governance | `reversibility`, `uncertainty`, re-grading as a fresh activation |
+| | F1 | deontic | the intervention profile over the existing Hohfeld incidents |
+| | F2 | governance + RVND | §7.1 named as where correctability lives, one isolating vector, and the closure test over the gate |
+| | H1 | versum | meaningful human control as a registered nD coordinate system |
+| | J1–J2 | governance | `consign`, `transfer`, and transfer-attenuation |
+| **1** | C1 | solver | `oversight_brief` — bounded by what went unresolved, not by action count |
+| | D1 | versum | a trajectory as an ordinary process composition, grounded in both directions |
+| | D2 | solver | `divergence` — a trajectory against the purpose it was given |
+| | D3 | solver | the root presupposition surfaced ahead of its consequences |
+| | D4 | solver | `proxy` — what a measurement stands for, and whether anyone checked |
+| | B4 | solver | `escalation` — autonomy as the lowest ceiling, never a weighted sum |
+| | E1 | solver | `falsifiability` — evidence ranked by how it could be shown wrong |
+| | H2 | solver | `collapse` — weakest-link over a conjunction, never a product |
+
+The governance language work is exercised by 15 conformance vectors.
+
+Two items did not land as this roadmap specified them, and both departures are
+recorded in their sections. **F2** closed by being *re-read* rather than built:
+the invariant quantified over addressees, which needs the act to name its target;
+stated over the intervener it is already governance §7.1, and the enforcement is
+RVND's Breaker. **D4** was predicted to be "the same shape" as divergence and is
+not — a divergence needs a judgement handed in, and the whole difficulty of proxy
+optimisation is that nobody has one.
+
+**Phase 2 is next, and it is the first that is not purely additive.** C2, C3, H3
+and G1 make the objects visible, which means building surfaces — and a surface is
+where the Phase 4 gate starts to bind: one that raises reviewer confidence without
+raising detection is recorded as a failure of that surface, including surfaces
+proposed here.
+
+### A — The mandate  ·  A1–A3 landed, A4 open
 
 *Problems 3, 5, 9; unblocks 1 and 2.*
 
@@ -236,7 +262,7 @@ Breaker is the enforcement. See F below.
   beyond the mandate. Legal supplies doctrine as data and a bridge; the solver
   does the reasoning; legal grows none of its own.
 
-### B — Dynamic autonomy, without computed guards  ·  B1–B3 landed
+### B — Dynamic autonomy, without computed guards  ·  B1–B4 landed, B5 open
 
 *Problem 2.*
 
@@ -255,7 +281,7 @@ Breaker is the enforcement. See F below.
   with its provenance. An underdetermined tuple escalates; it never defaults to a
   grade.
 
-### C — The oversight brief
+### C — The oversight brief  ·  C1 landed, C2–C4 open
 
 *Problem 1; the delivery surface for 3 and 9.*
 
@@ -275,7 +301,7 @@ Breaker is the enforcement. See F below.
   failure of that surface**, not as adoption. This gate exists specifically so
   the brief cannot quietly become the thing the trace already was.
 
-### D — Semantic monitoring
+### D — Semantic monitoring  ·  D1–D4 landed
 
 *Problem 3.*
 
@@ -293,7 +319,7 @@ Breaker is the enforcement. See F below.
 - **D4 · Proxy optimisation** (solver). The literal-compliance,
   purpose-violation case, through `interpret.audit`.
 
-### E — Signal trust typing
+### E — Signal trust typing  ·  E1 landed, E2 open
 
 *Problem 4.*
 
@@ -369,7 +395,7 @@ Breaker is the enforcement. See F below.
   that produced it**. That property, not the format, is what makes it the
   equivalent of a chain of custody.
 
-### H — Meaningful human control, measured  ·  H1 landed
+### H — Meaningful human control, measured  ·  H1–H2 landed, H3–H4 open
 
 *Problem 9.*
 
@@ -442,13 +468,25 @@ held. Whether a recipient honours them is conduct, outside the language.
 The order follows the family's own discipline: language first, deterministic
 floor next, enforcement late, falsification last and non-negotiable.
 
-| Phase | Theme | Contents | Needs a model? |
-|---|---|---|---|
-| **0** | Name the objects | A1–A3, B1–B3, F1–F2, H1 | No |
-| **1** | Make them computable | D1–D4, B4, C1, H2, E1 | No (rails only) |
-| **2** | Make them visible | C2, C3, H3, G1 | No |
-| **3** | Make them enforceable | B5, F3, F4, G2, G4, E2 | No |
-| **4** | Make them falsifiable | C4, H4, I1–I4 | Human subjects |
+| Phase | Theme | Contents | Needs a model? | State |
+|---|---|---|---|---|
+| **0** | Name the objects | A1–A3, B1–B3, F1–F2, H1, J1–J2 | No | **complete** |
+| **1** | Make them computable | D1–D4, B4, C1, H2, E1 | No (rails only) | **complete** |
+| **2** | Make them visible | C2, C3, H3, G1 | No | open |
+| **3** | Make them enforceable | B5, F3, F4, G2, G4, E2 | No | open |
+| **4** | Make them falsifiable | C4, H4, I1–I4 | Human subjects | open |
+
+J1–J2 are placed in Phase 0 because they name an object — where a release goes,
+and what it travels under. They were not in the original phasing: the gap was
+found by testing the language against a real handoff protocol after the phasing
+was written.
+
+**A4 and G3 sit in no phase, and that is a real omission rather than a
+convention.** Both are the legal plane supplying doctrine as data — scope of
+authority, and causation along the chain — and both wait on a decision this
+roadmap has not taken: whether the doctrine ships as a corpus in `loomground-legal`
+or as a profile the solver reads through a port. Phasing them before that would
+record a sequence nobody has agreed to.
 
 Phase 0 is language work under the lockstep gate and implies a governance minor
 version. Phase 4 is not a postscript: **no oversight claim in this roadmap is
