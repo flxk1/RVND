@@ -48,19 +48,30 @@ _GATE_KIND = "gate-verdict"
 
 def log_gate_decision(folder: str | Path, decision: Any, *,
                       log_root: Optional[Path] = None,
-                      actor: str = "system") -> str:
+                      actor: str = "system",
+                      run_id: str = "", step_index: Optional[int] = None) -> str:
     """Write one gate verdict to the folder's log in the scannable shape.
 
     ``decision`` is an ``action_gate.GateDecision`` (or its ``to_dict()``).
     Callers that gate actions (workflow runner, schedulers, dispatch) use
     this so the NO-GO storm scan reads real verdicts, not reconstructions.
+
+    ``run_id``/``step_index`` bind this verdict to the run + step it authorised,
+    so the effect ledger can tie an observed step outcome back to its
+    authorisation by identity — BOUND, not inferred (the complete-mediation
+    reconciliation reads these). Absent for non-workflow gate calls, which is
+    harmless: an unbindable authorisation simply is not reconciled.
     """
     d = decision.to_dict() if hasattr(decision, "to_dict") else dict(decision)
+    extra = {"kind": _GATE_KIND, "decision": d}
+    if run_id:
+        extra["run_id"] = run_id
+    if step_index is not None:
+        extra["step_index"] = step_index
     log = MutationLog(folder, log_root=log_root)
     return log.append(LogEvent(
         event="system", folder_path=str(folder), pair_id=_GATE_KIND,
-        channel="system", actor=actor,
-        extra={"kind": _GATE_KIND, "decision": d}))
+        channel="system", actor=actor, extra=extra))
 
 
 # ── the report ────────────────────────────────────────────────────────────────
