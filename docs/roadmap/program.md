@@ -15,7 +15,7 @@ one strand (S7) in depth. This is the whole programme.
 | `loomground-deontic` | 0.1.3 | draft | two boundary decisions open before 1.0 |
 | `loomground-solver` | 0.4.0 | working | 463 tests; dependency-inversion gate is the universality proof |
 | `loomground-versum` | 0.13.0 | working | 339 passed / 10 skipped; evidence ledger verified 2026-07-24 |
-| `loomground-norm` | attr | **partial** | 2 of 9 modules are skeletons |
+| `loomground-norm` | attr | working | all 9 modules implemented; 24 tests is thin coverage |
 | `loomground-legal` | attr | early | data + bridges only, by design |
 | `loomground-patchbay` | — | release-gated | 98 tracked files; gate green |
 | `RVND` | attr | **beta** | ~5840 tests |
@@ -46,6 +46,14 @@ single most consequential scheduling call in the programme.
 Recommendation: land the Phase 0 language work first, then freeze. The additions are
 small, they are lockstep-disciplined, and shipping 1.0 without a mandate would freeze
 the gap this programme exists to close.
+
+**Status.** The `mandate` attribute and its attenuation invariant have landed —
+lockstep across ten artefacts and five vectors, with all 52 vectors reproducing and
+the 47 pre-existing ones byte-identical, so a graph declaring no mandate is
+unconstrained. The remaining Phase 0 language items are `reversibility` and
+`uncertainty` on the token, and the interruptibility invariant. The freeze decision is
+therefore no longer hypothetical: 1.0 can now ship *with* a mandate whenever the
+remaining two are settled or deliberately deferred.
 
 ### S2 · Conformance independence — the open claim
 
@@ -105,12 +113,28 @@ git pins instead. That is workable but it means `pip install loomground-legal` c
 work for anyone outside the project. Deciding it — publish to an index, or state
 plainly that these are git-installed packages — is the remaining half of this strand.
 
-### S5 · Skeleton completion
+### S5 · The prerequisite that turned out not to exist
 
-`loomground-norm`'s `rule_registry` and `obligation_scheduler` still carry seams from
-the host-specific code they were extracted from — the scheduler lacks a resolved
-action-gate port, the registry lacks legal-domain placement. Both are prerequisites
-for modelling an oversight duty end to end (S7's N1).
+This strand was written as "skeleton completion": `loomground-norm`'s `rule_registry`
+and `obligation_scheduler` were said to carry unfinished host seams, blocking S7's
+obligation work (N1).
+
+**That was wrong, and it came from a stale README rather than from the code.** Both
+modules are implemented — span placement, re-pinning, orphan tracking and search in
+one; deadline arithmetic and per-state follow-up proposals in the other — with their
+host couplings already inverted into injected ports, and eighteen tests between them.
+No TODO, no `NotImplementedError`, no stub body. What the README called "the port it
+is waiting on" is the plane boundary working as designed: `rule_registry` deliberately
+does not anchor norms onto governing instruments (legal-domain), and
+`obligation_scheduler` deliberately only proposes (governance). The labels are
+corrected upstream.
+
+**N1 was never blocked**, and the sequencing below no longer holds S7 behind this.
+
+What is real, and narrower: twenty-four tests across nine modules. It went unnoticed
+because a `conftest` root-resolution bug made the suite skip rather than run, so a
+green local run on that plane meant nothing. Coverage is the precondition for trusting
+the plane; it is not a workstream.
 
 ### S6 · Runtime maturity — beta to 1.0
 
@@ -131,6 +155,11 @@ Nine problems, workstreams A–I, five phases, falsifiable gates. Covered in ful
 
 Its Phase 0 intersects S1; its Phase 4 (measurement) is the source of publication P3.
 
+Landed so far: the mandate and its attenuation invariant (A1–A2, governance); the
+intervention profile that makes corrigibility a checkable Hohfeld relation rather than
+an aspiration (F1–F2, deontic); and root-presupposition ordering, which reports one
+cause where the fold reported fifty consequences (D3, solver).
+
 ### S8 · Adoption surface
 
 Console, Patchbay, the packaged skills and plugins, published policy-pack import. The
@@ -144,9 +173,9 @@ the answer that most helps S2 is *an implementer*, not an end user.
 | Order | Strand | Why here |
 |---|---|---|
 | 1 | **S4** dependency hygiene | First pass landed; distribution story still open |
-| 2 | **S5** skeletons | Prerequisite for S7's obligation work |
-| 3 | **S7 Phase 0** language additions | Must precede the 1.0 freeze |
-| 4 | **S1** language 1.0 | Freeze once the mandate exists |
+| 2 | **S7 Phase 0** language additions | Partly landed — the mandate is in; `reversibility`/`uncertainty` and the interruptibility invariant remain |
+| 3 | **S1** language 1.0 | The freeze decision is now live: the mandate exists |
+| — | **S5** norm coverage | Not a prerequisite (see S5); worth doing before leaning on that plane |
 | 5 | **S2** independence | Runs in parallel from now; gated on outside people, not on code |
 | 6 | **S3** overlay migration | Ongoing |
 | 7 | **S7 Phases 1–3** | The build |
@@ -163,7 +192,8 @@ depends on someone else's calendar.
 - **Two planes had never been CI-verified** (S4) — now pinned and verified; the family's
   distribution story is still undecided.
 - **The interoperability criterion is open** (S2), and no internal work closes it.
-- **`loomground-norm` is 7/9 real**, and the two gaps are load-bearing for oversight duties.
+- **`loomground-norm` has 24 tests across 9 modules.** The modules are implemented; the
+  coverage is thin, and a `conftest` bug hid that until it was fixed.
 - **`loomground-norm` has only 3 test files**, and until the shim fix none of them ran.
   Coverage on that plane is thin regardless of the fix.
 - **Versum's concept layer is partly experimental** — normalization, canon convergence, typed pair compositions and model deepening are marked experimental, not operational.
