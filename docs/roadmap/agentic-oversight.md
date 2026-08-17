@@ -181,6 +181,25 @@ Workstream E applies that same discipline symmetrically, to agents.
 | 8 | Human competence paradox | norm, RVND, console | oversight certificate; escalate discipline | verification gap unmeasured |
 | 9 | Meaningful human control | versum, governance, patchbay | nD systems; verdicts; redress | MHC is not a registered coordinate system; unmeasured |
 
+**The gap column is the record as of writing, and parts of it have since closed.**
+Kept as written rather than edited, because which half of a gap closed is more
+informative than a row that no longer says anything was missing.
+
+- **1** — the bounded brief exists (`oversight_brief`); the *minimum-information
+  contract* does not, and cannot until C4 measures detection rather than confidence.
+- **2** — `reversibility` and `uncertainty` are on the token and the escalation
+  ceiling composes them. "Grade is static configuration" was not fixed but
+  *upheld*: re-grading is a fresh activation, so the variation lives in the token
+  and the runtime, never in a mutated grade.
+- **3** — both halves closed: the mandate is in the language, and `divergence`
+  compares a trajectory against it.
+- **4** — self-report is now ranked last on principle by `falsifiability`;
+  monitor-independence is still unrecorded.
+- **7** — the interruptibility invariant is closed, by re-reading rather than
+  building (F2 below); revocation propagation (F3) is open.
+- **9** — MHC is a registered coordinate system in versum; it remains unmeasured,
+  which is Phase 4 and needs human subjects.
+
 ---
 
 ## 4. Workstreams
