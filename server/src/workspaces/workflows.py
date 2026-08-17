@@ -520,7 +520,8 @@ def run_workflow(folder_path: str | Path,
                           folder=str(folder_path),
                           affected_parties=tuple(step.affected_parties)),
             standing_approvals=standing_approvals, posture=posture)
-        log_gate_decision(folder_path, decision, log_root=log_root, actor=actor)
+        log_gate_decision(folder_path, decision, log_root=log_root, actor=actor,
+                          run_id=run_id, step_index=i)
 
         # ── policy-matrix composition (opt-in: only when this folder has a
         # painted matrix). The painted cell can only TIGHTEN the gate's
