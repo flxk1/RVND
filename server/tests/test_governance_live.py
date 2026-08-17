@@ -63,9 +63,11 @@ def test_op_is_read_only_classified():
 def test_board_shape(seeded):
     b = _board(seeded)
     assert b["ok"] is True
-    assert set(b) == {"ok", "summary", "sessions", "leases", "chain", "certificates"}
+    assert set(b) == {"ok", "summary", "sessions", "leases", "chain",
+                      "certificates", "reconciliation"}
     assert set(b["summary"]) == {
-        "sessions_open", "admitted", "run_leases_held", "escalations"}
+        "sessions_open", "admitted", "run_leases_held", "escalations",
+        "unauthorised_effects"}
     assert isinstance(b["sessions"], list)
     assert isinstance(b["leases"], list)
     assert isinstance(b["chain"], list)
@@ -138,7 +140,8 @@ def test_reachable_through_the_workspace_workflow_facade(seeded, monkeypatch):
                            params={"folder_context": seeded["folder"]})
     assert b["ok"] is True
     assert set(b["summary"]) == {
-        "sessions_open", "admitted", "run_leases_held", "escalations"}
+        "sessions_open", "admitted", "run_leases_held", "escalations",
+        "unauthorised_effects"}
     assert b["summary"]["sessions_open"] == 2
 
 
