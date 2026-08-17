@@ -181,6 +181,15 @@ def evidence_pack(folder: str | Path, *, log_root: Optional[Path] = None,
                              "step_index": x.get("step_index"),
                              "state": x.get("state"),
                              "skill_id": x.get("skill_id")}
+        elif kind == "effect-observed":
+            # The effect ledger's counter-entry to a run's authorising decision:
+            # lift the outcome so the pack is legible without re-opening the raw
+            # chain event. ``run_id`` cross-references the RunOutcome that
+            # authorised the run, so a reviewer can reconcile the two by hand.
+            rec["detail"] = {"outcome": x.get("outcome"),
+                             "run_id": x.get("run_id"),
+                             "workflow": x.get("workflow"),
+                             "error": x.get("error") or ""}
         elif kind in ("incident", "drift-finding", "drift-baseline"):
             rec["detail"] = {k: v for k, v in x.items() if k != "kind"}
         records.append(rec)
