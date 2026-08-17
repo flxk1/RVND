@@ -189,10 +189,11 @@ Workstream E applies that same discipline symmetrically, to agents.
 `uncertainty`, re-grading as a fresh activation) and a new J (consignment and
 transfer) are in the governance language, exercised by 14 conformance vectors.
 F1 (the intervention profile) is in the deontic plane, D3 (root-presupposition
-ordering) in the solver, and H1 (the MHC coordinate system) in versum. **A3 and
-F2 remain**, and F2 is blocked on a design decision recorded in the governance
-slice — a grant is over a `kind` at a gate and a `kind` has no target, so the
-invariant as written has nothing to range over.
+ordering) in the solver, and H1 (the MHC coordinate system) in versum. **A3
+remains.** F2 is closed, and it closed by being re-read rather than built: the
+invariant quantified over addressees, which needs the act to name its target;
+stated over the intervener instead it is already governance §7.1, and RVND's
+Breaker is the enforcement. See F below.
 
 ### A — The mandate  ·  A1–A2 landed, A3 open
 
@@ -293,17 +294,34 @@ invariant as written has nothing to range over.
   family as the system it monitors is a correlated-failure risk. Record it as a
   declaration; never infer it. Direct extension of the oversight certificate.
 
-### F — Corrigibility  ·  F1 landed, F2 blocked
+### F — Corrigibility  ·  F1–F2 landed, F3–F4 open
 
 *Problem 7.*
 
 - **F1 · Intervention position profile** (deontic). A profile over the existing
   incidents for the intervention verbs — pause, correct, constrain, terminate. No
   fourth operator and no new vocabulary; a profile over what ships.
-- **F2 · Interruptibility invariant** (governance). Well-formedness: the root of
-  an actor's principal chain retains a power over the intervention kinds, and no
-  actor may be granted an immunity against them. Fail-closed, in the shape of the
-  existing invariants.
+- **F2 · Interruptibility invariant** (governance + RVND). *Landed, and not as
+  written.* "No actor may be granted an immunity against the intervention kinds"
+  quantifies over addressees, and an addressee-side rule needs the act to name its
+  target — which a `kind` at a gate does not. Stated over the **intervener**, the
+  rule needs no target, because it is a claim about one privileged position rather
+  than about every actor: *the human referral is unattenuable.* In that form it is
+  governance §7.1 already — `reserved` is evaluated on the token's `kind`,
+  independent of which actor presents it — so correctability holds by construction
+  and its negation is unwritable. What was missing was the statement and an
+  isolating vector (`reserve-grant-independence`), both now in place, with no new
+  language term. A `target` token field is declined, not deferred.
+
+  Enforcement is RVND's, and it is stronger than an invariant: the Breaker inverts
+  the default so that running requires continuous permission and the human's
+  *absence* stops the agent. Two tests hold the two halves —
+  `test_guardian_invariants.py` (the human's power cannot be gated away) and
+  `test_gate_cap_closure.py` (it cannot be routed around: every module reaching
+  `action_gate.gate` caps the grade against the acting agent's Breaker state, or
+  sits on an explicit register). The register currently carries four live paths
+  plus one quarantined module — see the test — and each is a path on which a
+  quarantined agent's cap does not apply. That is a finding, not a design.
 - **F3 · Revocation propagation** (RVND). Revoking a delegator's grant attenuates
   every delegate along the chain, the propagation is journalled, and it reaches
   **already-running** work by binding revocation to the existing time-based stop.
