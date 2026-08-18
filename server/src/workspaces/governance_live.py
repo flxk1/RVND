@@ -219,6 +219,35 @@ def _certificates(folder_context: str, log_root: Optional[str],
         return []
 
 
+def _reconciliation(folder_context: str,
+                    log_root: Optional[str]) -> dict[str, Any]:
+    """Complete-mediation summary for the board: the authorisation ledger
+    (per-step gate verdicts) reconciled against the effect ledger (observed step
+    outcomes) over the whole chain — see ``reconciliation_binding``. Compact by
+    design: the count of unauthorised effects, not their list (that stays in the
+    ``evidence_pack``). Fail-closed to an ``unavailable`` summary — a board panel
+    must never break the board."""
+    try:
+        from . import reconciliation_binding as rb
+        from .mutation_log import MutationLog
+        log = MutationLog(folder_context, log_root=_log_root_path(log_root))
+        events = list(log.replay())
+        if not events:
+            return {"status": "reconciled", "unauthorised_rate": 0.0,
+                    "matched": 0, "authorised_not_observed": 0,
+                    "observed_not_authorised": 0}
+        first = min(e.ts for e in events)
+        last = max(e.ts for e in events)
+        r = rb.reconcile_projection(events, since_ts=first, until_ts=last + 1.0)
+        return {"status": r.get("status"),
+                "unauthorised_rate": r.get("unauthorised_rate", 0.0),
+                "matched": r.get("matched", 0),
+                "authorised_not_observed": r.get("authorised_not_observed", 0),
+                "observed_not_authorised": len(r.get("observed_not_authorised", []))}
+    except Exception:                                   # noqa: BLE001
+        return {"status": "unavailable"}
+
+
 def governance_live(folder_context: str, *, log_root: Optional[str] = None,
                     chain_limit: int = 20,
                     now: Optional[float] = None) -> dict[str, Any]:
@@ -233,6 +262,7 @@ def governance_live(folder_context: str, *, log_root: Optional[str] = None,
     leases = _leases(folder_context, log_root, now)
     chain = _chain(folder_context, log_root, chain_limit)
     certificates = _certificates(folder_context, log_root, chain_limit)
+    reconciliation = _reconciliation(folder_context, log_root)
     summary = {
         "sessions_open": len(sessions),
         "admitted": sum(1 for s in sessions if s.get("admitted")),
@@ -241,6 +271,8 @@ def governance_live(folder_context: str, *, log_root: Optional[str] = None,
             if lease.get("position") == 0 and lease.get("holder")
         ),
         "escalations": sum(1 for s in sessions if s.get("escalation")),
+        # Complete-mediation at a glance: effects observed with no authorisation.
+        "unauthorised_effects": reconciliation.get("observed_not_authorised", 0),
     }
     return {
         "ok": True,
@@ -249,4 +281,5 @@ def governance_live(folder_context: str, *, log_root: Optional[str] = None,
         "leases": leases,
         "chain": chain,
         "certificates": certificates,
+        "reconciliation": reconciliation,
     }
