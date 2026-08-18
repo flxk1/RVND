@@ -153,6 +153,7 @@ def _process_one_run(entry: QueueEntry,
         result = run_workflow(
             entry.folder_path,
             entry.workflow_name,
+            run_id=entry.run_id,
             actor=cfg.worker_id,
             log_root=cfg.log_root,
         )

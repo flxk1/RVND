@@ -452,7 +452,8 @@ def run_workflow(folder_path: str | Path,
                  autonomy_grade: str = "L2",
                  posture: str = "balanced",
                  standing_approvals: tuple = (),
-                 step_approvals: Optional[dict[int, str]] = None) -> dict[str, Any]:
+                 step_approvals: Optional[dict[int, str]] = None,
+                 run_id: Optional[str] = None) -> dict[str, Any]:
     """Execute a workflow sequentially.
 
     ``dispatcher`` is a callable ``(folder, skill_id, query) -> dict`` —
@@ -493,7 +494,11 @@ def run_workflow(folder_path: str | Path,
             f"workflow {name!r} disappeared between resolve and load"
         )
 
-    run_id = _new_run_id(folder_path, name)
+    # Accept an externally-supplied run_id (the queue passes its own
+    # ``entry.run_id``) so ONE id threads the whole lifecycle — enqueue → gated
+    # steps → finalise — instead of the runner minting a second, disconnected
+    # id. A direct (non-queued) caller passes nothing and gets a fresh id.
+    run_id = run_id or _new_run_id(folder_path, name)
     _log_workflow_event(folder_path, run_id=run_id, workflow=name,
                          step_index=-1, state="running",
                          actor=actor, log_root=log_root,
@@ -520,7 +525,8 @@ def run_workflow(folder_path: str | Path,
                           folder=str(folder_path),
                           affected_parties=tuple(step.affected_parties)),
             standing_approvals=standing_approvals, posture=posture)
-        log_gate_decision(folder_path, decision, log_root=log_root, actor=actor)
+        log_gate_decision(folder_path, decision, log_root=log_root, actor=actor,
+                          run_id=run_id, step_index=i)
 
         # ── policy-matrix composition (opt-in: only when this folder has a
         # painted matrix). The painted cell can only TIGHTEN the gate's

@@ -83,6 +83,11 @@ async function main() {
   const escalations = [...root.querySelectorAll(".gl-escalation")];
   if (!escalations.length) fail("no .gl-escalation rendered — lane_capabilities escalation flag must surface");
 
+  // ── reconciliation panel · the complete-mediation summary must surface ──
+  const recon = root.querySelector(".gl-reconciliation");
+  if (!recon) fail("no .gl-reconciliation rendered — the complete-mediation summary must surface on the board");
+  if (recon.dataset.unauthorised == null) fail(".gl-reconciliation carries no data-unauthorised count");
+
   // ── invariant 4 · admission honesty ────────────────────────────────
   for (const s of unadmitted) {
     if (s.dataset.verdict === "auto") fail("admission honesty: un-admitted session " + s.dataset.sid + " rendered the GO-family verdict 'auto'");

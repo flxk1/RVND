@@ -64,7 +64,24 @@ Patchbay.register("govlive", {
       h += tile("admitted", esc(sum.admitted != null ? sum.admitted : "—"));
       h += tile("run leases held", esc(sum.run_leases_held != null ? sum.run_leases_held : "—"));
       h += tile("escalations", esca != null ? (esca > 0 ? '<span style="color:' + VC.reserved + '">' + esc(esca) + "</span>" : esc(esca)) : "—", esca != null && esca > 0);
+      const unauth = sum.unauthorised_effects != null ? sum.unauthorised_effects : null;
+      h += tile("unauthorised", unauth != null ? (unauth > 0 ? '<span style="color:' + VC.reserved + '">' + esc(unauth) + "</span>" : esc(unauth)) : "—", unauth != null && unauth > 0);
       h += "</div>";
+
+      // ── complete-mediation reconciliation: the authorisation ledger (gate
+      // verdicts) vs the effect ledger (observed step outcomes), see
+      // reconciliation_binding. An effect with no authorisation behind it is the
+      // loud number; this surfaces it read-only, warning red when non-zero. ──
+      const rec = b.reconciliation || {};
+      const unauthN = rec.observed_not_authorised != null ? rec.observed_not_authorised : 0;
+      h += '<div class="gl-reconciliation" data-status="' + escA(rec.status || "") +
+        '" data-unauthorised="' + escA(unauthN) +
+        '" data-rate="' + escA(rec.unauthorised_rate != null ? rec.unauthorised_rate : 0) +
+        '" style="border:1px solid ' + (unauthN > 0 ? VC.reserved : "var(--line)") +
+        ';border-radius:8px;padding:6px 10px;margin-bottom:9px;font-size:10.5px;color:var(--txt-dim)">' +
+        "complete-mediation — " + esc(rec.matched != null ? rec.matched : 0) + " matched · " +
+        '<span style="color:' + (unauthN > 0 ? VC.reserved : "var(--txt-dim)") + '">' + esc(unauthN) +
+        " unauthorised</span> · " + esc(rec.status || "—") + "</div>";
 
       // ── sessions (derived by replay; admission honesty enforced here too) ──
       h += '<div class="gl-sessions">';
