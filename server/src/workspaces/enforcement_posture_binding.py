@@ -144,7 +144,7 @@ def verify_attestation(envelope: dict[str, Any]):
 #: loosest → strictest for the one ordinal control (`L0` is the most restrictive
 #: autonomy ceiling), so compare/exposure rank a grade change instead of returning
 #: INCOMPARABLE. Boolean controls need no order.
-_MODE_ORDER = {"autonomy_ceiling": ("L4", "L3", "L2", "L1", "L0")}
+_MODE_ORDER = {"autonomy_ceiling": ("L6", "L5", "L4", "L3", "L2", "L1", "L0")}
 
 
 def _posture_from_dict(d: dict[str, Any]) -> Posture:
