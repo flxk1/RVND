@@ -37,6 +37,11 @@ dependencies = [
     # the signer (RVND Ed25519) and the RFC 8785 canonicaliser (rfc8785), so it pulls in
     # no transitive deps of its own.
     "enforcement-posture @ git+https://github.com/flxk1/enforcement-posture@fdd143a2a853fdba980dc45fbd6e69199ad5598c",
+    # effect-reconciliation (P0b): complete-mediation evidence — reconciles the
+    # authorisation ledger (per-step gate verdicts) against the effect ledger
+    # (observed step outcomes) → unauthorised_rate, coverage measured not asserted.
+    # MIT, stdlib-only core, zero deps; git-pinned like the planes.
+    "effect-reconciliation @ git+https://github.com/flxk1/effect-reconciliation@b2b3f995c0d9f9cca9bbabdf628d88cda26c91d2",
     "cryptography>=41.0",
     "rfc8785>=0.1.2,<0.2",
     "anyascii>=0.3",
