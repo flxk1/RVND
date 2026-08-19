@@ -13,7 +13,7 @@ the connection; it does not bundle it.
 ## Wiring it up
 
 `rvnd.mcp.json` is a connection descriptor in the common `mcpServers` shape. Register it with your
-MCP-capable host; it launches the installed `workspaces.mcp_server` module. The server speaks the
+MCP-capable host; it launches the installed `rvnd.mcp_server` module. The server speaks the
 Model Context Protocol over stdio and binds to the local machine only.
 
 The governance layer is on by default here (`RVND_GOVERNANCE_LAYER=on`). Setting it to `off`

@@ -9,7 +9,12 @@ neutral artifacts published by ``loomground-governance``.
 from __future__ import annotations
 
 from rvnd.adapters.solver.loomground import *  # noqa: F401,F403
-from rvnd.adapters.solver.loomground import _guard_holds, _has_cycle  # noqa: F401  -- re-export: `import *` skips _private names, so this line is the export
+# `import *` skips underscore names, so the one private this facade really
+# re-exports is named explicitly. The redundant alias is the conventional
+# way to say "re-exported on purpose" rather than "imported and unused".
+# `_guard_holds` used to be listed here and was never re-exported through
+# this module — operations.py imports it from the adapter directly.
+from rvnd.adapters.solver.loomground import _has_cycle as _has_cycle
 
 
 def _loomground_core():
