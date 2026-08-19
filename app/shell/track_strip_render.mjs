@@ -2,7 +2,7 @@
 // Copyright 2026 flxk1
 // Real DOM test for the track channel strip — per-track selection detail in the
 // Inspector (per-track-binding concept, step 2). Selecting an agent lane renders
-// its strip from the live track_strip op: status word + LED, the L0-L4 oversight
+// its strip from the live track_strip op: status word + LED, the per-grade autonomy
 // ladder with the earned rung lit, the channel join with its floor word, the
 // sign-off state in words, and the verdict meter. Selecting an egress connector
 // renders the floor and the CABLE — arm state as glyph + word + the reference,
@@ -43,9 +43,13 @@ async function main() {
   if (!ps) fail("party strip did not render");
   const pt = ps.textContent;
   if (!pt.includes("active")) fail("status word missing: " + pt);
-  // the oversight ladder: 5 discrete cells, the earned rung (L2) lit
+  // the autonomy ladder: one discrete cell per grade on the active ladder, the
+  // earned rung (L2) lit. Remappable policy → derive the rung count from the
+  // server's published grades, not a fixed 5.
+  const tsmx = await window.tool("workspace_matrix", { op: "show", params: { folder_context: A } });
+  const nG = Object.keys((tsmx && tsmx.matrix) || {}).filter((k) => /^L\d+$/.test(k)).length;
   const cells = [...ps.querySelectorAll(".fcell")];
-  if (cells.length !== 5) fail("ladder must have 5 discrete cells, got " + cells.length);
+  if (nG < 2 || cells.length !== nG) fail("ladder must have one discrete cell per grade (" + nG + "), got " + cells.length);
   const earned = cells.filter((c) => c.classList.contains("earned"));
   if (earned.length !== 1 || earned[0].textContent !== "L2") fail("earned rung should be exactly L2");
   if (!pt.includes("competences: legal")) fail("competences missing: " + pt);
@@ -71,7 +75,7 @@ async function main() {
   const v = await window.tool("workspace_audit", { op: "verify_chain", params: { folder_context: A } });
   if (v && v.ok === false) fail("rendering the strip disturbed the chain");
 
-  console.log("PASS: track channel strip — agent lane renders status word, the 5-cell ladder with L2 earned, competences, channel floor word, worded empty sign-off state and meter; egress connector renders floor + armed cable with the reference; the secret never reaches the DOM; read-only");
+  console.log("PASS: track channel strip — agent lane renders status word, the per-grade ladder with L2 earned, competences, channel floor word, worded empty sign-off state and meter; egress connector renders floor + armed cable with the reference; the secret never reaches the DOM; read-only");
   process.exit(0);
 }
 main().catch((e) => fail(String((e && e.stack) || e)));

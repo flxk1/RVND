@@ -46,7 +46,7 @@ ITEMS = [
     ("Policy lock-mode WRITE (tighten direct / loosen governed)", "panels/policy_write_render_test.py"),
     ("Workspace workspace-creator (create + switch)", "shell/workspace_render_test.py"),
     ("MIDI-learn controller + All-Stop", "shell/controller_render_test.py"),
-    ("Workspaces rail (channel per workspace, L0-L4 LEDs, group/send)", "shell/wsrail_render_test.py"),
+    ("Workspaces rail (channel per workspace, per-grade LEDs, group/send)", "shell/wsrail_render_test.py"),
     ("Read-only badge on read-only drawers", "shell/slice_e_render_test.py"),
     ("Verdict Router node (visualize-only verdict-handling map)", "panels/verdict_router_render_test.py"),
     ("Transport bar (resume/hold/all-stop + always-on REC)", "shell/transport_render_test.py"),
