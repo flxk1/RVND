@@ -168,6 +168,10 @@ _TRANSITIVE_PROVIDER = ("loomground-factual", "loomground-epistemic")
 _IMPORT_NAME_EXCEPTIONS = {
     "versum": "loomground-versum",
     "deontic": "loomground-deontic",
+    "loomground_ingest": "loomground-ingest",
+    "loomground_legal": "loomground-legal",
+    "loomground_norm": "loomground-norm",
+    "loomground_workspace": "loomground-workspace",
 }
 
 _IMPORT_TO_DIST: dict[str, str] = {d.replace("-", "_"): d for d in FIRST_PARTY}
@@ -244,6 +248,104 @@ def test_adapters_norm_is_the_only_norm_import_site() -> None:
                     importers.append(str(path.relative_to(PACKAGE_ROOT)))
     assert set(importers) == {"adapters/norm.py"}, (
         f"loomground_norm must be imported only in adapters/norm.py; got {sorted(set(importers))}")
+
+
+def _importers_of(package: str, roots: list[Path]) -> set[str]:
+    """Every file under ``roots`` that imports ``package`` (or a submodule),
+    as a repo-relative path string."""
+    found: set[str] = set()
+    for root in roots:
+        for path in root.rglob("*.py"):
+            if "__pycache__" in path.parts:
+                continue
+            try:
+                tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+            except SyntaxError:  # pragma: no cover - not our file to fix
+                continue
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Import):
+                    if any(a.name == package or a.name.startswith(package + ".")
+                           for a in node.names):
+                        found.add(str(path.relative_to(REPO_ROOT)))
+                elif isinstance(node, ast.ImportFrom) and not node.level:
+                    if node.module and (node.module == package
+                                        or node.module.startswith(package + ".")):
+                        found.add(str(path.relative_to(REPO_ROOT)))
+    return found
+
+
+def test_adapters_workspace_is_the_only_workspace_plane_import_site() -> None:
+    """``loomground_workspace`` is imported in exactly one place — the seam.
+
+    This gate is load-bearing for the EGRESS LOCK, not just for tidiness.
+
+    Upstream's ``list_known_workspaces`` returns the WHOLE registry unless the
+    host injects a ``scope=`` filter; RVND's retired copy scoped it internally
+    to the request principal, fail-closed. ``adapters/workspace.py`` restores
+    that by defaulting the filter, so every caller is scoped without knowing it.
+    A second importer anywhere would be able to call the unscoped upstream
+    function directly and get the full registry back — and the caller that
+    matters is ``app/serve.py``, which uses the list as the bridge's
+    trusted-path allowlist immediately upstream of the proxy-proof and
+    session-token checks that authorize egress. That failure is silent: the
+    happy path still works, the list is merely bigger.
+
+    So the scan covers ``app/`` as well as ``server/src/workspaces/`` — the
+    adapter-boundary gate only walks the latter, and the bridge lives in the
+    former.
+    """
+    importers = _importers_of(
+        "loomground_workspace",
+        [WORKSPACES_ROOT, REPO_ROOT / "app"],
+    )
+    assert importers == {"server/src/workspaces/adapters/workspace.py"}, (
+        "loomground_workspace must be imported only in "
+        "adapters/workspace.py (it is where the per-principal read scope is "
+        f"defaulted); got {sorted(importers)}")
+
+
+def test_workspace_seam_defaults_the_principal_scope() -> None:
+    """The seam's ``list_known_workspaces`` must pass a scope by default.
+
+    A structural check to go with the behavioural one in
+    ``server/tests/security/test_attack_folder_context_traversal.py``: if this
+    wrapper ever degrades to a bare re-export of the upstream name, the
+    behavioural test is the only thing left, and a re-export would still pass
+    every happy-path test in the suite.
+    """
+    from workspaces.adapters import workspace as seam
+
+    src = (WORKSPACES_ROOT / "adapters" / "workspace.py").read_text(encoding="utf-8")
+    assert "scope=_principal_scope if scope is None else scope" in src, (
+        "adapters.workspace.list_known_workspaces must default the principal "
+        "scope filter; a caller must not be able to get the unscoped registry "
+        "by omitting an argument")
+    # and it is genuinely RVND's wrapper, not upstream's function re-exported
+    import loomground_workspace as _lw
+    assert seam.list_known_workspaces is not _lw.list_known_workspaces
+    assert seam.list_known_workspaces is not _lw.workspace_registry.list_known_workspaces
+
+
+def test_workspace_concept_modules_are_shims_over_the_seam() -> None:
+    """The three retired workspace-concept modules carry no definitions.
+
+    ``folder_context.py``, ``workspace_registry.py`` and ``_storage_paths.py``
+    stay as module paths (~60 import sites address them) but must hold zero
+    ``def``/``class`` of their own, so the retired copies cannot grow back and
+    drift from the package.
+    """
+    seam = re.compile(r"from\s+\.adapters\.workspace\s+import")
+    offenders: list[str] = []
+    for name in ("folder_context.py", "workspace_registry.py", "_storage_paths.py"):
+        text = (WORKSPACES_ROOT / name).read_text(encoding="utf-8")
+        if not seam.search(text):
+            offenders.append(f"{name}: does not consume adapters.workspace")
+        tree = ast.parse(text, filename=name)
+        local = [n.name for n in tree.body
+                 if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))]
+        if local:
+            offenders.append(f"{name}: re-grew local definitions {local}")
+    assert not offenders, offenders
 
 
 # ── (c) ─────────────────────────────────────────────────────────────────────
