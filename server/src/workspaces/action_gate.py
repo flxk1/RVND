@@ -23,7 +23,7 @@ Flow:
 
 Three skills converge here, as the concept states: ``governance-by-design``
 sets the default approval breadth (posture), ``autonomy-grades`` scales the
-threshold (L0–L4), and the obligation graph supplies what a standing approval
+threshold (L0–L6), and the obligation graph supplies what a standing approval
 is *approved under*. A **standing approval is an edge**
 ``(agent, action_class) approved-under (obligation_pair) until (date)``; a
 **promotion gate is a graph query** over the agent's verdict history.
@@ -46,13 +46,24 @@ class Verdict(str, Enum):
     NO_GO = "NO-GO"
 
 
-# Autonomy grades L0 (interactive, every step approved) → L4 (silent publish).
+# Autonomy grades on the 0–6 level-of-automation ladder (grounded in ISO/IEC
+# 22989:2022 §5.13; the ladder itself lives in governance's grammar, not here):
+# L0 operator-controlled (a human approves every step) → L3 standby-conditional
+# (a human on standby) → L5 full automation (the former "silent publish") → L6
+# self-governing, which RVND never grants (the always-refused ceiling).
 from .adapters.policy_languages import grade_index as _grade_index
 
 _GRADE = _grade_index()  # grade lattice consumed from governance's grammar
 
 # Footprint tags that flag an action out of the fast path, with the minimum
-# autonomy grade at which they may proceed at all (below it → NO-GO).
+# autonomy grade at which they may proceed at all (below it → NO-GO). Values are
+# RANK INDICES on the active ladder (grade_index). The ladder grew to the 0–6
+# ISO/IEC 22989:2022 §5.13 scale, but these indices are UNCHANGED — each index's
+# meaning is preserved: 2 = L2 "partial", 3 = L3 "standby-conditional" (a human on
+# standby). High-stakes footprints require L3, which IS the sign-off level: at L3
+# a flagged action proceeds only as CONDITIONAL (human sign-off), below it → NO-GO.
+# So behaviour is identical to the former 0–4 ladder for every existing grade
+# (non-loosening), and self-governing L6 is refused outright above.
 _RISK_MIN_GRADE = {
     "personal-data": 2,
     "financial": 3,
@@ -381,6 +392,17 @@ def _gate_base(
     as_of = as_of or date.today()
     grade = _GRADE.get(req.autonomy_grade, 1)
     shift = _POSTURE_SHIFT.get(posture, 0)
+
+    # Self-governing autonomy — ISO/IEC 22989:2022 §5.13 level 6, an agent that
+    # could alter its own goals or domain without oversight — is categorically
+    # never permitted: RVND's enforcement thesis is that it does not grant
+    # self-governance. An actor presenting the ceiling grade is refused
+    # regardless of the action (the taxonomy names it; the gate forbids it).
+    if req.autonomy_grade == "L6":
+        return GateDecision(
+            Verdict.NO_GO, False,
+            "self-governing autonomy (L6) is never permitted",
+            _triple(req, Verdict.NO_GO, "self-governing-refused", []))
 
     # Hard prohibition always wins.
     if req.action_class in set(prohibited_actions):
