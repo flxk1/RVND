@@ -39,7 +39,20 @@ _EFFECT_STATES = frozenset({"done", "failed"})
 
 
 def _iso(ts: float) -> str:
-    return datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    """Microsecond resolution, deliberately.
+
+    Rendering at whole seconds silently destroyed any window narrower than one
+    second: both bounds collapsed to the same string, the window came out empty
+    or inverted, and the projection reported UNRECONCILED — "nobody looked" —
+    for a window somebody had in fact asked about. It fails safe rather than
+    permissive, but a legitimate sub-second window could not be measured at all,
+    and a test splitting a chain microseconds apart passed or failed depending
+    on where the run fell relative to a second boundary.
+
+    The same rendering is used for the record timestamps, so ordering within a
+    second now survives into the reconciliation too.
+    """
+    return datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
 
 def _key(run_id: str, step_index: Any) -> str:

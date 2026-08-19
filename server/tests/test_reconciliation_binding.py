@@ -133,3 +133,17 @@ def test_evidence_pack_flags_an_unauthorised_effect(tmp_path, monkeypatch):
     assert rec["status"] == "diverged"
     assert rec["unauthorised_rate"] == 1.0
     assert rec["observed_not_authorised"][0]["authorisation_id"] == "ghost:0"
+
+
+def test_a_sub_second_window_is_measurable(tmp_path):
+    """`_iso` rendered whole seconds, so both bounds of any window narrower than
+    a second collapsed to one string and the projection reported UNRECONCILED —
+    "nobody looked" — for a window somebody had asked about. Fails safe, but a
+    legitimate sub-second window could not be measured at all."""
+    from workspaces.reconciliation_binding import _iso, reconcile_projection
+
+    t = 1755000000.100000
+    assert _iso(t) != _iso(t + 0.000100), "bounds inside one second must stay distinct"
+
+    out = reconcile_projection([], since_ts=t, until_ts=t + 0.5)
+    assert out["status"] != "unreconciled", out

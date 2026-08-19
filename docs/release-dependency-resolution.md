@@ -32,6 +32,7 @@ Current tag-to-commit mapping:
 | `loomground-epistemic` | `epistemic-v0.1.0` | `2c1dc8ea8278fe3d1aeffa470319573c53dee932` |
 | `loomground-patchbay` | `v0.1.0` | `36e70ada8d51583b7071a51edf12e6d65b1a0cc5` |
 | `loomground-brief` | `main` | `70a36083f623c879569e7237b148f5762810b916` |
+| `loomground-proxy` | `main` | `ea7c006c1b624f63e9291ac1ed4e65c58cee0f89` |
 | `enforcement-posture` | `v0.3.0` | `fdd143a2a853fdba980dc45fbd6e69199ad5598c` |
 | `oversight-certificate` | `v0.2.0` | `8dbb4fa46042f12eeecaf37cb1ad095b838d7185` |
 | `effect-reconciliation` | `v0.1.0` | `b2b3f995c0d9f9cca9bbabdf628d88cda26c91d2` |

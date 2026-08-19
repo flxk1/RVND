@@ -225,6 +225,21 @@ def evidence_pack(folder: str | Path, *, log_root: Optional[Path] = None,
         since_ts=since if since is not None else (first_ts if first_ts is not None else 0.0),
         until_ts=until if until is not None else ((last_ts + 1.0) if last_ts is not None else 1.0),
     )
+    # Is the attested posture still standing for measured mediation? The pack
+    # shows both side by side, which is exactly where the substitution gets made
+    # without being checked. The period is split at its midpoint so there are two
+    # readings to compare; a posture with fewer than two attestations reports no
+    # change, and the substitution comes back `unchecked` rather than healthy.
+    from . import substitution_binding as _sb
+    _lo = since if since is not None else (first_ts if first_ts is not None else 0.0)
+    _hi = until if until is not None else ((last_ts + 1.0) if last_ts is not None else 1.0)
+    _mid = _lo + (_hi - _lo) / 2.0
+    substitution = _sb.substitution_projection(
+        log.replay(),
+        prior_since_ts=_lo, prior_until_ts=_mid,
+        since_ts=_mid, until_ts=_hi,
+        posture_change=posture.get("posture_change"),
+    )
     return {
         "op": "evidence_pack",
         "folder": str(folder),
@@ -238,6 +253,7 @@ def evidence_pack(folder: str | Path, *, log_root: Optional[Path] = None,
                   "key_pin": getattr(chain, "key_pin", None)},
         "counts_by_kind": dict(sorted(counts.items())),
         "effective_posture": posture["effective_posture"],
+        "substitution": substitution,
         "coverage": posture["coverage"],
         "exposure": posture["exposure"],
         "reconciliation": reconciliation,
