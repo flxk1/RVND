@@ -35,6 +35,7 @@ VCS_FIRST_PARTY = {
     "effect-reconciliation",
     # The bounded supervisor brief, extracted from the solver kernel in 0.5.0.
     "loomground-brief",
+    "loomground-proxy",
 }
 COPYLEFT = re.compile(r"\b(?:AGPL|GPL|LGPL|SSPL|EUPL|OSL|CECILL)\b", re.I)
 KNOWN_LICENSES = (
