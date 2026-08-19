@@ -25,8 +25,9 @@ os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 sys.path.insert(0, str(HERE.parent))
 sys.path.insert(0, str(HERE.parent.parent / "server" / "src"))
 import serve                          # noqa: E402
-import rvnd.mcp_server  # noqa: E402,F401 — imported for tool registration;
-                        # the alias `S` was never referenced
+import importlib                      # noqa: E402
+importlib.import_module("rvnd.mcp_server")   # imported for its side effect:
+                                      # registering the tools. Not a name we use.
 
 F = os.path.join(tmp, "org")
 os.makedirs(F, exist_ok=True)

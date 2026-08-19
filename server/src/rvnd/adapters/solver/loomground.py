@@ -20,3 +20,43 @@ from loomground_solver.loomground import (
     _has_cycle,  # noqa: F401  -- re-export: `import *` skips _private names, so this line is the export
     grade_meets,  # noqa: F401  -- re-export
 )
+
+# Declared so `import *` from this seam is an explicit surface rather than
+# whatever happens to be bound. These are exactly the public names it
+# already exported, so behaviour is unchanged.
+__all__ = [
+    "Any",
+    "ApplyError",
+    "CORD_TYPES",
+    "GRADES",
+    "GRADE_RANK",
+    "GUARD_FIELDS",
+    "GUARD_OPS",
+    "LANGUAGE_VERSION",
+    "MASTER",
+    "NODE_CLASSES",
+    "Optional",
+    "ParseError",
+    "RISKS",
+    "RISK_RANK",
+    "SUPPORTED_LANGUAGE_VERSIONS",
+    "VERDICTS",
+    "VERDICT_RANK",
+    "annotations",
+    "apply",
+    "evaluate",
+    "evaluate_log",
+    "expand_racks",
+    "grade_meets",
+    "grade_rank",
+    "language_version",
+    "parse",
+    "project",
+    "re",
+    "reason",
+    "require_language_version",
+    "to_netlist",
+    "validate",
+    "validate_token",
+    "vocabulary",
+]
