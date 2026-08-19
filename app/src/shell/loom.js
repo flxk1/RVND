@@ -30,10 +30,10 @@ async function drawLoom(folder, host){
   // identical strip widths: the same cell sits at the same x on every strip, so
   // which-track-is-at-which-level is one horizontal scan
   h+='<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">'+ucs.map(u=>{
-    const reserved=!!(u.reserved&&u.reserved.length), lvl=Math.max(0,Math.min(4,u.grade||0)), cap=(typeof u.grade_ceiling==='number')?u.grade_ceiling:lvl;  // M8: server-composed ceiling, client renders it
+    const reserved=!!(u.reserved&&u.reserved.length), lvl=Math.max(0,Math.min(GRADE_NAME.length-1,u.grade||0)), cap=(typeof u.grade_ceiling==='number')?u.grade_ceiling:lvl;  // M8: server-composed ceiling, client renders it
     let f='<div style="border:1px solid var(--line);border-radius:8px;padding:8px;flex:0 0 128px;box-sizing:border-box"><div style="font-size:11px;font-weight:600;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+escA(u.label)+'">'+esc(u.label)+'</div>';
     f+='<div class="fader'+(reserved?' clamped':'')+'" data-fader="'+esc(u.id)+'" data-reserved="'+(reserved?'true':'false')+'" role="group" aria-disabled="true" aria-label="read-only · autonomy level L'+lvl+', ceiling L'+cap+(reserved?', clamped, '+reservedPhrase(u):'')+' — server-decided, read-only">';
-    for(let i=0;i<5;i++) f+='<div class="fcell'+(i===lvl?' earned':'')+(i>cap?' over':'')+'"'+(i===lvl?' style="background:'+GHEX[lvl]+'"':'')+' title="L'+i+' · '+GRADE_NAME[i]+'">L'+i+'</div>';
+    for(let i=0;i<GRADE_NAME.length;i++) f+='<div class="fcell'+(i===lvl?' earned':'')+(i>cap?' over':'')+'"'+(i===lvl?' style="background:'+GHEX[lvl]+'"':'')+' title="L'+i+' · '+GRADE_NAME[i]+'">L'+i+'</div>';
     f+='</div><div class="ro" style="font-size:10px;margin-top:3px">risk '+esc(u.risk||'low')+(reserved?' · <b style="color:#e2877f">'+esc(reservedPhrase(u))+'</b>':'')+'</div></div>';
     return f;
   }).join('')+'</div>';

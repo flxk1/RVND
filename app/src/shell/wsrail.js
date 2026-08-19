@@ -53,7 +53,7 @@ async function loadWsRail(){
     return o; }));
   wrap.innerHTML=cells.map((c,i)=>{ const here=_samePath(c.path,S.path); const lc=c.ov?'#92c4ac':'#5b6472';
     const ovtext=c.ov?esc(c.ov):(c.ovErr?'oversight unread':'no oversight set');
-    const leds=(c.leds||['block','block','block','block','block']);
+    const leds=(c.leds||GRADE_NAME.map(()=>'block'));   // no-data fallback: one blocked LED per grade
     const ledHtml='<div class="wsleds" role="img" aria-label="'+escA(c.matrixErr?'autonomy unreadable — could not read the matrix':_ledLabel(leds))+'"'+(c.matrixErr?' style="opacity:.4"':'')+'>'+leds.map((s,gi)=>'<span class="wsled'+(s==='go'?' go':(s==='ask'?' ask':''))+'" title="L'+gi+': '+s+'"></span>').join('')+'</div>'+(c.matrixErr?'<div class="wsgroup" style="color:#c79">autonomy unread</div>':'');
     const grp=c.parent?('<div class="wsgroup">⮡ group: '+esc(bn(c.parent.path))+'</div>'):'';
     const snd=c.kids?('<div class="wssend">send→ '+c.kids+' workspace'+(c.kids===1?'':'s')+'</div>'):'';

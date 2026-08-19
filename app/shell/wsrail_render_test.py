@@ -4,7 +4,7 @@
 """Render test for the Workspaces rail (a DAW channel per workspace). Seeds a
 parent workspace, a registered child under it (hierarchy), and an independent
 workspace — each with an agent + oversight. The rail then renders a strip per
-workspace with discrete L0–L4 autonomy LEDs, marks the current one, shows the
+workspace with discrete per-grade autonomy LEDs, marks the current one, shows the
 child's group-bus tag and the parent's send→, exposes a master All-Stop, and
 focuses a workspace when its name button is clicked.
 
