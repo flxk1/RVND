@@ -1689,6 +1689,15 @@ def list_pinned_skills(folder_context: str) -> dict[str, Any]:
     except Exception as e:
         return {"ok": False, "error": f"{type(e).__name__}: {e}"}
 
+class SkillBodyUnreadable(RuntimeError):
+    """A skill body exists but could not be read.
+
+    Distinct from ``None`` (no Workspace-internal body — the host resolves it):
+    here the declarations exist and we failed to read them, so a caller must not
+    proceed as though the skill declared nothing.
+    """
+
+
 def _try_read_workspace_skill_body(skill_id: str) -> Optional[str]:
     """If ``skill_id`` matches a Workspace-internal skill, return the SKILL.md
     body (without YAML frontmatter). Otherwise return None — the host is
@@ -1722,17 +1731,24 @@ def _try_read_workspace_skill_body(skill_id: str) -> Optional[str]:
     # Cowork install layout: plugin lives next to the runtime under a
     # well-known cache root. Best-effort.
     for p in candidates:
-        try:
-            if p.exists():
-                src = p.read_text(encoding="utf-8")
-                # Strip frontmatter
-                if src.startswith("---"):
-                    parts = src.split("---", 2)
-                    if len(parts) >= 3:
-                        return parts[2].lstrip("\n")
-                return src
-        except Exception:
+        if not p.exists():
             continue
+        try:
+            src = p.read_text(encoding="utf-8")
+        except Exception as exc:
+            # The body IS there and we could not read it (permissions, or bytes
+            # that are not UTF-8). Swallowing that returned None, which the
+            # caller cannot tell from "not a Workspace skill" — so a body
+            # DECLARING a grade ceiling dispatched UNCAPPED, while a body that
+            # merely failed to PARSE clamped to L0. Same ignorance, opposite
+            # outcome. Raise so the caller can fail closed.
+            raise SkillBodyUnreadable(f"{p}: {exc}") from exc
+        # Strip frontmatter
+        if src.startswith("---"):
+            parts = src.split("---", 2)
+            if len(parts) >= 3:
+                return parts[2].lstrip("\n")
+        return src
     return None
 
 def dispatch_skill(folder_context: str,
@@ -1793,12 +1809,19 @@ def dispatch_skill(folder_context: str,
         # resolves to permit/hold/deny (gate × matrix × oversight × privacy)
         # and is recorded on the signed chain. Routine low-reach dispatches
         # resolve to permit; DENY blocks; HOLD flags for human authorisation. ──
-        body = _try_read_workspace_skill_body(skill_id)
+        try:
+            body = _try_read_workspace_skill_body(skill_id)
+        except SkillBodyUnreadable:
+            # Same fail-closed rule as an unparseable body below: a ceiling we
+            # could not read must clamp, never wave through.
+            body, _unreadable = None, True
+        else:
+            _unreadable = False
         # D9: a skill body may DECLARE its own oversight (a grade ceiling / min
         # level). Compose those facets and feed the ceiling into the chokepoint so
         # a high-reach skill can't be dispatched above the autonomy its own
         # declarations cap it to — the composed ceiling is consumed, not ignored.
-        skill_ceiling = ""
+        skill_ceiling = "L0" if _unreadable else ""
         if body:
             try:
                 from .oversight_extractor import extract_oversight
