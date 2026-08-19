@@ -6,7 +6,11 @@
 // renders, so the new console never re-derives its own notion of a verdict.
 // The server decides; this only colors and reads what it decided.
 
-export const GHEX = ['#5b7a99', '#5f9088', '#c8a23f', '#df8b46', '#cf463c'];
+// Autonomy-grade ramp, one colour per grade. Length follows the active ladder
+// (ISO/IEC 22989 §5.13 level-of-automation, L0..L6); L5 'full' deepens the warm
+// end, L6 'self-governing' is a muted inert tone — it is never a live ceiling
+// (always refused), so its colour reads as "not an operating level".
+export const GHEX = ['#5b7a99', '#5f9088', '#c8a23f', '#df8b46', '#cf463c', '#a8324f', '#6b6472'];
 
 export const VERDICT = {
   auto: { col: '#5aa886', label: 'auto' },
