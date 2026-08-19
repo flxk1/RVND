@@ -6,6 +6,7 @@
 // Usage: node wizard_render.mjs <PORT> <NEW_WORKSPACE_PATH>
 import { JSDOM } from "jsdom";
 import { bridgeGlobals, fetchComposedPage } from "../harness/render_harness.mjs";
+import { assertBridgeAlive } from "../harness/rvnd_gate_guards.mjs";
 const PORT = process.argv[2], NEW = process.argv[3];
 const html = await fetchComposedPage(PORT);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -31,6 +32,7 @@ const until = async (pred, what, tries = 80) => {
 async function main() {
   for (let i = 0; i < 80 && !window._ready; i++) await sleep(25);
   if (!window._ready) fail("patchbay did not boot");
+  await assertBridgeAlive(window, fail);
 
   // (1) empty registry → the wizard mounts over the demo patch
   if (!wiz()) fail("no workspaces + flag unset, but the wizard did not appear");

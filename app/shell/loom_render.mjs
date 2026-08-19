@@ -6,6 +6,7 @@
 // Usage: node loom_render.mjs <PORT> <FOLDER_CONTEXT>
 import { JSDOM } from "jsdom";
 import { bridgeGlobals, fetchComposedPage } from "../harness/render_harness.mjs";
+import { assertBridgeAlive } from "../harness/rvnd_gate_guards.mjs";
 
 const PORT = process.argv[2], F = process.argv[3];
 const html = await fetchComposedPage(PORT);
@@ -24,6 +25,7 @@ const { window } = dom;
 async function main() {
   for (let i = 0; i < 50 && typeof window.drawLoom !== "function"; i++) await sleep(20);
   if (typeof window.drawLoom !== "function") fail("page did not load drawLoom (Loom home missing)");
+  await assertBridgeAlive(window, fail);
 
   const host = window.document.createElement("div");
   window.document.body.appendChild(host);

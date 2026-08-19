@@ -11,6 +11,7 @@
 // Usage: node slice_e_render.mjs <PORT> <FOLDER_CONTEXT>
 import { JSDOM } from "jsdom";
 import { bridgeGlobals, fetchComposedPage } from "../harness/render_harness.mjs";
+import { assertBridgeAlive } from "../harness/rvnd_gate_guards.mjs";
 const PORT = process.argv[2], F = process.argv[3];
 const html = await fetchComposedPage(PORT);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -30,6 +31,7 @@ async function open(fn, panelId, label) {
 async function main() {
   for (let i = 0; i < 80 && !window._ready; i++) await sleep(25);
   if (!window._ready) fail("patchbay did not boot");
+  await assertBridgeAlive(window, fail);
   window.S.path = F; await window.reload(); await sleep(40);
 
   // Audit is NOT read-only any more — its attestation cards trigger the probe
