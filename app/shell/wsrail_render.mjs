@@ -1,6 +1,6 @@
 // Real DOM test for the Workspaces rail — a channel per workspace. Seeds a
 // parent, a registered child under it, and an independent workspace; asserts the
-// rail renders one strip per workspace each with discrete L0–L4 autonomy LEDs and
+// rail renders one strip per workspace each with discrete per-grade autonomy LEDs and
 // no nested interactive controls (name + mute are siblings, strip is a group),
 // the current workspace is marked, the child shows a group-bus tag, the parent
 // shows a send→, the master All-Stop is wired to allStopAll, and clicking another
@@ -44,11 +44,17 @@ async function main() {
     if (!s.querySelector("button.wmute")) fail("strip has no mute button");
   }
 
-  // discrete L0–L4 autonomy LEDs — five pips per strip, labelled non-visually
+  // discrete per-grade autonomy LEDs — one pip per grade on the active ladder,
+  // labelled non-visually. The ladder is remappable policy (any number of
+  // grades), so assert the LED count matches the server's published grades, not
+  // a fixed 5 (mirrors matrix_render).
+  const mxr0 = await window.tool("workspace_matrix", { op: "show", params: { folder_context: PARENT } });
+  const nGrades = Object.keys((mxr0 && mxr0.matrix) || {}).filter((k) => /^L\d+$/.test(k)).length;
+  if (nGrades < 2) fail("server published no autonomy grade ladder to render");
   for (const s of strips) {
     const leds = s.querySelector(".wsleds");
-    if (!leds) fail("strip missing the L0–L4 autonomy LEDs");
-    if (leds.querySelectorAll(".wsled").length !== 5) fail("autonomy ladder must have exactly 5 discrete LEDs");
+    if (!leds) fail("strip missing the per-grade autonomy LEDs");
+    if (leds.querySelectorAll(".wsled").length !== nGrades) fail("autonomy ladder must have one LED per grade (" + nGrades + "), got " + leds.querySelectorAll(".wsled").length);
     if (!/autonomy/i.test(leds.getAttribute("aria-label") || "")) fail("LED ladder has no non-visual (aria) autonomy label");
   }
 
@@ -123,7 +129,7 @@ async function main() {
   const aP = (Array.isArray(parentAfter) ? parentAfter : (parentAfter.parties || parentAfter.rows || []));
   if (!aP.some((p) => (p.status || "active") === "active")) fail("isolate wrongly suspended the SOLOED workspace's own agent");
 
-  console.log("PASS: workspaces rail — strip per workspace; no nested interactives; discrete L0–L4 LEDs (aria-labelled); current marked; child group-bus + parent send→; master All-Stop spans all; name-click focuses; unsaved gets a channel + save; mute suspends the workspace's agents on the chain; per-channel solo: view-solo dims (no governance change), govern-solo isolates the others");
+  console.log("PASS: workspaces rail — strip per workspace; no nested interactives; discrete per-grade LEDs (aria-labelled); current marked; child group-bus + parent send→; master All-Stop spans all; name-click focuses; unsaved gets a channel + save; mute suspends the workspace's agents on the chain; per-channel solo: view-solo dims (no governance change), govern-solo isolates the others");
   process.exit(0);
 }
 main().catch((e) => fail(String((e && e.stack) || e)));
