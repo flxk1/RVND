@@ -1,7 +1,7 @@
 /* The ARRANGE view — one of the four view-toggle states (PATCH/ARRANGE/
    MATRIX/DESK). LANES: agents as time lanes, runs as verdict-coloured clips,
    a read-only projection of the audit tail. MIX: the arranger's console
-   form — one channel strip per agent party (status lamp, the L0-L4 ladder
+   form — one channel strip per agent party (status lamp, the per-grade ladder
    with every rung's own matrix light rendered verbatim, a screen that
    follows one global mode selector — Overview | Autonomy | Checks | Reach |
    Time — pending sign-off count, Hold) plus a bus header (name, pending
@@ -56,7 +56,7 @@ async function renderArrangeLanes(host){
   _arrSet(host,h);
 }
 /* MIX — the arranger's console form. One channel strip per agent party: status
-   word + lamp, the L0-L4 ladder as a read-only stepped display — the earned
+   word + lamp, the per-grade ladder as a read-only stepped display — the earned
    rung highlighted, and every rung carrying its own matrix light (the server
    matrix cell for this workspace's oversight band, go|ask|block, rendered
    verbatim; the client never composes a ceiling from the cells, because the
@@ -232,7 +232,7 @@ async function renderArrangeMix(host){
       +' · matrix at oversight '+(band||'(unset)')+': '
       +(leds?leds.map((s,i)=>'L'+i+' '+s).join(', '):'unread');
     const roTxt=(g==null?'L —':'L'+g)+(leds?(g==null?'':' · matrix: '+leds[g]):' · matrix unread');
-    let cellsH=''; for(let i=0;i<5;i++){ const lw=leds?leds[i]:null;
+    let cellsH=''; for(let i=0;i<GRADE_NAME.length;i++){ const lw=leds?leds[i]:null;
       cellsH+='<div class="mix-rung"><div class="fcell'+(i===g?' earned':'')+'"'+(i===g?' style="background:'+GHEX[g]+'"':'')+' title="L'+i+' · '+GRADE_NAME[i]+(lw?' · matrix: '+lw:'')+'">L'+i+'</div>'
         +'<span class="wsled'+(lw==='go'?' go':(lw==='ask'?' ask':''))+'" title="L'+i+': '+(lw||'unread')+'"'+(lw?'':' style="opacity:.35"')+'></span></div>'; }
     let h='<div class="mix-strip" role="group" aria-label="channel strip '+escA(esc(t.pid))+'">';

@@ -1,6 +1,6 @@
 // Real DOM test for the ARRANGE view's two forms. LANES: agents as lanes with
 // verdict-coloured run clips, read-only. MIX: a channel strip per agent (status
-// word, five-rung ladder rendering the server matrix cell per rung verbatim —
+// word, per-grade ladder rendering the server matrix cell per rung verbatim —
 // the seed paints a non-monotonic band, so a client-composed scalar ceiling
 // would render false state — mono readout, oversight word, pending count, Hold)
 // plus a bus header (name, pending total, Hold-all). Strips carry screens under
@@ -71,19 +71,24 @@ async function main() {
   const strip = [...arr.querySelectorAll(".mix-strip")]
     .find(s => (s.querySelector(".mix-name") || { textContent: "" }).textContent.includes(AGENT));
   if (!strip) fail("no channel strip for the seeded agent " + AGENT);
-  if (strip.querySelectorAll(".fcell").length !== 5) fail("strip ladder is not five rungs");
   if (!/active|suspended|killed/.test((strip.querySelector(".mix-status") || { textContent: "" }).textContent)) fail("strip has no status word");
   // every rung shows its own server matrix cell verbatim — read the matrix and
   // the oversight band back from the server and compare cell for cell; the
-  // seeded band is non-monotonic, so a client-composed ceiling cannot match
+  // seeded band is non-monotonic, so a client-composed ceiling cannot match.
+  // The ladder is remappable policy (any number of grades), so the rung count is
+  // the server's published grade count, not a fixed 5 (mirrors matrix_render).
   const snap = await window.tool("workspace_policy", { op: "snapshot", params: { folder_context: F } });
   const mxr = await window.tool("workspace_matrix", { op: "show", params: { folder_context: F } });
   const bandName = snap && snap.oversight_default_level;
   if (!bandName) fail("seed left no oversight band to read");
-  const want = [0, 1, 2, 3, 4].map(i => mxr.matrix["L" + i][bandName]);
+  const grades = Object.keys(mxr.matrix || {}).filter((k) => /^L\d+$/.test(k)).sort((a, b) => +a.slice(1) - +b.slice(1));
+  const nG = grades.length;
+  if (nG < 3) fail("server published too few grades to test a non-monotonic band: " + nG);
+  if (strip.querySelectorAll(".fcell").length !== nG) fail("strip ladder rungs (" + strip.querySelectorAll(".fcell").length + ") must match the server's " + nG + " grades");
+  const want = grades.map((gk) => mxr.matrix[gk][bandName]);
   if (!(want[1] === "block" && want[2] === "go")) fail("seed did not paint a non-monotonic band (got " + want.join(",") + ") — on a monotonic band a composed ceiling is indistinguishable from verbatim cells");
   const lights = [...strip.querySelectorAll(".mix-ladder .wsled")];
-  if (lights.length !== 5) fail("ladder does not carry five per-rung matrix lights");
+  if (lights.length !== nG) fail("ladder does not carry one per-rung matrix light per grade (" + nG + "), got " + lights.length);
   lights.forEach((el, i) => {
     const t = el.getAttribute("title") || "";
     if (t !== "L" + i + ": " + want[i]) fail("rung light L" + i + " does not show the server cell verbatim: got " + JSON.stringify(t) + ", server says " + want[i]);
@@ -210,7 +215,7 @@ async function main() {
   if (!fCard) fail("CHECK·VERDICTS does not render its reserved stop through the shared stop card");
   if (fCard.querySelector("button, [data-pending-link], [data-rules-link]")) fail("a reserved card in CHECK·VERDICTS must render no action");
 
-  console.log("PASS: PATCH ⇄ ARRANGE — LANES (workspace group, agent lanes, verdict-coloured clips, legend; no controls beyond the sub-toggle) and MIX (bus header with pending total + Hold-all, per-agent strips with status word, five-rung ladder whose rung lights match the server matrix cell for cell on a non-monotonic band, oversight word, pending count; Hold suspends via party-status); strip screens follow one global mode selector (Overview | Autonomy | Checks | Reach | Time) with at most three value rows per page, deadline directions shown, and the law-locked strip's reserved plate with no control; Checks and CHECK·VERDICTS both render stops through the shared stop card, whose reserved state carries no action; self-description states the writes; PATCH restores the node graph");
+  console.log("PASS: PATCH ⇄ ARRANGE — LANES (workspace group, agent lanes, verdict-coloured clips, legend; no controls beyond the sub-toggle) and MIX (bus header with pending total + Hold-all, per-agent strips with status word, per-grade ladder whose rung lights match the server matrix cell for cell on a non-monotonic band, oversight word, pending count; Hold suspends via party-status); strip screens follow one global mode selector (Overview | Autonomy | Checks | Reach | Time) with at most three value rows per page, deadline directions shown, and the law-locked strip's reserved plate with no control; Checks and CHECK·VERDICTS both render stops through the shared stop card, whose reserved state carries no action; self-description states the writes; PATCH restores the node graph");
   process.exit(0);
 }
 main().catch((e) => fail(String((e && e.stack) || e)));

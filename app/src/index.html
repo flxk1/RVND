@@ -167,7 +167,7 @@
   .wschan.dim{opacity:.4}
   #wsisolate{margin-top:6px;font-family:"IBM Plex Mono",monospace;font-size:10px;border:1px solid #6b5a2a;color:#e8c570;background:#241f12;border-radius:6px;padding:6px;cursor:pointer;width:100%}
   .wslamp{width:7px;height:7px;border-radius:50%;display:inline-block;flex:none}
-  /* discrete L0–L4 autonomy LEDs (server-clamped ceiling, never a fader) */
+  /* discrete per-grade autonomy LEDs (server-clamped ceiling, never a fader) */
   .wsleds{display:flex;gap:3px;margin-top:6px}
   .wsled{flex:1;height:5px;border-radius:2px;background:#2b313c}
   .wsled.go{background:#5aa886}
@@ -462,7 +462,7 @@ window.showReconnectBanner=showReconnectBanner;
 
 /* ---- autonomy ramp + verdict colors ---- */
 const G=['var(--g0)','var(--g1)','var(--g2)','var(--g3)','var(--g4)'];
-const GHEX=['#5b7a99','#5f9088','#c8a23f','#df8b46','#cf463c'];
+const GHEX=['#5b7a99','#5f9088','#c8a23f','#df8b46','#cf463c','#a8324f','#6b6472'];  // one per grade; L6 muted (never a live ceiling)
 /* Multi-channel rendering (colour is confirmation, line-style + a midpoint
    label carry the meaning; refused≠reserved≠prohibited, colour-blind safe)
    for two distinct axes sharing one map: the 5-state execution-verdict
@@ -490,7 +490,10 @@ function resolveEgressVerdict(verdict, reservedFloor){
   if(verdict==='prohibited') return 'prohibited';  // floor can't soften a refusal
   return reservedFloor ? 'reserved' : verdict;     // floor lifts auto/human → reserved
 }
-const GRADE_NAME=['interactive','assisted','supervised','autonomous','silent'];
+// grade display names, indexed by grade — the client ladder length derives from
+// this array (ISO/IEC 22989 §5.13 level-of-automation, L0..L6). 'full' = full
+// automation (L5); 'self-governing' = L6, shown for completeness but never granted.
+const GRADE_NAME=['interactive','assisted','supervised','autonomous','silent','full','self-governing'];
 const RISKS=['low','medium','high','critical'];
 // OFFLINE-ONLY mirror of the server's step_contract.risk_grade_cap. The
 // disconnected canvas (no S.path) has no server to compose grade_ceiling, so
@@ -944,7 +947,7 @@ async function fillUcOps(uc){
   h+='<br>'+(g>=3?'<b style="color:#7fae97">auto-eligible (L3+)</b>':'<b style="color:#e6b483">needs a person — level below L3</b>')+'</div>';
   // clamped fader: earned level vs the risk-floored ceiling; clamped by law when reserved (discrete, no 0–1 dial)
   h+='<label style="margin-top:10px">Autonomy level vs ceiling</label><div class="fader'+(reserved?' clamped':'')+'" role="group" aria-disabled="true" aria-label="read-only · autonomy level L'+g+', ceiling L'+cap+(reserved?', clamped, '+reservedPhrase(uc):'')+' — server-decided, read-only">';
-  for(let i=0;i<5;i++) h+='<div class="fcell'+(i===g?' earned':'')+(i>cap?' over':'')+'"'+(i===g?' style="background:'+GHEX[g]+'"':'')+' title="L'+i+' · '+GRADE_NAME[i]+'">L'+i+'</div>';
+  for(let i=0;i<GRADE_NAME.length;i++) h+='<div class="fcell'+(i===g?' earned':'')+(i>cap?' over':'')+'"'+(i===g?' style="background:'+GHEX[g]+'"':'')+' title="L'+i+' · '+GRADE_NAME[i]+'">L'+i+'</div>';
   h+='</div><div class="ro">level <b>L'+g+'</b> · ceiling <b>L'+cap+'</b> for '+esc(uc.risk||'low')+' risk'+(reserved?' · <b style="color:var(--txt-dim)">clamped</b>':'')+' · <span style="color:var(--txt-dim)">server-decided, not editable here</span></div>';
   // drift budget (discrete pips, declare-the-gap) + calibration (categorical) — never a score
   h+='<label style="margin-top:8px">Lens drift budget</label><div class="pips">'+[0,1,2,3,4].map(()=>'<span class="pip"></span>').join('')+'</div><div class="ro" style="font-size:10px;color:var(--txt-dim)">not declared — no learning telemetry in this folder</div>';
@@ -1718,7 +1721,7 @@ function openContractPanel(mode){
 // vars) moved with the controller functions to app/src/shell/controller.js.
 /* Workspaces rail — a DAW channel per workspace. Each strip reads that
    workspace's live state from the server: oversight band + active/total agents,
-   plus discrete L0–L4 autonomy LEDs lit from the server's autonomy×oversight
+   plus discrete per-grade autonomy LEDs lit from the server's autonomy×oversight
    grid (go=lit, ask=amber, block=off — the client reads the grid, never decides
    it). The path tree gives hierarchy: a registered sub-folder shows a group-bus
    tag (⮡ its parent); a parent that has registered children shows a send→
@@ -1733,7 +1736,7 @@ function _parentOf(path,all){ const me=_normp(path); let best=null;
   return best; }
 // discrete autonomy ceiling for this workspace at its oversight band, read from
 // the server matrix: returns 5 verdicts L0..L4 ∈ go|ask|block (missing→block).
-function _ledStates(matrix,band){ const out=[]; for(let i=0;i<5;i++){ const row=matrix&&matrix['L'+i]; const v=(row&&band&&row[band])||'block'; out.push(v==='go'?'go':(v==='ask'?'ask':'block')); } return out; }
+function _ledStates(matrix,band){ const out=[]; for(let i=0;i<GRADE_NAME.length;i++){ const row=matrix&&matrix['L'+i]; const v=(row&&band&&row[band])||'block'; out.push(v==='go'?'go':(v==='ask'?'ask':'block')); } return out; }
 function _ledLabel(states){ const go=states.filter(s=>s==='go').length; const ask=states.indexOf('ask');
   if(!go&&ask<0) return 'autonomy: all levels blocked at this oversight';
   let t='autonomy ceiling: '+(go?('L0–L'+(go-1)+' run on their own'):'none auto'); if(ask>=0) t+=', L'+ask+' needs a person'; return t; }
