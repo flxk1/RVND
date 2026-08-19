@@ -33,6 +33,8 @@ VCS_FIRST_PARTY = {
     "oversight-certificate",
     # Complete-mediation evidence (P0b) — reconciles decisions vs effects; same git-pin discipline.
     "effect-reconciliation",
+    # The bounded supervisor brief, extracted from the solver kernel in 0.5.0.
+    "loomground-brief",
 }
 COPYLEFT = re.compile(r"\b(?:AGPL|GPL|LGPL|SSPL|EUPL|OSL|CECILL)\b", re.I)
 KNOWN_LICENSES = (
