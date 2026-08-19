@@ -8,7 +8,7 @@ No network, no LLM, no install — pure stdlib.
 
 from rvnd.oversight import assess
 from rvnd.action_gate import ActionRequest, StandingApproval
-from rvnd.breaker import Breaker, Lease, Tripwire, default_tripwires
+from rvnd.breaker import Breaker, Lease, default_tripwires
 from rvnd.oversight_drift import drift_tripwire, evaluate as evaluate_drift
 from rvnd.drift_monitor import DriftReport
 

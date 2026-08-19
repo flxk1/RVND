@@ -40,7 +40,9 @@ from host import (  # noqa: F401 — re-exported for `serve.<name>` callers/test
 from pathlib import Path
 _HERE = Path(__file__).resolve()
 try:
-    import rvnd  # noqa: F401 — already installed
+    import importlib.util
+    if importlib.util.find_spec("rvnd") is None:   # probe, not a use
+        raise ModuleNotFoundError("rvnd")
 except ModuleNotFoundError:
     _src = _HERE.parent.parent / "server" / "src"   # rvnd layout: rvnd/server/src
     if _src.is_dir() and str(_src) not in sys.path:

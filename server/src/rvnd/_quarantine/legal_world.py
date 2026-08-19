@@ -32,7 +32,6 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Iterable, Optional
 
-from rvnd.adapters.solver.dimensions import Dimension
 from .legal_connection import (Connection, ESCALATE, GOVERNING, compose_path,
                                dimension)
 

@@ -14,7 +14,10 @@ from rvnd.adapters.solver.loomground import *  # noqa: F401,F403
 # way to say "re-exported on purpose" rather than "imported and unused".
 # `_guard_holds` used to be listed here and was never re-exported through
 # this module — operations.py imports it from the adapter directly.
-from rvnd.adapters.solver.loomground import _has_cycle as _has_cycle
+from rvnd.adapters.solver.loomground import _has_cycle
+
+#: Named so the private re-export is a declaration, not an accident.
+__all__ = ["_has_cycle"]
 
 
 def _loomground_core():

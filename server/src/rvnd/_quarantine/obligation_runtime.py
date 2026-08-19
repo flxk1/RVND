@@ -44,7 +44,7 @@ from typing import Any, Iterable, Optional
 
 from .contracts.instance import ContractInstance
 from .mutation_log import LogEvent, MutationLog
-from rvnd.adapters.solver.temporal import Date, Duration, RelativeDeadline, TemporalError
+from rvnd.adapters.solver.temporal import Date, RelativeDeadline, TemporalError
 
 __all__ = ["Obligation", "ObligationRegistry", "ObligationError",
            "OPEN_STATES", "TERMINAL_STATES"]
