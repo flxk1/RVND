@@ -81,6 +81,7 @@ REQUIRED = {
     "deontic": ("classify_incident",),
     "versum": ("DimensionedSubgraphSink", "load_dimensioned_subgraphs"),
     "loomground_legal": ("connection",),
+    "loomground_vertical": ("SubjectCard", "build_house", "register_court_pack"),
 }
 missing = []
 for mod, syms in REQUIRED.items():
@@ -101,7 +102,7 @@ if missing:
                      "      python -m pip cache purge && ./server/install.sh\n")
     sys.exit(1)
 print("  consumed-plane surfaces OK "
-      "(solver ESCALATE/RelationAlgebra, ingest, deontic, versum, legal)")
+      "(solver ESCALATE/RelationAlgebra, ingest, deontic, versum, legal, vertical)")
 PYCHECK
 python -c "import workspaces; assert hasattr(workspaces,'assess'); print('  workspaces importable:', len(workspaces.__all__), 'exports')"
 if [ -f server/examples/oversight_demo.py ]; then

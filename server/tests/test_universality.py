@@ -17,6 +17,12 @@ import os
 import pytest
 
 from workspaces import jurisdiction_packs as JP
+# The pack registries themselves are the consumed vertical plane's (RVND reaches
+# them through the `adapters.vertical` seam; `workspaces.jurisdiction_packs` is the
+# historical shim over it). There is ONE set of stores, so the isolation fixture
+# has to patch them where they live — patching the shim would rebind names the
+# registration functions never read, and let the test pollute the real registry.
+from workspaces.adapters.vertical import jurisdiction_packs as _JP_STORES
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 
@@ -24,12 +30,12 @@ os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 @pytest.fixture
 def clean_packs(monkeypatch):
     """Register into COPIES of the pack registries — auto-restored, never global pollution."""
-    monkeypatch.setattr(JP, "_COURT_PACKS", dict(JP._COURT_PACKS))
-    monkeypatch.setattr(JP, "_COURT_ORDER", list(JP._COURT_ORDER))
-    monkeypatch.setattr(JP, "_MARKER_PACKS", dict(JP._MARKER_PACKS))
-    monkeypatch.setattr(JP, "_ROLE_STEPS", dict(JP._ROLE_STEPS))
-    monkeypatch.setattr(JP, "_ROOM_CUES_EXTRA", list(JP._ROOM_CUES_EXTRA))
-    monkeypatch.setattr(JP, "_ASK_SYNONYMS", dict(JP._ASK_SYNONYMS))
+    monkeypatch.setattr(_JP_STORES, "_COURT_PACKS", dict(_JP_STORES._COURT_PACKS))
+    monkeypatch.setattr(_JP_STORES, "_COURT_ORDER", list(_JP_STORES._COURT_ORDER))
+    monkeypatch.setattr(_JP_STORES, "_MARKER_PACKS", dict(_JP_STORES._MARKER_PACKS))
+    monkeypatch.setattr(_JP_STORES, "_ROLE_STEPS", dict(_JP_STORES._ROLE_STEPS))
+    monkeypatch.setattr(_JP_STORES, "_ROOM_CUES_EXTRA", list(_JP_STORES._ROOM_CUES_EXTRA))
+    monkeypatch.setattr(_JP_STORES, "_ASK_SYNONYMS", dict(_JP_STORES._ASK_SYNONYMS))
 
 
 US_OPINION = (
