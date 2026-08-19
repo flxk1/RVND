@@ -25,6 +25,13 @@ from loomground_solver.loomground import (
 # whatever happens to be bound. These are exactly the public names it
 # already exported, so behaviour is unchanged.
 __all__ = [
+    # Private by name, re-exported on purpose: `import *` skips underscore
+    # names, and consumers take these FROM this seam — loomground_lang
+    # re-exports `_has_cycle` (a test imports it from there) and
+    # operations.py imports `_guard_holds`. Naming them here says
+    # "re-exported", not "imported and forgotten".
+    "_guard_holds",
+    "_has_cycle",
     "Any",
     "ApplyError",
     "CORD_TYPES",
