@@ -23,14 +23,14 @@ Current tag-to-commit mapping:
 |---|---|---|
 | `loomground-solver` | `solver-v0.5.0` | `1a3637f0d6ae42e6de7382120ff4fb27ca79d0b6` |
 | `loomground-versum` | `loomground-versum-v0.13.0` | `1147d7fecd7b991ed87809fae263839ed92372ee` |
-| `loomground-governance` | `loomground-governance-v0.8.2` | `b69e0e17b8ab313f9ec0303523deeffdfe7ff115` |
+| `loomground-governance` | `loomground-governance-v0.8.3` | `6b291e7f31d7d22884a993b708d5295d8b93097b` |
 | `loomground-deontic` |  `deontic-v0.1.4` | `c93f4de657f04546f687966d4978d40e25693c2d` |
 | `loomground-ingest` | `fix/widen-solver-range` | `5921833728bc42bdfd465ac1a8cc413bfc576a8a` |
 | `loomground-legal` | `main` | `c955033c4c75a5f8fa31c5989b850967da089636` |
 | `loomground-norm` | `main` | `7e97852886fb6721e5f4ba72e868f5c939dcb8b6` |
 | `loomground-factual` | `factual-v0.1.0` | `db60a0592eb7741732944f05279b27def0c9685b` |
 | `loomground-epistemic` | `epistemic-v0.1.0` | `2c1dc8ea8278fe3d1aeffa470319573c53dee932` |
-| `loomground-patchbay` | `v0.1.0` | `36e70ada8d51583b7071a51edf12e6d65b1a0cc5` |
+| `loomground-patchbay` | `v0.2.3` | `f24740100cf428ae80a54c091fd6d80c9fc4e903` |
 | `loomground-brief` | `main` | `70a36083f623c879569e7237b148f5762810b916` |
 | `loomground-proxy` | `main` | `ea7c006c1b624f63e9291ac1ed4e65c58cee0f89` |
 | `enforcement-posture` | `v0.3.0` | `fdd143a2a853fdba980dc45fbd6e69199ad5598c` |
