@@ -35,7 +35,14 @@ async function main() {
   if (mp.getAttribute("aria-modal") !== "true") fail("matrix panel is not a modal dialog (no focus trap)");
 
   const cells = [...window.document.querySelectorAll(".mxcell")];
-  if (cells.length !== 30) fail("expected 30 cells (5 grades × 6 oversight), got " + cells.length);
+  // The autonomy ladder is remappable policy — a deployment may define any number
+  // of grades — so assert the grid is COMPLETE: one cell per (grade row × oversight
+  // column), derived from the rendered .mxrowh / .mxhdr, not a fixed magic count.
+  const nGrades = window.document.querySelectorAll(".mxrowh").length;
+  const nOv = window.document.querySelectorAll(".mxhdr").length;
+  if (nGrades < 2 || nOv < 2) fail("matrix did not render a grid: " + nGrades + " grades × " + nOv + " oversight");
+  if (cells.length !== nGrades * nOv)
+    fail("expected " + (nGrades * nOv) + " cells (" + nGrades + " grades × " + nOv + " oversight), got " + cells.length);
   // colour-blind safety: the light is carried as TEXT, not colour alone
   if (!cells.every((c) => /^(go|ask|block)$/.test(c.textContent.trim())))
     fail("matrix cells must label the light as text (colour-blind)");
@@ -60,7 +67,7 @@ async function main() {
   const blk = [...window.document.querySelectorAll(".mxcell")].find((c) => c.dataset.light === "block");
   if (blk && !blk.disabled) fail("'block' cell must be disabled (no click-loosen; loosen is via Reset)");
 
-  console.log("PASS: matrix grid 5×6 renders; lights text-labelled; tighten go→ask writes through; block strictest; modal dialog");
+  console.log("PASS: matrix grid renders (grades × oversight, complete); lights text-labelled; tighten go→ask writes through; block strictest; modal dialog");
   process.exit(0);
 }
 main().catch((e) => fail(String((e && e.stack) || e)));
