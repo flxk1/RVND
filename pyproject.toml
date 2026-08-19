@@ -53,6 +53,14 @@ dependencies = [
     # a declared-but-unconsumed plane is the parallel structure the
     # consumed-modules gate exists to catch.
     "loomground-brief @ git+https://github.com/flxk1/loomground-brief@70a36083f623c879569e7237b148f5762810b916",
+    # loomground-proxy — does a measurement still stand for what it claims?
+    # Consumed through `workspaces.adapters.proxy` by
+    # `substitution_binding.substitution_projection`: RVND attests a posture and
+    # separately MEASURES mediation, and routinely reads the first as standing
+    # for the second. The plane checks that substitution against both movements
+    # and names it — `gamed` when the posture hardened while the measured
+    # mediation gap grew. Same solver 0.5 floor as brief.
+    "loomground-proxy @ git+https://github.com/flxk1/loomground-proxy@ea7c006c1b624f63e9291ac1ed4e65c58cee0f89",
     "cryptography>=41.0",
     "rfc8785>=0.1.2,<0.2",
     "anyascii>=0.3",
