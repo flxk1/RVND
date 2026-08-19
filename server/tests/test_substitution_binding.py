@@ -11,12 +11,12 @@ Grounded in the real chain: a genuine `run_workflow` produces the authorised
 window and a step effect logged with no gate-verdict behind it produces the
 unauthorised one, exactly as the reconciliation tests do.
 
-The one-second gap is load-bearing, not padding. `reconciliation_binding._iso`
-renders window bounds at WHOLE-SECOND resolution, so two bounds inside the same
-second collapse to one ISO string and the window reads UNRECONCILED. A fixture
-that split the chain microseconds apart passed or failed depending on where the
-run happened to fall relative to a second boundary. The chain is built once and
-shared so the wait is paid a single time.
+The ghost effect must be strictly later than the clean run, and the fixture
+asserts it. It once had to be a WHOLE second later, because
+`reconciliation_binding._iso` rendered bounds at second resolution and collapsed
+any narrower window to UNRECONCILED — which made this file pass or fail
+depending on where the run fell relative to a second boundary. That is fixed at
+the source, so microseconds are now enough.
 """
 from __future__ import annotations
 
@@ -46,14 +46,14 @@ def chain(tmp_path_factory):
                         dispatcher=lambda **kw: {"ok": True}, log_root=log)["ok"]
 
     boundary = max(e.ts for e in MutationLog(str(fc), log_root=log).replay())
-    while time.time() <= boundary + 1.0:        # clear the whole-second floor
-        time.sleep(0.01)
+    while time.time() <= boundary:              # microseconds suffice now
+        pass
     _log_workflow_event(str(fc), run_id="ghost", workflow="wf", step_index=0,
                         state="done", skill_id="p:x", log_root=log)
 
     events = list(MutationLog(str(fc), log_root=log).replay())
     split = max(e.ts for e in events)
-    assert split - boundary >= 1.0, "windows must be resolvable at second resolution"
+    assert split > boundary, "the ghost effect must be strictly later than the clean run"
     return {"folder": str(fc), "log": log, "events": events,
             "lo": min(e.ts for e in events), "split": split}
 
