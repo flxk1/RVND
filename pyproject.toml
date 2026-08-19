@@ -23,13 +23,13 @@ authors = [{ name = "flxk1" }]
 # reasoning and Loomground evaluation, and loomground-governance owns all language
 # artifacts and conformance data. RVND carries adapters and governance overlays only.
 dependencies = [
-    "loomground-solver @ git+https://github.com/flxk1/loomground-solver@f8ac006de541215dc82a4cbd5bbd1497a4e658d1",
+    "loomground-solver @ git+https://github.com/flxk1/loomground-solver@1a3637f0d6ae42e6de7382120ff4fb27ca79d0b6",
     "loomground-versum @ git+https://github.com/flxk1/loomground-versum@1147d7fecd7b991ed87809fae263839ed92372ee",
     "loomground-governance @ git+https://github.com/flxk1/loomground-governance@b69e0e17b8ab313f9ec0303523deeffdfe7ff115",
     "loomground-deontic @ git+https://github.com/flxk1/loomground-deontic@c93f4de657f04546f687966d4978d40e25693c2d",
-    "loomground-ingest @ git+https://github.com/flxk1/loomground-ingest@dd277ef5c967b86f05ee0fa45c29634836affad0",
-    "loomground-legal @ git+https://github.com/flxk1/loomground-legal@3638910292886b7812cac0c3a6b5d1e954522fc3",
-    "loomground-norm @ git+https://github.com/flxk1/loomground-norm@72f3962e0495027b083c66962b4de78198bea7a4",
+    "loomground-ingest @ git+https://github.com/flxk1/loomground-ingest@5921833728bc42bdfd465ac1a8cc413bfc576a8a",
+    "loomground-legal @ git+https://github.com/flxk1/loomground-legal@c955033c4c75a5f8fa31c5989b850967da089636",
+    "loomground-norm @ git+https://github.com/flxk1/loomground-norm@7e97852886fb6721e5f4ba72e868f5c939dcb8b6",
     "loomground-factual @ git+https://github.com/flxk1/loomground-factual@db60a0592eb7741732944f05279b27def0c9685b",
     "loomground-epistemic @ git+https://github.com/flxk1/loomground-epistemic@2c1dc8ea8278fe3d1aeffa470319573c53dee932",
     # enforcement-posture (P0a): verdict-neutral evidence layer — attests the effective
@@ -42,6 +42,17 @@ dependencies = [
     # (observed step outcomes) → unauthorised_rate, coverage measured not asserted.
     # MIT, stdlib-only core, zero deps; git-pinned like the planes.
     "effect-reconciliation @ git+https://github.com/flxk1/effect-reconciliation@b2b3f995c0d9f9cca9bbabdf628d88cda26c91d2",
+    # loomground-brief — the bounded supervisor brief, extracted from the solver
+    # kernel in 0.5.0. Consumed through `workspaces.adapters.brief` by
+    # `evidence_coverage.coverage_brief`: a coverage report becomes statused
+    # premises (furnished=ASSERTED, empty=UNKNOWN, orphan=CONTESTED) and the
+    # brief selects only what is unsettled, reporting how many settled rooms it
+    # omitted. Requires solver >=0.5, which is why the solver pin moved to
+    # solver-v0.5.0 and the legal/norm/ingest caps were lifted to <0.6.
+    # Its five siblings are deliberately NOT pinned: nothing consumes them, and
+    # a declared-but-unconsumed plane is the parallel structure the
+    # consumed-modules gate exists to catch.
+    "loomground-brief @ git+https://github.com/flxk1/loomground-brief@70a36083f623c879569e7237b148f5762810b916",
     "cryptography>=41.0",
     "rfc8785>=0.1.2,<0.2",
     "anyascii>=0.3",
