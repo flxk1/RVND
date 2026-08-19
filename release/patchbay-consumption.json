@@ -1,10 +1,10 @@
 {
   "schema": "loomground.patchbay-consumption/v1",
   "upstream": "https://github.com/flxk1/loomground-patchbay",
-  "commit": "f24740100cf428ae80a54c091fd6d80c9fc4e903",
-  "tag": "v0.2.3",
+  "commit": "47431210f47db85f011f7968e4282c49ec9fe91b",
+  "tag": "v0.2.4",
   "license": "AGPL-3.0-only",
-  "aggregate_sha256": "c67e89a303300705e81f092a6ac914fe3c3f707249806824be587548e69137eb",
+  "aggregate_sha256": "1ab5fc940c656d3cadf9867fa0bdd88db90b6781f820569e763d843b58d9b316",
   "files": [
     "app/harness/console_ingest.mjs",
     "app/harness/console_sync.mjs",
