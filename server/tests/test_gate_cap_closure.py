@@ -27,7 +27,7 @@ from __future__ import annotations
 import ast
 import pathlib
 
-WORKSPACES = pathlib.Path(__file__).resolve().parents[1] / "src" / "workspaces"
+WORKSPACES = pathlib.Path(__file__).resolve().parents[1] / "src" / "rvnd"
 
 #: A module consults a cap if it reaches any of these. ``cap_grade`` and
 #: ``Breaker`` are the Breaker path; ``_actor_grade_cap`` is the party-register

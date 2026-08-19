@@ -91,7 +91,7 @@ def subject_component_version() -> str:
     """
     version_file = (
         Path(__file__).resolve().parent.parent
-        / "server" / "src" / "workspaces" / "_version.py"
+        / "server" / "src" / "rvnd" / "_version.py"
     )
     try:
         text = version_file.read_text(encoding="utf-8")

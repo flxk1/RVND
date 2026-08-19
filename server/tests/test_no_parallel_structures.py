@@ -19,7 +19,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-SRC = Path(__file__).resolve().parents[1] / "src" / "workspaces"
+SRC = Path(__file__).resolve().parents[1] / "src" / "rvnd"
 
 # Parallel structures already retired — must stay absent (deleted + unimported).
 # Grows as S1-S4 land. (``ingest/policy.py`` is fenced separately below: its stem

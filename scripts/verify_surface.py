@@ -35,7 +35,7 @@ from typing import Iterable
 
 HERE = Path(__file__).resolve().parent.parent
 APP_DIR = HERE / "app"
-PACKAGE_DIR = HERE / "server" / "src" / "workspaces"
+PACKAGE_DIR = HERE / "server" / "src" / "rvnd"
 BASELINE = HERE / "docs" / "evidence" / "surface-baseline.json"
 LEDGER = HERE / "docs" / "evidence" / "surface-ledger.md"
 
@@ -181,7 +181,7 @@ def _static_imports(src: str, importer: str, is_init: bool = False) -> set[str]:
                     found.add(mod)
                 for alias in node.names:
                     found.add((mod + "." if mod else "") + alias.name)
-            elif node.module and node.module.split(".")[0] == "workspaces":
+            elif node.module and node.module.split(".")[0] == "rvnd":
                 mod = ".".join(node.module.split(".")[1:])
                 if mod:
                     found.add(mod)
@@ -190,7 +190,7 @@ def _static_imports(src: str, importer: str, is_init: bool = False) -> set[str]:
         elif isinstance(node, ast.Import):
             for alias in node.names:
                 parts = alias.name.split(".")
-                if parts[0] == "workspaces" and len(parts) > 1:
+                if parts[0] == "rvnd" and len(parts) > 1:
                     found.add(".".join(parts[1:]))
     return found
 

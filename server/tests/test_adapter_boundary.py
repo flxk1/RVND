@@ -30,7 +30,7 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-WORKSPACES_ROOT = Path(__file__).resolve().parents[1] / "src" / "workspaces"
+WORKSPACES_ROOT = Path(__file__).resolve().parents[1] / "src" / "rvnd"
 
 RESTRICTED_PACKAGES = (
     "loomground_solver",

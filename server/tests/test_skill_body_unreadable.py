@@ -33,7 +33,7 @@ ART22 = ("---\nname: probe\n---\n\nThe data subject shall not be subject to a de
 @pytest.fixture
 def skill_dir(tmp_path, monkeypatch):
     """Point the reader's candidate search at a temporary tree."""
-    pkg = tmp_path / "runtime" / "src" / "workspaces"
+    pkg = tmp_path / "runtime" / "src" / "rvnd"
     pkg.mkdir(parents=True)
     (pkg / "__init__.py").write_text("", encoding="utf-8")
 

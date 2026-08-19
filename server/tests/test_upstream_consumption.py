@@ -10,7 +10,7 @@ from rvnd import mcp_server
 
 
 ROOT = Path(__file__).resolve().parents[2]
-PKG = ROOT / "server" / "src" / "workspaces"
+PKG = ROOT / "server" / "src" / "rvnd"
 
 
 def _imports(path: Path) -> set[str]:

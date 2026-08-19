@@ -52,7 +52,7 @@ def test_subject_component_version_matches_the_single_version_source():
 
     version_file = (
         Path(__file__).resolve().parents[2]
-        / "server" / "src" / "workspaces" / "_version.py"
+        / "server" / "src" / "rvnd" / "_version.py"
     )
     text = version_file.read_text(encoding="utf-8")
     import re
