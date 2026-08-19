@@ -52,7 +52,7 @@ dependencies = [
     # MIT, stdlib-only core, zero deps; git-pinned like the planes.
     "effect-reconciliation @ git+https://github.com/flxk1/effect-reconciliation@b2b3f995c0d9f9cca9bbabdf628d88cda26c91d2",
     # loomground-brief — the bounded supervisor brief, extracted from the solver
-    # kernel in 0.5.0. Consumed through `workspaces.adapters.brief` by
+    # kernel in 0.5.0. Consumed through `rvnd.adapters.brief` by
     # `evidence_coverage.coverage_brief`: a coverage report becomes statused
     # premises (furnished=ASSERTED, empty=UNKNOWN, orphan=CONTESTED) and the
     # brief selects only what is unsettled, reporting how many settled rooms it
@@ -63,7 +63,7 @@ dependencies = [
     # consumed-modules gate exists to catch.
     "loomground-brief @ git+https://github.com/flxk1/loomground-brief@70a36083f623c879569e7237b148f5762810b916",
     # loomground-proxy — does a measurement still stand for what it claims?
-    # Consumed through `workspaces.adapters.proxy` by
+    # Consumed through `rvnd.adapters.proxy` by
     # `substitution_binding.substitution_projection`: RVND attests a posture and
     # separately MEASURES mediation, and routinely reads the first as standing
     # for the second. The plane checks that substitution against both movements
@@ -78,7 +78,7 @@ dependencies = [
 ]
 # mcp>=1.8: the gateway (workspaces-gateway) needs the streamable-http server transport.
 # <2: mcp 2.0 removed `mcp.server.fastmcp` (superseded by `mcp.server.mcpserver`).
-# Five modules import FastMCP at module scope — workspaces/gateway.py,
+# Five modules import FastMCP at module scope — rvnd/gateway.py,
 # mcp_serving.py, mcp_impl.py, mcp_server.py and lock/mcp_server.py — so without
 # the ceiling a clean install resolves 2.0.0 and every entry point raises
 # ModuleNotFoundError at import. Lift it with the FastMCP port, which spans all five.
@@ -103,7 +103,7 @@ test = [
 # `pip install .[mcp]` invocations don't break.
 mcp = ["mcp>=1.8,<2.0"]
 llm = ["llama-cpp-python>=0.2"]
-# Tier C ONNX backend (workspaces/lock/backends/onnx_genai.py) imports
+# Tier C ONNX backend (rvnd/lock/backends/onnx_genai.py) imports
 # onnxruntime_genai lazily and classify() fails closed when it is absent, so the
 # dependency stays optional.
 onnx = ["onnxruntime-genai>=0.13"]
@@ -115,7 +115,7 @@ browser = ["playwright>=1.62"]
 # stub. Apple Pages parses with stdlib zipfile + xml.etree; no extra dep needed.
 extractors = ["pypdf>=4.0", "python-docx>=1.0"]
 # Portable oversight certificates (Art. 14): the DSSE/in-toto certificate package,
-# consumed behind the lazy imports in workspaces/oversight_cert.py. MIT, stdlib-only
+# consumed behind the lazy imports in rvnd/oversight_cert.py. MIT, stdlib-only
 # core (crypto + rfc8785 caller-injected). Git-pinned like the planes; provenance-
 # tracked in docs/release-dependency-resolution.md + release_dependency_artifacts.py.
 oversight-cert = ["oversight-certificate @ git+https://github.com/flxk1/oversight-certificate@8dbb4fa46042f12eeecaf37cb1ad095b838d7185"]
@@ -152,11 +152,12 @@ package-dir = { "" = "server/src" }
 py-modules = ["workspaces_doctor_bootstrap"]
 
 [tool.setuptools.dynamic]
-version = { attr = "workspaces._version.__version__" }
+version = { attr = "rvnd._version.__version__" }
 
 [tool.setuptools.packages.find]
 where = ["server/src"]
-include = ["workspaces*"]
+# both: `rvnd` is the package, `workspaces` is the deprecated import shim
+include = ["rvnd*", "workspaces*"]
 
 # Ship non-.py package data explicitly. Do NOT rely on include-package-data / the
 # VCS file-finder: a wheel built without it dropped all jurisdiction packs (verified
