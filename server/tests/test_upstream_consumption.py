@@ -43,13 +43,14 @@ def test_loomground_toolchain_is_release_pinned():
 
     The count is deliberate: it must be raised in the same change that adds a
     plane, so a pin can never arrive unnoticed. It went 9 -> 10 with
-    `loomground-brief`, which is consumed by `evidence_coverage.coverage_brief`
-    through `workspaces.adapters.brief`.
+    `loomground-brief` (consumed by `evidence_coverage.coverage_brief`) and
+    10 -> 11 with `loomground-proxy` (consumed by
+    `substitution_binding.substitution_projection`), each through its adapter.
     """
     text = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     direct_urls = [line for line in text.splitlines()
                    if "git+https://github.com/flxk1/loomground-" in line]
-    assert len(direct_urls) == 10
+    assert len(direct_urls) == 11
     for line in direct_urls:
         revision = line.rsplit("@", 1)[-1].split('"', 1)[0]
         assert len(revision) == 40
