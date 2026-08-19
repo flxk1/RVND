@@ -10,11 +10,11 @@ different register over the same report.
 
 from __future__ import annotations
 
-from workspaces.music_domain import (
+from rvnd.music_domain import (
     MUSIC_VOCAB, music_income_house, render_money_map,
 )
-from workspaces.subject_card import make_card, get_vocabulary
-from workspaces.evidence_coverage import EvidenceDoc, map_coverage
+from rvnd.subject_card import make_card, get_vocabulary
+from rvnd.evidence_coverage import EvidenceDoc, map_coverage
 
 
 def _artist_docs():
@@ -119,6 +119,6 @@ def test_same_mapper_no_music_code():
     # sanity: map_coverage is the generic function; the only music input is the
     # house (data). Running it on the music house produces a music result with
     # zero music-specific code in the mapper.
-    import workspaces.evidence_coverage as ec
+    import rvnd.evidence_coverage as ec
     src = ec.map_coverage.__module__
-    assert src == "workspaces.evidence_coverage"   # generic module, not music
+    assert src == "rvnd.evidence_coverage"   # generic module, not music

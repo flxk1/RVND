@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # Copyright 2026 flxk1
 """Egress import guard — a preventive invariant that keeps the fail-closed
-egress proxy (workspaces/lock/egress_proxy.py) the only path to a cloud LLM.
+egress proxy (rvnd/lock/egress_proxy.py) the only path to a cloud LLM.
 
 The proxy enforces the tier scan, oversight and per-track credential injection
 on outbound requests to api.anthropic.com / api.openai.com / api.cohere.ai /
@@ -55,7 +55,7 @@ _PROVIDER_HOSTS = (
 # egress_proxy.py is the gate itself; it names the hosts and speaks the
 # providers' wire protocol by design.
 _ALLOWLIST = frozenset({
-    "workspaces/lock/egress_proxy.py",
+    "rvnd/lock/egress_proxy.py",
 })
 
 _SRC_ROOT = Path("server/src")
@@ -199,7 +199,7 @@ def main(argv: list[str]) -> int:
             print(line)
         print(f"egress-import-guard: FAIL — {len(findings)} cloud-LLM bypass(es)"
               " outside the sanctioned egress proxy; route through"
-              " workspaces/lock/egress_proxy.py or allowlist with a reason")
+              " rvnd/lock/egress_proxy.py or allowlist with a reason")
         return 1
     print("egress-import-guard: clean (no cloud-LLM bypass outside the egress"
           " proxy)")

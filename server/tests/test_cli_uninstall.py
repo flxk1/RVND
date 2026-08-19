@@ -13,7 +13,7 @@ import argparse
 import io
 import json
 
-import workspaces.cli.impl as impl
+import rvnd.cli.impl as impl
 
 
 def _run(monkeypatch, tmp_path, *, stdin: str = "", yes=False, dry=False):

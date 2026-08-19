@@ -5,10 +5,10 @@ and span-norm anchoring."""
 
 from __future__ import annotations
 
-from workspaces import national_citations as nc
-from workspaces.corpus import ingest as corpus_ingest
-from workspaces import legal_corpus
-from workspaces.rule_registry import RuleRegistry
+from rvnd import national_citations as nc
+from rvnd.corpus import ingest as corpus_ingest
+from rvnd import legal_corpus
+from rvnd.rule_registry import RuleRegistry
 
 
 # ── recognition ───────────────────────────────────────────────────────────────

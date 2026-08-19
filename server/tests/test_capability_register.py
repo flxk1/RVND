@@ -126,7 +126,7 @@ def test_supported_status_is_non_empty():
 
 
 def _gateway_exposed() -> set[tuple[str, str | None]]:
-    from workspaces import gateway as gw
+    from rvnd import gateway as gw
     allowed = getattr(gw, "ALLOWED_OPS", None)
     if allowed is None:
         return None

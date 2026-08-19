@@ -37,7 +37,7 @@ os.environ["WORKSPACE_KEY_DIR"] = os.path.join(tmp, "keys")
 os.environ["WORKSPACE_L0_LOG_ROOT"] = os.path.join(tmp, "logs")
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 sys.path.insert(0, str(HERE.parent)); sys.path.insert(0, str(HERE.parent.parent / "server" / "src"))
-import serve, workspaces.mcp_server as S  # noqa: E402
+import serve, rvnd.mcp_server as S  # noqa: E402
 F = os.path.join(tmp, "acme")
 AGENT = "bot"
 os.makedirs(F, exist_ok=True)
@@ -70,8 +70,8 @@ LOCKED = "vault"
 S.workspace_policy("party_register", {"folder_context": F, "party_id": LOCKED, "kind": "agent", "grade": "L1", "actor": "alex"})
 S.workspace_workflow("use_case_register", {"folder_context": F, "use_case_id": "task2", "name": "Task two",
                                        "fingerprint": {}, "risk": "low", "allowed_agents": [LOCKED], "actor": "alex"})
-from workspaces.mutation_log import LogEvent, MutationLog  # noqa: E402
-from workspaces.use_case import get_use_case  # noqa: E402
+from rvnd.mutation_log import LogEvent, MutationLog  # noqa: E402
+from rvnd.use_case import get_use_case  # noqa: E402
 _LR = os.environ["WORKSPACE_L0_LOG_ROOT"]
 _rec = get_use_case(F, "task2", log_root=_LR)
 _law = {"trigger": "automated_decision", "basis_kind": "law", "reserved_to": "dpo",

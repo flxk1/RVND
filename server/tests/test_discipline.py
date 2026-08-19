@@ -15,13 +15,13 @@ from unittest.mock import mock_open, patch
 
 import pytest
 
-from workspaces import (
+from rvnd import (
     FolderPolicy,
     disable_discipline,
     enable_discipline,
     load_policy,
 )
-from workspaces.discipline import DEFAULT_MANIFEST, resolve_manifest, run_discipline
+from rvnd.discipline import DEFAULT_MANIFEST, resolve_manifest, run_discipline
 
 
 @pytest.fixture
@@ -32,10 +32,10 @@ def folder(tmp_path):
 
 
 def test_manifest_read_closes_file_handle():
-    from workspaces.discipline import _read
+    from rvnd.discipline import _read
 
     opener = mock_open(read_data="rules")
-    with patch("workspaces.discipline.open", opener, create=True):
+    with patch("rvnd.discipline.open", opener, create=True):
         assert _read("manifest.txt") == "rules"
     opener.return_value.__enter__.assert_called_once()
     opener.return_value.__exit__.assert_called_once()

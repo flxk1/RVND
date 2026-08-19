@@ -19,7 +19,7 @@ import time
 
 import pytest
 
-from workspaces.queue import (
+from rvnd.queue import (
     _lease_path,
     _queue_lock,
     _read_lease,
@@ -279,7 +279,7 @@ def test_list_queue_filters_by_folder(tmp_path):
 
 
 def test_inspect_stuck_runs_finds_leased_stale(tmp_path):
-    from workspaces.queue import inspect_stuck_runs
+    from rvnd.queue import inspect_stuck_runs
     folder = tmp_path / "wks"; folder.mkdir()
     log = tmp_path / "log"
     enqueue_run(str(folder), "a", log_root=log)
@@ -296,7 +296,7 @@ def test_inspect_stuck_runs_finds_leased_stale(tmp_path):
 
 
 def test_inspect_stuck_runs_finds_missing_lease(tmp_path):
-    from workspaces.queue import inspect_stuck_runs
+    from rvnd.queue import inspect_stuck_runs
     folder = tmp_path / "wks"; folder.mkdir()
     log = tmp_path / "log"
     enqueue_run(str(folder), "a", log_root=log)
@@ -309,12 +309,12 @@ def test_inspect_stuck_runs_finds_missing_lease(tmp_path):
 
 
 def test_inspect_stuck_runs_finds_pending_stale(tmp_path):
-    from workspaces.queue import inspect_stuck_runs
+    from rvnd.queue import inspect_stuck_runs
     folder = tmp_path / "wks"; folder.mkdir()
     log = tmp_path / "log"
     e = enqueue_run(str(folder), "a", log_root=log)
     # Backdate enqueued_at by forging the state file
-    from workspaces.queue import _load_state, _save_state
+    from rvnd.queue import _load_state, _save_state
     state = _load_state(log)
     state[e.run_id].enqueued_at = "2020-01-01T00:00:00.000000Z"
     _save_state(state, log)
@@ -324,7 +324,7 @@ def test_inspect_stuck_runs_finds_pending_stale(tmp_path):
 
 
 def test_inspect_stuck_runs_ignores_fresh_pending(tmp_path):
-    from workspaces.queue import inspect_stuck_runs
+    from rvnd.queue import inspect_stuck_runs
     folder = tmp_path / "wks"; folder.mkdir()
     log = tmp_path / "log"
     enqueue_run(str(folder), "a", log_root=log)
@@ -334,7 +334,7 @@ def test_inspect_stuck_runs_ignores_fresh_pending(tmp_path):
 
 
 def test_resume_run_flips_leased_to_pending(tmp_path):
-    from workspaces.queue import resume_run
+    from rvnd.queue import resume_run
     folder = tmp_path / "wks"; folder.mkdir()
     log = tmp_path / "log"
     enqueue_run(str(folder), "a", log_root=log)
@@ -349,7 +349,7 @@ def test_resume_run_flips_leased_to_pending(tmp_path):
 
 
 def test_resume_returns_false_for_non_leased(tmp_path):
-    from workspaces.queue import resume_run
+    from rvnd.queue import resume_run
     folder = tmp_path / "wks"; folder.mkdir()
     log = tmp_path / "log"
     e = enqueue_run(str(folder), "a", log_root=log)

@@ -19,7 +19,7 @@ from __future__ import annotations
 import json
 
 
-from workspaces.mutation_log import LogEvent, MutationLog
+from rvnd.mutation_log import LogEvent, MutationLog
 
 
 # ---------------------------------------------------------------------------
@@ -34,7 +34,7 @@ def test_per_host_key_generation(tmp_path, monkeypatch):
     keydir = tmp_path / "keys"
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(keydir))
 
-    from workspaces.signing import _host_id, ensure_keypair, _key_root_dir
+    from rvnd.signing import _host_id, ensure_keypair, _key_root_dir
     ensure_keypair()
 
     host_id = _host_id()
@@ -54,7 +54,7 @@ def test_per_host_key_generation(tmp_path, monkeypatch):
 def test_host_id_shape(monkeypatch, tmp_path):
     """_host_id() must return exactly 12 hex chars."""
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(tmp_path / "keys"))
-    from workspaces.signing import _host_id
+    from rvnd.signing import _host_id
     hid = _host_id()
     assert isinstance(hid, str)
     assert len(hid) == 12
@@ -70,7 +70,7 @@ def test_event_stamps_host_id(tmp_path, monkeypatch):
     """Every appended event must carry the 12-char host_id field. The stamp
     happens BEFORE hashing/signing so it's part of the canonical content."""
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(tmp_path / "keys"))
-    from workspaces.signing import _host_id
+    from rvnd.signing import _host_id
 
     log = MutationLog(tmp_path / "work", log_root=tmp_path / ".workspaces")
     log.append(LogEvent(
@@ -121,7 +121,7 @@ def test_controller_key_separate_from_identity_key(tmp_path, monkeypatch):
     """The controller key fingerprint MUST differ from the identity key
     fingerprint — they're independent keypairs, not the same key reused."""
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(tmp_path / "keys"))
-    from workspaces.signing import (
+    from rvnd.signing import (
         ensure_controller_keypair,
         ensure_keypair,
         public_controller_key_fingerprint,
@@ -148,7 +148,7 @@ def test_controller_keypair_idempotent(tmp_path, monkeypatch):
     """ensure_controller_keypair() called twice must return the same key
     (same fingerprint). The second call must NOT regenerate."""
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(tmp_path / "keys"))
-    from workspaces.signing import (
+    from rvnd.signing import (
         ensure_controller_keypair,
         public_controller_key_fingerprint,
     )
@@ -167,7 +167,7 @@ def test_controller_key_not_initialised_returns_none_fingerprint(tmp_path, monke
     returns None so `workspaces status` can render `(none)` instead of silently
     auto-creating a controller key."""
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(tmp_path / "keys-empty"))
-    from workspaces.signing import public_controller_key_fingerprint
+    from rvnd.signing import public_controller_key_fingerprint
     assert public_controller_key_fingerprint() is None
 
 
@@ -175,7 +175,7 @@ def test_controller_lives_at_flat_root_not_under_host_subdir(tmp_path, monkeypat
     """Controller key is workspace-scoped, not per-host — must sit at the
     flat root, not under <host_id>/. Same controller signs from every host."""
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(tmp_path / "keys"))
-    from workspaces.signing import (
+    from rvnd.signing import (
         _host_id,
         ensure_controller_keypair,
         _controller_private_key_path,
@@ -191,7 +191,7 @@ def test_controller_sign_and_verify_roundtrip(tmp_path, monkeypatch):
     """sign_with_controller() + verify_controller_signature() round-trip
     cleanly. A tampered payload fails verification."""
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(tmp_path / "keys"))
-    from workspaces.signing import (
+    from rvnd.signing import (
         sign_with_controller,
         verify_controller_signature,
     )

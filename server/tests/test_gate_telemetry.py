@@ -12,8 +12,8 @@ exactly.
 import itertools
 import random
 
-import workspaces.action_gate as ag
-from workspaces.action_gate import (ActionRequest, Observables, StandingApproval,
+import rvnd.action_gate as ag
+from rvnd.action_gate import (ActionRequest, Observables, StandingApproval,
                                Verdict, check_telemetry_monotonicity)
 
 SEV = {Verdict.GO: 0, Verdict.CONDITIONAL: 1, Verdict.NO_GO: 2}

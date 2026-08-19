@@ -14,7 +14,7 @@ from __future__ import annotations
 import json
 
 
-from workspaces import parties, session_io as S
+from rvnd import parties, session_io as S
 
 
 def _ws(tmp_path, wid: str, extra_event: str = "") -> dict:

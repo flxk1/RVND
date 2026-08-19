@@ -91,10 +91,10 @@ def test_retired_parallel_structures_stay_gone() -> None:
             # so match the module path, not a bare occurrence of the name.
             patterns = (
                 rf"^\s*import\s+{stem}\b",                              # import legal_norm_splitter
-                rf"^\s*import\s+workspaces\.{stem}\b",                  # import workspaces.legal_norm_splitter
+                rf"^\s*import\s+workspaces\.{stem}\b",                  # import rvnd.legal_norm_splitter
                 rf"^\s*from\s+\.?{stem}\s+import\b",                    # from (.)legal_norm_splitter import ...
-                rf"^\s*from\s+workspaces\.{stem}\s+import\b",           # from workspaces.legal_norm_splitter import ...
-                rf"^\s*from\s+workspaces\s+import\s+[^\n]*\b{stem}\b",  # from workspaces import legal_norm_splitter
+                rf"^\s*from\s+workspaces\.{stem}\s+import\b",           # from rvnd.legal_norm_splitter import ...
+                rf"^\s*from\s+workspaces\s+import\s+[^\n]*\b{stem}\b",  # from rvnd import legal_norm_splitter
                 rf"^\s*from\s+\.\s+import\s+[^\n]*\b{stem}\b",          # from . import legal_norm_splitter
             )
             if any(re.search(p, text, re.MULTILINE) for p in patterns):
@@ -109,14 +109,14 @@ def test_rvnd_deontic_language_is_retired() -> None:
     lives in ``deontic_facets.py``. Fenced apart from RETIRED because its stem
     ``deontic`` collides with the sanctioned package import ``import deontic``
     (the adapter seam + the mcp health probe) — so we fence the RVND MODULE path
-    (``.deontic`` / ``workspaces.deontic``), never the bare package."""
+    (``.deontic`` / ``rvnd.deontic``), never the bare package."""
     assert not (SRC / "deontic.py").exists(), (
         "workspaces/deontic.py (RVND-grown deontic language) reappeared")
     patterns = (
         r"^\s*from\s+\.deontic\s+import\b",                       # from .deontic import ...
-        r"^\s*from\s+workspaces\.deontic\s+import\b",             # from workspaces.deontic import ...
-        r"^\s*import\s+workspaces\.deontic\b",                    # import workspaces.deontic
-        r"^\s*from\s+workspaces\s+import\s+[^\n]*\bdeontic\b",    # from workspaces import deontic
+        r"^\s*from\s+workspaces\.deontic\s+import\b",             # from rvnd.deontic import ...
+        r"^\s*import\s+workspaces\.deontic\b",                    # import rvnd.deontic
+        r"^\s*from\s+workspaces\s+import\s+[^\n]*\bdeontic\b",    # from rvnd import deontic
         r"^\s*from\s+\.\s+import\s+[^\n]*\bdeontic\b",            # from . import deontic
     )
     offenders: list[str] = []

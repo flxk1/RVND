@@ -7,9 +7,9 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces import seal
-from workspaces.memory import WorkspaceMemory
-from workspaces.mutation_log import MutationLog, SealedWriteError
+from rvnd import seal
+from rvnd.memory import WorkspaceMemory
+from rvnd.mutation_log import MutationLog, SealedWriteError
 
 
 def _seed(folder, log_root, n=2):
@@ -66,7 +66,7 @@ def test_append_raises_typed_error(tmp_path):
     log = MutationLog(folder, log_root=logr)
     seal.seal_folder(folder, passphrase="pw", log_root=logr)
     log2 = MutationLog(folder, log_root=logr)
-    from workspaces.mutation_log import LogEvent
+    from rvnd.mutation_log import LogEvent
     with pytest.raises(SealedWriteError):
         log2.append(LogEvent(event="ingest", channel="system",
                              folder_path=str(folder), pair_id="sha256:z", actor="t"))

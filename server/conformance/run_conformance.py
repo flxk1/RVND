@@ -21,7 +21,7 @@ _SRC = Path(__file__).resolve().parent.parent / "src"
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
-from workspaces import loomground_lang as L  # noqa: E402
+from rvnd import loomground_lang as L  # noqa: E402
 
 
 def _find_conformance(argv: list[str]) -> Path:
@@ -29,7 +29,7 @@ def _find_conformance(argv: list[str]) -> Path:
         return Path(argv[1])
     # Vectors are dev/CI only and not bundled; resolve a live Loomground checkout
     # (LOOMGROUND_ROOT or a sibling) via the engine's asset bridge.
-    from workspaces import loomground_assets  # noqa: PLC0415
+    from rvnd import loomground_assets  # noqa: PLC0415
 
     return loomground_assets.conformance_dir()
 

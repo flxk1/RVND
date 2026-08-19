@@ -29,7 +29,7 @@ Claims under test (written BEFORE the logic):
 from __future__ import annotations
 
 
-from workspaces.completeness import completeness_report, TYPE_MODELS
+from rvnd.completeness import completeness_report, TYPE_MODELS
 
 
 def test_expected_but_absent_is_reported():                       # E1

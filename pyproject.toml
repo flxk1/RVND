@@ -124,10 +124,10 @@ oversight-cert = ["oversight-certificate @ git+https://github.com/flxk1/oversigh
 Homepage = "https://github.com/flxk1/rvnd"
 Source = "https://github.com/flxk1/rvnd"
 
-# Console entry points. "workspaces" is the import package and the historic command
-# prefix; the distribution installed by pip is `rvnd`.
+# Console entry points. The import package is `rvnd` (matching the distribution).
+# `workspaces` stays as the historic COMMAND prefix — only the package moved.
 [project.scripts]
-workspaces                = "workspaces.cli:main"
+workspaces                = "rvnd.cli:main"
 workspaces-mcp            = "workspaces.mcp_server:main"
 workspaces-gateway        = "workspaces.gateway:main"
 workspaces-gateway-verify = "workspaces.gateway_verify:main"
@@ -139,7 +139,7 @@ rvnd-visual-verdict       = "workspaces.release.visual_verdict:main"
 # --uninstall it manages its own .claude/settings.json entry.
 rvnd-hook                 = "workspaces.hook:main"
 # Compatibility aliases.
-workspace                 = "workspaces.cli:main"
+workspace                 = "rvnd.cli:main"
 workspace-mcp             = "workspaces.mcp_server:main"
 
 # src layout: the import package `workspaces` lives under server/src. An editable install
@@ -197,7 +197,7 @@ select = ["E9", "F63", "F7", "F82", "T10"]
 # the artifact. Branch coverage on, because the high-risk logic here is in the
 # decision/fail-closed branches, not line count.
 branch = true
-source = ["server/src/workspaces"]
+source = ["server/src/rvnd"]
 omit = ["*/tests/*", "*/__pycache__/*"]
 
 [tool.coverage.report]
@@ -205,7 +205,7 @@ skip_covered = false
 show_missing = true
 precision = 1
 
-# mypy config for local use (`mypy server/src/workspaces`). Not a CI gate yet —
+# mypy config for local use (`mypy server/src/rvnd`). Not a CI gate yet —
 # the tree is ~70% annotated, so a full run is noisy; gating waits until it is green.
 [tool.mypy]
 python_version = "3.10"

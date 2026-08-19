@@ -6,11 +6,11 @@ Run from the runtime dir:   PYTHONPATH=src python3 examples/oversight_demo.py
 No network, no LLM, no install — pure stdlib.
 """
 
-from workspaces.oversight import assess
-from workspaces.action_gate import ActionRequest, StandingApproval
-from workspaces.breaker import Breaker, Lease, Tripwire, default_tripwires
-from workspaces.oversight_drift import drift_tripwire, evaluate as evaluate_drift
-from workspaces.drift_monitor import DriftReport
+from rvnd.oversight import assess
+from rvnd.action_gate import ActionRequest, StandingApproval
+from rvnd.breaker import Breaker, Lease, Tripwire, default_tripwires
+from rvnd.oversight_drift import drift_tripwire, evaluate as evaluate_drift
+from rvnd.drift_monitor import DriftReport
 
 
 def show(title, o):

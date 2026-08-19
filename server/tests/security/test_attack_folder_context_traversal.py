@@ -26,7 +26,7 @@ def test_a6_workspace_registry_surface_exists():
     """Substrate check: ``list_known_workspaces`` exists so a future
     allowlist check has something to consult. Without this, A6 cannot be
     mitigated short of a fresh registry build."""
-    from workspaces import workspace_registry
+    from rvnd import workspace_registry
 
     assert hasattr(workspace_registry, "list_known_workspaces"), (
         "VULNERABILITY: workspace_registry.list_known_workspaces missing — "
@@ -40,8 +40,8 @@ def test_a6_unregistered_path_resolves_only_under_override(tmp_path, monkeypatch
     """The permissive behavior is opt-in: an unregistered folder_context
     resolves only while ``WORKSPACES_ALLOW_UNREGISTERED=1`` is set, and is
     refused the moment the override is absent."""
-    from workspaces import workspace_registry
-    from workspaces.folder_context import (
+    from rvnd import workspace_registry
+    from rvnd.folder_context import (
         FolderContextNotAllowed,
         resolve_folder_context,
     )
@@ -65,8 +65,8 @@ def test_a6_path_traversal_to_unregistered_sibling_is_refused(tmp_path, monkeypa
     reach an unregistered sibling by `..` traversal. The registry is the
     allowlist — descendants of a registered workspace pass, the sibling
     does not."""
-    from workspaces import workspace_registry
-    from workspaces.folder_context import (
+    from rvnd import workspace_registry
+    from rvnd.folder_context import (
         FolderContextNotAllowed,
         resolve_folder_context,
     )
@@ -96,10 +96,10 @@ def test_allowlist_resolution_does_not_reenter_principal_membership(
 ):
     """A verified request may resolve a registered workspace without the
     allowlist recursively trying to prove membership through MutationLog."""
-    from workspaces import workspace_registry
-    from workspaces.folder_context import resolve_folder_context
-    from workspaces.mcp_serving import clear_request_principal, set_request_principal
-    from workspaces.parties import register_party
+    from rvnd import workspace_registry
+    from rvnd.folder_context import resolve_folder_context
+    from rvnd.mcp_serving import clear_request_principal, set_request_principal
+    from rvnd.parties import register_party
 
     log_root = tmp_path / "logroot"
     folder = tmp_path / "workspace"
@@ -124,7 +124,7 @@ def test_a6_allowlist_blocks_unregistered_folder_context(tmp_path, monkeypatch):
     folder_context with a structured error."""
     monkeypatch.delenv("WORKSPACES_ALLOW_UNREGISTERED", raising=False)
 
-    from workspaces.folder_context import resolve_folder_context
+    from rvnd.folder_context import resolve_folder_context
 
     rogue = tmp_path / "totally_unregistered"
     rogue.mkdir()
@@ -146,12 +146,12 @@ def test_a6_persistence_stores_enforce_workspace_allowlist(tmp_path, monkeypatch
     stdio-MCP or Python call paths must not turn a folder argument into an
     arbitrary host write.
     """
-    from workspaces import workspace_registry
-    from workspaces.decisions.queue import DecisionQueue
-    from workspaces.folder_context import FolderContextNotAllowed
-    from workspaces.legal_corpus import EntityRegistry
-    from workspaces.mutation_log import MutationLog
-    from workspaces.rule_registry import RuleRegistry
+    from rvnd import workspace_registry
+    from rvnd.decisions.queue import DecisionQueue
+    from rvnd.folder_context import FolderContextNotAllowed
+    from rvnd.legal_corpus import EntityRegistry
+    from rvnd.mutation_log import MutationLog
+    from rvnd.rule_registry import RuleRegistry
 
     log_root = tmp_path / "logroot"
     monkeypatch.setattr(workspace_registry, "LOG_ROOT_DEFAULT", log_root)
@@ -177,7 +177,7 @@ def test_a6_allowlist_is_scoped_to_the_active_log_root(tmp_path, monkeypatch):
     operation runs under — not always the default log root.
 
     Regression: ``_enforce_allowlist`` called ``load_registry()`` with no
-    ``log_root``, so it always read ``<LOG_ROOT_DEFAULT>/known-workspaces.json``
+    ``log_root``, so it always read ``<LOG_ROOT_DEFAULT>/known-rvnd.json``
     even when the operation ran under a custom ``--log-root``. Two consequences,
     both pinned below: a folder registered under the custom root was invisible
     to enforcement (legitimate op refused), and a folder registered only under
@@ -185,12 +185,12 @@ def test_a6_allowlist_is_scoped_to_the_active_log_root(tmp_path, monkeypatch):
     prior tests never caught it because they monkeypatch ``LOG_ROOT_DEFAULT`` to
     equal the ``log_root`` they register under; here the two roots differ.
     """
-    from workspaces import workspace_registry
-    from workspaces.folder_context import (
+    from rvnd import workspace_registry
+    from rvnd.folder_context import (
         FolderContextNotAllowed,
         resolve_folder_context,
     )
-    from workspaces.mutation_log import MutationLog
+    from rvnd.mutation_log import MutationLog
 
     default_root = tmp_path / "default-logroot"
     custom_root = tmp_path / "custom-logroot"

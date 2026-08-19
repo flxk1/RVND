@@ -12,7 +12,7 @@ Each ND:
 from __future__ import annotations
 
 
-from workspaces import (
+from rvnd import (
     AIActRuleND,
     Classification,
     ContractRuleND,

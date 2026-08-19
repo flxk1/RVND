@@ -7,7 +7,7 @@ The Technical Report (§1.3) claims the gate acts as a variety *attenuator*: it
 should resolve the *decidable* variety of an agent's action stream mechanically
 and route only the irreducible residual to a human. That is an empirical claim.
 This script measures it on a defensible, deterministic action stream by running
-the REAL `workspaces.action_gate.gate()` over every action and counting:
+the REAL `rvnd.action_gate.gate()` over every action and counting:
 
   - ABSORBED  = verdict GO  (resolved mechanically; no human needed)
   - RESIDUAL  = verdict CONDITIONAL or NO-GO (reaches a human / is refused)
@@ -26,7 +26,7 @@ No randomness, no network, no LLM. Edit STREAM below to change the workload.
 from __future__ import annotations
 
 from collections import Counter
-from workspaces.action_gate import (ActionRequest, StandingApproval, gate, Verdict,
+from rvnd.action_gate import (ActionRequest, StandingApproval, gate, Verdict,
                                usage_from_history)
 
 AGENT = "ops-agent"

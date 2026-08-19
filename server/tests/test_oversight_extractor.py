@@ -8,10 +8,10 @@ solely-automated grade ceiling, measures + cadence, sentence merging,
 the no-signal empty result, and the ND pair shape.
 """
 
-from workspaces.oversight_extractor import (
+from rvnd.oversight_extractor import (
     OVERSIGHT_LEVELS, OversightFacet, extract_oversight, render_oversight)
-from workspaces.domain_nds import OversightND
-from workspaces.nd_routing import Classification
+from rvnd.domain_nds import OversightND
+from rvnd.nd_routing import Classification
 
 
 def _one(text: str) -> OversightFacet:

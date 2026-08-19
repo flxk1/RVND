@@ -40,13 +40,13 @@ from host import (  # noqa: F401 — re-exported for `serve.<name>` callers/test
 from pathlib import Path
 _HERE = Path(__file__).resolve()
 try:
-    import workspaces  # noqa: F401 — already installed
+    import rvnd  # noqa: F401 — already installed
 except ModuleNotFoundError:
     _src = _HERE.parent.parent / "server" / "src"   # rvnd layout: rvnd/server/src
     if _src.is_dir() and str(_src) not in sys.path:
         sys.path.insert(0, str(_src))
 
-from workspaces import mcp_server as _mcp_server  # noqa: E402 — needs the bootstrap above
+from rvnd import mcp_server as _mcp_server  # noqa: E402 — needs the bootstrap above
 
 # ---------------------------------------------------------------------------
 # Tool allowlist. The bridge previously did getattr(mcp_server, tool) for
@@ -55,7 +55,7 @@ from workspaces import mcp_server as _mcp_server  # noqa: E402 — needs the boo
 # write surfaces (write_file_to_folder), private readers (by_id, search,
 # route_to_workspace). The local app is full read+write by design, so the allowlist
 # is exactly the REGISTERED MCP tool surface — sourced from the canonical
-# workspaces.mcp_server._DECLARED_TOOLS rather than a hand-kept copy, so it stays in
+# rvnd.mcp_server._DECLARED_TOOLS rather than a hand-kept copy, so it stays in
 # lockstep with folds/additions: a folded tool (reachable only via its facade
 # op, e.g. reason / workspace_cascade / workspace_shadow_scan) cannot be invoked directly,
 # and a newly-declared tool (e.g. cross_workspace_read) is not silently unreachable.
@@ -133,18 +133,18 @@ def _resolve_principal(headers, args: dict):
     # allowlist before group auto-registration or party-log reads can touch a
     # store. Local single-operator mode never enters this proxy-only path.
     try:
-        from workspaces.folder_context import resolve_folder_context
+        from rvnd.folder_context import resolve_folder_context
         folder = resolve_folder_context(folder)
     except Exception:
         return (principal, None)               # outside a trusted root: deny
-    from workspaces.mcp_serving import _log_root
+    from rvnd.mcp_serving import _log_root
     groups = [s for s in (headers.get(groups_header) or "").replace(",", " ").split()
               if s] if groups_header else []
     try:
         if groups:
-            from workspaces.identity_map import ensure_party
+            from rvnd.identity_map import ensure_party
             ensure_party(folder, principal, groups, log_root=_log_root())
-        from workspaces.parties import list_parties
+        from rvnd.parties import list_parties
         roster = list_parties(str(folder),
                               log_root=str(_log_root()) if _log_root() else None)
         # Status-aware match: a suspended or killed party (kill switch) must
@@ -173,7 +173,7 @@ def _facade_call(tool: str, args: dict):
         # workspace_ask, server_info) take kwargs. This stops a stray 'op' in args
         # from misrouting a standalone tool into the (op, params) path.
         import inspect
-        from workspaces.mcp_serving import apply_principal_to_params
+        from rvnd.mcp_serving import apply_principal_to_params
         if "op" in inspect.signature(fn).parameters:
             # One seam for every op facade, hand-rolled ones included: under
             # a request principal, inject the resolved party as the actor and
@@ -199,7 +199,7 @@ def _stamp_help(result):
     CLI knows which ops raise a confirm-card. Fail-closed in op_mutation: an
     unrecognised op is treated as a write. Non-help responses pass through."""
     if isinstance(result, dict) and isinstance(result.get("ops"), list):
-        from workspaces.op_mutation import stamp
+        from rvnd.op_mutation import stamp
         stamp(result["ops"])
     return result
 
@@ -265,7 +265,7 @@ def make_handler(session_token: str):
             """Server-level: agents CONNECTED to this RVND via the MCP handshake,
             independent of any workspace (presence, not per-folder authority).
             Read-only; loopback-guarded like the other GET surfaces."""
-            from workspaces.connected_agents import list_connected
+            from rvnd.connected_agents import list_connected
             return self._send(200, {"ok": True, "agents": list_connected()})
 
         def _llms_txt(self):
@@ -275,7 +275,7 @@ def make_handler(session_token: str):
             here so a browser/agent can read the same language the MCP handshake
             hands over as the ``governance://llms.txt`` resource."""
             try:
-                from workspaces.loomground_assets import llms_txt
+                from rvnd.loomground_assets import llms_txt
                 body = llms_txt().encode("utf-8")
             except Exception as e:  # noqa: BLE001 — surface, never fake the language
                 return self._send(500, {"error": f"governance language unavailable: {e}"})
@@ -296,7 +296,7 @@ def make_handler(session_token: str):
             unmatched principal (or one with no mapped role) warrants no
             units; local single-operator mode warrants all of them."""
             from urllib.parse import parse_qs
-            from workspaces.mcp_serving import CONSOLE_UNITS, units_for_role
+            from rvnd.mcp_serving import CONSOLE_UNITS, units_for_role
             header_name, _ = _principal_config()
             if not header_name:
                 return self._send(200, {"trust_mode": False, "principal": None,
@@ -311,8 +311,8 @@ def make_handler(session_token: str):
             party = role = None
             if principal and folder:
                 try:
-                    from workspaces.mcp_serving import _log_root
-                    from workspaces.parties import list_parties
+                    from rvnd.mcp_serving import _log_root
+                    from rvnd.parties import list_parties
                     roster = list_parties(
                         str(folder),
                         log_root=str(_log_root()) if _log_root() else None)
@@ -354,8 +354,8 @@ def make_handler(session_token: str):
             if ".." in folder.split("/"):
                 self._send(400, {"error": "folder must not contain '..'"})
                 return None
-            from workspaces.mcp_serving import _log_root
-            from workspaces.workspace_registry import list_known_workspaces
+            from rvnd.mcp_serving import _log_root
+            from rvnd.workspace_registry import list_known_workspaces
             _lr = _log_root()
             _known = list_known_workspaces(log_root=str(_lr) if _lr else None)
             _want = _os.path.realpath(folder)
@@ -398,7 +398,7 @@ def make_handler(session_token: str):
                 limit = max(1, min(500, int((q.get("limit") or ["100"])[0])))
             except ValueError:
                 limit = 100
-            from workspaces.mcp_serving import (clear_request_principal,
+            from rvnd.mcp_serving import (clear_request_principal,
                                                 set_request_principal)
             if resolved is not None:
                 set_request_principal(resolved[0], resolved[1])
@@ -527,7 +527,7 @@ def make_handler(session_token: str):
             params = dict(req.get("params") or {})
             params["folder_context"] = trusted
             params["now"] = _time.time()
-            from workspaces.mcp_serving import (clear_request_principal,
+            from rvnd.mcp_serving import (clear_request_principal,
                                                 set_request_principal)
             if resolved is not None:
                 set_request_principal(resolved[0], resolved[1])
@@ -600,7 +600,7 @@ def make_handler(session_token: str):
                               and args.get("op") == "governance_open")
                 party = (params.get("party") or "").strip() if local_open else ""
                 if party:
-                    from workspaces.mcp_serving import (
+                    from rvnd.mcp_serving import (
                         clear_request_principal,
                         set_request_principal,
                     )
@@ -611,7 +611,7 @@ def make_handler(session_token: str):
                     finally:
                         clear_request_principal()
                 return self._send(200, _facade_call(req.get("tool", ""), args))
-            from workspaces.mcp_serving import (clear_request_principal,
+            from rvnd.mcp_serving import (clear_request_principal,
                                                 set_request_principal)
             principal, party = resolved
             if not principal:
@@ -632,13 +632,13 @@ def make_handler(session_token: str):
             body is refused in words."""
             n = int(self.headers.get("Content-Length", 0))
             body = self.rfile.read(n)
-            from workspaces.decisions.projections import unwrap_response
+            from rvnd.decisions.projections import unwrap_response
             resp = unwrap_response(self.headers.get("Content-Type", ""), body)
             if not resp or not resp.get("link_token"):
                 return self._send(200, {"ok": False, "error":
                     "unrecognisable response — a decision post-back needs its"
                     " action-link token"})
-            from workspaces.mcp_impl import decision_record
+            from rvnd.mcp_impl import decision_record
             out = decision_record(
                 str(resp.get("folder_context", "")),
                 chosen_option_id=str(resp.get("chosen_option_id", "")),

@@ -279,7 +279,7 @@ def _make_sandbox(tmp_path: Path) -> tuple[Path, dict[str, str]]:
         "OLLAMA_HOST": "http://127.0.0.1:0",
         "NO_PROXY": "*",
     }
-    # Preserve PYTHONPATH so `import workspaces` works in python blocks.
+    # Preserve PYTHONPATH so `import rvnd` works in python blocks.
     if "PYTHONPATH" in os.environ:
         env["PYTHONPATH"] = os.environ["PYTHONPATH"]
     return workdir, env

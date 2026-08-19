@@ -7,8 +7,8 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces import humanize_legal as hl, legal_corpus, problem_kg as pk
-from workspaces.rule_registry import RuleRegistry
+from rvnd import humanize_legal as hl, legal_corpus, problem_kg as pk
+from rvnd.rule_registry import RuleRegistry
 
 GDPR = """REGULATION (EU) 2016/679 (General Data Protection Regulation)
 Article 33
@@ -71,7 +71,7 @@ def test_gap_waiver_is_owned_signed_and_visible(registry, tmp_path):
     with pytest.raises(ValueError):                         # can't waive twice
         pk.waive_gap(case, "Art. 34", registry=registry, actor="alex", rationale="x")
     # contract: a waiver without actor/rationale is a violation
-    from workspaces import reasoning_contract as rc
+    from rvnd import reasoning_contract as rc
     bad = case.to_dict(); bad["waivers"] = [{"gap": "Art. 34", "actor": "", "rationale": ""}]
     assert any(f.code == "RC-1" for f in rc.check_case(bad).violations)
 

@@ -6,7 +6,7 @@ from __future__ import annotations
 
 
 
-from workspaces.workspace_registry import (
+from rvnd.workspace_registry import (
     add_known_workspace,
     bootstrap_default_workspace,
     list_known_workspaces,

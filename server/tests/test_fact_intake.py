@@ -8,7 +8,7 @@ run's data; the form shrinks to nothing once the entity is known."""
 
 from __future__ import annotations
 
-from workspaces.fact_intake import FactNeed, build_form, record_standing
+from rvnd.fact_intake import FactNeed, build_form, record_standing
 
 
 # A licence/invoice workflow's fact needs.

@@ -53,7 +53,7 @@ MATRIX_ARTIFACT = REPO / "docs" / "evidence" / "capability-coverage-matrix.json"
 
 def _real_registry_path() -> Path:
     # resolved against the CURRENT $HOME (conftest's test home under pytest)
-    return Path.home() / ".workspace" / "log" / "known-workspaces.json"
+    return Path.home() / ".workspace" / "log" / "known-rvnd.json"
 
 
 def _snapshot(p: Path) -> str:

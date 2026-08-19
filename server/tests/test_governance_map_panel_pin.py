@@ -35,7 +35,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from workspaces import governance_map as GM
+from rvnd import governance_map as GM
 
 _SHELL = (Path(__file__).resolve().parents[2] / "app" / "src" / "index.html")
 

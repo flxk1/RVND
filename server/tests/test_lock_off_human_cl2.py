@@ -11,11 +11,11 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces import disable_lock
-from workspaces.lock import l0_bridge
-from workspaces.lock.core import AuditLog, Mode
-from workspaces.lock.gate import gate_for_cloud
-from workspaces.lock.oversight import OversightLevel
+from rvnd import disable_lock
+from rvnd.lock import l0_bridge
+from rvnd.lock.core import AuditLog, Mode
+from rvnd.lock.gate import gate_for_cloud
+from rvnd.lock.oversight import OversightLevel
 
 # A text that the gate genuinely refuses (an email is a Tier-B hit; STRICT mode
 # makes any finding a refuse, so the would-be action is unambiguous).
@@ -132,7 +132,7 @@ def test_lockoff_pattern_preview_is_redacted(folder):
 
 
 def test_write_bypass_rejects_invalid_would_have(tmp_path):
-    from workspaces.lock.core import TextDecision
+    from rvnd.lock.core import TextDecision
     audit = AuditLog(tmp_path / "a.jsonl")
     td = TextDecision(action="refuse", findings=[], source="document")
     with pytest.raises(ValueError):

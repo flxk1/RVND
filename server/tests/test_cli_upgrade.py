@@ -14,10 +14,10 @@ import argparse
 import io
 import json
 
-import workspaces.cli.impl as impl
-import workspaces.backup as backup_mod
-import workspaces.signing as signing
-from workspaces._version import __version__ as CODE_VER
+import rvnd.cli.impl as impl
+import rvnd.backup as backup_mod
+import rvnd.signing as signing
+from rvnd._version import __version__ as CODE_VER
 
 
 def _home(tmp_path):

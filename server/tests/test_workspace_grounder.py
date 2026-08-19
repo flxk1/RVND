@@ -13,7 +13,7 @@ import json
 
 import pytest
 
-from workspaces.workspace_grounder import (
+from rvnd.workspace_grounder import (
     CITATION_STYLES,
     GroundingLedger,
     format_citation,
@@ -42,7 +42,7 @@ def _work(**over):
 def test_mcp_register_work_reports_failure_with_public_type_parameter(
         tmp_path, monkeypatch):
     """The public ``type`` argument must not break the exception path."""
-    from workspaces.mcp_impl import grounder_register_work
+    from rvnd.mcp_impl import grounder_register_work
 
     def fail_register(*args, **kwargs):
         raise ValueError("invalid work")
@@ -150,7 +150,7 @@ def test_claim_grounded_with_known_work(ledger):
 def test_refusal_is_audited(tmp_path):
     led = GroundingLedger(tmp_path, log_root=tmp_path / "log")
     led.ground_claim("Ungrounded claim.", [])
-    from workspaces.mutation_log import MutationLog
+    from rvnd.mutation_log import MutationLog
     events = list(MutationLog(tmp_path, log_root=tmp_path / "log").replay())
     kinds = [e.extra.get("kind") for e in events]
     assert "grounding-refusal" in kinds
@@ -300,7 +300,7 @@ def test_link_creators_to_corpus(ledger):
     assert res["status"] == "ok"
     assert {l["name"] for l in res["linked"]} == {"Vaswani, Ashish",
                                                   "Shazeer, Noam"}
-    from workspaces.legal_corpus import EntityRegistry
+    from rvnd.legal_corpus import EntityRegistry
     reg = EntityRegistry(ledger.folder, log_root=ledger.log_root)
     names = {e["name"] for e in reg.entities.values()}
     assert "Vaswani, Ashish" in names

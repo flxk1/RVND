@@ -1,6 +1,6 @@
 """RVND's workspaces package reaches upstream Loomground packages through one seam.
 
-AST-scans every ``server/src/workspaces/**/*.py`` module and fails if it imports
+AST-scans every ``server/src/rvnd/**/*.py`` module and fails if it imports
 ``loomground_solver``, ``loomground_versum``, ``loomground_governance``,
 ``loomground_deontic``, or the bare ``versum`` package outside an explicit
 allowlist. Each entry on the allowlist is a declared seam, not an exception
@@ -10,7 +10,7 @@ being hidden:
   ``adapters/solver/dimensions.py``, ``adapters/versum/knowledge.py``) are the
   only place RVND is allowed to import an upstream Loomground package
   directly; every other module reaches upstream names through here (or
-  through a top-level compatibility facade, e.g. ``workspaces.dimensions``,
+  through a top-level compatibility facade, e.g. ``rvnd.dimensions``,
   that itself imports from here).
 * ``ingest/**`` — RVND's contributed ingester, which legitimately consumes
   ``loomground_ingest`` directly; it is upstream-facing by design, not a

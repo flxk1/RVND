@@ -8,16 +8,16 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces import card_store as C
-from workspaces import erasure, seal
-from workspaces.mutation_log import MutationLog, SealedWriteError
-from workspaces.subject_card import SubjectCard
+from rvnd import card_store as C
+from rvnd import erasure, seal
+from rvnd.mutation_log import MutationLog, SealedWriteError
+from rvnd.subject_card import SubjectCard
 
 
 @pytest.fixture
 def env(tmp_path, monkeypatch):
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(tmp_path / "keys"))
-    from workspaces import signing
+    from rvnd import signing
     signing.ensure_keypair()
     signing.ensure_controller_keypair()
     folder = tmp_path / "ws"

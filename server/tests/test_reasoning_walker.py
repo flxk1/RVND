@@ -11,10 +11,10 @@ from pathlib import Path
 
 import pytest
 
-from workspaces import legal_corpus, reasoning_phases as rp, reasoning_walker as rw
-from workspaces import reasoning_contract as rc
-from workspaces.reasoning_contract import ReasoningViolation
-from workspaces.rule_registry import RuleRegistry
+from rvnd import legal_corpus, reasoning_phases as rp, reasoning_walker as rw
+from rvnd import reasoning_contract as rc
+from rvnd.reasoning_contract import ReasoningViolation
+from rvnd.rule_registry import RuleRegistry
 
 GDPR = """REGULATION (EU) 2016/679 (General Data Protection Regulation)
 Article 33
@@ -247,7 +247,7 @@ def _ship_registry(tmp_path):
 
 
 def test_gate_blocked_offers_conditions_never_ships_itself(tmp_path):
-    from workspaces import problem_kg as pk
+    from rvnd import problem_kg as pk
     reg = _ship_registry(tmp_path)
     sub1 = pk.build_case("Breach process in place? (Regulation (EU) 2016/679)",
                          registry=reg, required_rooms=["Art. 33(1)"],
@@ -277,7 +277,7 @@ def test_gate_blocked_offers_conditions_never_ships_itself(tmp_path):
 
 
 def test_gate_all_green_is_ratified_not_auto_emitted(tmp_path):
-    from workspaces import problem_kg as pk
+    from rvnd import problem_kg as pk
     reg = _ship_registry(tmp_path)
     subs = [pk.build_case("Breach process? (Regulation (EU) 2016/679)", registry=reg,
                           required_rooms=["Art. 33(1)"], answer="documented"),
@@ -296,7 +296,7 @@ def test_gate_all_green_is_ratified_not_auto_emitted(tmp_path):
 
 
 def test_gate_facts_are_the_subcase_records(tmp_path):
-    from workspaces import problem_kg as pk
+    from rvnd import problem_kg as pk
     reg = _ship_registry(tmp_path)
     sub = pk.build_case("Breach process? (Regulation (EU) 2016/679)", registry=reg,
                         required_rooms=["Art. 33(1)"], answer="documented")
@@ -307,7 +307,7 @@ def test_gate_facts_are_the_subcase_records(tmp_path):
 
 
 def test_r5_unresolvable_citation_escalates_never_passes_silently(tmp_path):
-    from workspaces import problem_kg as pk
+    from rvnd import problem_kg as pk
     reg = _ship_registry(tmp_path)
     case = pk.build_case("Notify? (Regulation (EU) 2016/679)", registry=reg,
                          required_rooms=["Art. 33(1)"], answer="72h",

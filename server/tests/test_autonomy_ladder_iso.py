@@ -12,8 +12,8 @@ that matter on RVND's enforcement gate after the re-scale:
 """
 from __future__ import annotations
 
-from workspaces.action_gate import ActionRequest, Verdict, gate
-from workspaces.adapters.policy_languages import grade_levels
+from rvnd.action_gate import ActionRequest, Verdict, gate
+from rvnd.adapters.policy_languages import grade_levels
 
 
 def _verdict(footprint, grade):

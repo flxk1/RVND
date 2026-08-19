@@ -10,8 +10,8 @@ reservations already follow."""
 from __future__ import annotations
 import os, tempfile
 
-import workspaces.mcp_server as M
-from workspaces.use_case import get_use_case
+import rvnd.mcp_server as M
+from rvnd.use_case import get_use_case
 
 
 def _ws():
@@ -62,7 +62,7 @@ def test_obligation_carried_forward_on_structure_only_reapply():
 def test_malformed_declaration_item_does_not_crash_apply():
     # a hand-built patch with a non-dict obligation/redress item must be skipped,
     # not crash _loom_apply (the netlist parser only emits dicts, but be defensive).
-    import workspaces.loomground_lang as L
+    import rvnd.loomground_lang as L
     ws = _ws()
     patch = L.parse("actor bot\ngate g1 risk low grant bot\ncord bot -> g1\ncord g1 -> master\n")
     patch["obligations"] = ["malformed", {"obligation": "x", "on": "g1"}]
@@ -94,7 +94,7 @@ def test_no_reservation_from_fingerprint_and_policy_is_sticky():
     reservation on its own. Only an AUTHORED policy reservation does — and that
     policy reservation is sticky across a re-registration that carries it forward
     (mirroring sticky prohibitions / no silent drop)."""
-    from workspaces.use_case import register_use_case, get_use_case
+    from rvnd.use_case import register_use_case, get_use_case
     ws = _ws()
     # a fingerprint that ONCE drove a legal reservation now derives none
     register_use_case(ws, use_case_id="g", name="g", fingerprint={"issue_type": "automated_decision"},

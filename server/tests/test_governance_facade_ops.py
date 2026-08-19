@@ -15,7 +15,7 @@ import os
 
 import pytest
 
-mcp_server = pytest.importorskip("workspaces.mcp_server")
+mcp_server = pytest.importorskip("rvnd.mcp_server")
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 

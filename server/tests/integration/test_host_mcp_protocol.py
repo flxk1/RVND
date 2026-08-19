@@ -81,9 +81,9 @@ def _import_declared_tools() -> set[str]:
     server package is not installed.
     """
     try:
-        from workspaces.mcp_server import _DECLARED_TOOLS  # type: ignore[import-not-found]
+        from rvnd.mcp_server import _DECLARED_TOOLS  # type: ignore[import-not-found]
     except ImportError as exc:  # pragma: no cover - exercised on bare envs
-        pytest.skip(f"workspaces.mcp_server not importable: {exc}")
+        pytest.skip(f"rvnd.mcp_server not importable: {exc}")
     return set(_DECLARED_TOOLS)
 
 
@@ -113,7 +113,7 @@ def _server_params(folder_context: str | None = None) -> StdioServerParameters:
         env["PYTHONPATH"] = os.environ["PYTHONPATH"]
     return StdioServerParameters(
         command=sys.executable,
-        args=["-m", "workspaces.mcp_server"],
+        args=["-m", "rvnd.mcp_server"],
         env=env or None,
     )
 
@@ -332,7 +332,7 @@ async def test_audit_verify_chain_exposed_as_mcp_tool(workspace_folder: str) -> 
         "workspace_audit facade missing — chain verification unreachable for "
         "non-Claude MCP hosts."
     )
-    from workspaces import mcp_server
+    from rvnd import mcp_server
     ops = {o["op"] for o in mcp_server.workspace_audit("help")["ops"]}
     assert "verify_chain" in ops, (
         "workspace_audit lost the verify_chain op — hosts can no longer verify "

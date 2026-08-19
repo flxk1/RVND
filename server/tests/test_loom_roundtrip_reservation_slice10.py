@@ -16,7 +16,7 @@ import os
 
 import pytest
 
-from workspaces import mcp_server as M
+from rvnd import mcp_server as M
 
 
 # A reserved use case AUTHORED via a `.lg reserve` sentence (G2 doctrine):
@@ -106,7 +106,7 @@ def test_structural_change_preserves_reservation_and_grade(tmp_path, monkeypatch
         "netlist": ("actor bot7\nhuman dpo role data-protection\n"
                     "gate uc-decide risk high grant bot7\nreserve uc-decide by dpo\n"
                     "cord bot7 -> uc-decide\ncord uc-decide -> master\n")})
-    from workspaces.use_case import register_use_case as _ruc
+    from rvnd.use_case import register_use_case as _ruc
     authored = _uc(f, "uc-decide")["reserved_acts"]
     _ruc(f, use_case_id="uc-decide", name="Decide",
          fingerprint={}, risk="high", allowed_agents=["bot7"], actor="alex",

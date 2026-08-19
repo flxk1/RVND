@@ -13,10 +13,10 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces.source_classes import (Effect, Relation, SourceClass, max_effect,
+from rvnd.source_classes import (Effect, Relation, SourceClass, max_effect,
                                   self_executes, requires_incorporation,
                                   check_source, is_relation, catalogue)
-from workspaces import legal_systems as ls
+from rvnd import legal_systems as ls
 
 
 # ── universal: effect ceilings ────────────────────────────────────────────────

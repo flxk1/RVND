@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # Copyright 2026 flxk1
-"""Tests for the URL ingestion lane (``workspaces.url_ingest``).
+"""Tests for the URL ingestion lane (``rvnd.url_ingest``).
 
 The local server is admitted only by replacing the internal resolver in tests;
 the production API has no private-network bypass.
@@ -17,9 +17,9 @@ import pytest
 
 pytestmark = pytest.mark.security  # red-team-relevant: runs in the `-m security` gate
 
-import workspaces.url_ingest as url_ingest
-from workspaces.memory import WorkspaceMemory
-from workspaces.url_ingest import ingest_url, read_ledger
+import rvnd.url_ingest as url_ingest
+from rvnd.memory import WorkspaceMemory
+from rvnd.url_ingest import ingest_url, read_ledger
 
 
 # ---------------------------------------------------------------------------

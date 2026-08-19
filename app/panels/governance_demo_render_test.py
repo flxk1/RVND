@@ -30,7 +30,7 @@ os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 sys.path.insert(0, str(HERE.parent))
 sys.path.insert(0, str(HERE.parent.parent / "server" / "src"))
 import serve                                   # noqa: E402
-import workspaces.mcp_server as S              # noqa: E402
+import rvnd.mcp_server as S              # noqa: E402
 
 F = os.path.join(tmp, "org")
 os.makedirs(F, exist_ok=True)
@@ -45,7 +45,7 @@ def setup() -> str:
     # to render. Same convention as conftest's `_isolate_session_admission`:
     # replace the verifier in this test process only; the signed gate itself
     # is covered by the live_session_admission tests.
-    from workspaces import session_admission
+    from rvnd import session_admission
     session_admission.verify_operation_session = lambda *a, **k: object()
     S.workspace_workspace("add", {"folder_context": F})
     # an agent (grade L2) and a person

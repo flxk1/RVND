@@ -24,10 +24,10 @@ os.environ["WORKSPACE_PROXY_SHARED_SECRET"] = "render-fixture-proof"
 sys.path.insert(0, str(HERE.parent))
 sys.path.insert(0, str(HERE.parent.parent / "server" / "src"))
 import serve                          # noqa: E402
-import workspaces.mcp_server as S          # noqa: E402
-from workspaces.governance_lane import GovernanceLane, register_lane  # noqa: E402
-from workspaces.mcp_serving import set_request_principal  # noqa: E402
-from workspaces.session_admission import governance_open  # noqa: E402
+import rvnd.mcp_server as S          # noqa: E402
+from rvnd.governance_lane import GovernanceLane, register_lane  # noqa: E402
+from rvnd.mcp_serving import set_request_principal  # noqa: E402
+from rvnd.session_admission import governance_open  # noqa: E402
 
 F = os.path.join(tmp, "org")
 LOG_ROOT = os.environ["WORKSPACE_L0_LOG_ROOT"]

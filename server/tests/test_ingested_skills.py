@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-from workspaces import ingested_skills as isk
+from rvnd import ingested_skills as isk
 
 
 VALID_SKILL = (

@@ -17,8 +17,8 @@ import json
 
 import pytest
 
-from workspaces import connectors, draft_store, parties, policy, use_case, session_io as S
-from workspaces.mutation_log import MutationLog
+from rvnd import connectors, draft_store, parties, policy, use_case, session_io as S
+from rvnd.mutation_log import MutationLog
 
 
 def _seed(folder: str, lr: str, tag: str) -> None:
@@ -145,7 +145,7 @@ def test_gate_catches_a_dropped_subsystem(env, tmp_path):
 def test_restore_refuses_unsafe_workspace_id(tmp_path):
     """Path-traversal guard: an absolute/'..' id would escape the restore root."""
     folder = tmp_path / "s"; folder.mkdir()
-    from workspaces import parties
+    from rvnd import parties
     parties.register_party(str(folder), "b", "agent", log_root=str(tmp_path / "l"))
     doc = S.capture_workspace(str(folder), workspace_id="ok", log_root=str(tmp_path / "l"))
     for evil in ("/etc/evil", "../escape", "a/b", ".."):

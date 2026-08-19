@@ -22,7 +22,7 @@ _REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_REPO / "server" / "eval" / "variety"))
 
 import measure_variety_absorption as mva  # noqa: E402
-from workspaces.action_gate import StandingApproval, Verdict  # noqa: E402
+from rvnd.action_gate import StandingApproval, Verdict  # noqa: E402
 
 AGENT = mva.AGENT
 

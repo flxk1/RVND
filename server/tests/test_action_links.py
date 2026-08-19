@@ -29,9 +29,9 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-import workspaces.decisions.queue as DQ
-import workspaces.mcp_server as S
-from workspaces.mcp_impl import (decision_claim, decision_link_mint,
+import rvnd.decisions.queue as DQ
+import rvnd.mcp_server as S
+from rvnd.mcp_impl import (decision_claim, decision_link_mint,
                                  decision_open, decision_record)
 
 SURFACE = {

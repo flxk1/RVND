@@ -19,7 +19,7 @@ from datetime import date
 
 import pytest
 
-from workspaces import regulatory_population as rp
+from rvnd import regulatory_population as rp
 
 CSV = rp.default_csv()
 if CSV is None:

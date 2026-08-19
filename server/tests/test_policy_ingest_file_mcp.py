@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from workspaces import mcp_server as M
+from rvnd import mcp_server as M
 
 POLICY = "Generated content must be approved by a moderator."
 

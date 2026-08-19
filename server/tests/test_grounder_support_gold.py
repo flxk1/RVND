@@ -16,18 +16,18 @@ import random
 
 import pytest
 
-from workspaces.grounder_eval import (
+from rvnd.grounder_eval import (
     BAR,
     LABELS,
     load_gold,
     validate_gold,
 )
-from workspaces.grounder_eval import evaluate as _evaluate
+from rvnd.grounder_eval import evaluate as _evaluate
 
 # The corpus is conformance data owned by the language kit and ships in its
 # packaged artifact tree; an installed loomground-governance too old to carry it
 # skips with the remedy.
-from workspaces.loomground_assets import grounder_gold_path
+from rvnd.loomground_assets import grounder_gold_path
 
 GOLD_CORPUS = grounder_gold_path()
 if not GOLD_CORPUS.is_file():
@@ -221,7 +221,7 @@ def test_bar_matches_gold_meta():
 @pytest.mark.skipif(not os.environ.get("WORKSPACE_LOCAL_LLM_URL"),
                     reason="no local-LLM endpoint configured")
 def test_live_local_llm_against_gold():
-    from workspaces.grounder_eval import evaluate_local_llm
+    from rvnd.grounder_eval import evaluate_local_llm
     res = evaluate_local_llm()
     # report either way; the assertion is the production gate
     print(f"\nlive gold run: acc={res['accuracy_decided']} "

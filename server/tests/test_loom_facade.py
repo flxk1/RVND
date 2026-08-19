@@ -11,8 +11,8 @@ from __future__ import annotations
 import os
 import pytest
 
-from workspaces import mcp_server as M
-from workspaces.governance_graph import governance_graph
+from rvnd import mcp_server as M
+from rvnd.governance_graph import governance_graph
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 

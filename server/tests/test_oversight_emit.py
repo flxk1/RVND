@@ -8,7 +8,7 @@ Pins the non-disturbance and anti-ratification invariants:
 - the dossier degrades gracefully and never invents what it cannot gather.
 """
 
-from workspaces.oversight_emit import (
+from rvnd.oversight_emit import (
     build_grounds_bundle, build_dossier,
     needs_dossier)
 

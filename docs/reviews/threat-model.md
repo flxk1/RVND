@@ -17,9 +17,9 @@ anchors below are the contract this model is written against.*
 ## Assets, in priority order
 
 1. **The signed audit chain** — the tamper-evident record of every governed
-   decision. Integrity is the product. (`server/src/workspaces/mutation_log.py`)
+   decision. Integrity is the product. (`server/src/rvnd/mutation_log.py`)
 2. **The signing keys** — identity (per-host) and controller (workspace).
-   Whoever holds them can author history. (`server/src/workspaces/signing.py`)
+   Whoever holds them can author history. (`server/src/rvnd/signing.py`)
 3. **Personal data at rest** — pairs, drafts, cards, and the decisions store,
    optionally sealed (AEAD). (`seal.py`, `erasure.py`)
 4. **The egress boundary** — the only sanctioned path to a cloud model; the

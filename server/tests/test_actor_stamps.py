@@ -17,9 +17,9 @@ import os
 
 import pytest
 
-from workspaces import policy_matrix as pm
-from workspaces.mutation_log import MutationLog
-from workspaces.parties import register_party, set_party_status
+from rvnd import policy_matrix as pm
+from rvnd.mutation_log import MutationLog
+from rvnd.parties import register_party, set_party_status
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 
@@ -69,7 +69,7 @@ def test_matrix_clear_is_audited_with_actor(env):
 
 
 def test_workspace_matrix_facade_passes_actor_through(env):
-    from workspaces import mcp_server
+    from rvnd import mcp_server
     mcp_server.workspace_matrix("set", {
         "folder_context": env["ws"], "grade": "L1", "oversight": "approve",
         "light": "block", "actor": "alex"})
@@ -81,11 +81,11 @@ def test_workspace_matrix_facade_passes_actor_through(env):
 # --- every state-changing surface stamps the GIVEN actor ----------------------
 
 def test_every_governance_surface_stamps_the_given_actor(env):
-    from workspaces.approvals import (decide_approval, delegate_competence,
+    from rvnd.approvals import (decide_approval, delegate_competence,
                                  request_approval)
-    from workspaces.guardian import guardian_act
-    from workspaces.juris_packs import set_folder_packs
-    from workspaces.policy import set_ai_training_optout, set_oversight_level
+    from rvnd.guardian import guardian_act
+    from rvnd.juris_packs import set_folder_packs
+    from rvnd.policy import set_ai_training_optout, set_oversight_level
 
     set_party_status(env["ws"], "agent-x", "suspended", actor="alex",
                      log_root=env["lr"])
@@ -118,7 +118,7 @@ def test_every_governance_surface_stamps_the_given_actor(env):
 
 def test_no_surface_downgrades_a_given_actor_to_default(env):
     """The caller said 'alex'; no event from these calls may say 'user'."""
-    from workspaces.juris_packs import set_folder_packs
+    from rvnd.juris_packs import set_folder_packs
     set_folder_packs(env["ws"], ["eu-base"], actor="alex",
                      log_root=env["lr"])
     pm.save_own_matrix(env["ws"], pm.recommended_default(), actor="alex",
@@ -132,11 +132,11 @@ def test_no_surface_downgrades_a_given_actor_to_default(env):
 # --- the measurement projection ------------------------------------------------
 
 def test_actor_stamp_report_classifies(env):
-    from workspaces.parties import actor_stamp_report
+    from rvnd.parties import actor_stamp_report
     pm.save_own_matrix(env["ws"], pm.recommended_default(), actor="alex",
                        log_root=env["lr"])
     MutationLog(env["ws"], log_root=env["lr"]).append(
-        __import__("workspaces.mutation_log", fromlist=["LogEvent"]).LogEvent(
+        __import__("rvnd.mutation_log", fromlist=["LogEvent"]).LogEvent(
             event="system", folder_path=env["ws"], pair_id="x",
             channel="system", actor="ghost-9", extra={}))
     r = actor_stamp_report(env["ws"], log_root=env["lr"])
@@ -147,6 +147,6 @@ def test_actor_stamp_report_classifies(env):
 
 
 def test_actor_stamp_report_clean_chain_has_no_unknowns(env):
-    from workspaces.parties import actor_stamp_report
+    from rvnd.parties import actor_stamp_report
     r = actor_stamp_report(env["ws"], log_root=env["lr"])
     assert r["unknown_actors"] == [] and r["unstamped"] == 0

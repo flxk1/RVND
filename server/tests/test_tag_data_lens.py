@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from workspaces import mcp_server as M
+from rvnd import mcp_server as M
 
 
 def _connector(ws, cid, tags, use_cases):
@@ -81,8 +81,8 @@ def test_connector_read_failure_is_journalled_not_swallowed(ws, monkeypatch):
     """Loop fix: a connector-store read failure is RECORDED on the chain (so an
     auditor can tell 'no connectors' from 'read failed' — non-repudiation), and the
     run proceeds with the tags it has; a programming bug would NOT be masked."""
-    from workspaces import operations as ops
-    from workspaces.mutation_log import MutationLog
+    from rvnd import operations as ops
+    from rvnd.mutation_log import MutationLog
     monkeypatch.setattr(ops, "list_connectors",
                         lambda *a, **k: (_ for _ in ()).throw(OSError("simulated store failure")))
     _disp(ws)  # must not raise

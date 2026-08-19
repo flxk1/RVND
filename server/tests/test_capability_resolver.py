@@ -11,7 +11,7 @@ one); declared NDs and connector requirements are honoured.
 
 from __future__ import annotations
 
-from workspaces.capability.resolver import resolve, missing, Host
+from rvnd.capability.resolver import resolve, missing, Host
 
 
 LEGAL = ("Providers of high-risk AI systems shall establish a risk management "
@@ -75,8 +75,8 @@ def test_reasons_are_carried_for_auditability():
 
 
 def test_existing_but_unloaded_nd_is_provisionable_not_missing():
-    from workspaces.capability.resolver import provisionable, provision_into
-    from workspaces.nd_routing import NDRouter
+    from rvnd.capability.resolver import provisionable, provision_into
+    from rvnd.nd_routing import NDRouter
     # math ND exists on disk (domain_nds.MathND) but this host hasn't loaded it
     host = Host(registered_nds={"nd:rule"}, has_python_sandbox=True)
     m = resolve(sample_text=MATH, host=host)

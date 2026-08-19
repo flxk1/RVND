@@ -8,11 +8,11 @@ import os
 
 import pytest
 
-from workspaces.lock import BackendError, make_local_llm
-from workspaces.lock.backends import MockBackend
-from workspaces.lock.backends.llama_cpp import LlamaCppBackend
-from workspaces.lock.backends.onnx_genai import OnnxGenaiBackend
-from workspaces.lock.tier_c import (
+from rvnd.lock import BackendError, make_local_llm
+from rvnd.lock.backends import MockBackend
+from rvnd.lock.backends.llama_cpp import LlamaCppBackend
+from rvnd.lock.backends.onnx_genai import OnnxGenaiBackend
+from rvnd.lock.tier_c import (
     is_tier_c_available,
     describe_tier_c,
     reset_backend_cache,

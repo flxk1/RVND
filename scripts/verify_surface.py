@@ -61,7 +61,7 @@ INTERNAL_MARK = "internal by design"
 APPROVED_NONVISUAL_CONTRACTS: dict[str, str] = {
     "cli": "packaged 'workspaces' command-line entry point; the CLI is the surface, not a console panel",
     "cli.impl": "command handlers behind the 'workspaces' CLI; non-visual by design",
-    "cli.__main__": "python -m workspaces.cli package entry; same contract as the cli entry point",
+    "cli.__main__": "python -m rvnd.cli package entry; same contract as the cli entry point",
     "licence_usage": "read-only commercial-capacity evidence exposed by the packaged 'workspaces licence usage' CLI; intentionally non-visual",
     "published_policy_pack": "public Python package import boundary exported from 'workspaces'; policy-pack validation is host/adapter-facing, not a console interaction",
     "worker": "'workspaces run-worker' background queue drainer; a long-running process, not a console interaction",
@@ -76,7 +76,7 @@ APPROVED_NONVISUAL_CONTRACTS: dict[str, str] = {
 
 def load_mcp_module():
     sys.path.insert(0, str(PACKAGE_DIR.parent))
-    import workspaces.mcp_server as m
+    import rvnd.mcp_server as m
     return m
 
 
@@ -158,7 +158,7 @@ def _module_name(path: Path) -> str:
 def _static_imports(src: str, importer: str, is_init: bool = False) -> set[str]:
     """Package-relative names this source imports, resolved within the
     workspaces package (handles ``from .x import``, ``from .sub.x import``,
-    ``from workspaces.x import`` and lazy in-function imports alike). A
+    ``from rvnd.x import`` and lazy in-function imports alike). A
     package __init__ is its own containing package, so its single-dot
     imports resolve inside the package rather than one level up."""
     found: set[str] = set()

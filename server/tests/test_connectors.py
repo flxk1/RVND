@@ -13,10 +13,10 @@ from __future__ import annotations
 import os
 import pytest
 
-from workspaces import parties as pt
-from workspaces.connectors import register_connector, list_connectors
-from workspaces.governance_graph import governance_graph
-from workspaces.use_case import register_use_case
+from rvnd import parties as pt
+from rvnd.connectors import register_connector, list_connectors
+from rvnd.governance_graph import governance_graph
+from rvnd.use_case import register_use_case
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 
@@ -66,7 +66,7 @@ def test_graph_emits_connector_edges(env):
 
 
 def test_facade_and_surface(env):
-    from workspaces import mcp_server as M
+    from rvnd import mcp_server as M
     assert len(M._DECLARED_TOOLS) == 24                                      # C4
     M.workspace_workflow(op="connector_register", params={
         "folder_context": env["ws"], "connector_id": "inbox", "role": "ingress",

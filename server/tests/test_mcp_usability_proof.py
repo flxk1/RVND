@@ -22,7 +22,7 @@ from __future__ import annotations
 import os
 import tempfile
 
-from workspaces import mcp_server as M
+from rvnd import mcp_server as M
 
 AGENT = "ai_system"     # policy_ingest emits this actor; operate runs as this agent
 

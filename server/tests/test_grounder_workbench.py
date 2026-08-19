@@ -11,8 +11,8 @@ from __future__ import annotations
 
 import json
 
-from workspaces.workspace_grounder import CITATION_STYLES
-from workspaces.grounder_workbench import build_demo, export_state, write_state
+from rvnd.workspace_grounder import CITATION_STYLES
+from rvnd.grounder_workbench import build_demo, export_state, write_state
 
 
 def _demo(tmp_path):

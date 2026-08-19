@@ -14,8 +14,8 @@ these tests pin the two properties the boundary guarantees:
 
 import pytest
 
-from workspaces.mutation_log import MutationLog
-from workspaces.workflows import Workflow, WorkflowStep, define_workflow, run_workflow
+from rvnd.mutation_log import MutationLog
+from rvnd.workflows import Workflow, WorkflowStep, define_workflow, run_workflow
 
 INJECTION_BODY = (
     "Summary done.\n"
@@ -194,7 +194,7 @@ def test_external_publish_without_affected_parties_is_blocked(folder, log_root):
 
 
 def test_external_publish_step_attaches_signed_disclosure(folder, log_root):
-    from workspaces.disclosure import verify_envelope
+    from rvnd.disclosure import verify_envelope
     define_workflow(folder, _wf(
         WorkflowStep("mailer", query="send the note",
                      footprint=("external-publish",),
@@ -240,6 +240,6 @@ def test_footprint_survives_definition_round_trip(folder, log_root):
     define_workflow(folder, _wf(
         WorkflowStep("skill-pub", query="x", footprint=("external-publish",))),
         log_root=log_root)
-    from workspaces.workflows import load_workflow
+    from rvnd.workflows import load_workflow
     wf = load_workflow(folder, "wf-test", log_root=log_root)
     assert wf.steps[0].footprint == ("external-publish",)

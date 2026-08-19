@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces import (connectors, draft_store, parties, session_io as S,
+from rvnd import (connectors, draft_store, parties, session_io as S,
                         session_templates as T, use_case)
 
 CREATED = "2026-07-09T12:00:00Z"
@@ -161,7 +161,7 @@ def test_guard_refuses_before_touching_any_folder(tmp_path):
 # ---- the workspace_session facade (S12 wiring) ---------------------------------
 
 def test_facade_new_materializes_and_registers_beside(tmp_path):
-    from workspaces import mcp_server, workspace_registry as WR
+    from rvnd import mcp_server, workspace_registry as WR
     listed = mcp_server.workspace_session("template_list")
     assert listed["ok"]
     assert {"kids-ai", "enterprise-baseline"} <= {t["id"] for t in listed["templates"]}
@@ -178,7 +178,7 @@ def test_facade_new_materializes_and_registers_beside(tmp_path):
 
 
 def test_facade_mode_none_skips_the_registry(tmp_path):
-    from workspaces import mcp_server, workspace_registry as WR
+    from rvnd import mcp_server, workspace_registry as WR
     rlr = str(tmp_path / "registry")
     out = mcp_server.workspace_session("template_new", {
         "template_id": "kids-ai", "dest_root": str(tmp_path / "env"),
@@ -189,7 +189,7 @@ def test_facade_mode_none_skips_the_registry(tmp_path):
 
 
 def test_facade_refuses_unknown_mode_and_template(tmp_path):
-    from workspaces import mcp_server
+    from rvnd import mcp_server
     bad_mode = mcp_server.workspace_session("template_new", {
         "template_id": "kids-ai", "dest_root": str(tmp_path / "env"),
         "mode": "merge"})

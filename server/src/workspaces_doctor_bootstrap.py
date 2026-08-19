@@ -78,10 +78,10 @@ def _read_shebang_interpreter(script: str) -> tuple[str | None, str | None]:
 
 
 def _probe_python_for_workspaces(python_path: str) -> tuple[int, str, str]:
-    """Run ``python -c 'import workspaces; print(workspaces.__version__)'``."""
+    """Run ``python -c 'import rvnd; print(rvnd.__version__)'``."""
     try:
         proc = subprocess.run(
-            [python_path, "-c", "import workspaces; print(workspaces.__version__)"],
+            [python_path, "-c", "import rvnd; print(rvnd.__version__)"],
             capture_output=True,
             text=True,
             timeout=10,

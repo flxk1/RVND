@@ -16,7 +16,7 @@ import io
 
 import pytest
 
-from workspaces import (
+from rvnd import (
     WorkspaceMemory,
     discover_ancestors,
 )
@@ -209,7 +209,7 @@ def test_unpublish_only_works_on_published_pairs(vault, log_root):
 
 def test_unpublish_audit_trail_survives(vault, log_root):
     """After unpublish, the original publish event is still in the log."""
-    from workspaces import MutationLog
+    from rvnd import MutationLog
 
     acme = WorkspaceMemory(vault["acme"], log_root=log_root)
     pid = acme.publish(_sample("p1", summary="x"))
@@ -311,7 +311,7 @@ def test_two_published_pairs_visible_in_descendant(vault, log_root):
 
 
 def test_cli_publish_command(vault, log_root, capsys, monkeypatch):
-    from workspaces.cli import main
+    from rvnd.cli import main
 
     acme = WorkspaceMemory(vault["acme"], log_root=log_root)
     pid = acme.remember(_sample("p1", summary="to be published"))
@@ -328,7 +328,7 @@ def test_cli_publish_command(vault, log_root, capsys, monkeypatch):
 
 
 def test_cli_publish_unknown_pair(vault, log_root, capsys):
-    from workspaces.cli import main
+    from rvnd.cli import main
     rc = main(["--log-root", str(log_root), "publish",
                "--folder", str(vault["acme"]),
                "sha256:nope", "--yes"])
@@ -336,7 +336,7 @@ def test_cli_publish_unknown_pair(vault, log_root, capsys):
 
 
 def test_cli_publish_user_aborts(vault, log_root, capsys, monkeypatch):
-    from workspaces.cli import main
+    from rvnd.cli import main
     acme = WorkspaceMemory(vault["acme"], log_root=log_root)
     pid = acme.publish(_sample("p1", summary="x"))
     capsys.readouterr()  # drain
@@ -350,7 +350,7 @@ def test_cli_publish_user_aborts(vault, log_root, capsys, monkeypatch):
 
 
 def test_cli_unpublish_command(vault, log_root, capsys):
-    from workspaces.cli import main
+    from rvnd.cli import main
 
     acme = WorkspaceMemory(vault["acme"], log_root=log_root)
     pid = acme.publish(_sample("p1", summary="will revoke"))
@@ -371,7 +371,7 @@ def test_cli_unpublish_command(vault, log_root, capsys):
 
 
 def test_cli_unpublish_unknown(vault, log_root, capsys):
-    from workspaces.cli import main
+    from rvnd.cli import main
     rc = main(["--log-root", str(log_root), "unpublish",
                "--folder", str(vault["acme"]),
                "sha256:nope", "--yes"])

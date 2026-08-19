@@ -23,7 +23,7 @@ import tempfile
 # Bind to the in-tree source, not a possibly-stale installed copy. The coverage
 # matrix proves this repository's source callable; a non-editable site-packages
 # install can lag the tree (e.g. omit the loomground data bundle) and make ops
-# spuriously uncallable. Prepend server/src so `import workspaces` resolves here
+# spuriously uncallable. Prepend server/src so `import rvnd` resolves here
 # regardless of how the subprocess was launched.
 _SRC = str(Path(__file__).resolve().parents[1] / "src")
 if _SRC not in sys.path:
@@ -34,7 +34,7 @@ if _SRC not in sys.path:
 # $HOME at import time (LOG_ROOT_DEFAULT = ~/.workspace/log), so a harness that
 # registers disposable folders would otherwise pollute the user's real registry
 # and leave dead `ws` entries in the live console selector. Redirecting $HOME
-# here — before the first `import workspaces` freezes those paths — confines all
+# here — before the first `import rvnd` freezes those paths — confines all
 # state to a temp dir that is removed on exit (success or failure). The launching
 # test additionally asserts the real registry is byte-identical before/after.
 _HARNESS_HOME: str | None = None

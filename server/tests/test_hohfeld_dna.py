@@ -6,10 +6,10 @@ discipline throughout: '' beats a guessed incident, counterparty, or
 condition kind."""
 
 
-from workspaces.contracts.extractor import intake_contract
-from workspaces.hohfeld import (INCIDENTS, attach_incidents, classify_condition_kind,
+from rvnd.contracts.extractor import intake_contract
+from rvnd.hohfeld import (INCIDENTS, attach_incidents, classify_condition_kind,
                            classify_incident, extract_counterparty)
-from workspaces.rule_extractor import RuleFacet, extract_rules
+from rvnd.rule_extractor import RuleFacet, extract_rules
 
 
 class TestClassifyIncident:
@@ -114,8 +114,8 @@ class TestDnaPropagation:
         assert term.incident == "power"            # not a mere permission
 
     def test_norm_dict_carries_the_layer(self, tmp_path):
-        from workspaces.contracts.extractor import ingest_contract
-        from workspaces.rule_registry import RuleRegistry
+        from rvnd.contracts.extractor import ingest_contract
+        from rvnd.rule_registry import RuleRegistry
         ingest_contract(tmp_path, self.TEXT, contract_id="dna-x",
                         log_root=tmp_path / "log")
         norms = [r["norm"] for r in RuleRegistry(tmp_path).items.values()]
@@ -124,8 +124,8 @@ class TestDnaPropagation:
         assert any(n["incident"] == "power" for n in norms)
 
     def test_obligations_inherit_obligee_and_incident(self, tmp_path):
-        from workspaces.contracts.extractor import ingest_contract
-        from workspaces.obligation_runtime import ObligationRegistry
+        from rvnd.contracts.extractor import ingest_contract
+        from rvnd.obligation_runtime import ObligationRegistry
         ingest_contract(tmp_path, self.TEXT, contract_id="dna-x",
                         log_root=tmp_path / "log")
         obs = ObligationRegistry(tmp_path).for_contract("dna-x@1")
@@ -134,8 +134,8 @@ class TestDnaPropagation:
         assert report.facets["incident"] == "claim-duty"
 
     def test_powers_never_instantiate_as_duties(self, tmp_path):
-        from workspaces.contracts.extractor import ingest_contract
-        from workspaces.obligation_runtime import ObligationRegistry
+        from rvnd.contracts.extractor import ingest_contract
+        from rvnd.obligation_runtime import ObligationRegistry
         ingest_contract(tmp_path, self.TEXT, contract_id="dna-x",
                         log_root=tmp_path / "log")
         obs = ObligationRegistry(tmp_path).for_contract("dna-x@1")
@@ -152,8 +152,8 @@ class TestDnaCompleteness:
     (statute/ND path), and Phase-2 LLM facets."""
 
     def test_bare_place_span_enriches(self, tmp_path):
-        from workspaces.rule_extractor import extract_rules
-        from workspaces.rule_registry import RuleRegistry
+        from rvnd.rule_extractor import extract_rules
+        from rvnd.rule_registry import RuleRegistry
         text = "The provider may terminate this agreement upon notice."
         facet = extract_rules(text, gated_by_fingerprint=False)[0]
         assert facet.incident == ""                  # born unenriched
@@ -162,14 +162,14 @@ class TestDnaCompleteness:
         assert r["norm"]["incident"] == "power"
 
     def test_statute_duty_path_enriches(self, tmp_path):
-        from workspaces.rule_registry import RuleRegistry
+        from rvnd.rule_registry import RuleRegistry
         reg = RuleRegistry(tmp_path, log_root=tmp_path / "log")
         r = reg.place_span("The provider shall inform the authority without delay.")
         assert r["norm"]["incident"] == "claim-duty"
 
     def test_phase2_llm_facets_enrich_deterministically(self):
         import json
-        from workspaces.rule_extractor_llm import extract_rules_llm
+        from rvnd.rule_extractor_llm import extract_rules_llm
         text = "The Provider may terminate this agreement at any time."
         reply = json.dumps([{
             "subject": "Provider", "modal": "permission", "modal_phrase": "may",
@@ -180,14 +180,14 @@ class TestDnaCompleteness:
         assert llm and llm[0].incident == "power"
 
     def test_nt14_rejects_invented_incident(self):
-        from workspaces.norm_contract import check_incident_vocabulary
+        from rvnd.norm_contract import check_incident_vocabulary
         pair = {"id": "p1", "problem": {"facets": {}},
                 "solution": {"rule": {"incident": "super-right"}}, "edges": []}
         out = check_incident_vocabulary(pair)
         assert any(f.code == "NT-14" and f.level.value == "violation" for f in out)
 
     def test_nt14_accepts_abstention_and_vocabulary(self):
-        from workspaces.norm_contract import check_incident_vocabulary
+        from rvnd.norm_contract import check_incident_vocabulary
         for inc in ("", "power", "disability"):
             pair = {"id": "p1", "problem": {"facets": {}},
                     "solution": {"rule": {"incident": inc,

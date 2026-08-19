@@ -30,7 +30,7 @@ from collections import Counter
 from dataclasses import dataclass
 
 
-from workspaces.lock.core import (
+from rvnd.lock.core import (
     _detect_confusable_bypass,
     tier_b_scan_text,
     tier_c_semantic_check,

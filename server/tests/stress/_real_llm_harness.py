@@ -129,10 +129,10 @@ def real_llm_available() -> tuple[bool, str]:
 
     # Pull registered models from the registry.
     try:
-        from workspaces import models_registry
+        from rvnd import models_registry
     except Exception as e:  # noqa: BLE001
         return False, (
-            f"real LLM not available: cannot import workspaces.models_registry "
+            f"real LLM not available: cannot import rvnd.models_registry "
             f"({type(e).__name__}: {e})"
         )
 
@@ -186,7 +186,7 @@ def real_llm_or_skip() -> dict[str, Any]:
     if not ok:
         pytest.skip(reason)
     # Re-resolve so the fixture surfaces a clean view.
-    from workspaces import models_registry
+    from rvnd import models_registry
     by_role: dict[str, list[str]] = {}
     for role in ("lock-c", "validator"):
         ids = models_registry.models_for_role(role)

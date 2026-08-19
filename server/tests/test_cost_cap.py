@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from workspaces.llm_capture import (
+from rvnd.llm_capture import (
     IngestMode,
     LLMExchange,
     OversightLevel,
@@ -20,8 +20,8 @@ from workspaces.llm_capture import (
     capture_llm_exchange,
     folder_spend_cents,
 )
-from workspaces.operations import operate
-from workspaces.policy import (
+from rvnd.operations import operate
+from rvnd.policy import (
     POLICY_FILENAME,
     FolderPolicy,
     InvalidPolicy,
@@ -29,7 +29,7 @@ from workspaces.policy import (
     save_policy,
     verified_cost_cap,
 )
-from workspaces.use_case import register_use_case
+from rvnd.use_case import register_use_case
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 

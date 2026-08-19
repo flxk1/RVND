@@ -14,8 +14,8 @@ from __future__ import annotations
 
 import os
 
-from workspaces import ingest_quarantine as IQ
-from workspaces.lens import Admission
+from rvnd import ingest_quarantine as IQ
+from rvnd.lens import Admission
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 

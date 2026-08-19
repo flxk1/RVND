@@ -16,8 +16,8 @@ import tarfile
 
 import pytest
 
-import workspaces.cli.impl as impl
-import workspaces.backup as backup
+import rvnd.cli.impl as impl
+import rvnd.backup as backup
 
 
 def _make_home(tmp_path):
@@ -26,7 +26,7 @@ def _make_home(tmp_path):
     (home / "keys" / "HOSTID" / "identity.priv").write_text("SECRET-KEY", encoding="utf-8")
     (home / "log" / "folderA").mkdir(parents=True)
     (home / "log" / "folderA" / "chain.jsonl").write_text("genesis\nlink1\n", encoding="utf-8")
-    (home / "log" / "known-workspaces.json").write_text('{"workspaces":[]}', encoding="utf-8")
+    (home / "log" / "known-rvnd.json").write_text('{"workspaces":[]}', encoding="utf-8")
     return home
 
 

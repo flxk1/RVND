@@ -12,12 +12,12 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces.lock import tier_m as TM
-from workspaces.lock.core import lock_text
-from workspaces.lock.gate import gate_for_cloud
-from workspaces.lock.l0_bridge import PolicySnapshot, _load_policy_inprocess
-from workspaces.lock.oversight import OversightLevel
-from workspaces.policy import FolderPolicy, InvalidPolicy, save_policy, load_policy
+from rvnd.lock import tier_m as TM
+from rvnd.lock.core import lock_text
+from rvnd.lock.gate import gate_for_cloud
+from rvnd.lock.l0_bridge import PolicySnapshot, _load_policy_inprocess
+from rvnd.lock.oversight import OversightLevel
+from rvnd.policy import FolderPolicy, InvalidPolicy, save_policy, load_policy
 
 
 # ── no-op when unconfigured (opt-in; legacy folders unaffected) ───────────────
@@ -226,15 +226,15 @@ def test_inprocess_snapshot_carries_rules(tmp_path):
 def test_mcp_snapshot_payload_carries_rules(tmp_path):
     # Server side: the policy_snapshot payload (what the MCP client receives) must
     # include moderation_rules, else the cross-process gate silently no-ops Tier M.
-    from workspaces.mcp_impl import policy_snapshot
+    from rvnd.mcp_impl import policy_snapshot
     save_policy(tmp_path, FolderPolicy(moderation_rules={"banned_terms": ["x"]}))
     assert policy_snapshot(str(tmp_path))["moderation_rules"] == {"banned_terms": ["x"]}
 
 
 def test_mcp_transport_propagates_rules_to_snapshot(monkeypatch):
     # Client side: _load_policy_via_mcp must lift moderation_rules off the payload.
-    from workspaces.lock import l0_mcp_client as MC
-    from workspaces.lock import l0_bridge as LB
+    from rvnd.lock import l0_mcp_client as MC
+    from rvnd.lock import l0_bridge as LB
     rules = {"banned_terms": ["x"]}
     monkeypatch.setattr(MC, "mcp_try_load_policy", lambda fc: MC.MCPClientResult(
         success=True, payload={"lock_is_active": True, "oversight_is_active": True,
@@ -247,7 +247,7 @@ def test_mcp_transport_propagates_rules_to_snapshot(monkeypatch):
 def test_gate_for_cloud_enforces_moderation(monkeypatch):
     snap = PolicySnapshot(lock_is_active=True, oversight_is_active=True,
                           moderation_rules={"banned_terms": ["contraband"]})
-    monkeypatch.setattr("workspaces.lock.gate.try_load_policy", lambda fc: snap)
+    monkeypatch.setattr("rvnd.lock.gate.try_load_policy", lambda fc: snap)
     hit = gate_for_cloud("shipment of contraband tonight",
                          oversight=OversightLevel.AUTONOMOUS, folder_context="/x")
     assert hit.action == "refuse"

@@ -4,8 +4,8 @@
 
 from __future__ import annotations
 
-from workspaces import knowledge_import
-from workspaces.workspace_grounder import GroundingLedger
+from rvnd import knowledge_import
+from rvnd.workspace_grounder import GroundingLedger
 
 
 _CSV = (

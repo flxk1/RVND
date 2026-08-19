@@ -10,7 +10,7 @@ ipv4, ipv6, uk_nino, de_personnummer, credit_card (Luhn-gated).
 from __future__ import annotations
 
 
-from workspaces.lock.core import (
+from rvnd.lock.core import (
     tier_b_scan_text, _luhn_ok,
 )
 

@@ -12,7 +12,7 @@ Pins the inversion: stopping is default, running needs a live lease.
 
 import pytest
 
-from workspaces.breaker import (
+from rvnd.breaker import (
     Breaker, BreakerState, Lease, Tripwire, cap_grade, default_tripwires)
 
 

@@ -39,7 +39,7 @@ def test_a5_egress_lock_catches_pii_in_document_body():
     about to leave for a cloud LLM, the egress lock must catch the
     PII-shaped strings even when wrapped in injection prose.
     """
-    from workspaces.lock.core import tier_b_scan_text
+    from rvnd.lock.core import tier_b_scan_text
 
     findings = tier_b_scan_text(INJECTION_PAYLOAD)
     types = {f.type for f in findings}
@@ -57,13 +57,13 @@ def test_a5_egress_lock_catches_pii_in_document_body():
 def test_a5_ingest_time_injection_scan_exists():
     """Full mitigation (LANDED): a Tier D scanner on the ingest path flags
     injection patterns BEFORE the document body can be forwarded to a cloud
-    LLM. ``workspaces.lock.injection_scan`` surfaces ``prompt_injection`` findings;
+    LLM. ``rvnd.lock.injection_scan`` surfaces ``prompt_injection`` findings;
     this regression locks the mitigation. See docs/reviews/red-team-findings.md (A5)."""
     try:
-        from workspaces.lock import injection_scan  # type: ignore
+        from rvnd.lock import injection_scan  # type: ignore
     except ImportError:
         pytest.fail(
-            "workspaces.lock.injection_scan is required for Tier D ingest-time "
+            "rvnd.lock.injection_scan is required for Tier D ingest-time "
             "injection detection."
         )
 

@@ -21,7 +21,7 @@ import os
 import time
 
 
-from workspaces.lock.core import tier_c_semantic_check
+from rvnd.lock.core import tier_c_semantic_check
 
 from tests.stress._harness import SyntheticWorkload
 from tests.stress._real_llm_harness import (

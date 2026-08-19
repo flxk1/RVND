@@ -23,10 +23,10 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
 
-from workspaces import connectors
-from workspaces.lock import OversightLevel
-from workspaces.lock.egress_proxy import ApprovalDecision, EgressProxy, autonomous_callback
-from workspaces.lock.track_broker import TRACK_HEADER, bind_track
+from rvnd import connectors
+from rvnd.lock import OversightLevel
+from rvnd.lock.egress_proxy import ApprovalDecision, EgressProxy, autonomous_callback
+from rvnd.lock.track_broker import TRACK_HEADER, bind_track
 
 # Real ThreadingHTTPServer instances (proxy + stub) started and torn down per
 # test — ~25s for this file alone versus low single digits for the rest of

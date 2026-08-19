@@ -134,5 +134,5 @@ or run it yourself
 |---|---|
 | MCP server | `python -m workspaces.mcp_server` (the `rvnd-governance` server) |
 | Skills | `plugin/rvnd-governance/skills/` |
-| Enforcement hook | `server/src/workspaces/hook.py` (`rvnd-hook`) |
+| Enforcement hook | `server/src/rvnd/hook.py` (`rvnd-hook`) |
 | Installer | `scripts/connect-agent-hub.sh` registers all three |

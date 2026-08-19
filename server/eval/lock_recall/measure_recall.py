@@ -37,7 +37,7 @@ from pathlib import Path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 sys.path.insert(0, os.path.dirname(__file__))
 
-from workspaces.lock.core import (  # noqa: E402
+from rvnd.lock.core import (  # noqa: E402
     _detect_confusable_bypass,
     tier_b_scan_text,
 )

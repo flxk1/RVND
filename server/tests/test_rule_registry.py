@@ -5,9 +5,9 @@ persisted per workspace and per user."""
 
 from __future__ import annotations
 
-from workspaces import rule_registry
-from workspaces.rule_registry import RuleRegistry
-from workspaces import legal_corpus
+from rvnd import rule_registry
+from rvnd.rule_registry import RuleRegistry
+from rvnd import legal_corpus
 
 
 _CLAUSE = ("The controller shall erase personal data on request under "

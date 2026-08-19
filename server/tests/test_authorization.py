@@ -12,9 +12,9 @@ import pytest
 
 pytestmark = pytest.mark.security  # red-team-relevant: runs in the `-m security` gate
 
-from workspaces.authorization import check_access
-from workspaces.parties import register_party, set_party_status
-from workspaces.policy import FolderPolicy, save_policy
+from rvnd.authorization import check_access
+from rvnd.parties import register_party, set_party_status
+from rvnd.policy import FolderPolicy, save_policy
 
 
 @pytest.fixture
@@ -91,7 +91,7 @@ def test_unknown_action_denied(folder):
 
 def test_recent_read_op_is_gated(folder, monkeypatch):
     f, _ = folder; _enable(f)
-    from workspaces import mcp_impl as M
+    from rvnd import mcp_impl as M
     # a named external actor with no registration is denied the read...
     denied = M.recent(f, actor="mallory")
     assert denied.get("error") == "access denied"
@@ -102,5 +102,5 @@ def test_recent_read_op_is_gated(folder, monkeypatch):
 
 def test_reads_open_when_not_enabled(folder):
     f, _ = folder  # no _enable → access control OFF
-    from workspaces import mcp_impl as M
+    from rvnd import mcp_impl as M
     assert "error" not in M.recent(f, actor="mallory")        # permissive default

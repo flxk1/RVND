@@ -86,7 +86,7 @@ def subject_component_version() -> str:
     rvnd is the install root, skipped from the dependency component list, but it
     is what the document is ABOUT; a CycloneDX SBOM without metadata.component
     leaves a consumer unable to tell what it describes. Read from the single
-    version source (server/src/workspaces/_version.py) so it matches the release
+    version source (server/src/rvnd/_version.py) so it matches the release
     tag and is immune to how a given pip report represents the install root.
     """
     version_file = (

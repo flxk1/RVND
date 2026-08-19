@@ -18,8 +18,8 @@ import json
 
 import pytest
 
-from workspaces import cli as _cli
-from workspaces.cli import main
+from rvnd import cli as _cli
+from rvnd.cli import main
 
 
 # ---------------------------------------------------------------------------
@@ -109,7 +109,7 @@ def test_doctor_missing_optional_dep_warns_not_errors(isolated_env, monkeypatch,
 def test_doctor_uninitialised_controller_key_is_info_not_error(isolated_env):
     """A fresh keydir (no controller.priv) reports INFO, not ERROR or WARN."""
     # Confirm no controller key exists yet.
-    from workspaces import signing
+    from rvnd import signing
     assert not signing._controller_private_key_path().exists()
 
     result = _cli._doctor_check_controller_key()
@@ -145,11 +145,11 @@ def test_doctor_sample_round_trip_ok_under_allowlist_enforcement(
     import os
     import tempfile
 
-    from workspaces.folder_context import (
+    from rvnd.folder_context import (
         ALLOW_UNREGISTERED_ENV,
         FolderContextNotAllowed,
     )
-    from workspaces.mutation_log import MutationLog
+    from rvnd.mutation_log import MutationLog
 
     monkeypatch.delenv(ALLOW_UNREGISTERED_ENV, raising=False)
 

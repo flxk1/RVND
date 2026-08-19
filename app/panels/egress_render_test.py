@@ -22,7 +22,7 @@ os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 os.environ["EG_TOK"] = "EG-SECRET-VALUE"          # resolves -> armed; must never reach the DOM
 os.environ.pop("EG_MISSING", None)                 # dangling -> unplugged
 sys.path.insert(0, str(HERE.parent)); sys.path.insert(0, str(HERE.parent.parent / "server" / "src"))
-import serve, workspaces.mcp_server as S  # noqa: E402
+import serve, rvnd.mcp_server as S  # noqa: E402
 A = os.path.join(tmp, "alpha")
 os.makedirs(A, exist_ok=True)
 S.workspace_workspace("add", {"folder_context": A})

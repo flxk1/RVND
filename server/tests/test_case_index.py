@@ -26,7 +26,7 @@ import os
 
 import pytest
 
-from workspaces.case_index import (
+from rvnd.case_index import (
     case_fingerprint, record_case, retrieve, solves_edges,
 )
 
@@ -159,8 +159,8 @@ def test_projection_pure_and_additive(env):
 # ── I8: the real walker, deterministic mode ──────────────────────────────────
 
 def test_real_walker_open_case_records_without_edge(env, tmp_path):
-    from workspaces import legal_corpus, reasoning_walker as rw
-    from workspaces.rule_registry import RuleRegistry
+    from rvnd import legal_corpus, reasoning_walker as rw
+    from rvnd.rule_registry import RuleRegistry
 
     corpus_dir = tmp_path / "corpus"
     corpus_dir.mkdir()

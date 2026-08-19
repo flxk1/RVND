@@ -14,7 +14,7 @@ import os
 
 import pytest
 
-from workspaces.workspace_grounder import GroundingLedger
+from rvnd.workspace_grounder import GroundingLedger
 
 
 @pytest.fixture()
@@ -47,7 +47,7 @@ def test_forget_subject_removes_creator_keeps_work(ledger):
 def test_forget_subject_removes_corpus_entity(ledger):
     _attributed(ledger)
     ledger.link_creators_to_corpus()
-    from workspaces.legal_corpus import EntityRegistry
+    from rvnd.legal_corpus import EntityRegistry
     assert any(e["name"] == "Doe, Jane"
                for e in EntityRegistry(ledger.folder,
                                        log_root=ledger.log_root).entities.values())
@@ -69,7 +69,7 @@ def test_forget_subject_claims_routed_to_human(ledger):
 def test_forget_subject_audited_as_purge(ledger, tmp_path):
     _attributed(ledger)
     ledger.forget_subject("Doe, Jane")
-    from workspaces.mutation_log import MutationLog
+    from rvnd.mutation_log import MutationLog
     events = list(MutationLog(tmp_path, log_root=tmp_path / "log").replay())
     purge = [e for e in events
              if e.extra.get("kind") == "grounding-subject-forgotten"]
@@ -80,7 +80,7 @@ def test_creator_names_sweepable_in_audit_haystack(ledger, tmp_path):
     """erase_sweep matches str values in event extras — creators_text makes
     grounder events discoverable by subject name."""
     _attributed(ledger)
-    from workspaces.erasure import sweep
+    from rvnd.erasure import sweep
     report = sweep(str(tmp_path), "Doe, Jane", log_root=tmp_path / "log")
     assert sum(len(v) for v in report.hits_by_kind.values()) >= 1
 
@@ -158,7 +158,7 @@ def test_check_claim_requires_evidence(ledger):
 def test_failing_verdict_escalates_never_retracts(ledger, monkeypatch):
     w = ledger.register_work(title="W", url="https://x.test/w")
     c = ledger.ground_claim("Checked claim.", [w["id"]], quote="quote")
-    import workspaces.local_llm as ll
+    import rvnd.local_llm as ll
     monkeypatch.setattr(ll, "classify", lambda *a, **k: {
         "ok": True, "category": "does_not_support", "model_used": "mock"})
     res = ledger.check_claim_support(c["id"])
@@ -173,7 +173,7 @@ def test_failing_verdict_escalates_never_retracts(ledger, monkeypatch):
 def test_supports_verdict_recorded_no_escalation(ledger, monkeypatch):
     w = ledger.register_work(title="W", url="https://x.test/w")
     c = ledger.ground_claim("Good claim.", [w["id"]], quote="quote")
-    import workspaces.local_llm as ll
+    import rvnd.local_llm as ll
     monkeypatch.setattr(ll, "classify", lambda *a, **k: {
         "ok": True, "category": "supports", "model_used": "mock"})
     res = ledger.check_claim_support(c["id"])
@@ -182,7 +182,7 @@ def test_supports_verdict_recorded_no_escalation(ledger, monkeypatch):
 
 
 def test_gold_set_template_exists_and_parses():
-    from workspaces.loomground_assets import grounder_gold_path
+    from rvnd.loomground_assets import grounder_gold_path
     p = grounder_gold_path(template=True)
     rows = [json.loads(l) for l in p.read_text("utf-8").splitlines()
             if l.strip()]
@@ -198,7 +198,7 @@ def test_classify_creator_roles_proposes_never_overwrites(ledger, monkeypatch):
                          creators=[{"name": "Doe, Jane"},
                                    {"name": "European Commission"},
                                    {"name": "Kept, Role", "role": "editor"}])
-    import workspaces.local_llm as ll
+    import rvnd.local_llm as ll
     monkeypatch.setattr(ll, "classify", lambda text, cats, **k: {
         "ok": True,
         "category": "organisation" if ("Commission" in text) else "person"})
@@ -214,10 +214,10 @@ def test_classify_creator_roles_proposes_never_overwrites(ledger, monkeypatch):
 
 
 def test_classify_creator_roles_drives_citation_formatting(ledger, monkeypatch):
-    from workspaces.workspace_grounder import format_citation
+    from rvnd.workspace_grounder import format_citation
     w = ledger.register_work(title="Report", url="https://x.test/r", date="2024",
                              creators=[{"name": "European Data Protection Board"}])
-    import workspaces.local_llm as ll
+    import rvnd.local_llm as ll
     monkeypatch.setattr(ll, "classify", lambda *a, **k: {
         "ok": True, "category": "organisation"})
     ledger.classify_creator_roles()
@@ -229,7 +229,7 @@ def test_classify_creator_roles_unavailable_leaves_ledger_untouched(
         ledger, monkeypatch):
     ledger.register_work(title="W", url="https://x.test/w",
                          creators=[{"name": "Doe, Jane"}])
-    import workspaces.local_llm as ll
+    import rvnd.local_llm as ll
     monkeypatch.setattr(ll, "classify", lambda *a, **k: {
         "ok": False, "error": "no endpoint"})
     res = ledger.classify_creator_roles()
@@ -241,7 +241,7 @@ def test_classify_creator_roles_unavailable_leaves_ledger_untouched(
 def test_classify_creator_roles_garbage_category_skipped(ledger, monkeypatch):
     ledger.register_work(title="W", url="https://x.test/w2",
                          creators=[{"name": "Ambiguous Name"}])
-    import workspaces.local_llm as ll
+    import rvnd.local_llm as ll
     monkeypatch.setattr(ll, "classify", lambda *a, **k: {
         "ok": True, "category": "maybe??"})
     res = ledger.classify_creator_roles()

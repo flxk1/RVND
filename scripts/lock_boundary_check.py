@@ -71,7 +71,7 @@ def _import_targets(tree: ast.AST, parts: list[str], is_init: bool
 
 def _lock_public_api() -> set[str]:
     """Names the lock package binds at its top level — its declared inbound
-    API. A host import of the form ``from workspaces.lock import <name>``
+    API. A host import of the form ``from rvnd.lock import <name>``
     resolving to one of these is the sanctioned crossing and not an edge."""
     import ast as _ast
     names: set[str] = set()

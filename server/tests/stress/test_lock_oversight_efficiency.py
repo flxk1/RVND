@@ -7,7 +7,7 @@ level the system fires the *correct* number of human prompts, and stays
 within the documented friction budget.
 
 We don't reach into the full agent stack — we simulate the decision matrix
-in this file against the actual ``workspaces.lock`` Tier-B scanner. The
+in this file against the actual ``rvnd.lock`` Tier-B scanner. The
 matrix here MUST match what the runtime does; if it ever drifts, the
 real surface owes us a passing test, not a passing matrix.
 
@@ -31,7 +31,7 @@ import pytest
 
 # Tier-A: structural fields (e.g. IBAN, government IDs). For this test we
 # use a synthetic IBAN-shaped string so we don't pin the test to specific
-# workspaces.lock regex precision.
+# rvnd.lock regex precision.
 TIER_A_INPUT = "Wire to DE89370400440532013000 for the down payment."
 
 # Tier-B: PII-shaped strings the regex catches (emails, phones).
@@ -72,7 +72,7 @@ def lock_classify(text: str) -> str:
     catches things the regex deliberately misses.
     """
     try:
-        from workspaces.lock.core import tier_b_scan_text, _detect_confusable_bypass
+        from rvnd.lock.core import tier_b_scan_text, _detect_confusable_bypass
     except Exception:
         return "none"
     if _detect_confusable_bypass(text):
@@ -257,7 +257,7 @@ def test_autonomous_never_prompts_under_any_input():
 
 
 # ---------------------------------------------------------------------------
-# Per-tier shape regression — what workspaces.lock classifies into what
+# Per-tier shape regression — what rvnd.lock classifies into what
 # ---------------------------------------------------------------------------
 
 

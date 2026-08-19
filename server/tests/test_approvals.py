@@ -20,7 +20,7 @@ import os
 
 import pytest
 
-from workspaces.parties import register_party, set_party_status
+from rvnd.parties import register_party, set_party_status
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 
@@ -45,20 +45,20 @@ def env(tmp_path, monkeypatch):
 
 def _request(env, form="single_approver", competence="data-protection",
              timeout=3600.0, rid="req-1", requester="agent-x"):
-    from workspaces.approvals import request_approval
+    from rvnd.approvals import request_approval
     return request_approval(env["ws"], rid, form=form, competence=competence,
                             requester=requester, timeout_seconds=timeout,
                             now=T0, log_root=env["lr"])
 
 
 def _decide(env, rid, decision, actor, now=T0 + 10):
-    from workspaces.approvals import decide_approval
+    from rvnd.approvals import decide_approval
     return decide_approval(env["ws"], rid, decision, actor=actor, now=now,
                            log_root=env["lr"])
 
 
 def _resolve(env, rid, now):
-    from workspaces.approvals import resolve_approval
+    from rvnd.approvals import resolve_approval
     return resolve_approval(env["ws"], rid, now=now, log_root=env["lr"])
 
 
@@ -74,7 +74,7 @@ def test_timeout_means_deny_not_consent(env):
 def test_absence_delegates_via_logged_grant(env):
     """Anna is away; she DELEGATES data-protection to Carl (a logged grant on
     the chain). Ben is also away. Carl's approval now counts."""
-    from workspaces.approvals import delegate_competence
+    from rvnd.approvals import delegate_competence
     set_party_status(env["ws"], "ben", "suspended", actor="ben",
                      log_root=env["lr"])
     d = delegate_competence(env["ws"], "data-protection", from_party="anna",
@@ -87,7 +87,7 @@ def test_absence_delegates_via_logged_grant(env):
 
 
 def test_delegation_requires_holding_the_competence(env):
-    from workspaces.approvals import delegate_competence
+    from rvnd.approvals import delegate_competence
     with pytest.raises(ValueError):
         delegate_competence(env["ws"], "data-protection", from_party="carl",
                             to_party="anna", actor="carl", now=T0,
@@ -156,7 +156,7 @@ def test_auto_form_granted_immediately_block_never(env):
 
 
 def test_unknown_form_or_request_refused(env):
-    from workspaces.approvals import resolve_approval
+    from rvnd.approvals import resolve_approval
     with pytest.raises(ValueError):
         _request(env, form="notarized", rid="r-x")
     with pytest.raises(ValueError):

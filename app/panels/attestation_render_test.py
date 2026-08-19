@@ -21,7 +21,7 @@ os.environ["WORKSPACE_MODELS_DIR"] = os.path.join(tmp, "models")
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 sys.path.insert(0, str(HERE.parent)); sys.path.insert(0, str(HERE.parent.parent / "server" / "src"))
 import serve  # noqa: E402
-from workspaces.attestation import runtime as AR  # noqa: E402
+from rvnd.attestation import runtime as AR  # noqa: E402
 
 F = os.path.join(tmp, "org"); os.makedirs(F, exist_ok=True)
 LOG = os.environ["WORKSPACE_L0_LOG_ROOT"]

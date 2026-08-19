@@ -7,8 +7,8 @@ from __future__ import annotations
 
 import json
 
-from workspaces import draft_store as D
-from workspaces import parties, session_io as S, session_mcp as M
+from rvnd import draft_store as D
+from rvnd import parties, session_io as S, session_mcp as M
 
 
 def _ws(tmp_path, wid: str, *, chat: dict | None = None) -> dict:

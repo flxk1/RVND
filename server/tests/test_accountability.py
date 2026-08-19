@@ -27,8 +27,8 @@ Claims under test (written BEFORE the logic):
 from __future__ import annotations
 
 
-from workspaces.solver_topology import SolverNode
-from workspaces.accountability import audit_accountability, amplification_curve
+from rvnd.solver_topology import SolverNode
+from rvnd.accountability import audit_accountability, amplification_curve
 
 
 def _n(i, warrant="detected", kind="solve", grade="auto"):

@@ -11,10 +11,10 @@ from __future__ import annotations
 import os
 import pytest
 
-from workspaces import parties as pt
-from workspaces.governance_graph import governance_graph
-from workspaces.use_case import register_use_case
-from workspaces.operations import operate
+from rvnd import parties as pt
+from rvnd.governance_graph import governance_graph
+from rvnd.use_case import register_use_case
+from rvnd.operations import operate
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 
@@ -37,7 +37,7 @@ def test_c1_egress_boundaries_grouped_by_destination_class(env):
     """C1: egress connectors are surfaced as N boundaries grouped by
     destination-class, each carrying its floor + group-bus; the single master
     stays (additive — nothing that reads it breaks)."""
-    from workspaces.connectors import register_connector
+    from rvnd.connectors import register_connector
     ws, lr = env["ws"], env["lr"]
     register_connector(ws, connector_id="llm-out", role="egress", channel="api",
                        use_cases=["u"], floor="hold", group="company",
@@ -170,7 +170,7 @@ def test_policy_reservation_projects_as_policy_not_law(env):
     """A company-chosen reservation must project basis_kind 'policy' (NOT law), so
     no surface can attribute it to law. The register row carries the distinct
     basis(es) — here ['policy'] — never a flat reserved_by_law boolean."""
-    from workspaces.governance_graph import governance_register
+    from rvnd.governance_graph import governance_register
     ws, lr = env["ws"], env["lr"]
     register_use_case(
         ws, use_case_id="uc-mod", name="Moderate", fingerprint=_fp("liability_cap"),
@@ -200,7 +200,7 @@ def test_unfired_egress(env):
 
 
 def test_facade_ops_reachable_and_surface_intact(env):
-    from workspaces import mcp_server as M
+    from rvnd import mcp_server as M
     assert len(M._DECLARED_TOOLS) == 24
     ops = {o["op"] for o in M.workspace_workflow(op="help")["ops"]}
     assert {"use_case_register", "use_case_list", "use_case_get",

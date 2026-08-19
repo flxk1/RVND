@@ -14,8 +14,8 @@ import tempfile
 
 import pytest
 
-from workspaces import parties as P
-from workspaces import party_resolver as PR
+from rvnd import parties as P
+from rvnd import party_resolver as PR
 
 
 @pytest.fixture

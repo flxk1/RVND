@@ -25,7 +25,7 @@ os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 sys.path.insert(0, str(HERE.parent))
 sys.path.insert(0, str(HERE.parent.parent / "server" / "src"))
 import serve                          # noqa: E402
-import workspaces.mcp_server as S          # noqa: E402
+import rvnd.mcp_server as S          # noqa: E402
 
 F = os.path.join(tmp, "org")
 os.makedirs(F, exist_ok=True)
@@ -47,7 +47,7 @@ def main() -> int:
     # event: audit_tail reports signed=False for it and the ticker must flag
     # it, not render it like a signed chip.
     import json
-    from workspaces.mutation_log import MutationLog
+    from rvnd.mutation_log import MutationLog
     lf = MutationLog(F, log_root=os.environ["WORKSPACE_L0_LOG_ROOT"]).log_file
     lines = lf.read_text().splitlines()
     tampered = json.loads(lines[-1])

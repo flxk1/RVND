@@ -8,7 +8,7 @@ import io
 import json
 
 
-from workspaces.lock import (
+from rvnd.lock import (
     Finding,
     OversightDecision,
     OversightLevel,
@@ -16,13 +16,13 @@ from workspaces.lock import (
     effective_level,
     review_findings,
 )
-from workspaces.lock.oversight import (
+from rvnd.lock.oversight import (
     asks_user_per_finding,
     asks_user_per_plan,
     notifies_user_post_execution,
     waits_for_review_after_execution,
 )
-from workspaces.lock.interactive import interactive_cli
+from rvnd.lock.interactive import interactive_cli
 
 
 # ---------------------------------------------------------------------------

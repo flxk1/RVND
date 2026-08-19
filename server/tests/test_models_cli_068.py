@@ -18,8 +18,8 @@ import json
 
 import pytest
 
-from workspaces import cli as cli_mod
-from workspaces import models_registry
+from rvnd import cli as cli_mod
+from rvnd import models_registry
 
 
 @pytest.fixture
@@ -393,7 +393,7 @@ def test_models_registry_back_compat_reads_legacy_primary_backup_keys_with_warni
     # regardless of test ordering.
     models_registry._LEGACY_KEYS_WARNED.clear()
 
-    with caplog.at_level(logging.WARNING, logger="workspaces.models_registry"):
+    with caplog.at_level(logging.WARNING, logger="rvnd.models_registry"):
         got = models_registry.models_for_role("validator")
 
     # Reader returns the same list as the new-key form would.

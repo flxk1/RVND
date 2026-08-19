@@ -54,7 +54,7 @@ flowchart TB
 ## Settled flow vs. what runs today
 
 The spine `ingest → versum → solver → patchbay` is the **settled flow** — the code names it
-verbatim in [`deontic_facets.py`](../../server/src/workspaces/deontic_facets.py):
+verbatim in [`deontic_facets.py`](../../server/src/rvnd/deontic_facets.py):
 *"per the settled flow `versum → solver → patchbay → rvnd`, the deontic nD facet is emitted by
 ingest into versum and should reach RVND as an editable **patchbay relation**."*
 
@@ -64,7 +64,7 @@ exists, the `*_from_text` builders re-run the surface reader locally … a delib
 fallback."* Until it lands, the skills reach the gate two other ways, both drawn **solid**:
 
 - **`governance_netlist`** — *"a read-only graph assembled from the signed chain"*
-  ([`governance_graph.py`](../../server/src/workspaces/governance_graph.py)); what
+  ([`governance_graph.py`](../../server/src/rvnd/governance_graph.py)); what
   `compile-loomground-policy` and `reason-governance-rules` (`operate`) read.
 - **raw-text fallback** — the deontic facet re-read locally, bypassing the spine.
 

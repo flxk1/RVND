@@ -20,13 +20,13 @@ import importlib
 from pathlib import Path
 
 
-from workspaces.memory import WorkspaceMemory
+from rvnd.memory import WorkspaceMemory
 
 
 def _fresh_mcp(monkeypatch, log_root: Path):
-    import workspaces.mcp_server as srv
+    import rvnd.mcp_server as srv
     importlib.reload(srv)
-    monkeypatch.setattr("workspaces.mcp_serving._log_root", lambda: log_root)
+    monkeypatch.setattr("rvnd.mcp_serving._log_root", lambda: log_root)
     return srv
 
 

@@ -9,8 +9,8 @@ from __future__ import annotations
 
 import os
 
-from workspaces import security_dashboard as SD
-from workspaces import card_gate as CG
+from rvnd import security_dashboard as SD
+from rvnd import card_gate as CG
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 
@@ -77,8 +77,8 @@ def test_from_log_reads_the_chain(tmp_path, monkeypatch):
     # governance_graph_v05 when this leaked WORKSPACE_KEY_DIR).
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(tmp_path / "keys"))
     log_root = str(tmp_path / "logs")
-    from workspaces import inbox_watcher as IW
-    from workspaces.ingest_quarantine import QuarantineRefused
+    from rvnd import inbox_watcher as IW
+    from rvnd.ingest_quarantine import QuarantineRefused
     folder = tmp_path / "f"
     folder.mkdir(parents=True, exist_ok=True)
     bad = folder / "x.txt"
@@ -96,9 +96,9 @@ def test_security_dashboard_op_is_live_and_discoverable(tmp_path, monkeypatch):
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(tmp_path / "keys"))
     monkeypatch.setenv("WORKSPACE_L0_LOG_ROOT", str(tmp_path / "logs"))
     monkeypatch.setenv("WORKSPACES_ALLOW_UNREGISTERED", "1")
-    from workspaces import inbox_watcher as IW
-    from workspaces.ingest_quarantine import QuarantineRefused
-    from workspaces import mcp_server as M
+    from rvnd import inbox_watcher as IW
+    from rvnd.ingest_quarantine import QuarantineRefused
+    from rvnd import mcp_server as M
     folder = tmp_path / "f"
     folder.mkdir(parents=True, exist_ok=True)
     bad = folder / "x.txt"

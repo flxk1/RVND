@@ -36,7 +36,7 @@ pytestmark = [pytest.mark.slow, pytest.mark.security]
 def _signing_writer(workspace_str: str, log_root_str: str, key_dir: str,
                     n_events: int, label: str) -> None:
     os.environ["WORKSPACE_KEY_DIR"] = key_dir
-    from workspaces.mutation_log import LogEvent, MutationLog
+    from rvnd.mutation_log import LogEvent, MutationLog
 
     workspace = Path(workspace_str)
     log = MutationLog(workspace, log_root=Path(log_root_str))
@@ -84,7 +84,7 @@ def test_racing_first_use_keypair_single_identity(tmp_path: Path,
 
     # Every event from BOTH processes must verify against that identity.
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(key_dir))
-    from workspaces.mutation_log import MutationLog
+    from rvnd.mutation_log import MutationLog
     result = MutationLog(workspace, log_root=log_root).verify_chain()
     assert result.total_events == 2 * n_each
     assert len(result.signature_failures) == 0, (

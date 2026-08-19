@@ -9,9 +9,9 @@ composes over, and (d) instrument data adds TEMPORAL supersedes edges.
 
 from __future__ import annotations
 
-from workspaces import legal_kg
-from workspaces.dimensions import Dimension
-from workspaces import reasoning
+from rvnd import legal_kg
+from rvnd.dimensions import Dimension
+from rvnd import reasoning
 
 
 def _edge_triples(kg):

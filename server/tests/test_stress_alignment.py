@@ -16,10 +16,10 @@ from __future__ import annotations
 import tempfile
 from pathlib import Path
 
-from workspaces import governance as gov
-from workspaces import policy_matrix as pm
-from workspaces.policy import set_oversight_level, set_lock_mode, load_policy
-from workspaces.mutation_log import MutationLog
+from rvnd import governance as gov
+from rvnd import policy_matrix as pm
+from rvnd.policy import set_oversight_level, set_lock_mode, load_policy
+from rvnd.mutation_log import MutationLog
 
 
 def _run_scenarios(root: Path):

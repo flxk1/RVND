@@ -35,13 +35,13 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-import workspaces.decisions.outbox as OB
-import workspaces.decisions.queue as DQ
-import workspaces.mcp_server as S
-from workspaces.mcp_impl import (decision_claim, decision_open,
+import rvnd.decisions.outbox as OB
+import rvnd.decisions.queue as DQ
+import rvnd.mcp_server as S
+from rvnd.mcp_impl import (decision_claim, decision_open,
                                  decision_pending,
                                  decision_reconfirm_request, decision_record)
-from workspaces.parties import register_party
+from rvnd.parties import register_party
 
 SURFACE = {
     "query": "Erase the record while invoices sit in the retention window?",
@@ -194,7 +194,7 @@ def test_miss_cap_voids_the_code(env):                           # N8
     assert q.verify_reconfirm(did, "dana", fresh)["ok"] is True
     from pathlib import Path as P
 
-    from workspaces.mutation_log import MutationLog
+    from rvnd.mutation_log import MutationLog
     kinds = [(e.extra or {}).get("kind") for e in
              MutationLog(P(env["folder"]), log_root=P(env["log"])).replay()]
     assert "decision.reconfirm_failed" in kinds
@@ -216,7 +216,7 @@ def test_reconfirm_code_egress_is_gated(env, monkeypatch):       # N10
     tok = S.workspace_dispatch("decision_link_mint", {
         "folder_context": env["folder"], "decision_id": did,
         "party_id": "dana"})["token"]
-    import workspaces.mcp_impl as MI
+    import rvnd.mcp_impl as MI
     monkeypatch.setattr(OB, "SENDERS", {"email": env["senders"]["email"]})
     monkeypatch.setattr(MI, "lock_egress_check",
                         lambda **kw: {"action": "refuse", "reason": "policy"})

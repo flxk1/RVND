@@ -10,8 +10,8 @@ from __future__ import annotations
 import argparse
 import io
 
-import workspaces.cli.impl as impl
-import workspaces.workspace_registry as registry
+import rvnd.cli.impl as impl
+import rvnd.workspace_registry as registry
 
 
 def _run(monkeypatch, tmp_path, *, stdin: str = "", yes=False, dry=False):
@@ -47,7 +47,7 @@ def test_init_dry_run_writes_nothing(monkeypatch, tmp_path):
 
 
 def test_init_model_step_shows_paths_when_none_registered(monkeypatch, tmp_path):
-    import workspaces.models_registry as mr
+    import rvnd.models_registry as mr
     monkeypatch.setattr(mr, "models_for_role", lambda role: [])
     rc, out, _c, _h = _run(monkeypatch, tmp_path, yes=True)
     assert rc == 0
@@ -59,7 +59,7 @@ def test_init_model_step_shows_paths_when_none_registered(monkeypatch, tmp_path)
 
 
 def test_init_model_step_confirms_when_registered(monkeypatch, tmp_path):
-    import workspaces.models_registry as mr
+    import rvnd.models_registry as mr
     monkeypatch.setattr(mr, "models_for_role", lambda role: ["my-local-gguf"])
     rc, out, _c, _h = _run(monkeypatch, tmp_path, yes=True)
     assert rc == 0
@@ -82,7 +82,7 @@ def test_init_has_skills_section_and_pin_hint_under_yes(monkeypatch, tmp_path):
 
 
 def test_init_interactive_offers_model_wizard_and_skills(monkeypatch, tmp_path):
-    import workspaces.models_registry as mr
+    import rvnd.models_registry as mr
     monkeypatch.setattr(mr, "models_for_role", lambda role: [])
     # promise=y, ws folder=default, model wizard offer=n, skills offer=n
     rc, out, _c, _h = _run(monkeypatch, tmp_path, stdin="y\n\nn\nn\n", yes=False)
@@ -93,8 +93,8 @@ def test_init_interactive_offers_model_wizard_and_skills(monkeypatch, tmp_path):
 
 
 def test_init_launches_real_model_wizard_when_accepted(monkeypatch, tmp_path):
-    import workspaces.models_registry as mr
-    import workspaces.lock as lock
+    import rvnd.models_registry as mr
+    import rvnd.lock as lock
     monkeypatch.setattr(mr, "models_for_role", lambda role: [])
     called: dict = {}
 
@@ -114,8 +114,8 @@ def test_init_launches_real_model_wizard_when_accepted(monkeypatch, tmp_path):
 
 
 def test_init_pins_skills_via_real_picker_when_accepted(monkeypatch, tmp_path):
-    import workspaces.models_registry as mr
-    import workspaces.pinned_skills as ps
+    import rvnd.models_registry as mr
+    import rvnd.pinned_skills as ps
     monkeypatch.setattr(mr, "models_for_role", lambda role: [])
     monkeypatch.setattr(ps, "load_companion_catalogue", lambda: {
         "families": {"ai-gov": {"label": "AI Gov", "skills": ["watch"]}}})

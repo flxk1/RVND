@@ -11,10 +11,10 @@ import os
 import time
 import pytest
 
-from workspaces import mcp_server as M
-from workspaces import loomground_lang as L
-from workspaces.governance_graph import governance_graph, governance_graph_v05, _project_v05
-from workspaces.loomground_lang import VERDICTS
+from rvnd import mcp_server as M
+from rvnd import loomground_lang as L
+from rvnd.governance_graph import governance_graph, governance_graph_v05, _project_v05
+from rvnd.loomground_lang import VERDICTS
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 

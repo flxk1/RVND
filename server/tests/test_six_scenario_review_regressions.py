@@ -18,7 +18,7 @@ from pathlib import Path
 
 import pytest
 
-from workspaces import mcp_server as M
+from rvnd import mcp_server as M
 
 
 NOW = 1_750_000_000

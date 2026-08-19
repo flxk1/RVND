@@ -18,7 +18,7 @@ from pathlib import Path
 
 import pytest
 
-from workspaces.mutation_log import (
+from rvnd.mutation_log import (
     LogEvent,
     MutationLog,
     _canonical_event_hash,
@@ -32,7 +32,7 @@ pytestmark = pytest.mark.security
 def _make_keydir(tmp_path: Path, name: str, monkeypatch) -> Path:
     keydir = tmp_path / name
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(keydir))
-    from workspaces import signing
+    from rvnd import signing
     signing.ensure_keypair()
     return keydir
 
@@ -80,7 +80,7 @@ def test_a2_resign_with_stolen_key_chain_passes_signature_check(
     _make_keydir(tmp_path, "host_a_keys", monkeypatch)
     log = _populated_chain(tmp_path, n=5)
 
-    from workspaces import signing
+    from rvnd import signing
 
     # Attacker (holding the key) deletes event[2] and re-links + re-signs
     # the rest.
@@ -125,7 +125,7 @@ def test_a2_cross_host_divergence_is_flagged(tmp_path, monkeypatch):
     _make_keydir(tmp_path, "host_a_keys", monkeypatch)
     log = _populated_chain(tmp_path, n=3)
 
-    from workspaces import signing
+    from rvnd import signing
 
     # Forge a new event stamped with host B's id and signed with host A's key.
     log_file = log.log_file
@@ -175,7 +175,7 @@ def test_a2_strict_mode_fails_the_chain_on_divergence(tmp_path, monkeypatch):
     _make_keydir(tmp_path, "host_a_keys", monkeypatch)
     log = _populated_chain(tmp_path, n=3)
 
-    from workspaces import signing
+    from rvnd import signing
 
     log_file = log.log_file
     lines = [json.loads(l) for l in log_file.read_text().splitlines() if l.strip()]

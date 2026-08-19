@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces.workflows import Workflow, WorkflowStep, define_workflow, run_workflow
+from rvnd.workflows import Workflow, WorkflowStep, define_workflow, run_workflow
 
 INJECTION_PAYLOAD = (
     "Quarterly report for project Atlas.\n"
@@ -62,7 +62,7 @@ def test_a5t_scanner_absence_is_loud_not_silent(tmp_path, monkeypatch):
     import builtins
     real_import = builtins.__import__
     def broken_import(name, *a, **k):
-        if name.startswith("workspaces.lock"):
+        if name.startswith("rvnd.lock"):
             raise ImportError("scanner unavailable")
         return real_import(name, *a, **k)
     monkeypatch.setattr(builtins, "__import__", broken_import)

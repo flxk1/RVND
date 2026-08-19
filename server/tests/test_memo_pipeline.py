@@ -4,11 +4,11 @@
 
 from __future__ import annotations
 
-from workspaces.subject_card import make_card, AI_ACT_VOCAB
-from workspaces.applicability import enrich_pairs, applicability_facets_ai_act
-from workspaces.matcher import assess, Match
-from workspaces.deontic_facets import extract_deontic_pairs
-from workspaces.memo import build_memo, render_memo
+from rvnd.subject_card import make_card, AI_ACT_VOCAB
+from rvnd.applicability import enrich_pairs, applicability_facets_ai_act
+from rvnd.matcher import assess, Match
+from rvnd.deontic_facets import extract_deontic_pairs
+from rvnd.memo import build_memo, render_memo
 
 
 AI_ACT = (

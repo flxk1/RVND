@@ -13,7 +13,7 @@ Pins the guard-not-teacher model:
 
 import pytest
 
-from workspaces.lens import (
+from rvnd.lens import (
     Admission, LearningObject, LearningScope, Precedent, UpdateBudget,
     classify_admission, select_precedent)
 

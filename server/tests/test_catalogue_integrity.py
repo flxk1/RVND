@@ -21,7 +21,7 @@ from pathlib import Path
 
 import pytest
 
-from workspaces import catalogue_integrity as ci
+from rvnd import catalogue_integrity as ci
 
 
 # ---------------------------------------------------------------------------

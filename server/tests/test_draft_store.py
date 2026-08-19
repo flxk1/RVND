@@ -9,10 +9,10 @@ import json
 
 import pytest
 
-from workspaces import draft_store as D
-from workspaces import seal
-from workspaces.memory import WorkspaceMemory
-from workspaces.mutation_log import MutationLog
+from rvnd import draft_store as D
+from rvnd import seal
+from rvnd.memory import WorkspaceMemory
+from rvnd.mutation_log import MutationLog
 
 
 @pytest.fixture
@@ -76,7 +76,7 @@ def test_oversize_payload_refused_with_size_named(env):
 
 def test_sealed_workspace_refuses_save_load_discard(env, tmp_path, monkeypatch):
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(tmp_path / "keys"))
-    from workspaces import signing
+    from rvnd import signing
     signing.ensure_keypair()
     mem = WorkspaceMemory(env["folder"], log_root=env["log_root"], actor="t")
     mem.remember({

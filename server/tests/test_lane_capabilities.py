@@ -11,18 +11,18 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces.adapters.solver.loomground import (
+from rvnd.adapters.solver.loomground import (
     RISKS,
     VERDICTS,
     evaluate_log,
     grade_meets,
 )
-from workspaces.governance_graph import governance_graph
-from workspaces.governance_lane import GovernanceLane, register_lane
-from workspaces.lane_capabilities import SCHEMA_KIND, lane_capabilities, preview_patch
-from workspaces.operations import AUTO_GRADE_MIN
-from workspaces.parties import register_party
-from workspaces.use_case import register_use_case
+from rvnd.governance_graph import governance_graph
+from rvnd.governance_lane import GovernanceLane, register_lane
+from rvnd.lane_capabilities import SCHEMA_KIND, lane_capabilities, preview_patch
+from rvnd.operations import AUTO_GRADE_MIN
+from rvnd.parties import register_party
+from rvnd.use_case import register_use_case
 
 # The lane-declared kind the folder never wires (projects default-deny).
 GHOST = "ghost_kind"
@@ -170,7 +170,7 @@ def test_fail_closed_never_all_allowed(governed, monkeypatch):
     # unreadable chain -> readable:false, no capabilities, never 'auto'
     def _boom(*a, **k):
         raise OSError("chain unreadable")
-    monkeypatch.setattr("workspaces.lane_capabilities.get_lane", _boom)
+    monkeypatch.setattr("rvnd.lane_capabilities.get_lane", _boom)
     out = lane_capabilities(folder, "bot", log_root=log)
     assert out["ok"] is False and out["readable"] is False
     assert out["capabilities"] == []
@@ -245,11 +245,11 @@ def test_preview_auto_split_is_the_run_path_grade_rule(governed):
 
 # ------------------------------------------------------- handshake + verb
 def test_admission_response_carries_the_projection(governed):
-    from workspaces.mcp_serving import (
+    from rvnd.mcp_serving import (
         clear_request_principal,
         set_request_principal,
     )
-    from workspaces.session_admission import governance_open
+    from rvnd.session_admission import governance_open
     folder, log = governed
     set_request_principal("bot", "bot")
     try:
@@ -269,7 +269,7 @@ def test_admission_response_carries_the_projection(governed):
 
 
 def test_mcp_verb_is_registered_and_read_only(governed, monkeypatch):
-    from workspaces import mcp_server as M
+    from rvnd import mcp_server as M
     folder, log = governed
     monkeypatch.setenv("WORKSPACE_L0_LOG_ROOT", log)
     ops = {o["op"] for o in M.workspace_workflow("help")["ops"]}

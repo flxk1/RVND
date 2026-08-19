@@ -28,7 +28,7 @@ import threading
 from collections import Counter
 
 
-from workspaces.lock.core import (
+from rvnd.lock.core import (
     ENSEMBLE_MODELS_DEFAULT,
     tier_c_semantic_check,
 )
@@ -226,14 +226,14 @@ def test_local_model_crash_mid_response_records_no_truncated_capture(monkeypatch
         captured.append(kwargs)
         return {"ok": True}
 
-    monkeypatch.setattr("workspaces.mcp_server.capture_llm",
+    monkeypatch.setattr("rvnd.mcp_server.capture_llm",
                          _fake_capture, raising=True)
 
     local = MockLocalLLM(models={
         "phi-3.5-mini-q4": "crash_mid_response",
     })
     with local:
-        from workspaces.mcp_server import local_llm_complete
+        from rvnd.mcp_server import local_llm_complete
         out = local_llm_complete(
             prompt="hello", folder_context="/tmp/x",
             model="phi-3.5-mini-q4", capture=True,
@@ -257,7 +257,7 @@ def test_model_registry_consistency_when_one_model_deregisters():
     local_full = MockLocalLLM()  # default both ok
     with local_full:
         result_both = tier_c_semantic_check("Some neutral text.")
-        from workspaces.local_llm import list_available
+        from rvnd.local_llm import list_available
         listing_both = list_available()
     assert result_both is not None
     assert set(listing_both.get("models", [])) == set(ENSEMBLE_MODELS_DEFAULT)
@@ -270,7 +270,7 @@ def test_model_registry_consistency_when_one_model_deregisters():
     })
     with local_one:
         result_one = tier_c_semantic_check("Some neutral text.")
-        from workspaces.local_llm import list_available as _list_again
+        from rvnd.local_llm import list_available as _list_again
         listing_one = _list_again()
     assert result_one is not None
     assert result_one.label == "insufficient", (

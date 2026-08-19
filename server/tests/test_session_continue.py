@@ -17,8 +17,8 @@ from pathlib import Path
 
 import pytest
 
-from workspaces import parties, session_io as S
-from workspaces.mutation_log import MutationLog
+from rvnd import parties, session_io as S
+from rvnd.mutation_log import MutationLog
 
 
 @pytest.fixture

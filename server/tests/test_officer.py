@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import os
 
-from workspaces import officer as OF
+from rvnd import officer as OF
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 
@@ -41,7 +41,7 @@ def test_reserved_act_routes_to_human():
 
 
 def test_officer_escalates_a_gate_verdict():
-    from workspaces import action_gate as AG
+    from rvnd import action_gate as AG
     req = AG.ActionRequest(agent="ai_system", action_class="hiring", autonomy_grade="L2")
     assert AG.gate(req).verdict.value == "GO"                         # base: benign action goes
     d = AG.gate(req, officers=[OF.Officer("dpo", "DPO", oversees=["hiring"],
@@ -54,7 +54,7 @@ def test_officer_escalates_a_gate_verdict():
 
 
 def test_officer_scoped_and_monotone():
-    from workspaces import action_gate as AG
+    from rvnd import action_gate as AG
     req = AG.ActionRequest(agent="ai_system", action_class="hiring", autonomy_grade="L2")
     # an officer that does not govern this gate changes nothing
     assert AG.gate(req, officers=[OF.Officer("x", "X", oversees=["other"], control_form="block")]).verdict.value == "GO"
@@ -70,7 +70,7 @@ def test_officer_op_previews_oversight_and_is_discoverable():
     # the mechanism is already wired+tested into action_gate (O5/O6); the op makes an officer
     # PREVIEW reachable via the dispatch. Production auto-loading of
     # registered officers needs an officer store (persistence) and is separate.
-    from workspaces import mcp_server as M
+    from rvnd import mcp_server as M
     r = M.workspace_workflow("officer", {
         "folder_context": "", "officer_id": "dpo-officer", "oversees": ["gate:hiring"],
         "control_form": "single_approver", "escalation_party": "dpo", "gate_floor": "auto"})

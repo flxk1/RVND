@@ -30,7 +30,7 @@ from __future__ import annotations
 import time
 
 
-from workspaces.lock.core import (
+from rvnd.lock.core import (
     tier_b_scan_text,
     tier_c_semantic_check,
     _detect_confusable_bypass,

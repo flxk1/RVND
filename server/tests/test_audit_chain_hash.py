@@ -28,7 +28,7 @@ def _default_chain_profile(monkeypatch):
                 "WORKSPACE_STRICT_HOST_DIVERGENCE"):
         monkeypatch.delenv(var, raising=False)
 
-from workspaces.mutation_log import (
+from rvnd.mutation_log import (
     GENESIS_HASH,
     LogEvent,
     MutationLog,

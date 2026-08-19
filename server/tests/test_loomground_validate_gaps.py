@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces import loomground_lang as L
+from rvnd import loomground_lang as L
 
 
 def _validate(loom: str):

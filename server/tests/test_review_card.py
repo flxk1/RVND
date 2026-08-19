@@ -26,7 +26,7 @@ import os
 
 import pytest
 
-from workspaces.review_card import (
+from rvnd.review_card import (
     overrides_for, recurrence_flags, record_override, review_card,
 )
 

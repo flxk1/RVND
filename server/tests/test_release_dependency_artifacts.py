@@ -46,7 +46,7 @@ def test_report_generates_platform_lock_sbom_and_notices(tmp_path: Path):
 
 
 def test_subject_component_version_matches_the_single_version_source():
-    """metadata.component.version is sourced from server/src/workspaces/_version.py
+    """metadata.component.version is sourced from server/src/rvnd/_version.py
     (the release-tag source), so the SBOM subject matches what ships."""
     from scripts.release_dependency_artifacts import subject_component_version
 

@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces import (
+from rvnd import (
     WorkspaceMemory,
     MutationLog,
     WebResult,
@@ -394,7 +394,7 @@ def test_delete_writes_system_channel_event(vault, log_root):
 def test_purge_pair_physically_removes_from_log(vault, log_root, tmp_path, monkeypatch):
     # B1: purge() now requires controller key + GDPR-grounds args.
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(tmp_path / "keys"))
-    from workspaces import signing
+    from rvnd import signing
     signing.ensure_controller_keypair()
 
     hr = WorkspaceMemory(vault["hr"], log_root=log_root)
@@ -413,7 +413,7 @@ def test_purge_pair_physically_removes_from_log(vault, log_root, tmp_path, monke
     # raw id.
     matching = [e for e in log.replay() if e.pair_id == pid]
     assert matching == []
-    from workspaces.forgotten_subjects import purged_pair_ref
+    from rvnd.forgotten_subjects import purged_pair_ref
     ref = purged_pair_ref(log.folder_path, pid)
     tombstones = [e for e in log.replay() if e.event == "purge" and e.pair_id == ref]
     assert len(tombstones) == 1
@@ -421,7 +421,7 @@ def test_purge_pair_physically_removes_from_log(vault, log_root, tmp_path, monke
 
 def test_purge_unknown_pair_returns_zero(vault, log_root, tmp_path, monkeypatch):
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(tmp_path / "keys"))
-    from workspaces import signing
+    from rvnd import signing
     signing.ensure_controller_keypair()
     hr = WorkspaceMemory(vault["hr"], log_root=log_root)
     assert hr.purge_pair(

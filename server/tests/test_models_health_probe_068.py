@@ -20,8 +20,8 @@ import json as _json
 import urllib.error
 
 
-from workspaces import models_registry
-from workspaces.models_registry import ModelEntry, health_check
+from rvnd import models_registry
+from rvnd.models_registry import ModelEntry, health_check
 
 
 # ---------------------------------------------------------------------------
@@ -188,7 +188,7 @@ def test_workspaces_models_list_health_shows_endpoint_status(
     import urllib.request as _ur
     monkeypatch.setattr(_ur, "urlopen", _ok)
 
-    from workspaces.cli import main
+    from rvnd.cli import main
     rc = main(["models", "list", "--health"])
     assert rc == 0
     out = capsys.readouterr().out
@@ -215,7 +215,7 @@ def test_workspaces_models_list_health_shows_no_endpoint_when_unconfigured(
         artifact_path=str(artifact),
     )
 
-    from workspaces.cli import main
+    from rvnd.cli import main
     rc = main(["models", "list", "--health"])
     assert rc == 0
     out = capsys.readouterr().out
