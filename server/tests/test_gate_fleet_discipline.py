@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # Copyright 2026 flxk1
-"""Fleet discipline for the UI render gates — three classes of silent failure
-died in one day (2026-08-08); these assertions keep them dead.
+"""Fleet discipline for the UI render gates. Three classes of silent failure
+died in one day (2026-08-08) and a fourth on 2026-08-19; these assertions keep
+them dead.
 
 1. **Explicit success exit.** Every gate .mjs must call ``process.exit(0)``.
    The composed page carries always-on chrome with live refresh intervals, so
