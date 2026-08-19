@@ -25,7 +25,7 @@ authors = [{ name = "flxk1" }]
 dependencies = [
     "loomground-solver @ git+https://github.com/flxk1/loomground-solver@f8ac006de541215dc82a4cbd5bbd1497a4e658d1",
     "loomground-versum @ git+https://github.com/flxk1/loomground-versum@1147d7fecd7b991ed87809fae263839ed92372ee",
-    "loomground-governance @ git+https://github.com/flxk1/loomground-governance@b69e0e17b8ab313f9ec0303523deeffdfe7ff115",
+    "loomground-governance @ git+https://github.com/flxk1/loomground-governance@6b291e7f31d7d22884a993b708d5295d8b93097b",
     "loomground-deontic @ git+https://github.com/flxk1/loomground-deontic@c93f4de657f04546f687966d4978d40e25693c2d",
     "loomground-ingest @ git+https://github.com/flxk1/loomground-ingest@dd277ef5c967b86f05ee0fa45c29634836affad0",
     "loomground-legal @ git+https://github.com/flxk1/loomground-legal@3638910292886b7812cac0c3a6b5d1e954522fc3",
