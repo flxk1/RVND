@@ -1,6 +1,6 @@
 /* The track channel strip — per-track selection detail in the Inspector
    (docs/concepts/per-track-binding-concept.md, "The track channel strip"). A read-only
-   render of the server's track_strip projection: status LED, the L0-L4
+   render of the server's track_strip projection: status LED, the per-grade
    oversight ladder (a law-basis reservation locks it — tighten only, no
    loosening affordance rendered), the governance inserts (competences, channel
    floors, reservations, the routed m-of-n sign-off meter), the per-track
@@ -23,7 +23,7 @@ async function fillTrackStrip(addr){
     h+='<div class="ro" aria-label="status: '+escA(st)+'"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+(_TS_STATUS[st]||'#5a616f')+';margin-right:5px"></span>'+esc(st)+(s.role?' · '+esc(s.role):'')+'</div>';
     const g=_tsGrade(s.ladder&&s.ladder.grade);
     if(g!=null){ h+='<div style="display:flex;gap:3px;margin:5px 0" role="img" aria-label="oversight ladder: L'+g+(s.ladder.locked?', locked by law — tighten only':'')+'">';
-      for(let i=0;i<5;i++) h+='<div class="fcell'+(i===g?' earned':'')+'"'+(i===g?' style="background:'+GHEX[g]+'"':'')+' title="L'+i+' · '+GRADE_NAME[i]+'">L'+i+'</div>';
+      for(let i=0;i<GRADE_NAME.length;i++) h+='<div class="fcell'+(i===g?' earned':'')+'"'+(i===g?' style="background:'+GHEX[g]+'"':'')+' title="L'+i+' · '+GRADE_NAME[i]+'">L'+i+'</div>';
       h+='</div>';
       if(s.ladder.locked){ const lk=(s.ladder.locks||[])[0]||{};
         h+='<div class="ro" style="font-size:10px;color:#e2554a" title="'+escA(lk.source||'')+'">🔒 locked by law — tighten only'+(lk.act_type?' ('+esc(lk.act_type)+')':'')+'</div>'; } }
