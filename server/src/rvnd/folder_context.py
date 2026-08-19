@@ -144,7 +144,7 @@ def _enforce_allowlist(resolved: Path, *, log_root: str | Path | None = None) ->
     under one. Descendants are allowed (the asymmetric folder rule).
 
     ``log_root`` selects which registry file backs the allowlist —
-    ``<log_root>/known-rvnd.json`` — and MUST match the log root the
+    ``<log_root>/known-workspaces.json`` — and MUST match the log root the
     operation runs under so enforcement reads the same registry that
     ``add_known_workspace`` / ``bootstrap_default_workspace`` write to. When
     ``None`` it falls back to the default log root (the historic behaviour).
@@ -316,7 +316,7 @@ def resolve_folder_context(
       3. If ``allow_unscoped`` is True → :data:`UNSCOPED_SENTINEL` with a warning.
       4. Else → raise :class:`NoFolderContextError`.
 
-    ``log_root`` scopes the A6 allowlist to ``<log_root>/known-rvnd.json``
+    ``log_root`` scopes the A6 allowlist to ``<log_root>/known-workspaces.json``
     (see :func:`_enforce_allowlist`); pass the same log root the operation runs
     under so a folder registered under a custom ``--log-root`` is honoured.
     Only the ``explicit`` branch is allowlist-checked, so ``log_root`` is

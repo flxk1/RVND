@@ -5,7 +5,7 @@ Workspaces workspaces.
 
 Until now the dashboard kept this list in browser ``localStorage``. That
 loses everything when the user switches browser or reinstalls Cowork. This
-module persists the same list to ``<log_root>/known-rvnd.json`` so it
+module persists the same list to ``<log_root>/known-workspaces.json`` so it
 survives, independent of the browser, served by serve.py.
 
 Format:
@@ -41,7 +41,7 @@ from typing import Any, Optional
 from ._storage_paths import LOG_ROOT_DEFAULT
 
 
-REGISTRY_FILE = "known-rvnd.json"
+REGISTRY_FILE = "known-workspaces.json"
 REGISTRY_VERSION = 1
 DEFAULT_WORKSPACE_DIR = Path.home() / "Documents" / "Workspaces"
 

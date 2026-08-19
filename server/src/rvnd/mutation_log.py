@@ -454,7 +454,7 @@ class MutationLog:
 
         # Enforce the A6 allowlist against the SAME log root this log writes to,
         # so a folder registered under a custom --log-root is honoured (the
-        # registry lives at <log_root>/known-rvnd.json).
+        # registry lives at <log_root>/known-workspaces.json).
         self.folder_path = resolve_folder_context(folder_path, log_root=log_root)
         self._folder_id = folder_hash(self.folder_path)
         root = Path(log_root) if log_root else LOG_ROOT_DEFAULT

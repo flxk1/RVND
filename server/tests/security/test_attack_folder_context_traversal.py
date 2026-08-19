@@ -177,7 +177,7 @@ def test_a6_allowlist_is_scoped_to_the_active_log_root(tmp_path, monkeypatch):
     operation runs under — not always the default log root.
 
     Regression: ``_enforce_allowlist`` called ``load_registry()`` with no
-    ``log_root``, so it always read ``<LOG_ROOT_DEFAULT>/known-rvnd.json``
+    ``log_root``, so it always read ``<LOG_ROOT_DEFAULT>/known-workspaces.json``
     even when the operation ran under a custom ``--log-root``. Two consequences,
     both pinned below: a folder registered under the custom root was invisible
     to enforcement (legitimate op refused), and a folder registered only under
