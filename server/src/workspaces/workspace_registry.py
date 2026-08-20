@@ -38,6 +38,7 @@ import time
 from pathlib import Path
 from typing import Any, Optional
 
+from .principal import get_request_principal, principal_workspace_member
 from ._storage_paths import LOG_ROOT_DEFAULT
 
 
@@ -150,7 +151,6 @@ def list_known_workspaces(log_root: Optional[Path] = None) -> list[dict[str, Any
     data = load_registry(log_root=log_root)
     ws = list(data.get("workspaces") or [])
     ws.sort(key=lambda w: w.get("added_at", ""))
-    from .principal import get_request_principal, principal_workspace_member
     ctx = get_request_principal()
     if ctx is not None:
         principal = ctx.get("principal") or ""
