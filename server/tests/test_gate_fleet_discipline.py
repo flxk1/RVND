@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # Copyright 2026 flxk1
-"""Fleet discipline for the UI render gates — three classes of silent failure
-died in one day (2026-08-08); these assertions keep them dead.
+"""Fleet discipline for the UI render gates. Three classes of silent failure
+died in one day (2026-08-08) and a fourth on 2026-08-19; these assertions keep
+them dead.
 
 1. **Explicit success exit.** Every gate .mjs must call ``process.exit(0)``.
    The composed page carries always-on chrome with live refresh intervals, so
@@ -19,9 +20,27 @@ died in one day (2026-08-08); these assertions keep them dead.
    gate swallows the rejection with a tolerant ``.catch``. A ``window.tool``
    call may only route its rejection to ``fail`` (that is exactly how the
    original asleep cross-check survived: a tolerant guard around a broken
-   helper). ``assertBridgeAlive`` (app/harness/rvnd_gate_guards.mjs — the
-   RVND-owned file beside the vendored harness) stays available as optional
-   early armor for heavy cross-checkers.
+   helper).
+
+4. **Every bridge-using gate proves the bridge is alive.** Rule 3 only armors
+   gates that actually CALL ``window.tool``; a gate that reads server-fed
+   state purely through the page's own boot has no such signal, because
+   ``loadGraph()`` (app/src/index.html) deliberately SWALLOWS a bridge fault
+   and returns an empty graph — the honest product behaviour, so an empty
+   workspace is drawn empty rather than dressed in the demo. The cost is that
+   a dead /tool bridge is indistinguishable from an empty workspace, and a
+   gate whose assertions survive an empty render then reports PASS against a
+   server it never reached. That is not hypothetical: with a 403-ing /tool,
+   ``empty_workspace_render.mjs`` printed its full PASS line (measured
+   2026-08-19, A/B against a forwarding proxy that 403s POST /tool). So every
+   gate must carry at least ONE liveness signal — a ``window.tool`` call
+   (rule 3 forces its rejection to ``fail``) or an explicit
+   ``assertBridgeAlive`` (app/harness/rvnd_gate_guards.mjs — the RVND-owned
+   file beside the vendored harness), which turns the same dead bridge into a
+   named failure. A gate whose SUBJECT is a broken bridge opts out with an
+   inline ``// gate-guard: exempt — <reason>`` marker: the exemption lives
+   beside the code that needs it, carries its reason, and greps out, instead
+   of accumulating in a list nobody rereads.
 
 HONEST RESIDUAL — what this file deliberately does NOT cover: a SUCCESSFUL
 but EMPTY result asserted as pass. Some gates legitimately expect empty, so
@@ -34,6 +53,7 @@ covered is how the last three were born.
 """
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
@@ -85,3 +105,63 @@ def test_no_gate_tolerates_a_tool_rejection():
         "window.tool rejection swallowed by a tolerant .catch — a dead bridge "
         "or refused op must FAIL the gate, never let a cross-check silently "
         "skip (route the rejection to fail):\n  " + "\n  ".join(offenders))
+
+
+# Vendored from loomground-patchbay, so an in-place guard would drift the
+# consumption contract that `verify_patchbay_consumption.py` enforces. These
+# nine ARE the failure this rule exists to catch — `empty_workspace_render`
+# was demonstrated printing a full PASS line against a bridge returning 403 —
+# so this is a RECORDED GAP, not an exemption on merit. The fix is upstream:
+# add the probe in patchbay and re-vendor. Shrink this list when that lands;
+# a name may only leave it by gaining the guard, never by being deleted.
+_VENDORED_UNGUARDED = frozenset({
+    "app/shell/about_render.mjs",
+    "app/shell/desk_view_render.mjs",
+    "app/shell/empty_workspace_render.mjs",
+    "app/shell/help_render.mjs",
+    "app/shell/loom_render.mjs",
+    "app/shell/slice_e_render.mjs",
+    "app/shell/ticker_render.mjs",
+    "app/shell/toolbar_render.mjs",
+    "app/shell/wizard_render.mjs",
+})
+
+def test_every_gate_proves_its_bridge_is_alive():
+    # loadGraph() swallows a bridge fault by design (an empty workspace must
+    # draw empty, not the demo), so page boot alone is NOT evidence the server
+    # was reached. A gate with no window.tool call of its own therefore needs
+    # the explicit probe, or a 403-ing bridge reads exactly like empty state.
+    offenders = []
+    for p in _gate_mjs():
+        text = p.read_text(errors="ignore")
+        if "bridgeGlobals" not in text:
+            continue                       # no live bridge to prove
+        if "window.tool(" in text or "assertBridgeAlive(" in text:
+            continue
+        m = re.search(r"//\s*gate-guard:\s*exempt\s*—\s*(\S.*)", text)
+        if m and m.group(1).strip():
+            continue                       # opted out, with a reason, in place
+        if str(p.relative_to(REPO)) in _VENDORED_UNGUARDED:
+            continue                       # see the constant: a KNOWN GAP, not a pass
+        offenders.append(str(p.relative_to(REPO)))
+    assert not offenders, (
+        "gate .mjs wires a live bridge but never proves it is alive — no "
+        "window.tool call (rule 3 armor) and no assertBridgeAlive. A dead "
+        "/tool bridge is indistinguishable from an empty workspace, so these "
+        "can PASS against a server they never reached; call "
+        "assertBridgeAlive(window, fail) right after the boot wait:\n  "
+        + "\n  ".join(offenders))
+
+
+def test_the_vendored_gap_list_is_honest():
+    """Every name in _VENDORED_UNGUARDED must still exist and still be
+    vendored. Otherwise the list becomes a place to hide a gate: delete the
+    file, or un-vendor it, and the recorded gap silently stops being recorded."""
+    import json
+    vendored = set(json.loads((REPO / "release" / "patchbay-consumption.json")
+                              .read_text(encoding="utf-8"))["files"])
+    for rel in sorted(_VENDORED_UNGUARDED):
+        assert (REPO / rel).exists(), f"{rel} is listed as a known gap but does not exist"
+        assert rel in vendored, (
+            f"{rel} is no longer vendored — it is ours now, so it must carry "
+            f"assertBridgeAlive rather than sit on the vendored-gap list")

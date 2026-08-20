@@ -22,6 +22,7 @@
 // Usage: node protections_failure_render.mjs <PORT> <FOLDER> <MODE>
 import { JSDOM } from "jsdom";
 import { bridgeGlobals, fetchComposedPage } from "../harness/render_harness.mjs";
+import { assertBridgeAlive } from "../harness/rvnd_gate_guards.mjs";
 const PORT = process.argv[2], F = process.argv[3], MODE = process.argv[4];
 const html = await fetchComposedPage(PORT);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -51,6 +52,7 @@ async function waitFor(pred, n = 100) { for (let i = 0; i < n; i++) { await slee
 async function main() {
   for (let i = 0; i < 400 && !window._ready; i++) await sleep(25);   // 10s: CI runners under load blow a 2s boot budget
   if (!window._ready) fail("patchbay did not boot");
+  await assertBridgeAlive(window, fail);
   window.S.path = F; await window.reload(); await sleep(40);
 
   // Revocation is a mid-session event: the page booted with a valid token
