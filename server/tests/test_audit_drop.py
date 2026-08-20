@@ -80,3 +80,29 @@ def test_doctor_reports_dropped_writes_as_an_error(tmp_path):
     check = _doctor_check_audit_drops(tmp_path)
     assert check["level"] == "error", "a lost audit record is not a warning"
     assert "egress_proxy.audit_log" in check["detail"]
+
+
+def test_lock_reports_through_the_injected_hook_not_an_import(monkeypatch, capsys):
+    """The lock must not import audit_drop -- lock_boundary_check enforces that.
+    It reports through host_deps.record_audit_drop instead."""
+    from workspaces.lock import egress_proxy as ep, host_deps
+    host_deps._wired = False
+    ep._report_audit_drop("unit.wired", OSError("boom"), detail="d")
+    assert [d["where"] for d in audit_drop.drops()] == ["unit.wired"]
+
+
+def test_lock_falls_back_to_stderr_without_its_host(monkeypatch, capsys):
+    """The extraction case: hooks unfilled. Degraded (no durable marker) but
+    never silent.
+
+    Worth a test of its own because the fallback is the branch no normal run
+    takes: it was shipped calling `sys.stderr` in a module that never imported
+    `sys`, and ruff's F82 (undefined name) -- which this repo selects -- did not
+    flag it. Only executing the branch did.
+    """
+    from workspaces.lock import egress_proxy as ep, host_deps
+    monkeypatch.setattr(host_deps, "record_audit_drop", None)
+    monkeypatch.setattr(host_deps, "_wired", True)
+    ep._report_audit_drop("unit.fallback", OSError("boom"))
+    assert "AUDIT WRITE DROPPED at unit.fallback" in capsys.readouterr().err
+    assert audit_drop.drops() == [], "no host means no in-process register either"

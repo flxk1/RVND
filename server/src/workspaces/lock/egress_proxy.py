@@ -59,6 +59,7 @@ import http.client
 import json
 import os
 import socket
+import sys
 import threading
 import time
 import urllib.error
@@ -856,10 +857,9 @@ class EgressProxy:
             with open(self.audit_log_path, "a") as fh:
                 fh.write(json.dumps(entry) + "\n")
         except OSError as exc:
-            from ..audit_drop import record as _record_drop
-            _record_drop("egress_proxy.audit_log", exc,
-                         path=str(self.audit_log_path),
-                         entry_kind=entry.get("kind"))
+            _report_audit_drop("egress_proxy.audit_log", exc,
+                               path=str(self.audit_log_path),
+                               entry_kind=entry.get("kind"))
 
     def record_capability_refusal(self, reason: str, path: str) -> None:
         """Append a signed incident when this proxy is bound to a workspace."""
@@ -887,6 +887,25 @@ class EgressProxy:
 # ===========================================================================
 
 
+def _report_audit_drop(where: str, exc: BaseException, **context: Any) -> None:
+    """Report a failed audit write through the injected host hook.
+
+    Falls back to stderr when the lock runs without its host: degraded (no
+    durable marker for `workspaces doctor`) but never silent. Silence is the
+    failure mode this exists to end.
+    """
+    host_deps.ensure_wired()
+    sink = host_deps.record_audit_drop
+    if sink is not None:
+        try:
+            sink(where, exc, **context)
+            return
+        except Exception:  # noqa: BLE001 - the reporter must never propagate
+            pass
+    print(f"[rvnd] AUDIT WRITE DROPPED at {where}: {type(exc).__name__}: {exc}",
+          file=sys.stderr, flush=True)
+
+
 def _persist_scope_decision(store, text: str, decision: str,
                             markers: list[str] | None, reason: str,
                             actor: str = "") -> None:
@@ -905,9 +924,8 @@ def _persist_scope_decision(store, text: str, decision: str,
                 try:
                     store.remember(text, decision, scope=scope, reason=reason, actor=actor)
                 except (OSError, ValueError) as exc:
-                    from ..audit_drop import record as _record_drop
-                    _record_drop("egress_proxy._persist_scope_decision", exc,
-                                 scope=scope, decision=str(decision))
+                    _report_audit_drop("egress_proxy._persist_scope_decision",
+                                       exc, scope=scope, decision=str(decision))
                 return
 
 
