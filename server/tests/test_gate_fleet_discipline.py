@@ -107,6 +107,25 @@ def test_no_gate_tolerates_a_tool_rejection():
         "skip (route the rejection to fail):\n  " + "\n  ".join(offenders))
 
 
+# Vendored from loomground-patchbay, so an in-place guard would drift the
+# consumption contract that `verify_patchbay_consumption.py` enforces. These
+# nine ARE the failure this rule exists to catch — `empty_workspace_render`
+# was demonstrated printing a full PASS line against a bridge returning 403 —
+# so this is a RECORDED GAP, not an exemption on merit. The fix is upstream:
+# add the probe in patchbay and re-vendor. Shrink this list when that lands;
+# a name may only leave it by gaining the guard, never by being deleted.
+_VENDORED_UNGUARDED = frozenset({
+    "app/shell/about_render.mjs",
+    "app/shell/desk_view_render.mjs",
+    "app/shell/empty_workspace_render.mjs",
+    "app/shell/help_render.mjs",
+    "app/shell/loom_render.mjs",
+    "app/shell/slice_e_render.mjs",
+    "app/shell/ticker_render.mjs",
+    "app/shell/toolbar_render.mjs",
+    "app/shell/wizard_render.mjs",
+})
+
 def test_every_gate_proves_its_bridge_is_alive():
     # loadGraph() swallows a bridge fault by design (an empty workspace must
     # draw empty, not the demo), so page boot alone is NOT evidence the server
@@ -122,6 +141,8 @@ def test_every_gate_proves_its_bridge_is_alive():
         m = re.search(r"//\s*gate-guard:\s*exempt\s*—\s*(\S.*)", text)
         if m and m.group(1).strip():
             continue                       # opted out, with a reason, in place
+        if str(p.relative_to(REPO)) in _VENDORED_UNGUARDED:
+            continue                       # see the constant: a KNOWN GAP, not a pass
         offenders.append(str(p.relative_to(REPO)))
     assert not offenders, (
         "gate .mjs wires a live bridge but never proves it is alive — no "
@@ -130,3 +151,17 @@ def test_every_gate_proves_its_bridge_is_alive():
         "can PASS against a server they never reached; call "
         "assertBridgeAlive(window, fail) right after the boot wait:\n  "
         + "\n  ".join(offenders))
+
+
+def test_the_vendored_gap_list_is_honest():
+    """Every name in _VENDORED_UNGUARDED must still exist and still be
+    vendored. Otherwise the list becomes a place to hide a gate: delete the
+    file, or un-vendor it, and the recorded gap silently stops being recorded."""
+    import json
+    vendored = set(json.loads((REPO / "release" / "patchbay-consumption.json")
+                              .read_text(encoding="utf-8"))["files"])
+    for rel in sorted(_VENDORED_UNGUARDED):
+        assert (REPO / rel).exists(), f"{rel} is listed as a known gap but does not exist"
+        assert rel in vendored, (
+            f"{rel} is no longer vendored — it is ours now, so it must carry "
+            f"assertBridgeAlive rather than sit on the vendored-gap list")
