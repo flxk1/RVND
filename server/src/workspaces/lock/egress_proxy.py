@@ -104,7 +104,7 @@ def _egress_max_concurrency() -> int:
     return val if val > 0 else 64
 
 from .core import Finding, Mode, AuditLog, _redact_text_with_regex
-from .core import tier_a_check_arguments, tier_b_scan_text
+from .core import tier_b_scan_text
 from .tier_c import tier_c_check_semantic
 from .oversight import OversightLevel
 from .onboarding.config import load_config, apply_config_to_env
@@ -855,8 +855,11 @@ class EgressProxy:
         try:
             with open(self.audit_log_path, "a") as fh:
                 fh.write(json.dumps(entry) + "\n")
-        except OSError:
-            pass
+        except OSError as exc:
+            from ..audit_drop import record as _record_drop
+            _record_drop("egress_proxy.audit_log", exc,
+                         path=str(self.audit_log_path),
+                         entry_kind=entry.get("kind"))
 
     def record_capability_refusal(self, reason: str, path: str) -> None:
         """Append a signed incident when this proxy is bound to a workspace."""
@@ -901,8 +904,10 @@ def _persist_scope_decision(store, text: str, decision: str,
             if scope in ("session", "always"):
                 try:
                     store.remember(text, decision, scope=scope, reason=reason, actor=actor)
-                except (OSError, ValueError):
-                    pass
+                except (OSError, ValueError) as exc:
+                    from ..audit_drop import record as _record_drop
+                    _record_drop("egress_proxy._persist_scope_decision", exc,
+                                 scope=scope, decision=str(decision))
                 return
 
 
@@ -1364,7 +1369,6 @@ def _make_handler(proxy: EgressProxy):
 
 def main(argv: list[str] | None = None) -> int:
     import argparse
-    import sys
     parser = argparse.ArgumentParser(prog="agent-tool-lock proxy")
     parser.add_argument("--port", type=int, default=_DEFAULT_PORT)
     parser.add_argument(

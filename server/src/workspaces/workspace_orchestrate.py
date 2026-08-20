@@ -105,6 +105,7 @@ def orchestrate(query: str,
         })
 
     audit_id = None
+    audit_dropped = None
     try:
         log = MutationLog(root.folder, log_root=log_root)
         ev = LogEvent(
@@ -116,8 +117,10 @@ def orchestrate(query: str,
                    "verdicts": {p["workspace"]: p["verdict"] for p in plan}},
         )
         audit_id = log.append(ev)
-    except Exception:
-        pass
+    except Exception as exc:
+        from .audit_drop import record as _record_drop
+        audit_dropped = _record_drop("workspace_orchestrate.orchestrate", exc,
+                                     folder=root.folder, log_root=log_root)
 
     return {
         "query": query,
@@ -125,6 +128,9 @@ def orchestrate(query: str,
         "scope_workspaces": len(nodes),
         "companions": plan,
         "audit_id": audit_id,
+        # Present only when the append failed. Without it `audit_id: None` is
+        # indistinguishable from "no audit configured".
+        **({"audit_dropped": audit_dropped["error"]} if audit_dropped else {}),
         "governed": True,
     }
 
@@ -245,6 +251,7 @@ def ask_workspace(query: str,
 
     # 8. record the turn
     audit_id = None
+    audit_dropped = None
     try:
         log = MutationLog(resolved, log_root=log_root)
         ev = LogEvent(event="system", folder_path=resolved,
@@ -255,8 +262,10 @@ def ask_workspace(query: str,
                              "served_by": gen.get("served_by"),
                              "grounding": grounding["applied"]})
         audit_id = log.append(ev)
-    except Exception:
-        pass
+    except Exception as exc:
+        from .audit_drop import record as _record_drop
+        audit_dropped = _record_drop("workspace_orchestrate.ask", exc,
+                                     folder=resolved, log_root=log_root)
 
     return {
         "query": query,
