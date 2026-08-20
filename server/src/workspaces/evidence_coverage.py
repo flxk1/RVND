@@ -196,6 +196,26 @@ def map_coverage(house: RequirementsHouse, docs: list[EvidenceDoc],
     return report
 
 
+def coverage_brief(report: CoverageReport):
+    """The bounded brief for a coverage report — what a supervisor must read.
+
+    :func:`render_coverage` renders everything; this renders only what is
+    unsettled. An empty room is a gap the supervisor must look at, an orphan
+    document is a placement in dispute, and a furnished room is omitted and
+    counted rather than shown. The result therefore grows with the org's gaps,
+    not with the size of its document set.
+
+    Selection is `loomground-brief`'s, reached through
+    :mod:`workspaces.adapters.brief`; the mapping onto statused premises is
+    documented there.
+    """
+    from .adapters.brief import brief_from_coverage
+
+    return brief_from_coverage(
+        furnished=report.furnished, empty=report.empty, orphans=report.orphans,
+    )
+
+
 def render_coverage(house: RequirementsHouse, report: CoverageReport) -> str:
     """Human-readable coverage report — the payoff view of the house."""
     out: list[str] = []

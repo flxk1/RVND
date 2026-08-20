@@ -144,7 +144,7 @@ def verify_attestation(envelope: dict[str, Any]):
 #: loosest → strictest for the one ordinal control (`L0` is the most restrictive
 #: autonomy ceiling), so compare/exposure rank a grade change instead of returning
 #: INCOMPARABLE. Boolean controls need no order.
-_MODE_ORDER = {"autonomy_ceiling": ("L4", "L3", "L2", "L1", "L0")}
+_MODE_ORDER = {"autonomy_ceiling": ("L6", "L5", "L4", "L3", "L2", "L1", "L0")}
 
 
 def _posture_from_dict(d: dict[str, Any]) -> Posture:
@@ -180,7 +180,9 @@ def posture_projection(posture_events: Any, *, since_ts: float, until_ts: float,
     the disable-rate — ONLY when an intended baseline is supplied; otherwise exposure
     is omitted with a stated reason (a guessed baseline would manufacture a rate).
     """
-    from enforcement_posture import coverage as _coverage, exposure as _exposure
+    from enforcement_posture import (
+        compare as _compare, coverage as _coverage, exposure as _exposure,
+    )
 
     raw = [_posture_from_dict(e.extra["posture"]) for e in posture_events
            if (e.extra or {}).get("kind") == POSTURE_EVENT_KIND and e.extra.get("posture")]
@@ -193,8 +195,17 @@ def posture_projection(posture_events: Any, *, since_ts: float, until_ts: float,
                             end=_iso_utc(until_ts), digest=digest or "")
     cov = _coverage(window, postures, canonicalize=_canonicalize, mode_order=_MODE_ORDER)
     covered = cov.status.value == "covered"
+    # Which way the posture moved across the window: the first attestation
+    # compared against the last. Fewer than two attestations means nothing was
+    # compared, and that is reported as None rather than "unchanged" — a single
+    # reading is not evidence that the posture held still.
+    posture_change = None
+    if len(postures) >= 2:
+        posture_change = _compare(postures[0], postures[-1], mode_order=_MODE_ORDER).value
+
     out: dict[str, Any] = {
         "effective_posture": postures[0].to_dict() if (covered and postures) else None,
+        "posture_change": posture_change,
         "coverage": {"verdict": cov.status.value,
                      "segments": [_seg(s) for s in cov.segments],
                      "gaps": [_seg(s) for s in cov.gaps]},

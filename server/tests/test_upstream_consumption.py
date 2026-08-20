@@ -36,15 +36,24 @@ def test_upstream_packages_are_direct_dependencies():
 
 def test_loomground_toolchain_is_release_pinned():
     """Every Loomground engine is consumed as an immutable git dependency,
-    never a floating branch, and all four planes appear in the manifest.
+    never a floating branch, and every declared plane appears in the manifest.
 
     Full commit IDs make the exact upstream reviewed for governance compatibility
     immutable even if a release tag is later moved.
+
+    The count is deliberate: it must be raised in the same change that adds a
+    plane, so a pin can never arrive unnoticed. It went 9 -> 10 with
+    `loomground-brief` (consumed by `evidence_coverage.coverage_brief`), 10 -> 11
+    with `loomground-proxy` (consumed by
+    `substitution_binding.substitution_projection`), and 11 -> 12 with
+    `loomground-vertical` (the vertical-registration surface, consumed by
+    `subject_card` / `jurisdiction_packs` / `requirements_house`), each through
+    its adapter.
     """
     text = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     direct_urls = [line for line in text.splitlines()
                    if "git+https://github.com/flxk1/loomground-" in line]
-    assert len(direct_urls) == 9
+    assert len(direct_urls) == 12
     for line in direct_urls:
         revision = line.rsplit("@", 1)[-1].split('"', 1)[0]
         assert len(revision) == 40
@@ -67,6 +76,7 @@ def test_documented_release_commits_match_install_manifest():
         "loomground-norm",
         "loomground-factual",
         "loomground-epistemic",
+        "loomground-vertical",
     ):
         installed = re.search(
             rf'"{re.escape(package)} @ git\+https://github\.com/flxk1/'
