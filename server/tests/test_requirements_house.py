@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from workspaces.requirements_house import build_house_from_text, build_house
+from workspaces.requirements_house import build_house_from_text
 from workspaces.evidence_coverage import (
     EvidenceDoc, map_coverage, render_coverage,
 )

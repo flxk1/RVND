@@ -13,7 +13,7 @@ Pure stdlib. No rendering here; the HTML viewers embed the JSON this produces.
 
 from __future__ import annotations
 
-from typing import Any, Iterable
+from typing import Iterable
 
 # 5D dimension → colour (shared by every viewer so the legend is stable)
 DIMENSION_COLOR = {

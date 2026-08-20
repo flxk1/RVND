@@ -11,7 +11,6 @@ exactly.
 
 import itertools
 import random
-from datetime import date
 
 import workspaces.action_gate as ag
 from workspaces.action_gate import (ActionRequest, Observables, StandingApproval,

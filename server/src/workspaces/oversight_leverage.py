@@ -23,7 +23,7 @@ Deterministic; no model in the loop.
 """
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 
 def _shape_key(fp: dict[str, Any]) -> tuple:

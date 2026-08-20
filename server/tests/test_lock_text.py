@@ -10,14 +10,10 @@ when a document or KG triple is about to leave local context.
 from __future__ import annotations
 
 import json
-import tempfile
-from pathlib import Path
 
 from workspaces.lock import (
     AuditLog,
-    Finding,
     Mode,
-    TextDecision,
     lock_text,
 )
 from workspaces.lock.tier_c import reset_backend_cache

@@ -13,11 +13,8 @@ monkey-patched with predetermined returns.
 
 from __future__ import annotations
 
-import pytest
 
 from workspaces.lock.core import (
-    ENSEMBLE_MODELS_DEFAULT,
-    TIER_C_COT_PROMPT_TEMPLATE,
     TierCEnsembleResult,
     tier_b_scan_text,
     tier_c_semantic_check,

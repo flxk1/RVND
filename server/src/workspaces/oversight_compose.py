@@ -31,7 +31,7 @@ Pure stdlib, deterministic, no I/O.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Iterable, Optional, Sequence
+from typing import Any, Iterable, Optional
 
 from .oversight_extractor import OVERSIGHT_LEVELS, OversightFacet
 

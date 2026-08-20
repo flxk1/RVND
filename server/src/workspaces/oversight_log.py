@@ -20,7 +20,7 @@ failure is attached to the record, never raised — a decision is never lost).
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable, Optional
 

@@ -4,9 +4,7 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 
-import pytest
 
 from workspaces.workspace_registry import (
     add_known_workspace,

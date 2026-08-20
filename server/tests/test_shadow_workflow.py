@@ -5,7 +5,7 @@ from pathlib import Path
 
 from workspaces.mutation_log import LogEvent, MutationLog
 from workspaces.shadow_workflow import (classify_shadow_workflows,
-                                   SHADOW, REVIEW, NEEDS_SIGNOFF, BLOCKED)
+                                   SHADOW)
 from workspaces.workflows import Workflow, WorkflowStep, define_workflow
 
 

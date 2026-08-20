@@ -19,7 +19,6 @@ import sys
 import textwrap
 from pathlib import Path
 
-import pytest
 
 from workspaces import cli as _cli
 

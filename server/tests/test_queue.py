@@ -14,16 +14,12 @@ Covers:
 
 from __future__ import annotations
 
-import json
 import os
 import time
-from pathlib import Path
 
 import pytest
 
 from workspaces.queue import (
-    Lease,
-    QueueEntry,
     _lease_path,
     _queue_lock,
     _read_lease,
@@ -318,7 +314,7 @@ def test_inspect_stuck_runs_finds_pending_stale(tmp_path):
     log = tmp_path / "log"
     e = enqueue_run(str(folder), "a", log_root=log)
     # Backdate enqueued_at by forging the state file
-    from workspaces.queue import _load_state, _save_state, _now_iso
+    from workspaces.queue import _load_state, _save_state
     state = _load_state(log)
     state[e.run_id].enqueued_at = "2020-01-01T00:00:00.000000Z"
     _save_state(state, log)

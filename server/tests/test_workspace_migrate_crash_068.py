@@ -24,7 +24,6 @@ from pathlib import Path
 import pytest
 
 from workspaces.mutation_log import LogEvent, MutationLog, folder_hash
-from workspaces import workspace_migrate
 from workspaces.workspace_migrate import (
     _MIGRATION_MARKER,
     WorkspaceMigrateError,

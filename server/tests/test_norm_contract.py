@@ -8,11 +8,10 @@ collision, unknown date and sub-floor confidence escalate (not decide); and a
 stated lex-relation is never auto-resolved into a winner.
 """
 
-import copy
 import pytest
 
 from workspaces.norm_contract import (
-    check_pair, enforce, gate, ContractViolation, Level, CONFIDENCE_FLOOR,
+    check_pair, enforce, gate, ContractViolation, Level,
 )
 
 

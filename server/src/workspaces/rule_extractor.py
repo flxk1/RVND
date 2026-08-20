@@ -21,9 +21,8 @@ from .adapters.norm import (
     RuleFacet,
     extract_rules,
     supported_languages,
-    _detect_language,
-    _is_agentless_passive,
-    _segment,
-)
+    _detect_language,  # noqa: F401  -- re-export: reached as a module attribute, not an import
+    _is_agentless_passive,  # noqa: F401  -- re-export: reached as a module attribute, not an import
+    )
 
 __all__ = ["RuleFacet", "extract_rules", "supported_languages"]

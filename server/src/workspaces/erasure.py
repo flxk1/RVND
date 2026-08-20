@@ -36,14 +36,13 @@ Failure modes are loud:
 
 from __future__ import annotations
 
-import time
 import uuid
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Callable, Iterable
+from typing import Any
 
 from . import card_store, draft_store, forgotten_subjects
-from .memory import WorkspaceMemory, _pair_from_event, discover_descendants
+from .memory import _pair_from_event, discover_descendants
 from .redaction import replace_ci
 from .mutation_log import (
     LOG_ROOT_DEFAULT,
@@ -769,8 +768,10 @@ def execute(
                         "subject_preview":   "[REDACTED]",
                     },
                 ))
-            except Exception:
-                pass
+            except Exception as exc:
+                from .audit_drop import record as _record_drop
+                _record_drop("erasure.execute:purge_start", exc,
+                             request_id=request_id, log_root=log_root)
             try:
                 n = log.purge(
                     pid,
@@ -931,8 +932,9 @@ def execute(
     try:
         from .lock import DecisionsStore
         report.decisions_previews_scrubbed = DecisionsStore().erase_subject(subject_norm)
-    except Exception:
-        pass
+    except Exception as exc:
+        from .audit_drop import record as _record_drop
+        _record_drop("erasure.execute:decisions_scrub", exc, log_root=log_root)
 
     return report
 

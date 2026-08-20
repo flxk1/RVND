@@ -29,11 +29,8 @@ from __future__ import annotations
 
 import time
 
-import pytest
 
 from workspaces.lock.core import (
-    Mode,
-    lock_text,
     tier_b_scan_text,
     tier_c_semantic_check,
     _detect_confusable_bypass,

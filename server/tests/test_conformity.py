@@ -7,7 +7,6 @@ replay-verified (every record resolves to a signed event in the chain);
 no op writes state.
 """
 
-import time
 
 import pytest
 

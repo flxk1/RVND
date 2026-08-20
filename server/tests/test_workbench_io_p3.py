@@ -10,8 +10,6 @@ import pytest
 
 from workspaces.contracts.extractor import ingest_contract
 from workspaces.obligation_runtime import ObligationRegistry
-from workspaces.obligation_scheduler import ObligationScheduler
-from workspaces.temporal import Date
 from workspaces.workbench_io import apply_actions, build_demo, export_state
 
 DPA = """DATA PROCESSING AGREEMENT
@@ -221,7 +219,6 @@ class TestLegalPanelRound2:
     def _saturday_deadline_folder(self, tmp_path):
         from workspaces.contracts.instance import ContractInstance, ContractRegistry, PartyRef
         from workspaces.obligation_runtime import ObligationRegistry
-        from workspaces.temporal import Date
         c = ContractInstance(contract_id="wk-x",
                              parties=(PartyRef(entity_code="a", role="supplier"),))
         ContractRegistry(tmp_path, log_root=tmp_path / "log").register(c)

@@ -40,7 +40,7 @@ from __future__ import annotations
 
 import json
 import re
-from typing import Any, Callable, Optional
+from typing import Callable, Optional
 
 from . import problem_kg, reasoning_phases
 from .decisions.surface import build_surface, record_choice

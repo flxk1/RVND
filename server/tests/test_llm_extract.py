@@ -13,7 +13,6 @@ import json
 
 from workspaces.llm_extract import (
     DomainProfile,
-    ExtractionResult,
     extract,
     extract_obligations_hybrid,
     _parse_json,

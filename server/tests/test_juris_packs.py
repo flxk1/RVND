@@ -12,12 +12,11 @@ NT-14), no compliance claims in the data.
 """
 from __future__ import annotations
 
-import itertools
 
 import pytest
 
 from workspaces import policy_matrix as pm
-from workspaces.controlforms import guarantees, leq
+from workspaces.controlforms import leq
 
 
 def _load(name):

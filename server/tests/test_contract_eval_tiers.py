@@ -8,9 +8,8 @@ Also pins the extractor behaviours the hard tiers forced into existence:
 conflicting governing law abstains, time quantities never become money,
 written-out dates parse, OCR-shattered party names never emit as garbage."""
 
-import pytest
 
-from workspaces.contracts.eval import CORPUS_DIR, run_eval, run_tiers
+from workspaces.contracts.eval import run_tiers
 from workspaces.contracts.extractor import (classify_contract_type,
                                       extract_effective_date,
                                       extract_governing_law, extract_parties)
