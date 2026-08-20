@@ -277,5 +277,7 @@ def ask_workspace(query: str,
         "companions": dispatched,
         "grounding": grounding,
         "audit_id": audit_id,
+        # Present only when the append failed; see orchestrate() above.
+        **({"audit_dropped": audit_dropped["error"]} if audit_dropped else {}),
         "cascade": gen,
     }

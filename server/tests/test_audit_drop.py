@@ -10,7 +10,6 @@ returns, and (b) the drop is visible afterwards.
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 import pytest
 
@@ -106,3 +105,23 @@ def test_lock_falls_back_to_stderr_without_its_host(monkeypatch, capsys):
     ep._report_audit_drop("unit.fallback", OSError("boom"))
     assert "AUDIT WRITE DROPPED at unit.fallback" in capsys.readouterr().err
     assert audit_drop.drops() == [], "no host means no in-process register either"
+
+
+def test_ask_and_orchestrate_name_the_drop_in_their_response():
+    """Both paths pre-bind `audit_id = None`, so a failed append returns a
+    success response whose audit pointer is null -- identical to what a caller
+    sees when no audit is configured. The marker is what tells them apart, and
+    it was added to orchestrate() but missed in ask(): the response said
+    nothing while the drop was recorded. CodeQL caught it as an unused local.
+    """
+    import inspect
+    from workspaces import workspace_cascade as wc, workspace_orchestrate as wo
+    checked = 0
+    for fn in (wo.orchestrate, wo.ask_workspace, wc.cascade_for_workspace):
+        src = inspect.getsource(fn)
+        assert "audit_dropped = " in src, f"{fn.__name__} no longer records the drop"
+        assert '"audit_dropped"' in src, (
+            f"{fn.__name__} records the drop but never reports it to the caller")
+        checked += 1
+    # No `continue`: a check that can quietly examine nothing is not a check.
+    assert checked == 3
