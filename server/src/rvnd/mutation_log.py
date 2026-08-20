@@ -311,6 +311,22 @@ from .adapters.workspace import (  # noqa: F401
     legacy_folder_hash,
 )
 
+__all__ = [
+    # Re-exported from the consumed plane. Private by name, deliberate by
+    # intent: callers address it through this module path, and without the
+    # declaration it reads as imported-and-unused.
+    "_filesystem_is_case_insensitive",
+    "folder_hash",
+    "legacy_folder_hash",
+    "DiskFullError",
+    "ChainVerificationResult",
+    "LogEvent",
+    "SealedWriteError",
+    "MutationLog",
+    "events_from_bytes",
+]
+
+
 
 @dataclass
 class LogEvent:

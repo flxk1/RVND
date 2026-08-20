@@ -47,6 +47,13 @@ from .adapters.workspace import (  # noqa: F401
 )
 
 __all__ = [
+    # Private by name, re-exported deliberately: callers and the A6 security
+    # suite address them through this module path, and `import *` would skip
+    # them. Listing them here is the declaration; without it they read as
+    # imported-and-unused, which is the opposite of what a shim does.
+    "_registry_path",
+    "_resolved",
+    "_save_registry",
     "REGISTRY_FILE",
     "REGISTRY_VERSION",
     "DEFAULT_WORKSPACE_DIR",
