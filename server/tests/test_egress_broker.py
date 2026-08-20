@@ -26,7 +26,7 @@ import pytest
 from workspaces import connectors
 from workspaces.lock import OversightLevel
 from workspaces.lock.egress_proxy import ApprovalDecision, EgressProxy, autonomous_callback
-from workspaces.lock.track_broker import TRACK_HEADER, TrackBinding, bind_track
+from workspaces.lock.track_broker import TRACK_HEADER, bind_track
 
 # Real ThreadingHTTPServer instances (proxy + stub) started and torn down per
 # test — ~25s for this file alone versus low single digits for the rest of

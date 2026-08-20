@@ -13,7 +13,7 @@ from __future__ import annotations
 import pytest
 
 from workspaces.lock import tier_m as TM
-from workspaces.lock.core import lock_text, Mode
+from workspaces.lock.core import lock_text
 from workspaces.lock.gate import gate_for_cloud
 from workspaces.lock.l0_bridge import PolicySnapshot, _load_policy_inprocess
 from workspaces.lock.oversight import OversightLevel

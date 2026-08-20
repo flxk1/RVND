@@ -21,7 +21,6 @@ sys.path.insert(0, str(HERE.parent))
 sys.path.insert(0, str(HERE.parent.parent / "server" / "src"))
 
 import serve  # noqa: E402
-import workspaces.mcp_server as workspaces  # noqa: E402
 
 folder = os.path.join(tmp, "release-workspace")
 

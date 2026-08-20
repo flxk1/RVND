@@ -21,7 +21,7 @@ that it resolves is ``corpus_validate`` / ``source_validator``'s job).
 
 from __future__ import annotations
 
-from typing import Iterable, Optional
+from typing import Optional
 
 from ..crossref_extractor import (extract_cross_references, infer_host_instrument,
                                  _INSTRUMENTS)

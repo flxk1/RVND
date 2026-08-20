@@ -8,13 +8,10 @@ import json
 import time
 from pathlib import Path
 
-import pytest
 
 from workspaces.lock import (
     AuditLog,
     CapabilityToken,
-    EgressDecision,
-    IngressDecision,
     Mode,
     ToolCall,
     ToolResponse,

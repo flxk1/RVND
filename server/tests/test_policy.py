@@ -18,7 +18,6 @@ from workspaces import (
     enable_oversight,
     enable_lock,
     load_policy,
-    policy_path,
     save_policy,
 )
 

@@ -9,8 +9,6 @@ from EUR-Lex XML instead of guessing them from flattened text.
 from __future__ import annotations
 
 from workspaces.xml_legal import (
-    DocumentTree,
-    ProvisionNode,
     all_cross_refs,
     document_tree_to_text,
     parse_akoma_ntoso,

@@ -24,9 +24,8 @@ from __future__ import annotations
 from .adapters.norm import (
     ObligationScheduler,
     SchedulerReport,
-    Proposal,
     DEFAULT_WARNING_WINDOW,
-    _target_state,
+    _target_state,  # noqa: F401  -- re-export: `import *` skips _private names, so this line is the export
 )
 
 __all__ = ["SchedulerReport", "ObligationScheduler", "DEFAULT_WARNING_WINDOW"]

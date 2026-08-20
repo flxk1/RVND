@@ -5,7 +5,6 @@ inherits these slots via RuleFacet → norm dict → obligations. Abstention
 discipline throughout: '' beats a guessed incident, counterparty, or
 condition kind."""
 
-import pytest
 
 from workspaces.contracts.extractor import intake_contract
 from workspaces.hohfeld import (INCIDENTS, attach_incidents, classify_condition_kind,

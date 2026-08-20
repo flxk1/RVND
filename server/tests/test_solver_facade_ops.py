@@ -16,7 +16,6 @@ Claims under test (written BEFORE the wiring):
 """
 from __future__ import annotations
 
-import pytest
 
 from workspaces import mcp_server
 

@@ -19,7 +19,6 @@ import pytest
 from workspaces import (
     WorkspaceMemory,
     discover_ancestors,
-    discover_descendants,
 )
 
 

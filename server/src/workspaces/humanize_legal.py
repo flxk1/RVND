@@ -19,7 +19,6 @@ Pure stdlib; reads the folder's entity registry for display names.
 from __future__ import annotations
 
 import re
-from typing import Optional
 
 from .legal_corpus import EntityRegistry
 

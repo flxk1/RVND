@@ -8,9 +8,7 @@ CL5 ALLOW clearances expire (TTL); BLOCK never expires (lapsing = fail-open).
 CL6 on a recall tie, BLOCK wins over a later ALLOW (safety). Lock/Shield panel."""
 from __future__ import annotations
 
-import json
 
-import pytest
 
 from workspaces.lock.decisions import DecisionsStore
 from workspaces.lock.egress_proxy import _persist_scope_decision

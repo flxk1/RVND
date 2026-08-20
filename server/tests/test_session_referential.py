@@ -10,7 +10,6 @@ import (S13), where dropping a workspace can leave a ref pointing at nothing.
 """
 from __future__ import annotations
 
-from pathlib import Path
 
 import pytest
 

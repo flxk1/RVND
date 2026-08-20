@@ -30,7 +30,7 @@ from .adapters.legal import (
     seed_world,
     reach,
 )
-from .legal_connection import Connection, dimension
+from .legal_connection import dimension
 
 __all__ = [
     "Entity", "EntityKind", "WorldEdge", "WorldMap", "GovEntry", "ReachResult",

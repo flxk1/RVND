@@ -37,7 +37,7 @@ Internal by design: world-building machinery consumed by validators and routers;
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Optional
 
 from workspaces.adapters.solver.dimensions import Dimension
 from .source_classes import Effect, Relation, SourceClass, max_effect

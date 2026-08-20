@@ -5,12 +5,11 @@
 from __future__ import annotations
 
 import os
-from unittest.mock import patch
 
 import pytest
 
 from workspaces.lock import BackendError, make_local_llm
-from workspaces.lock.backends import LLMBackend, MockBackend
+from workspaces.lock.backends import MockBackend
 from workspaces.lock.backends.llama_cpp import LlamaCppBackend
 from workspaces.lock.backends.onnx_genai import OnnxGenaiBackend
 from workspaces.lock.tier_c import (

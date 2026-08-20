@@ -13,12 +13,9 @@ patch actually does what the docstring claims.
 """
 from __future__ import annotations
 
-import os
 
-import pytest
 
 from workspaces.lock.core import (
-    Finding,
     Mode,
     ToolCall,
     _detect_confusable_bypass,

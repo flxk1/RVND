@@ -22,11 +22,11 @@ re-verifiable draft, never legal advice.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 
-from .subject_card import SubjectCard, get_vocabulary
+from .subject_card import SubjectCard
 from .applicability import enrich_pairs
-from .matcher import assess, AssessmentResult, Match
+from .matcher import assess, AssessmentResult
 
 
 # ---------------------------------------------------------------------------

@@ -7,7 +7,7 @@ from __future__ import annotations
 import pytest
 
 from workspaces.dimensions import Dimension
-from workspaces.reasoning import Edge, Inference, compose_paths, extract_edges
+from workspaces.reasoning import compose_paths, extract_edges
 
 
 def _pair(pid, edges, confidence=1.0):

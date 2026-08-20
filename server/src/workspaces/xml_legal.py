@@ -33,7 +33,7 @@ from __future__ import annotations
 import re
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field, asdict
-from typing import Any, Optional
+from typing import Any
 
 
 # ---------------------------------------------------------------------------

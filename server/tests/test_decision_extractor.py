@@ -6,8 +6,6 @@ from __future__ import annotations
 
 from workspaces.decisions.extractor import (
     DecisionExtractor,
-    DecisionPoint,
-    Option,
     extract_decisions,
 )
 from workspaces.nd_routing import Classification

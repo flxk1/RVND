@@ -19,7 +19,6 @@ import io
 import json as _json
 import urllib.error
 
-import pytest
 
 from workspaces import models_registry
 from workspaces.models_registry import ModelEntry, health_check

@@ -10,7 +10,6 @@ selected legal system — while the engine stays the same.
 
 from __future__ import annotations
 
-from datetime import date
 
 import pytest
 

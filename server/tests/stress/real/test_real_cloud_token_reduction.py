@@ -29,7 +29,6 @@ import time
 from collections import Counter
 from dataclasses import dataclass
 
-import pytest
 
 from workspaces.lock.core import (
     _detect_confusable_bypass,

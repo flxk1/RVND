@@ -13,7 +13,6 @@ import importlib
 import re
 from pathlib import Path
 
-import pytest
 
 from workspaces.mutation_log import MutationLog
 from workspaces.pinned_skills import pin_skill

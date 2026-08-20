@@ -11,7 +11,6 @@ B6.2: malformed-UTF-8 / malformed-JSON in the middle of the log does
 from __future__ import annotations
 
 import errno
-import json
 from pathlib import Path
 
 import pytest

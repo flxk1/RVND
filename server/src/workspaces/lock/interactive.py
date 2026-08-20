@@ -22,18 +22,14 @@ import sys
 import time
 import uuid
 from dataclasses import asdict
-from typing import IO, Callable
+from typing import IO
 
 from .core import (
     Finding,
-    EgressDecision,
-    IngressDecision,
     Mode,
     ToolCall,
-    ToolResponse,
     CapabilityToken,
     egress,
-    ingress,
 )
 from .oversight import (
     OversightLevel,

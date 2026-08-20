@@ -6,8 +6,8 @@ Proves the three layers compose into one verdict, and that the grade the gate
 sees is capped by the Breaker and the ceiling, never trusted from the request.
 """
 
-from workspaces.oversight import assess, OversightOutcome
-from workspaces.action_gate import ActionRequest, Verdict
+from workspaces.oversight import assess
+from workspaces.action_gate import ActionRequest
 from workspaces.breaker import Breaker, Lease, Tripwire
 
 

@@ -9,9 +9,7 @@ POSIX. Kept fast and dependency-light so they gate every platform cheaply.
 import os
 from pathlib import Path
 
-import pytest
 
-from workspaces import workspace_cascade
 from workspaces.workspace_cascade import (config_path, write_local_config, _local_config,
                                 tiers_for_workspace, CONFIG_PATH_ENV, LOCAL_URL_ENV,
                                 LOCAL_MODEL_ENV)

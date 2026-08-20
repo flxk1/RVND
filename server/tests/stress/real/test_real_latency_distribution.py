@@ -21,7 +21,6 @@ from __future__ import annotations
 
 import time
 
-import pytest
 
 from workspaces import local_llm
 from tests.stress._real_llm_harness import (

@@ -6,12 +6,9 @@ from __future__ import annotations
 
 import io
 import json
-import time
 
-import pytest
 
 from workspaces.lock import (
-    CapabilityToken,
     Finding,
     OversightDecision,
     OversightLevel,
