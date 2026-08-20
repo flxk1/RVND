@@ -15,6 +15,10 @@
 // Usage: node failclosed_render.mjs <PORT> <FOLDER> <mode>
 import { JSDOM } from "jsdom";
 import { bridgeGlobals, fetchComposedPage } from "../harness/render_harness.mjs";
+// gate-guard: exempt — this gate DRIVES the bridge into each failure mode
+// (error/hang/revoked) and asserts the console reads DEGRADED. Proving the
+// bridge alive is the negation of its subject; it is the fleet's own evidence
+// that a dead bridge surfaces, so it needs no liveness probe.
 
 const PORT = process.argv[2], F = process.argv[3], MODE = process.argv[4] || "healthy";
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));

@@ -1,9 +1,9 @@
 {
  "schema": "ui-walk-matrix-1",
- "ui_supported": 1,
- "covered": 1,
+ "ui_supported": 2,
+ "covered": 2,
  "gaps": 0,
- "render_gates_run": 66,
+ "render_gates_run": 68,
  "render_gates_broken": [],
  "rows": [
   {
@@ -11,8 +11,48 @@
    "op": null,
    "covered_by": [
     "about_render_test",
+    "ai_pin_render_test",
+    "ai_render_test",
+    "approvals_render_test",
+    "attest_trigger_render_test",
+    "attestation_render_test",
+    "audit_render_test",
+    "conformity_render_test",
+    "decision_link_render_test",
+    "decision_panel_render_test",
+    "decision_routing_render_test",
+    "desk_view_render_test",
+    "empty_workspace_render_test",
+    "erasure_render_test",
+    "federated_verdict_render_test",
+    "federation_comp_render_test",
+    "federation_render_test",
+    "governance_map_render_test",
+    "grounder_render_test",
+    "help_render_test",
+    "legal_render_test",
+    "lock_setup_render_test",
+    "loom_render_test",
+    "mirror_review_render_test",
+    "obligations_render_test",
+    "policy_extra_render_test",
+    "proxy_identity_render_test",
     "slice_e_render_test",
-    "toolbar_render_test"
+    "tags_render_test",
+    "ticker_render_test",
+    "toolbar_render_test",
+    "unit_gating_render_test",
+    "wf_unpin_render_test",
+    "wizard_render_test",
+    "workspace_approvals_render_test"
+   ],
+   "gap_reason": null
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "governance_open",
+   "covered_by": [
+    "patchbay_render_test"
    ],
    "gap_reason": null
   }

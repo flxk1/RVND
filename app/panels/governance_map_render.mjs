@@ -12,6 +12,7 @@
 // Usage: node governance_map_render.mjs <PORT> <FOLDER>
 import { JSDOM } from "jsdom";
 import { bridgeGlobals, fetchComposedPage } from "../harness/render_harness.mjs";
+import { assertBridgeAlive } from "../harness/rvnd_gate_guards.mjs";
 const PORT = process.argv[2], F = process.argv[3];
 const html = await fetchComposedPage(PORT);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -34,6 +35,7 @@ const POLICY = [
 
 async function main() {
   if (!await waitFor(() => window._ready, 3000)) fail("app did not boot");
+  await assertBridgeAlive(window, fail);
   window.S.path = F;
 
   // 1) open the Policy map panel — the same entry a user clicks
