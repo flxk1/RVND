@@ -59,8 +59,8 @@ def _import_targets(tree: ast.AST, parts: list[str], is_init: bool
             elif node.module == "rvnd":
                 for alias in node.names:
                     targets.add((alias.name, None))
-            elif node.module and node.module.startswith("workspaces."):
-                targets.add((node.module[len("workspaces."):], names))
+            elif node.module and node.module.startswith("rvnd."):
+                targets.add((node.module[len("rvnd."):], names))
         elif isinstance(node, ast.Import):
             for alias in node.names:
                 p = alias.name.split(".")
