@@ -77,7 +77,7 @@ import os
 import socket
 import time
 from contextlib import contextmanager
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import Any, Callable, Iterator, Optional
 

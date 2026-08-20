@@ -14,7 +14,6 @@ licence metadata also fails: absence is not release evidence. Run in CI after
 """
 from __future__ import annotations
 
-import sys
 from importlib import metadata
 
 COPYLEFT_MARKERS = ("GPL", "SSPL", "EUPL", "OSL", "CECILL", "MPL-2.0-no-copyleft-exception")

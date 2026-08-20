@@ -35,7 +35,6 @@ from workspaces.mutation_log import (
     GENESIS_HASH,
     LogEvent,
     MutationLog,
-    _canonical_event_hash,
     _signed_bytes,
     folder_hash,
 )

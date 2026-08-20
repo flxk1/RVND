@@ -44,7 +44,7 @@ import hashlib
 import re
 from typing import Any
 
-from .nd_routing import BaseNDDispatcher, Classification
+from .nd_routing import BaseNDDispatcher
 # document kind/identifier/instrument + host inference are the legal plane's;
 # consumed through the single adapters.legal seam (retiring the parallels below).
 from .adapters.legal import (

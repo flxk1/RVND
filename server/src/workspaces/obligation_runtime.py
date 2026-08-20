@@ -24,7 +24,7 @@ from .adapters.norm import (
     ObligationError,
     OPEN_STATES,
     TERMINAL_STATES,
-    _obligor_role,
+    _obligor_role,  # noqa: F401  -- re-export: `import *` skips _private names, so this line is the export
 )
 
 __all__ = ["Obligation", "ObligationRegistry", "ObligationError",

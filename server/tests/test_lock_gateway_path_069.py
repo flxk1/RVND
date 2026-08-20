@@ -19,9 +19,8 @@ from __future__ import annotations
 
 import json
 
-import pytest
 
-from workspaces.mcp_server import workspace_lock, lock_egress_check, lock_ingress_check
+from workspaces.mcp_server import workspace_lock, lock_egress_check
 
 
 PII_TEXT = "Contact Maria Schneider, maria.schneider\x40example.de, +49 170 1234567."

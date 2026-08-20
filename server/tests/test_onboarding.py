@@ -5,10 +5,7 @@
 from __future__ import annotations
 
 import io
-import json
-from pathlib import Path
 
-import pytest
 
 from workspaces.lock.onboarding import (
     Config,

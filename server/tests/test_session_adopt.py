@@ -9,9 +9,7 @@ disk, recoverable). Foreign-key sessions are refused (decision B).
 """
 from __future__ import annotations
 
-from pathlib import Path
 
-import pytest
 
 from workspaces import parties, session_io as S, session_mcp as M
 from workspaces import workspace_registry as WR

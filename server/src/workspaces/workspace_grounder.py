@@ -38,7 +38,7 @@ import os
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 from .mutation_log import MutationLog, LogEvent
 from .urn import mint_canonical

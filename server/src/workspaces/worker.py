@@ -43,9 +43,8 @@ import logging
 import os
 import signal
 import socket
-import sys
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
@@ -55,7 +54,6 @@ from .queue import (
     list_queue,
     mark_done,
     mark_failed,
-    renew_lease,
     take_next_run,
 )
 from .workflows import run_workflow

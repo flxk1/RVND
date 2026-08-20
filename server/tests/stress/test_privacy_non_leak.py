@@ -40,8 +40,8 @@ from workspaces.lock.core import (
     _detect_confusable_bypass,
 )
 
-from workspaces import erasure, forgotten_subjects, signing
-from workspaces.mutation_log import LogEvent, MutationLog
+from workspaces import forgotten_subjects, signing
+from workspaces.mutation_log import MutationLog
 
 from tests.stress._harness import (
     MockCloudLLM,

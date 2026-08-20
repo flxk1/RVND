@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 import pytest
 
@@ -13,11 +12,8 @@ from workspaces.lock import (
     AuditLog,
     DecisionsStore,
     GateDecision,
-    Mode,
     OversightLevel,
-    StoredDecision,
     gate_for_cloud,
-    kg_context_for_vault,
 )
 from workspaces.lock.tier_c import reset_backend_cache
 

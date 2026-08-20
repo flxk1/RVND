@@ -27,11 +27,10 @@ is therefore the failing-then-passing acceptance gate for B4.
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 import pytest
 
-from workspaces.mutation_log import MutationLog, folder_hash
+from workspaces.mutation_log import MutationLog
 
 
 def _read_log_events(log: MutationLog) -> list[dict]:

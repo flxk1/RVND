@@ -25,6 +25,11 @@ def _llm_classify(**kwargs):
     return local_llm_classify(**kwargs)
 
 
+def _record_audit_drop(where, exc, **context):
+    from .audit_drop import record
+    return record(where, exc, **context)
+
+
 def _key_root_dir():
     from .signing import _key_root_dir
     return _key_root_dir()
@@ -175,6 +180,7 @@ def _verify_agent_identity(headers, *, authority="", method="", path="",
 host_deps.models_for_role = _models_for_role
 host_deps.llm_classify = _llm_classify
 host_deps.key_root_dir = _key_root_dir
+host_deps.record_audit_drop = _record_audit_drop
 host_deps.record_decision = _record_decision
 host_deps.list_connectors = _list_connectors
 host_deps.l0_load_policy = _l0_load_policy

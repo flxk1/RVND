@@ -7,7 +7,7 @@ from pathlib import Path
 
 from workspaces.drift_monitor import DriftReport
 from workspaces.oversight_drift import (
-    DriftSignal, drift_tripwire, raise_floor, evaluate as evaluate_drift)
+    drift_tripwire, raise_floor, evaluate as evaluate_drift)
 from workspaces.breaker import Breaker, Lease, BreakerState
 from workspaces.oversight_dispatch import dispatch, record_decision_return
 from workspaces.mutation_log import MutationLog

@@ -28,7 +28,6 @@ from __future__ import annotations
 
 from typing import Iterable
 
-import pytest
 
 from workspaces import RuleFacet, extract_rules
 from workspaces.nd_routing import (

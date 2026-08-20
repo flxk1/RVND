@@ -11,10 +11,8 @@ These tests pin down remediation payloads and lock threshold behavior.
 """
 from __future__ import annotations
 
-import pytest
 
 from workspaces.lock.core import (
-    Finding,
     RemediationAction,
     _detect_confusable_bypass,
     tier_b_scan_dict,

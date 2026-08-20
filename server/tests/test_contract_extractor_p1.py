@@ -6,7 +6,6 @@ extractor breaks the build, not the claim)."""
 
 import json
 
-import pytest
 
 from workspaces.contracts.eval import FLOORS, run_eval
 from workspaces.contracts.extractor import (classify_contract_type,

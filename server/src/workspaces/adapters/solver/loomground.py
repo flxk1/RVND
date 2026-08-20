@@ -14,9 +14,9 @@ from __future__ import annotations
 
 from loomground_solver.loomground import *  # noqa: F401,F403
 from loomground_solver.loomground import (
-    LANGUAGE_VERSION,
-    VERDICTS,
-    _guard_holds,
-    _has_cycle,
-    grade_meets,
+    LANGUAGE_VERSION,  # noqa: F401  -- re-export
+    VERDICTS,  # noqa: F401  -- re-export
+    _guard_holds,  # noqa: F401  -- re-export: `import *` skips _private names, so this line is the export
+    _has_cycle,  # noqa: F401  -- re-export: `import *` skips _private names, so this line is the export
+    grade_meets,  # noqa: F401  -- re-export
 )

@@ -17,10 +17,9 @@ Design intent:
 from __future__ import annotations
 
 import importlib
-import json
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable, Protocol
+from typing import Any, Protocol
 
 # YAML is the only external dep. We import it lazily so the test for "schema
 # is loadable as JSON" can run in environments without PyYAML.

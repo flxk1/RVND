@@ -28,7 +28,6 @@ Claims under test (written BEFORE the logic):
 """
 from __future__ import annotations
 
-import pytest
 
 from workspaces.completeness import completeness_report, TYPE_MODELS
 

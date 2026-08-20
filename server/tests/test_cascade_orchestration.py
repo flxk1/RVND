@@ -31,7 +31,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 import pytest
 
 from workspaces import local_llm
-from workspaces.cascade import (Tier, run_cascade, nonempty_verifier, always_accept)
+from workspaces.cascade import (Tier, run_cascade, nonempty_verifier)
 
 
 # ── a real in-process OpenAI-compatible server ────────────────────────────────

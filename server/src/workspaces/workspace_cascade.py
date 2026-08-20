@@ -393,6 +393,7 @@ def cascade_for_workspace(folder: str | Path,
     res = run_cascade(prompt, tiers, **kw)
 
     audit_id = None
+    audit_dropped = None
     try:
         resolved = str(Path(folder).expanduser().resolve())
         log = MutationLog(resolved, log_root=log_root)
@@ -411,12 +412,18 @@ def cascade_for_workspace(folder: str | Path,
                    "cloud_tiers_withheld": cloud_withheld},
         )
         audit_id = log.append(ev)
-    except Exception:
-        pass
+    except Exception as exc:
+        from .audit_drop import record as _record_drop
+        audit_dropped = _record_drop("workspace_cascade.cascade_for_workspace", exc,
+                                     folder=str(folder), log_root=log_root)
 
     out = res.to_dict()
     out["ledger"] = res.ledger()
     out["audit_id"] = audit_id
+    if audit_dropped:
+        # See workspace_orchestrate: a null audit_id alone cannot say whether the
+        # write failed or was never attempted.
+        out["audit_dropped"] = audit_dropped["error"]
     out["air_gapped"] = air_gapped
     out["cloud_tiers_withheld"] = cloud_withheld
     return out

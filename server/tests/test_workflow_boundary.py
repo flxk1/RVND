@@ -11,7 +11,6 @@ these tests pin the two properties the boundary guarantees:
      the step's STATIC footprint — no upstream output can raise privileges.
 """
 
-from pathlib import Path
 
 import pytest
 

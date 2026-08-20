@@ -4,9 +4,9 @@
 
 from __future__ import annotations
 
-from workspaces.subject_card import make_card, AI_ACT_VOCAB, get_vocabulary
+from workspaces.subject_card import make_card, AI_ACT_VOCAB
 from workspaces.applicability import enrich_pairs, applicability_facets_ai_act
-from workspaces.matcher import assess, match_obligation, Match
+from workspaces.matcher import assess, Match
 from workspaces.deontic_facets import extract_deontic_pairs
 from workspaces.memo import build_memo, render_memo
 

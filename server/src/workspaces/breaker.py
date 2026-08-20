@@ -32,7 +32,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field, asdict
 from enum import Enum
-from typing import Any, Callable, Iterable, Optional
+from typing import Any, Iterable, Optional
 
 
 from .adapters.policy_languages import (grade_index as _grade_index,

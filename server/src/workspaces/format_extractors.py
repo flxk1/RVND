@@ -29,7 +29,6 @@ behaviour as today). No hard import-time failure.
 
 from __future__ import annotations
 
-import hashlib
 import mimetypes
 import time
 import zipfile

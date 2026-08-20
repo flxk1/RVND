@@ -47,7 +47,7 @@ tiers, or the contract model — those are loomground-legal's, whole and entire.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Callable, List, Optional
 
 from loomground_solver import ESCALATE, Dimension

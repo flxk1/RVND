@@ -9,7 +9,7 @@ neutral artifacts published by ``loomground-governance``.
 from __future__ import annotations
 
 from workspaces.adapters.solver.loomground import *  # noqa: F401,F403
-from workspaces.adapters.solver.loomground import _guard_holds, _has_cycle
+from workspaces.adapters.solver.loomground import _guard_holds, _has_cycle  # noqa: F401  -- re-export: `import *` skips _private names, so this line is the export
 
 
 def _loomground_core():

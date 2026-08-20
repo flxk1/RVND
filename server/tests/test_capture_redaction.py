@@ -20,9 +20,7 @@ import pytest
 
 from workspaces.lock.core import redact_for_capture
 from workspaces.llm_capture import (
-    IngestMode,
     LLMExchange,
-    OversightLevel,
     _project_pair,
     VerbosityLevel,
 )

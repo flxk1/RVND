@@ -13,7 +13,6 @@ import os
 import time
 from pathlib import Path
 from typing import Any, Optional
-from mcp.server.fastmcp import FastMCP
 from .memory import WorkspaceMemory
 from workspaces.adapters.solver.dimensions import Dimension, classify_predicate, classify_query_dimension
 from .llm_capture import (
@@ -31,16 +30,10 @@ from .web_capture import (
 )
 from .mcp_serving import (
     _log_root,
-    _doc_token,
-    _fingerprint_of,
-    _triples_of,
     _lock_string,
-    _scrub_triple_object,
     _resolve_mode_for_folder,
-    _folder_lock_on,
     _lock_gate_text,
     _folder_lock_mode,
-    _lock_fingerprint,
     _rerank_by_dimension,
     _safe_view,
     _wrap_scanned,
@@ -51,8 +44,6 @@ from .mcp_serving import (
 from . import mcp_serving as _mcp_serving
 def _log_root():
     return _mcp_serving._log_root()
-from .workspace_identity import opaque_doc_token
-import base64 as _base64
 
 
 def _default_actor() -> str:
@@ -1273,8 +1264,6 @@ def fetch_pair_spans(
     """
     try:
         from .policy import (
-            LOCK_MODE_CLEAN_ROOM_WITH_ALGO,
-            LOCK_MODE_CLEAN_ROOM,
             LOCK_MODE_OFF,
         )
         lock_mode = _folder_lock_mode(folder_context)
@@ -1340,7 +1329,7 @@ def reextract_folder(folder_context: str) -> dict[str, Any]:
     Returns ``{ok, folder_context, files_reextracted, pair_ids, count}``.
     """
     try:
-        from .inbox_watcher import InboxWatcher, ingest_file
+        from .inbox_watcher import InboxWatcher
         watcher = InboxWatcher(
             folder_context,
             log_root=_log_root(),
@@ -2551,7 +2540,7 @@ def _run_membership_refusal(run_id: str) -> dict[str, Any] | None:
     run and a foreign workspace's run refuse identically (the response
     reveals neither the run's existence nor its folder). Without a request
     principal (local single-operator mode) returns None — unchanged."""
-    from .mcp_serving import get_request_principal, principal_member_filter
+    from .principal import get_request_principal, principal_member_filter
     member = principal_member_filter()
     if member is None:
         return None
@@ -2581,7 +2570,7 @@ def list_queue(state_filter: str = "",
     Returns ``{ok, entries: [{run_id, folder_path, workflow_name, state, ...}, ...]}``.
     """
     try:
-        from .mcp_serving import principal_member_filter
+        from .principal import principal_member_filter
         from .queue import list_queue as _list
         entries = _list(
             state_filter=(state_filter.strip() or None),
@@ -2611,7 +2600,7 @@ def take_next_run(worker_id: str = "",
     ``{ok: True, state: "empty"}`` when nothing is queued.
     """
     try:
-        from .mcp_serving import principal_member_filter
+        from .principal import principal_member_filter
         from .queue import take_next_run as _take
         wid = (worker_id or "").strip() or _default_actor()
         entry = _take(wid,
@@ -2683,7 +2672,7 @@ def inspect_stuck_runs(stale_pending_seconds: int = 300) -> dict[str, Any]:
     Returns ``{ok, stuck: [{kind, entry, lease?, reason}, ...]}``.
     """
     try:
-        from .mcp_serving import principal_member_filter
+        from .principal import principal_member_filter
         from .queue import inspect_stuck_runs as _inspect
         stuck = _inspect(stale_pending_seconds=int(stale_pending_seconds),
                           log_root=_log_root())
@@ -3875,7 +3864,7 @@ def _op_call(op: str, table: dict, params: dict) -> dict[str, Any]:
     fn = table.get(op)
     if fn is None:
         return {"error": f"unknown op {op!r}", "valid_ops": sorted(table)}
-    from .mcp_serving import apply_principal_to_params
+    from .principal import apply_principal_to_params
     refused = apply_principal_to_params(fn, params)
     if refused is not None:
         return refused
@@ -4189,7 +4178,7 @@ def decision_claim(folder_context: str, decision_id: str = "",
                 return v
             actor, decision_id, rung = v["party_id"], v["decision_id"], v["auth_rung"]
         else:
-            from .mcp_serving import get_request_principal
+            from .principal import get_request_principal
             ctx = get_request_principal()
             if ctx and ctx.get("party") == (actor or "").strip():
                 rung = ctx.get("rung", "")
@@ -4247,7 +4236,7 @@ def decision_record(folder_context: str, surface: dict | None = None,
         entry = None
         auth_rung = ""
         if not link_token:
-            from .mcp_serving import get_request_principal
+            from .principal import get_request_principal
             ctx = get_request_principal()
             if ctx and ctx.get("party") == (actor or "").strip():
                 auth_rung = ctx.get("rung", "")

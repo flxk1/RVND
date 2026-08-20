@@ -21,7 +21,6 @@ import re
 import time
 from pathlib import Path
 
-import pytest
 
 from workspaces.mutation_log import LogEvent, MutationLog
 from workspaces.workflows import (

@@ -30,7 +30,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 from .controlforms import (
-    G_BLOCKED, G_COMPETENCE, G_PRE_APPROVAL, G_TWO_APPROVERS, guarantees,
+    G_BLOCKED, G_PRE_APPROVAL, G_TWO_APPROVERS, guarantees,
 )
 from .mutation_log import LogEvent, MutationLog
 from .parties import list_parties

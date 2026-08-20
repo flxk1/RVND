@@ -15,7 +15,6 @@ with unsigned events, signature-payload binding to chain position.
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
 
 import pytest

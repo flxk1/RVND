@@ -7,7 +7,6 @@ the cascade builds an ordered local cascade from them and routes in-process vs
 HTTP rungs through one dispatching completer. Generation itself needs
 llama-cpp-python + a real GGUF, so the routing is exercised with fakes.
 """
-import os
 
 from workspaces import workspace_local_inproc as inproc
 from workspaces.workspace_cascade import (tiers_for_workspace, write_local_config,

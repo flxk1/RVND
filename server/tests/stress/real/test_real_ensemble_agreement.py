@@ -20,7 +20,6 @@ from __future__ import annotations
 import os
 import time
 
-import pytest
 
 from workspaces.lock.core import tier_c_semantic_check
 
