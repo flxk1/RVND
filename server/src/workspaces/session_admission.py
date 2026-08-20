@@ -9,7 +9,6 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Optional
 
-from .principal import get_request_principal
 from .governance_lane import get_lane
 from .mutation_log import LogEvent, MutationLog
 from .parties import list_parties
@@ -52,6 +51,7 @@ def governance_open(
     the same policy the token is bound to (identical policy_fingerprint). A
     pure read riding the response: it touches neither the audit event nor
     enforcement, and stays re-queryable mid-session via the standalone verb."""
+    from .principal import get_request_principal
     principal = get_request_principal()
     if principal is None or principal.get("rung") not in {
         "proxy-verified", "loopback-session",
