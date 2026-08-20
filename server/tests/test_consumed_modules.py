@@ -5,20 +5,30 @@
 RVND's eight norm-runtime twins (rule extraction, obligation state, subsumption,
 the span-norm registry, the obligation scheduler) are retired in favour of
 ``loomground-norm``. Each live twin is now a thin re-export shim over
-``workspaces.adapters.norm``; the original implementations are quarantined
+``adapters.norm``; the original implementations are quarantined
 (dead-on-arrival, never imported). This gate makes that permanent:
 
-  (a) no live ``workspaces`` module imports from ``_quarantine/``;
+  (a) no live module in the package imports from ``_quarantine/``;
   (b) each norm-runtime twin is a shim over ``adapters.norm`` — it imports from
       there and does NOT re-grow the retired behavior locally;
-  (c) every ``loomground-*`` distribution RVND consumes is either declared in
-      ``pyproject.toml`` or on the explicit ``_PIN_PENDING`` allowlist (for
-      packages consumed-but-undeclared until they are released) — so a NEW
-      orphan fails, while today is green.
+  (c) every FIRST-PARTY distribution RVND consumes is either declared in
+      ``pyproject.toml`` (main dependencies or an extra) or on the explicit
+      ``_PIN_PENDING`` allowlist, and every first-party distribution declared
+      there is actually consumed — so a NEW orphan fails, while today is green.
+
+"First-party" is not a name pattern. This gate used to read it off the
+``loomground-`` prefix, which made three real first-party pins —
+``enforcement-posture``, ``effect-reconciliation``, ``oversight-certificate`` —
+invisible to it: an orphan among them would have passed silently, which is the
+exact failure class the gate exists to prevent. The set now comes from
+``VCS_FIRST_PARTY`` in ``scripts/release_dependency_artifacts.py``, the same
+list the release tooling uses to decide which artifacts must carry an exact git
+commit instead of a PyPI digest. One source, so the two cannot drift.
 """
 from __future__ import annotations
 
 import ast
+import importlib.util
 import re
 import sys
 from pathlib import Path
@@ -28,8 +38,55 @@ if sys.version_info >= (3, 11):
 else:  # pragma: no cover
     import tomli as tomllib
 
+# The only path assumption in this file: it lives at <repo>/server/tests/.
+# Everything below is derived from pyproject.toml, so the imminent rename of the
+# import package (server/src/workspaces -> server/src/rvnd) needs no edit here.
 REPO_ROOT = Path(__file__).resolve().parents[2]
-WORKSPACES_ROOT = REPO_ROOT / "server" / "src" / "workspaces"
+_PYPROJECT = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+
+
+def _package_root() -> Path:
+    """The import package's source directory, read off the build config."""
+    where = _PYPROJECT.get("tool", {}).get("setuptools", {}) \
+        .get("package-dir", {}).get("", "server/src")
+    src = REPO_ROOT / where
+    found = sorted(d for d in src.iterdir()
+                   if d.is_dir() and (d / "__init__.py").is_file())
+    assert len(found) == 1, (
+        f"expected exactly one import package under {src}; got "
+        f"{[d.name for d in found]} — teach this gate which one is RVND's")
+    return found[0]
+
+
+PACKAGE_ROOT = _package_root()
+# The package's import name (``workspaces`` today, ``rvnd`` after the rename).
+# The seam regexes below are built from it rather than spelling it out.
+PKG = PACKAGE_ROOT.name
+
+
+def _load_vcs_first_party() -> frozenset[str]:
+    """The authoritative first-party set, taken from the release tooling.
+
+    ``scripts/release_dependency_artifacts.py`` already decides, per package,
+    whether its release artifact must carry an exact git commit (first-party) or
+    a PyPI sha256 (third-party). That is the same question this gate asks, so it
+    reads the same constant instead of keeping a second list that would drift.
+    The module is imported, not re-parsed, so a rename of the constant fails
+    loudly here rather than quietly shrinking the gate's coverage to nothing.
+    """
+    script = REPO_ROOT / "scripts" / "release_dependency_artifacts.py"
+    spec = importlib.util.spec_from_file_location("_rvnd_release_artifacts", script)
+    assert spec is not None and spec.loader is not None, f"cannot load {script}"
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    names = getattr(module, "VCS_FIRST_PARTY", None)
+    assert isinstance(names, (set, frozenset)) and names, (
+        f"{script.name} must define a non-empty VCS_FIRST_PARTY set — this gate "
+        f"derives the first-party set from it; got {names!r}")
+    return frozenset(names)
+
+
+FIRST_PARTY = _load_vcs_first_party()
 
 # The eight norm-runtime twins now consumed from loomground-norm through the seam.
 NORM_TWINS = (
@@ -62,42 +119,56 @@ FORBIDDEN_LOCAL_DEFS = (
     r"class\s+Subsumption\b",
 )
 
-# loomground distributions consumed-but-undeclared until release (git deps not
+# First-party distributions consumed-but-undeclared until release (git deps not
 # yet pinned in pyproject). A new orphan NOT on this list (and not declared)
 # fails check (c). Empty now: loomground-norm graduated to a declared git pin.
 _PIN_PENDING: tuple[str, ...] = ()
 
 # The opposite category: dists RVND pins to PROVIDE the installable git artifact
-# for a plane that imports them transitively but does not declare them
-# (loomground-ingest imports loomground_factual at module scope and
-# loomground_epistemic lazily, yet declares neither). They are not on any package
-# index, so pip cannot resolve them from ingest's abstract requirement — RVND must
-# carry the direct-URL pin. RVND does NOT consume them directly, so they are
-# exempt from the declared-must-be-consumed direction (check below). Proper
-# long-term home: ingest declaring these deps; until then RVND provides them.
+# for a plane that imports them transitively without carrying an installable pin
+# of its own. loomground-ingest imports loomground_factual at module scope
+# (ingest/deontic.py) and loomground_epistemic lazily (ingest/compose.py), while
+# its metadata lists both only behind its ``compose`` extra, which RVND does not
+# request — and neither package is on any index, so pip could not resolve them
+# from an abstract requirement anyway. RVND must carry the direct-URL pin. RVND
+# does NOT consume them directly, so they are exempt from the
+# declared-must-be-consumed direction (check below). Proper long-term home:
+# ingest carrying its own direct-URL pins; until then RVND provides them.
+# ``test_transitive_provider_pins_are_still_needed`` asserts that reason still
+# holds, so the pins get dropped when it stops being true.
 _TRANSITIVE_PROVIDER = ("loomground-factual", "loomground-epistemic")
 
-# import-name -> distribution-name for the loomground packages RVND consumes.
-_IMPORT_TO_DIST = {
-    "loomground_solver": "loomground-solver",
-    "loomground_versum": "loomground-versum",
+# ── import name != distribution name ────────────────────────────────────────
+# Handled by two explicit rules rather than one hand-maintained table:
+#
+#   1. DEFAULT — a distribution imports under its own name with '-' -> '_'.
+#      Applied to every member of FIRST_PARTY, so a newly pinned plane is
+#      covered the moment it is added to VCS_FIRST_PARTY, with no edit here:
+#      loomground-solver -> loomground_solver, enforcement-posture ->
+#      enforcement_posture, effect-reconciliation -> effect_reconciliation,
+#      oversight-certificate -> oversight_certificate.
+#
+#   2. EXCEPTIONS — two planes publish an import package that drops the
+#      ``loomground-`` prefix. These are ADDITIONAL spellings, not replacements:
+#      both ``loomground_versum`` and ``versum`` map to loomground-versum.
+#
+# ``test_import_name_exceptions_are_not_stale`` keeps rule 2 honest.
+_IMPORT_NAME_EXCEPTIONS = {
     "versum": "loomground-versum",
-    "loomground_governance": "loomground-governance",
-    "loomground_deontic": "loomground-deontic",
     "deontic": "loomground-deontic",
-    "loomground_ingest": "loomground-ingest",
-    "loomground_legal": "loomground-legal",
-    "loomground_norm": "loomground-norm",
 }
+
+_IMPORT_TO_DIST: dict[str, str] = {d.replace("-", "_"): d for d in FIRST_PARTY}
+_IMPORT_TO_DIST.update(_IMPORT_NAME_EXCEPTIONS)
 
 
 def _live_py_files() -> list[Path]:
-    return [p for p in WORKSPACES_ROOT.rglob("*.py")
+    return [p for p in PACKAGE_ROOT.rglob("*.py")
             if "__pycache__" not in p.parts and "_quarantine" not in p.parts]
 
 
 def _all_py_files() -> list[Path]:
-    return [p for p in WORKSPACES_ROOT.rglob("*.py") if "__pycache__" not in p.parts]
+    return [p for p in PACKAGE_ROOT.rglob("*.py") if "__pycache__" not in p.parts]
 
 
 # ── (a) ─────────────────────────────────────────────────────────────────────
@@ -108,14 +179,14 @@ def test_no_live_module_imports_from_quarantine() -> None:
     offenders: list[str] = []
     for path in _live_py_files():
         if pattern.search(path.read_text(encoding="utf-8")):
-            offenders.append(str(path.relative_to(WORKSPACES_ROOT)))
+            offenders.append(str(path.relative_to(PACKAGE_ROOT)))
     assert not offenders, f"live module imports from _quarantine/: {offenders}"
 
 
 def test_quarantine_dir_is_present_but_inert() -> None:
     """The quarantine package exists (originals kept for verification) and is
     marked as not-imported-by-live-code."""
-    q = WORKSPACES_ROOT / "_quarantine"
+    q = PACKAGE_ROOT / "_quarantine"
     assert q.is_dir(), "expected the _quarantine/ package"
     init = (q / "__init__.py").read_text(encoding="utf-8")
     assert "dead-on-arrival" in init.lower() or "not imported" in init.lower()
@@ -130,11 +201,12 @@ def test_quarantine_dir_is_present_but_inert() -> None:
 def test_norm_twins_are_shims_over_adapters_norm() -> None:
     """Each norm-runtime twin imports from ``adapters.norm`` and re-grows none of
     the retired behavior locally."""
-    seam = re.compile(r"from\s+\.adapters\.norm\s+import|from\s+workspaces\.adapters\.norm\s+import")
+    seam = re.compile(
+        rf"from\s+\.adapters\.norm\s+import|from\s+{PKG}\.adapters\.norm\s+import")
     not_shims: list[str] = []
     regrown: list[str] = []
     for name in NORM_TWINS:
-        text = (WORKSPACES_ROOT / name).read_text(encoding="utf-8")
+        text = (PACKAGE_ROOT / name).read_text(encoding="utf-8")
         if not seam.search(text):
             not_shims.append(name)
         for pat in FORBIDDEN_LOCAL_DEFS:
@@ -153,31 +225,44 @@ def test_adapters_norm_is_the_only_norm_import_site() -> None:
             if isinstance(node, ast.Import):
                 if any(a.name == "loomground_norm" or a.name.startswith("loomground_norm.")
                        for a in node.names):
-                    importers.append(str(path.relative_to(WORKSPACES_ROOT)))
+                    importers.append(str(path.relative_to(PACKAGE_ROOT)))
             elif isinstance(node, ast.ImportFrom) and not node.level:
                 if node.module and (node.module == "loomground_norm"
                                     or node.module.startswith("loomground_norm.")):
-                    importers.append(str(path.relative_to(WORKSPACES_ROOT)))
+                    importers.append(str(path.relative_to(PACKAGE_ROOT)))
     assert set(importers) == {"adapters/norm.py"}, (
         f"loomground_norm must be imported only in adapters/norm.py; got {sorted(set(importers))}")
 
 
 # ── (c) ─────────────────────────────────────────────────────────────────────
 
-def _declared_loomground_dists() -> set[str]:
-    data = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
-    deps = data.get("project", {}).get("dependencies", [])
-    out: set[str] = set()
-    for dep in deps:
-        # e.g. "loomground-solver @ git+https://..." → "loomground-solver"
-        name = re.split(r"[\s@<>=!~;\[]", dep.strip(), maxsplit=1)[0]
-        if name.startswith("loomground-"):
-            out.add(name)
+def _declared_first_party_dists() -> dict[str, str]:
+    """First-party dists declared in pyproject -> where they are declared.
+
+    Reads BOTH ``project.dependencies`` and every ``project.optional-dependencies``
+    extra: ``oversight-certificate`` is pinned only in the ``[oversight-cert]``
+    extra, so a main-dependencies-only read would have called it undeclared.
+    Membership is decided by :data:`FIRST_PARTY`, never by a name prefix.
+    """
+    project = _PYPROJECT.get("project", {})
+    groups: list[tuple[str, list[str]]] = [("dependencies", list(project.get("dependencies", [])))]
+    for extra, deps in project.get("optional-dependencies", {}).items():
+        groups.append((f"extra:{extra}", list(deps)))
+    out: dict[str, str] = {}
+    for where, deps in groups:
+        for dep in deps:
+            # e.g. "loomground-solver @ git+https://..." -> "loomground-solver"
+            name = re.split(r"[\s@<>=!~;\[]", dep.strip(), maxsplit=1)[0]
+            if name in FIRST_PARTY:
+                out.setdefault(name, where)
     return out
 
 
-def _consumed_loomground_dists() -> set[str]:
-    consumed: set[str] = set()
+def _imported_top_level_names() -> set[str]:
+    """Every top-level module name imported anywhere under the package root,
+    including imports nested inside functions (``ast.walk``, not ``tree.body``) —
+    the first-party planes are routinely imported lazily."""
+    tops: set[str] = set()
     for path in _all_py_files():
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
         for node in ast.walk(tree):
@@ -187,68 +272,219 @@ def _consumed_loomground_dists() -> set[str]:
             elif isinstance(node, ast.ImportFrom) and not node.level and node.module:
                 names = [node.module]
             for mod in names:
-                top = mod.split(".", 1)[0]
-                if top in _IMPORT_TO_DIST:
-                    consumed.add(_IMPORT_TO_DIST[top])
-                elif top.startswith("loomground_"):
-                    # an unmapped loomground_* import — treat as its dist name so
-                    # a NEW orphan surfaces here rather than passing silently.
-                    consumed.add(top.replace("_", "-"))
+                tops.add(mod.split(".", 1)[0])
+    return tops
+
+
+def _consumed_first_party_dists() -> set[str]:
+    consumed: set[str] = set()
+    for top in _imported_top_level_names():
+        if top in _IMPORT_TO_DIST:
+            consumed.add(_IMPORT_TO_DIST[top])
+        elif top.startswith("loomground_"):
+            # A loomground_* import with no mapping — a plane pinned but not yet
+            # added to VCS_FIRST_PARTY. Treat it as its dist name so a NEW orphan
+            # surfaces here rather than passing silently. (No such heuristic is
+            # possible for non-loomground first-party names, which is precisely
+            # why VCS_FIRST_PARTY, not a prefix, is the source of truth.)
+            consumed.add(top.replace("_", "-"))
     return consumed
 
 
-def test_every_consumed_loomground_dist_is_declared_or_pinned() -> None:
-    declared = _declared_loomground_dists()
-    allowed = declared | set(_PIN_PENDING)
-    consumed = _consumed_loomground_dists()
+def test_import_name_exceptions_are_not_stale() -> None:
+    """Rule 2 of the import-name mapping must stay tied to reality: each
+    bare-name exception must name a real first-party dist AND still be imported
+    somewhere — else drop it, so the map cannot rot into dead entries that
+    quietly mask what they claim to cover."""
+    imported = _imported_top_level_names()
+    bogus = sorted(f"{k} -> {v}" for k, v in _IMPORT_NAME_EXCEPTIONS.items()
+                   if v not in FIRST_PARTY)
+    assert not bogus, (
+        f"_IMPORT_NAME_EXCEPTIONS maps to distributions that are not first-party "
+        f"(not in VCS_FIRST_PARTY): {bogus}")
+    unused = sorted(k for k in _IMPORT_NAME_EXCEPTIONS if k not in imported)
+    assert not unused, (
+        f"_IMPORT_NAME_EXCEPTIONS lists import names nobody imports — remove "
+        f"them: {unused}")
+
+
+def test_import_name_map_covers_every_first_party_dist() -> None:
+    """Every first-party distribution has at least one known import name, so
+    none of them can be consumed invisibly."""
+    unmapped = sorted(FIRST_PARTY - set(_IMPORT_TO_DIST.values()))
+    assert not unmapped, (
+        f"first-party distributions with no import name — this gate cannot see "
+        f"whether they are consumed: {unmapped}")
+
+
+def test_every_git_pinned_dependency_is_first_party() -> None:
+    """VCS_FIRST_PARTY cannot fall behind pyproject.
+
+    A dependency pinned to a git URL is by construction one we build ourselves.
+    If such a pin is missing from VCS_FIRST_PARTY then both this gate and the
+    release tooling stop seeing it — which is how the ``loomground-*`` prefix
+    rule hid enforcement-posture, effect-reconciliation and
+    oversight-certificate for as long as it did. Adding a git pin without
+    listing it fails here.
+    """
+    project = _PYPROJECT.get("project", {})
+    deps = list(project.get("dependencies", []))
+    for extra_deps in project.get("optional-dependencies", {}).values():
+        deps.extend(extra_deps)
+    unlisted: list[str] = []
+    for dep in deps:
+        if "@ git+" not in dep:
+            continue
+        name = re.split(r"[\s@<>=!~;\[]", dep.strip(), maxsplit=1)[0]
+        if name not in FIRST_PARTY:
+            unlisted.append(name)
+    assert not unlisted, (
+        f"git-pinned dependencies missing from VCS_FIRST_PARTY in "
+        f"scripts/release_dependency_artifacts.py — add them there (one source, "
+        f"used by both the release artifacts and this gate): {sorted(unlisted)}")
+
+
+def test_every_consumed_first_party_dist_is_declared_or_pinned() -> None:
+    declared = _declared_first_party_dists()
+    allowed = set(declared) | set(_PIN_PENDING)
+    consumed = _consumed_first_party_dists()
     orphans = sorted(consumed - allowed)
     assert not orphans, (
-        f"loomground distributions consumed but neither declared in pyproject "
+        f"first-party distributions consumed but neither declared in pyproject "
         f"nor on _PIN_PENDING: {orphans}\n"
         f"  declared: {sorted(declared)}\n"
         f"  pin-pending: {sorted(_PIN_PENDING)}\n"
         f"  consumed: {sorted(consumed)}")
 
 
-def test_every_declared_loomground_dist_is_consumed() -> None:
+def test_every_declared_first_party_dist_is_consumed() -> None:
     """The reverse of the orphan check above, and the direction it was missing: a
-    loomground-* distribution DECLARED as a dependency must actually be imported
-    somewhere under server/src.
+    first-party distribution DECLARED as a dependency must actually be imported
+    somewhere under the package root.
 
     A declared-but-unconsumed dependency is the ``orphan = reimplemented`` signal
     the standing consume-vs-regrow gate exists to catch: RVND paid the dependency
     cost but grew its own runtime instead of consuming the module (the historical
     ``loomground_norm`` failure — declared/vendored yet imported nowhere while a
     parallel twin carried the work). Together with
-    :func:`test_every_consumed_loomground_dist_is_declared_or_pinned` this makes the
-    manifest↔usage relationship bidirectional: nothing consumed-but-undeclared, and
-    nothing declared-but-unconsumed.
+    :func:`test_every_consumed_first_party_dist_is_declared_or_pinned` this makes
+    the manifest<->usage relationship bidirectional: nothing consumed-but-undeclared,
+    and nothing declared-but-unconsumed.
+
+    Both directions now cover EVERY first-party pin, not just the ``loomground-*``
+    ones — enforcement-posture, effect-reconciliation and oversight-certificate
+    were invisible here while the check keyed on the name prefix.
 
     (_PIN_PENDING dists are consumed-but-undeclared by construction, so they never
     appear in ``declared`` and cannot trip this check.)"""
-    declared = _declared_loomground_dists()
-    consumed = _consumed_loomground_dists()
+    declared = _declared_first_party_dists()
+    consumed = _consumed_first_party_dists()
     # _TRANSITIVE_PROVIDER dists are pinned to provide a transitive plane artifact,
     # not consumed by RVND directly — they are declared-but-unconsumed by design.
-    unconsumed = sorted(declared - consumed - set(_TRANSITIVE_PROVIDER))
+    unconsumed = sorted(set(declared) - consumed - set(_TRANSITIVE_PROVIDER))
     assert not unconsumed, (
-        f"loomground distributions declared in pyproject but imported NOWHERE under "
-        f"server/src — declared-but-unconsumed means the capability was reimplemented "
-        f"as a parallel structure instead of consumed. Consume the module through its "
-        f"adapter seam, or drop the dependency: {unconsumed}\n"
-        f"  declared: {sorted(declared)}\n"
+        f"first-party distributions declared in pyproject but imported NOWHERE "
+        f"under the package root — declared-but-unconsumed means the capability was "
+        f"reimplemented as a parallel structure instead of consumed. Consume the "
+        f"module through its adapter seam, or drop the dependency: {unconsumed}\n"
+        f"  declared: {dict(sorted(declared.items()))}\n"
         f"  consumed: {sorted(consumed)}")
 
 
 def test_pin_pending_entries_are_actually_consumed() -> None:
     """Guard against _PIN_PENDING going stale: every pinned-pending dist must
     actually be consumed (else drop it), and must NOT also be declared."""
-    declared = _declared_loomground_dists()
-    consumed = _consumed_loomground_dists()
+    declared = _declared_first_party_dists()
+    consumed = _consumed_first_party_dists()
     for dist in _PIN_PENDING:
         assert dist in consumed, f"_PIN_PENDING lists {dist} but it is not consumed"
         assert dist not in declared, (
             f"{dist} is declared in pyproject — remove it from _PIN_PENDING")
+
+
+# ── transitive-provider pins: the reason must still hold ────────────────────
+
+def _ingest_source_dir() -> Path:
+    """The INSTALLED loomground-ingest source tree.
+
+    Deliberately no skip-if-missing: loomground-ingest is a hard RVND dependency,
+    so an environment without it is a broken environment, not a reason to let this
+    check quietly pass."""
+    spec = importlib.util.find_spec("loomground_ingest")
+    assert spec is not None and spec.submodule_search_locations, (
+        "loomground_ingest is not importable — it is a declared RVND dependency; "
+        "install the environment rather than skipping this check")
+    return Path(list(spec.submodule_search_locations)[0])
+
+
+def _ingest_requirements() -> list[str]:
+    from importlib.metadata import distribution
+    return list(distribution("loomground-ingest").metadata.get_all("Requires-Dist") or [])
+
+
+def test_transitive_provider_pins_are_still_needed() -> None:
+    """factual/epistemic are pinned for a REASON — assert the reason still holds.
+
+    RVND imports neither. They are pinned so that pip has an installable artifact
+    for packages the ingest plane imports but does not itself carry a pin for.
+    Two conditions make that necessary, and this test asserts both:
+
+      (N1) the installed loomground-ingest source still imports the package —
+           if it stops, nothing in the closure needs it and the pin is dead
+           weight;
+      (N2) ingest still declares no direct-URL (``@ git+``) requirement for it —
+           if ingest starts carrying its own installable pin, pip resolves the
+           package through ingest and RVND's provider pin is redundant.
+
+    Either flip fails here, so the pins get dropped rather than outliving their
+    reason. (loomground-epistemic additionally requires loomground-factual, which
+    only strengthens N1 for factual.)
+    """
+    src = _ingest_source_dir()
+    sources = [f for f in src.rglob("*.py") if "__pycache__" not in f.parts]
+    assert sources, f"no python sources under the installed ingest at {src}"
+    blob = "\n".join(f.read_text(encoding="utf-8") for f in sources)
+    requires = _ingest_requirements()
+
+    unneeded: list[str] = []
+    superseded: list[str] = []
+    for dist in _TRANSITIVE_PROVIDER:
+        import_name = dist.replace("-", "_")
+        if not re.search(rf"^\s*(?:from|import)\s+{re.escape(import_name)}\b",
+                         blob, re.MULTILINE):
+            unneeded.append(dist)
+        for req in requires:
+            name = re.split(r"[\s@<>=!~;\[]", req.strip(), maxsplit=1)[0]
+            if name == dist and "@ git+" in req and "extra ==" not in req:
+                superseded.append(f"{dist} ({req.strip()})")
+
+    assert not unneeded, (
+        f"transitive-provider pins whose reason no longer holds: the installed "
+        f"loomground-ingest no longer imports them, so nothing in the closure "
+        f"needs them. Drop the pin from pyproject.toml, _TRANSITIVE_PROVIDER and "
+        f"VCS_FIRST_PARTY: {sorted(unneeded)}")
+    assert not superseded, (
+        f"transitive-provider pins now superseded: loomground-ingest carries its "
+        f"own installable direct-URL requirement for these, so RVND's provider "
+        f"pin is redundant. Drop it: {sorted(superseded)}")
+
+
+def test_transitive_provider_entries_are_not_stale() -> None:
+    """Every _TRANSITIVE_PROVIDER entry must be a first-party dist that is
+    declared in pyproject and NOT consumed by RVND directly — otherwise the
+    exemption is hiding a dependency that belongs in the normal
+    declared<->consumed direction."""
+    declared = _declared_first_party_dists()
+    consumed = _consumed_first_party_dists()
+    for dist in _TRANSITIVE_PROVIDER:
+        assert dist in FIRST_PARTY, (
+            f"_TRANSITIVE_PROVIDER lists {dist}, which is not in VCS_FIRST_PARTY")
+        assert dist in declared, (
+            f"_TRANSITIVE_PROVIDER lists {dist} but pyproject does not declare it "
+            f"— the whole point of the entry is that RVND provides the artifact")
+        assert dist not in consumed, (
+            f"{dist} IS consumed by RVND directly — remove it from "
+            f"_TRANSITIVE_PROVIDER so the normal declared<->consumed checks apply")
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -257,7 +493,7 @@ def test_pin_pending_entries_are_actually_consumed() -> None:
 # RVND's world-map stack (the entity model + graph container + reach, the seed
 # corpus, the md-table loader, the curated relational enrichment, the instrument
 # catalogue, corpus validation, the contract model) is retired in favour of
-# ``loomground-legal``, consumed through ``workspaces.adapters.legal``. Unlike
+# ``loomground-legal``, consumed through ``adapters.legal``. Unlike
 # the norm twins (uniform shims), these are a *parallel-by-role* set: some are
 # pure re-export shims (legal_world, corpus/validate, world_corpus_loader,
 # world_relations) and some are SPLITs that KEEP their folder-runtime local
@@ -269,7 +505,7 @@ def test_pin_pending_entries_are_actually_consumed() -> None:
 # untouched).
 # ════════════════════════════════════════════════════════════════════════════
 
-# twin file (relative to WORKSPACES_ROOT) -> regexes for MOVED symbols that must
+# twin file (relative to PACKAGE_ROOT) -> regexes for MOVED symbols that must
 # NOT be defined locally (they now live in the package, behind the seam).
 LEGAL_TWINS: dict[str, tuple[str, ...]] = {
     "legal_world.py": (
@@ -343,11 +579,11 @@ def test_legal_twins_consume_adapters_legal() -> None:
     """Each legal-stack twin consumes the plane through ``adapters.legal`` and
     re-grows none of the symbols that moved to the package."""
     seam = re.compile(
-        r"from\s+\.+adapters\.legal\s+import|from\s+workspaces\.adapters\.legal\s+import")
+        rf"from\s+\.+adapters\.legal\s+import|from\s+{PKG}\.adapters\.legal\s+import")
     not_shims: list[str] = []
     regrown: list[str] = []
     for name, forbidden in LEGAL_TWINS.items():
-        text = (WORKSPACES_ROOT / name).read_text(encoding="utf-8")
+        text = (PACKAGE_ROOT / name).read_text(encoding="utf-8")
         if not seam.search(text):
             not_shims.append(name)
         for pat in forbidden:
@@ -366,18 +602,18 @@ def test_adapters_legal_is_the_only_legal_import_site() -> None:
             if isinstance(node, ast.Import):
                 if any(a.name == "loomground_legal" or a.name.startswith("loomground_legal.")
                        for a in node.names):
-                    importers.append(str(path.relative_to(WORKSPACES_ROOT)))
+                    importers.append(str(path.relative_to(PACKAGE_ROOT)))
             elif isinstance(node, ast.ImportFrom) and not node.level:
                 if node.module and (node.module == "loomground_legal"
                                     or node.module.startswith("loomground_legal.")):
-                    importers.append(str(path.relative_to(WORKSPACES_ROOT)))
+                    importers.append(str(path.relative_to(PACKAGE_ROOT)))
     assert set(importers) == {"adapters/legal.py"}, (
         f"loomground_legal must be imported only in adapters/legal.py; got {sorted(set(importers))}")
 
 
 # The required-artifact catalogue is CONSUMED from loomground-ingest, not re-grown.
 # (A single-import-site rule is NOT used here — loomground_ingest is legitimately
-# imported by workspaces/ingest/* and adapters/ingest/governance.py — so this is the
+# imported by ingest/* and adapters/ingest/governance.py — so this is the
 # twin-consume + no-regrow shape, like LEGAL_TWINS.)
 INGEST_TWINS: dict[str, tuple[str, ...]] = {
     # instrument_obligation_extractor: consumes ingest.extract_required_artifacts /
@@ -396,11 +632,11 @@ def test_ingest_twins_consume_adapters_ingest() -> None:
     ``adapters.ingest``; its catalogue, schema, obligation-cue regex and scan must
     not regrow in the ND-dispatcher module."""
     seam = re.compile(
-        r"from\s+\.+adapters\.ingest\b|from\s+workspaces\.adapters\.ingest\b")
+        rf"from\s+\.+adapters\.ingest\b|from\s+{PKG}\.adapters\.ingest\b")
     not_shims: list[str] = []
     regrown: list[str] = []
     for name, forbidden in INGEST_TWINS.items():
-        text = (WORKSPACES_ROOT / name).read_text(encoding="utf-8")
+        text = (PACKAGE_ROOT / name).read_text(encoding="utf-8")
         if not seam.search(text):
             not_shims.append(name)
         for pat in forbidden:
@@ -413,7 +649,7 @@ def test_ingest_twins_consume_adapters_ingest() -> None:
 def test_legal_quarantine_originals_present() -> None:
     """The retired legal originals are kept in _quarantine (for verification
     before deletion) and remain inert (no live import — fenced above)."""
-    q = WORKSPACES_ROOT / "_quarantine"
+    q = PACKAGE_ROOT / "_quarantine"
     present = sorted(p.name for p in q.glob("*.py") if p.name != "__init__.py")
     assert set(LEGAL_QUARANTINE) <= set(present), (
         f"quarantine is missing some retired legal originals: "
@@ -427,7 +663,7 @@ def test_legal_quarantine_originals_present() -> None:
 # an engine while importing NOTHING upstream is invisible to them — which is
 # exactly how ``problem_kg``'s copy of solver.case's Ground/Fact/CaseRecord/
 # project_pairs hid for so long. This check closes that hole by looking at
-# DEFINITIONS, not imports: a live workspaces module (outside the adapters/
+# DEFINITIONS, not imports: a live package module (outside the adapters/
 # seam) must not DEFINE a symbol that duplicates a consumed package's
 # distinctive public surface. Genuine name-collisions are allow-listed with a
 # reason.
@@ -461,13 +697,13 @@ SHADOW_ALLOWLIST = {
 
 
 def test_no_shadow_parallel_of_consumed_surface() -> None:
-    """A live workspaces module must not DEFINE (top-level) a symbol that
+    """A live package module must not DEFINE (top-level) a symbol that
     duplicates a consumed package's distinctive surface, outside the adapters/
     seam. Catches parallels that import nothing upstream. Legitimate
     name-collisions are allow-listed above with a reason."""
     offenders: list[str] = []
     for path in _live_py_files():
-        rel = path.relative_to(WORKSPACES_ROOT).as_posix()
+        rel = path.relative_to(PACKAGE_ROOT).as_posix()
         if rel.startswith("adapters/"):
             continue  # the seam is where re-exports legitimately live
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
@@ -488,7 +724,7 @@ def test_shadow_allowlist_is_not_stale() -> None:
     silent escape hatch."""
     stale: list[str] = []
     for (rel, name) in SHADOW_ALLOWLIST:
-        path = WORKSPACES_ROOT / rel
+        path = PACKAGE_ROOT / rel
         if not path.exists():
             stale.append(f"{rel} (file gone)")
             continue
@@ -520,7 +756,7 @@ def test_shadow_allowlist_is_not_stale() -> None:
 def test_matcher_consumes_solver_subsumption() -> None:
     """matcher.py routes is-a matching through Solver's ``subsume_across`` and
     does not re-grow the transitive taxonomy walk (``vocab.ancestors``)."""
-    src = (WORKSPACES_ROOT / "matcher.py").read_text(encoding="utf-8")
+    src = (PACKAGE_ROOT / "matcher.py").read_text(encoding="utf-8")
     assert ("from .adapters.solver.subsumption import" in src
             and "subsume_across" in src), (
         "matcher.py must consume Solver's subsumption engine (subsume_across) "
