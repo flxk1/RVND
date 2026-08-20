@@ -10,6 +10,7 @@
 //   MODE=local     — no identity header (single-operator): all chrome renders
 import { JSDOM } from "jsdom";
 import { bridgeGlobals, fetchComposedPage } from "../harness/render_harness.mjs";
+import { assertBridgeAlive } from "../harness/rvnd_gate_guards.mjs";
 const PORT = process.argv[2], F = process.argv[3];
 const MODE = process.argv[4], WHO = process.argv[5] || "";
 const html = await fetchComposedPage(PORT);
@@ -19,8 +20,12 @@ const dom = new JSDOM(html, {
   runScripts: "dangerously",
   beforeParse(window) {
     bridgeGlobals(window, PORT);
-    if (MODE === "principal") window.fetch = (u, o) => fetch(u, { ...(o || {}),
-      headers: { ...((o || {}).headers || {}), "X-Auth-Request-Email": WHO } });
+    // The bridge is REAL in both modes — only the identity header differs.
+    // (Local mode used to install no fetch at all, so the page never reached
+    // the server and "every menu renders" held vacuously: the default DOM.)
+    window.fetch = (u, o) => (MODE === "principal"
+      ? fetch(u, { ...(o || {}), headers: { ...((o || {}).headers || {}), "X-Auth-Request-Email": WHO } })
+      : fetch(u, o));
     Object.defineProperty(window.HTMLElement.prototype, "clientWidth", { get(){ return 900; } });
     Object.defineProperty(window.HTMLElement.prototype, "clientHeight", { get(){ return 600; } });
   },
@@ -37,6 +42,7 @@ const viewBtn = (v) => D.querySelector('.viewtog button[data-view="' + v + '"]')
 async function main() {
   for (let i = 0; i < 80 && !window._ready; i++) await sleep(25);
   if (!window._ready) fail("page did not boot");
+  await assertBridgeAlive(window, fail);
   for (const label of ["Set up", "Rules", "Pending", "Record"])
     if (!sect(label)) fail("section menu missing from the markup: " + label);
 
