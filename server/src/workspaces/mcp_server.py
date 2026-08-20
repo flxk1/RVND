@@ -33,7 +33,6 @@ or, with the installed entry point::
 
 from __future__ import annotations
 
-import json
 import os
 import re
 import time
@@ -43,20 +42,7 @@ from typing import Any, Optional
 from mcp.server.fastmcp import FastMCP
 
 from .memory import WorkspaceMemory
-from workspaces.adapters.solver.dimensions import Dimension, classify_predicate, classify_query_dimension
-from .llm_capture import (
-    IngestMode,
-    LLMExchange,
-    OversightLevel,
-    capture_llm_exchange,
-)
-from .policy import load_policy
 from . import session_mcp  # S12 — session save/load facade
-from .web_capture import (
-    WebSearchExchange,
-    WebSearchResult,
-    capture_web_search,
-)
 
 
 # ---------------------------------------------------------------------------
@@ -113,14 +99,10 @@ def governance_language() -> str:
 # Implementation handlers (split to mcp_impl.py; this file is the surface).
 from .mcp_impl import (
     _default_actor,
-    _parse_mode,
-    _parse_oversight,
-    _serialise_capture_result,
     capture_llm,
     capture_web,
     capture_read,
     policy_snapshot,
-    _at_rest_state,
     _workspace_lock_guard,
     _rank_served,
     workspace_lock_unlock,
@@ -133,8 +115,6 @@ from .mcp_impl import (
     model_attest_admit,
     model_attest_status,
     recent,
-    list_folder,
-    create_folder,
     pair_safe_context,
     pairs_safe_context_for_query,
     workspace_remember,
@@ -151,10 +131,7 @@ from .mcp_impl import (
     policy_enable_discipline,
     policy_disable_discipline,
     discipline_audit,
-    _make_full_extractor,
-    scan_folder,
     fetch_pair_spans,
-    reextract_folder,
     lock_classify_text,
     lock_threshold_get,
     lock_threshold_set,
@@ -163,7 +140,6 @@ from .mcp_impl import (
     pin_skills_to_folder,
     unpin_skill_from_folder,
     list_pinned_skills,
-    _try_read_workspace_skill_body,
     dispatch_skill,
     dispatch_skills_batch,
     ingest_skill,
@@ -188,9 +164,7 @@ from .mcp_impl import (
     resume_run,
     cancel_run,
     get_audit_event,
-    _serialize_log_event,
     set_pair_layout,
-    _replay_pair_layouts,
     get_pair_layouts,
     active_workflows,
     suggest_companion_skills,
@@ -259,29 +233,14 @@ from .mcp_impl import (
     grounder_ingest_source,
     grounder_classify_creators,
     grounder_link_entities,
-    _FS_SKIP_DIRS,
-    _LOCK_CLASSIFY_BUCKET,
-    _LOCK_CLASSIFY_RATE_LIMIT,
-    _UNSAFE_FILENAME_CHARS,
-)
+    _LOCK_CLASSIFY_BUCKET,  # noqa: F401  -- re-export: reached as a module attribute, not an import
+    )
 
 # Serving helpers (extracted to keep this file the assembler, not the impl).
 from .mcp_serving import (
     _log_root,
-    _doc_token,
-    _fingerprint_of,
-    _triples_of,
-    _lock_string,
-    _scrub_triple_object,
-    _resolve_mode_for_folder,
-    _folder_lock_on,
-    _lock_gate_text,
-    _folder_lock_mode,
-    _lock_fingerprint,
-    _rerank_by_dimension,
-    _safe_view,
-    _wrap_scanned,
-)
+    _rerank_by_dimension,  # noqa: F401  -- re-export: reached as a module attribute, not an import
+    )
 
 # Dynamic seam: resolve _log_root through mcp_serving so tests that patch
 # workspaces.mcp_serving._log_root take effect in every module (split-safe).
@@ -558,7 +517,6 @@ def audit_verify_chain(folder_context: str,
 # returned with action="refuse" — the artifact must drop them from the prompt.
 
 
-from .workspace_identity import opaque_doc_token
 
 
 
@@ -1748,7 +1706,6 @@ def workspace_conformity(op: str, params: dict[str, Any] | None = None) -> dict[
         if rid == "eu-ai-act":
             reg = _conf.load_regime()
         elif isinstance(rid, str) and rid:
-            from pathlib import Path as _P
             cand = _conf.REGIME_PACKS_DIR / f"{rid}-conformity.json"
             reg = _conf.load_regime(cand) if cand.exists() else None
         if op == "evidence_pack":

@@ -29,7 +29,7 @@ from typing import Iterable
 from .action_gate import ActionRequest, StandingApproval, Verdict, gate
 from .workspace_lock import read_pairs
 from .mutation_log import LogEvent, MutationLog
-from .mcp_serving import get_request_principal, principal_workspace_member
+from .principal import get_request_principal, principal_workspace_member
 
 ROLE_SOURCE = "source"
 ROLE_COMPANION = "companion"

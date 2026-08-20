@@ -5,24 +5,18 @@
 from __future__ import annotations
 
 import time
-from pathlib import Path
 
-import pytest
 
 from workspaces.queue import (
-    cancel_run,
     enqueue_run,
     get_run,
     list_queue,
-    mark_done,
-    mark_failed,
 )
 from workspaces.worker import (
     WorkerConfig,
     _StopFlag,
     run_forever,
     run_once,
-    stop_worker,
     worker_status,
 )
 from workspaces.workflows import (

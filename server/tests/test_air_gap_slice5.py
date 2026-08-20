@@ -11,7 +11,6 @@ import json
 
 import pytest
 
-from workspaces import policy as P
 from workspaces.policy import (
     FolderPolicy, LocalLlmPolicy, is_air_gapped, save_policy,
     POLICY_FILENAME, LEGACY_POLICY_FILENAME,

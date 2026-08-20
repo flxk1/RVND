@@ -9,11 +9,11 @@ import pytest
 from workspaces.contracts.instance import ContractInstance, ContractRegistry, PartyRef
 from workspaces.fact_source import (UNKNOWN, CsvFactSource, Fact, ManualFactSource,
                                evaluate)
-from workspaces.obligation_runtime import (Obligation, ObligationError,
+from workspaces.obligation_runtime import (ObligationError,
                                       ObligationRegistry)
 from workspaces.obligation_scheduler import ObligationScheduler, _target_state
 from workspaces.predicate import Predicate, parse_condition
-from workspaces.temporal import Date, Duration, RelativeDeadline, Term
+from workspaces.temporal import Date, Duration
 
 
 def dpa(version: int = 1, **kw) -> ContractInstance:

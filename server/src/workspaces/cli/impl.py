@@ -2121,9 +2121,7 @@ def _doctor_check_python_binding() -> dict:
       * **INFO** — no ``workspaces`` script found on PATH (running from source,
         or in a sandbox without PATH propagation); nothing to compare.
     """
-    import shutil as _shutil
     import subprocess as _subprocess
-    import sys as _sys
 
     try:
         from workspaces import __version__ as _our_version  # noqa: WPS433
@@ -2257,6 +2255,28 @@ _DOCTOR_GLYPHS = {
     DOCTOR_LEVEL_ERROR: "[x] ",
 }
 
+def _doctor_check_audit_drops(log_root) -> dict:
+    """Audit writes that failed and were reported rather than swallowed.
+
+    These used to be `except Exception: pass`, so a lost audit write looked
+    exactly like a successful operation. Any entry here is a write that did not
+    reach the chain -- an error, not a warning, because the record it was meant
+    to produce does not exist and cannot be reconstructed.
+    """
+    from ..audit_drop import durable_drops, MARKER_NAME
+    drops = durable_drops(log_root)
+    if not drops:
+        return {"name": "audit_drops",
+                "level": DOCTOR_LEVEL_OK,
+                "detail": "no dropped audit writes recorded"}
+    where = sorted({str(d.get("where", "?")) for d in drops})
+    return {"name": "audit_drops",
+            "level": DOCTOR_LEVEL_ERROR,
+            "detail": f"{len(drops)} dropped audit write(s) at {', '.join(where[:4])}"
+                      f"{' ...' if len(where) > 4 else ''} "
+                      f"— see {Path(log_root) / MARKER_NAME}"}
+
+
 def cmd_doctor(args: argparse.Namespace) -> int:
     """Run preflight diagnostics and print a structured report."""
     log_root = _log_root(args)
@@ -2276,6 +2296,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     checks.append(_doctor_check_sample_round_trip(log_root))
     checks.append(_doctor_check_mcp_reachable(skip=skip_mcp))
     checks.append(_doctor_check_symlink_mode())
+    checks.append(_doctor_check_audit_drops(log_root))
 
     exit_code = _doctor_overall_exit(checks)
 

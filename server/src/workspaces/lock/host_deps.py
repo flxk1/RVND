@@ -32,6 +32,11 @@ govern_egress: Optional[Callable[..., Any]] = None
 # injected so the lock never imports the verifier or the key registry directly.
 # Absent (extraction case) → the proxy keeps the DECLARED identity, never fails open.
 verify_agent_identity: Optional[Callable[..., Any]] = None
+# Reporting sink for an audit write that failed -- injected so the lock never
+# imports `audit_drop` directly. Absent (extraction case) -> the call site
+# falls back to stderr, which is degraded (no durable marker for `doctor`)
+# but never silent, and never fail-open.
+record_audit_drop: Optional[Callable[..., Any]] = None
 
 _wired = False
 

@@ -17,7 +17,6 @@ want a tighter wall on known-fast hardware.
 
 from __future__ import annotations
 
-import json
 
 import pytest
 

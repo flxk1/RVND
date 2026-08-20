@@ -20,7 +20,6 @@ Both operations are explicit user actions; nothing here runs automatically.
 from __future__ import annotations
 
 import json
-import os
 import shutil
 import time
 import uuid
@@ -30,7 +29,6 @@ from typing import Any, Optional
 
 from .mutation_log import (
     LOG_ROOT_DEFAULT,
-    LogEvent,
     MutationLog,
     folder_hash,
 )

@@ -28,7 +28,6 @@ from __future__ import annotations
 
 import os
 
-import pytest
 
 from workspaces.kg_export import (
     case_set_to_cytoscape, case_trace_to_cytoscape, validate_graph,

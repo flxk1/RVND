@@ -256,8 +256,11 @@ def _persist_certificate(folder_context: str, audit_id: str, envelope: dict,
         with path.open("a", encoding="utf-8") as fh:
             fh.write(json.dumps({"audit_id": audit_id, "certificate": envelope},
                                 separators=(",", ":")) + "\n")
-    except Exception:
-        pass
+    except Exception as exc:
+        from .audit_drop import record as _record_drop
+        _record_drop("oversight_cert._persist_certificate", exc,
+                     audit_id=audit_id, folder_context=str(folder_context),
+                     log_root=log_root)
 
 
 def emit_decision_certificate(folder_context: str, *, actor: str, action: str,

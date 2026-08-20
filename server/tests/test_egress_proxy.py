@@ -16,7 +16,6 @@ verify the forwarding path without touching api.anthropic.com.
 
 from __future__ import annotations
 
-import io
 import json
 import socket
 import threading
@@ -25,7 +24,6 @@ import urllib.error
 import urllib.request
 from email.message import Message
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from pathlib import Path
 
 import pytest
 

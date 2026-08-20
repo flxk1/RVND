@@ -51,7 +51,6 @@ def test_a5t_canonical_payload_is_held_at_the_thread_boundary(tmp_path):
 
 def test_a5t_scanner_absence_is_loud_not_silent(tmp_path, monkeypatch):
     """A missing scanner must never look like a clean scan."""
-    import workspaces.workflows as wfm
     folder = tmp_path / "ws"
     folder.mkdir()
     log_root = tmp_path / "logroot"

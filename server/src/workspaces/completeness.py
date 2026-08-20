@@ -25,7 +25,7 @@ high may proceed at grade. Deterministic; no model in the loop.
 """
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 #: Type models — what issue types a document of each class usually carries.
 #: A partial, maintainable "what should be here". Extend per domain; a missing

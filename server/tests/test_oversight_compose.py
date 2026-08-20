@@ -4,7 +4,7 @@
 
 from workspaces.oversight_extractor import OversightFacet
 from workspaces.oversight_compose import (
-    ComposedOversight, ControlChange, compose_facets, binds_grade,
+    ControlChange, compose_facets, binds_grade,
     check_separation, approves_clean)
 
 

@@ -15,7 +15,6 @@ import pytest
 
 from workspaces import regulatory_population as rp
 from workspaces import legal_corpus
-from workspaces.legal_connection import Connection
 from workspaces.rule_registry import RuleRegistry
 
 if rp.default_csv() is None:

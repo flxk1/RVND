@@ -24,7 +24,6 @@ Invariants (written BEFORE the logic):
 """
 from __future__ import annotations
 
-import pytest
 
 from workspaces.issue_token import (
     IssueToken, Span, assign_method, detect_issues, register_detector,

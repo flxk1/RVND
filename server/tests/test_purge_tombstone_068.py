@@ -27,7 +27,6 @@ from pathlib import Path
 import pytest
 
 from workspaces.mutation_log import (
-    LogEvent,
     MutationLog,
     VALID_LEGAL_BASES,
 )

@@ -20,7 +20,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Optional
 
-from .core import Probe, attest, breaker_metrics, signature
+from .core import Probe, attest, signature
 from ..models_registry import models_dir
 from ..mutation_log import LogEvent, MutationLog
 

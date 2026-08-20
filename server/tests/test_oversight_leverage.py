@@ -27,7 +27,6 @@ Claims under test (written BEFORE the logic):
 """
 from __future__ import annotations
 
-import pytest
 
 from workspaces.oversight_leverage import leverage_report, sampling_adequacy
 

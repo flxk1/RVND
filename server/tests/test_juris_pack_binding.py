@@ -16,7 +16,7 @@ import os
 
 import pytest
 
-from workspaces.controlforms import guarantees, leq
+from workspaces.controlforms import leq
 from workspaces.mutation_log import MutationLog
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")

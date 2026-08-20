@@ -8,7 +8,6 @@ action_gate.StandingApproval + contract_reviews.request_contract_approval.
 Discipline under test throughout: abstain over guess; orphan over silent
 drop; reject at write over defensive parse at read."""
 
-from datetime import date
 
 import pytest
 
@@ -20,7 +19,6 @@ from workspaces.predicate import (PREDICATE_CONFIDENCE_FLOOR, Predicate,
                              parse_condition)
 from workspaces.rule_extractor import RuleFacet
 from workspaces.rule_registry import RuleRegistry
-from workspaces.temporal import Date
 
 
 # ── Predicate type ────────────────────────────────────────────────────────────

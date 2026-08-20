@@ -16,7 +16,6 @@ import hashlib
 import json
 import struct
 import subprocess
-import sys
 from pathlib import Path
 
 POLICY = "loomground-builder.visual-release/v1"

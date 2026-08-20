@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from workspaces.lock import kg_context_for_vault, lock_text, Mode
+from workspaces.lock import kg_context_for_vault, lock_text
 from workspaces.lock.tier_c import reset_backend_cache
 
 

@@ -59,6 +59,7 @@ import http.client
 import json
 import os
 import socket
+import sys
 import threading
 import time
 import urllib.error
@@ -104,7 +105,7 @@ def _egress_max_concurrency() -> int:
     return val if val > 0 else 64
 
 from .core import Finding, Mode, AuditLog, _redact_text_with_regex
-from .core import tier_a_check_arguments, tier_b_scan_text
+from .core import tier_b_scan_text
 from .tier_c import tier_c_check_semantic
 from .oversight import OversightLevel
 from .onboarding.config import load_config, apply_config_to_env
@@ -855,8 +856,10 @@ class EgressProxy:
         try:
             with open(self.audit_log_path, "a") as fh:
                 fh.write(json.dumps(entry) + "\n")
-        except OSError:
-            pass
+        except OSError as exc:
+            _report_audit_drop("egress_proxy.audit_log", exc,
+                               path=str(self.audit_log_path),
+                               entry_kind=entry.get("kind"))
 
     def record_capability_refusal(self, reason: str, path: str) -> None:
         """Append a signed incident when this proxy is bound to a workspace."""
@@ -884,6 +887,25 @@ class EgressProxy:
 # ===========================================================================
 
 
+def _report_audit_drop(where: str, exc: BaseException, **context: Any) -> None:
+    """Report a failed audit write through the injected host hook.
+
+    Falls back to stderr when the lock runs without its host: degraded (no
+    durable marker for `workspaces doctor`) but never silent. Silence is the
+    failure mode this exists to end.
+    """
+    host_deps.ensure_wired()
+    sink = host_deps.record_audit_drop
+    if sink is not None:
+        try:
+            sink(where, exc, **context)
+            return
+        except Exception:  # noqa: BLE001 - the reporter must never propagate
+            pass
+    print(f"[rvnd] AUDIT WRITE DROPPED at {where}: {type(exc).__name__}: {exc}",
+          file=sys.stderr, flush=True)
+
+
 def _persist_scope_decision(store, text: str, decision: str,
                             markers: list[str] | None, reason: str,
                             actor: str = "") -> None:
@@ -901,8 +923,9 @@ def _persist_scope_decision(store, text: str, decision: str,
             if scope in ("session", "always"):
                 try:
                     store.remember(text, decision, scope=scope, reason=reason, actor=actor)
-                except (OSError, ValueError):
-                    pass
+                except (OSError, ValueError) as exc:
+                    _report_audit_drop("egress_proxy._persist_scope_decision",
+                                       exc, scope=scope, decision=str(decision))
                 return
 
 
@@ -1364,7 +1387,6 @@ def _make_handler(proxy: EgressProxy):
 
 def main(argv: list[str] | None = None) -> int:
     import argparse
-    import sys
     parser = argparse.ArgumentParser(prog="agent-tool-lock proxy")
     parser.add_argument("--port", type=int, default=_DEFAULT_PORT)
     parser.add_argument(

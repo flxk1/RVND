@@ -9,7 +9,7 @@ Pins the non-disturbance and anti-ratification invariants:
 """
 
 from workspaces.oversight_emit import (
-    GroundsBundle, DoubtDossier, build_grounds_bundle, build_dossier,
+    build_grounds_bundle, build_dossier,
     needs_dossier)
 
 

@@ -39,16 +39,15 @@ import logging
 import re
 import time
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 from .folder_context import resolve_folder_context
 from .mutation_log import (
     LOG_ROOT_DEFAULT,
     LogEvent,
     MutationLog,
-    folder_hash,
 )
 
 _LOG = logging.getLogger(__name__)

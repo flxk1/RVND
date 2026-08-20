@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 import pytest
@@ -12,7 +11,6 @@ import pytest
 from workspaces import (
     WorkspaceMemory,
     NoFolderContextError,
-    UNSCOPED_SENTINEL,
     current_folder,
     folder_context,
     reset_folder,

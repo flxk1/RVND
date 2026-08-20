@@ -13,7 +13,6 @@ Run: PYTHONPATH=server/src python3 -m pytest tests/test_genesis_key_pinning.py -
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 import pytest
 
