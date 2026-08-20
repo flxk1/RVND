@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import json
 
-import pytest
 
 from workspaces import parties, session_io as S
 

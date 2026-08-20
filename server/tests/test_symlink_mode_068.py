@@ -10,9 +10,6 @@ isolate          — Path.absolute(): symlink kept distinct; two paths to
 
 from __future__ import annotations
 
-import os
-import sys
-from pathlib import Path
 
 import pytest
 

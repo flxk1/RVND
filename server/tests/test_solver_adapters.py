@@ -5,7 +5,6 @@ from loomground_solver.ports import Governance, NormSource
 from workspaces.adapters.solver import (
     RvndGovernance,
     RvndNormSource,
-    check_with_rvnd_governance,
 )
 
 

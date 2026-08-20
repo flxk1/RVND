@@ -23,7 +23,6 @@ from __future__ import annotations
 import json
 import warnings
 
-import pytest
 
 from workspaces import _namespace
 from workspaces.policy import (

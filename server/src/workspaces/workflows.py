@@ -381,7 +381,7 @@ def _scan_threaded_refs(query: str,
     if not query or "${" not in query:
         return []
     from workspaces.lock import tier_b_scan_text
-    from workspaces.lock import scan_document, scan_text
+    from workspaces.lock import scan_text
     findings: list[dict[str, Any]] = []
     for idx_s, fieldname in set(_TEMPLATE_RE.findall(query)):
         idx = int(idx_s)

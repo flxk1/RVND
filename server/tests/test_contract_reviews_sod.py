@@ -10,7 +10,6 @@ is the set of DISTINCT required identities. A reject still absorbs (incl. the re
 from __future__ import annotations
 
 import os
-import tempfile
 
 import pytest
 

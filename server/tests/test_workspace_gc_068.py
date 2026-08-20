@@ -8,7 +8,6 @@ import json
 import shutil
 from pathlib import Path
 
-import pytest
 
 from workspaces.mutation_log import LogEvent, MutationLog, folder_hash
 from workspaces.workspace_migrate import gc_orphans

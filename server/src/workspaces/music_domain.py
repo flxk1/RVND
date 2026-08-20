@@ -26,7 +26,6 @@ shared coverage mapper + a money renderer need no music-specific code.
 
 from __future__ import annotations
 
-from typing import Any
 
 from .subject_card import DomainVocabulary, FacetSpec, register_vocabulary
 from .requirements_house import Room, RequirementsHouse

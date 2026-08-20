@@ -27,9 +27,9 @@ import json
 import re
 import shutil
 import time
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Iterator, Literal
+from typing import Any, Literal
 
 from .mutation_log import LogEvent, MutationLog
 

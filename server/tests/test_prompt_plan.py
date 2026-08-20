@@ -27,7 +27,6 @@ Invariants (written BEFORE the logic):
 """
 from __future__ import annotations
 
-import pytest
 
 from workspaces.issue_token import IssueToken, Span, detect_issues
 from workspaces.prompt_plan import plan_prompts

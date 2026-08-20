@@ -12,11 +12,10 @@ cloud-LLM boundary and the local-LLM endpoint are mocked.
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 import pytest
 
-from workspaces import erasure, forgotten_subjects, signing
+from workspaces import signing
 from workspaces.mutation_log import LogEvent, MutationLog
 from workspaces.pinned_skills import pin_skill, record_dispatch
 

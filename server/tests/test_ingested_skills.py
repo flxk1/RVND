@@ -9,7 +9,6 @@ back to the operator key, which ``ensure_keypair`` generates on demand.
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 import pytest

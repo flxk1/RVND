@@ -5,12 +5,10 @@
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
 
 import pytest
 
-from workspaces import mirror_editor
 from workspaces.mirror_editor import (
     ControllerSignatureRequired,
     LockHeldError,

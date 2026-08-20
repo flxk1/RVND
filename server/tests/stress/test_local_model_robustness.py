@@ -27,11 +27,9 @@ from __future__ import annotations
 import threading
 from collections import Counter
 
-import pytest
 
 from workspaces.lock.core import (
     ENSEMBLE_MODELS_DEFAULT,
-    TierCEnsembleResult,
     tier_c_semantic_check,
 )
 

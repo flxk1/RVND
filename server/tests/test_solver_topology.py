@@ -26,10 +26,9 @@ Invariants first:
 """
 from __future__ import annotations
 
-import pytest
 
 from workspaces.solver_topology import (
-    Dep, SolverNode, build_topology, topo_order, validate_topology,
+    Dep, SolverNode, build_topology, topo_order,
 )
 
 

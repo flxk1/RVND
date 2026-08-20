@@ -31,10 +31,10 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterable, Optional
+from typing import Iterable, Optional
 
 from .legal_connection import Connection, is_connection
-from .adapters.legal import Entity, EntityKind, WorldEdge, WorldMap
+from .adapters.legal import Entity, EntityKind, WorldMap
 from .mutation_log import MutationLog, LogEvent
 from .urn import mint_canonical
 

@@ -30,7 +30,7 @@ Pure stdlib; consumes a `DriftReport`, emits a `DriftSignal`.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 from .drift_monitor import DriftReport
 from .breaker import Tripwire

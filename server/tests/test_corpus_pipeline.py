@@ -10,8 +10,6 @@ from workspaces.corpus import ingest as corpus_ingest
 from workspaces.corpus import validate as corpus_validate
 from workspaces import legal_corpus
 from workspaces.graph_export import export_graph
-from workspaces.legal_world import EntityKind
-from workspaces.legal_connection import Connection
 
 
 # ── CELEX → ELI synthesis ─────────────────────────────────────────────────────

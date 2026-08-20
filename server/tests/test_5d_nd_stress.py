@@ -11,7 +11,6 @@ import string
 import pytest
 
 from workspaces.dimensions import (
-    COMPOSITION_TABLE,
     Dimension,
     classify_predicate,
     classify_query_dimension,

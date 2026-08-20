@@ -16,7 +16,6 @@ and stdin/stdout streams are injected.
 from __future__ import annotations
 
 import io
-import os
 import sys
 import time
 from dataclasses import dataclass
@@ -25,7 +24,7 @@ from typing import IO, Iterable
 
 from ..backends import make_local_llm, BackendError
 from ..tier_c import reset_backend_cache
-from .config import Config, save_config, default_config_path, apply_config_to_env
+from .config import Config, save_config, apply_config_to_env
 
 
 # ASCII helpers

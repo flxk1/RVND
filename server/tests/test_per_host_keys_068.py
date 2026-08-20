@@ -17,9 +17,7 @@ Per-host key layout regression:
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
-import pytest
 
 from workspaces.mutation_log import LogEvent, MutationLog
 

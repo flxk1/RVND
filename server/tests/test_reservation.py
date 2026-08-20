@@ -8,7 +8,6 @@ free issues, deduplication, and determinism.
 """
 from __future__ import annotations
 
-import pytest
 
 from workspaces.reservation import (
     LEGAL_RESERVATIONS, reserved_acts_for,

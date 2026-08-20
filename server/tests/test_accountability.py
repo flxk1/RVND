@@ -26,9 +26,8 @@ Claims under test (written BEFORE the logic):
 """
 from __future__ import annotations
 
-import pytest
 
-from workspaces.solver_topology import SolverNode, Dep
+from workspaces.solver_topology import SolverNode
 from workspaces.accountability import audit_accountability, amplification_curve
 
 
