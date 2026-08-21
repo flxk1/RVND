@@ -93,6 +93,75 @@ FOLDER_SCOPED: Final[frozenset[str]] = frozenset({
 })
 
 
+#: What the DEPLOYMENT owns outright: whether a protection runs at all. A folder
+#: value here could only ever WEAKEN it -- there is no stricter direction for a
+#: boolean that is already on -- and RVND enforces where there is no folder to
+#: consult. Everything else stays the subject's, so a new FolderPolicy field
+#: keeps working with no edit here.
+DEPLOYMENT_OWNED: Final[frozenset[str]] = frozenset({
+    "privacy_lock_enabled",       # is the Lock on at all
+    "oversight_enabled",          # is human oversight on at all
+})
+
+#: Graded fields a folder may still set, but only toward MORE restriction. The
+#: deployment sets a floor; a folder may stand above it and not below. Taking
+#: these outright would have removed a capability the split never needed to
+#: remove: a folder asking for stricter handling of ITS contents threatens
+#: nothing the deployment declared.
+#:
+#: Each entry maps the field to its strictness order, weakest first. A value not
+#: in the order (an unset "" or None) means "the folder said nothing".
+RATCHETED: Final[dict[str, tuple]] = {
+    # off < clean_room < clean_room_with_algo
+    "lock_mode_explicit": ("off", "clean_room", "clean_room_with_algo"),
+    # autonomous < notify < review < approve < supervised < manual
+    "oversight_default_level": ("autonomous", "notify", "review", "approve",
+                                "supervised", "manual"),
+    # a folder may turn its own discipline gate ON, never off
+    "discipline_enabled": (False, True),
+}
+
+
+def strictest(field_name: str, folder_value, deployment_value):
+    """The winning value for a ratcheted field: whichever is more restrictive.
+
+    An unrecognised or unset folder value contributes nothing rather than
+    winning by accident -- an unknown string must not be able to outrank the
+    deployment's floor simply because it was not in the table.
+    """
+    order = RATCHETED[field_name]
+    try:
+        f_rank = order.index(folder_value)
+    except ValueError:
+        return deployment_value
+    try:
+        d_rank = order.index(deployment_value)
+    except ValueError:
+        d_rank = -1
+    return folder_value if f_rank > d_rank else deployment_value
+
+
+def weakens(field_name: str, folder_value, deployment_value) -> bool:
+    """Would setting ``folder_value`` ask for LESS restriction than the floor?
+
+    Setters call this so a weakening write is refused at the door, instead of
+    being accepted, saved, and then quietly overruled by the resolver -- the
+    caller being told it worked is the defect, not the resolver's correctness.
+    """
+    if field_name not in RATCHETED:
+        return False
+    return strictest(field_name, folder_value, deployment_value) != folder_value
+
+
+#: Acknowledgements that opt OUT of a deployment-owned protection travel with it.
+#: An acknowledgement is half of a decision — `lock_is_active` is the boolean AND
+#: the absence of an opt-out — so leaving these with the folder would let a
+#: folder's acknowledgement apply to the deployment's switch.
+DEPLOYMENT_OWNED_ACKS: Final[frozenset[str]] = frozenset({
+    "lock_disable", "lock_mode_change_to_off", "oversight_disable",
+})
+
+
 def may_override(subject: Subject, field_name: str) -> bool:
     """May ``subject`` set ``field_name``, or is it the deployment's to set?
 
@@ -101,4 +170,4 @@ def may_override(subject: Subject, field_name: str) -> bool:
     """
     if subject.kind == GLOBAL:
         return True
-    return field_name in FOLDER_SCOPED
+    return field_name not in DEPLOYMENT_OWNED

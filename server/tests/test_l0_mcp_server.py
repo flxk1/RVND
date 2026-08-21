@@ -152,11 +152,11 @@ def test_policy_snapshot_defaults(server_module, folder):
 
 
 def test_policy_snapshot_after_lock_disable(server_module, folder):
-    from rvnd import disable_lock
+    from rvnd import disable_lock_for_deployment
     # disable_lock writes to the same log_root the server reads.
     import os
     log_root = os.environ["WORKSPACE_L0_LOG_ROOT"]
-    disable_lock(folder, accepted_by="alex", log_root=log_root)
+    disable_lock_for_deployment(accepted_by="alex", log_root=log_root)
     out = server_module.policy_snapshot(folder_context=str(folder))
     assert out["lock_is_active"] is False
     assert "lock_disable" in out["acknowledgements"]

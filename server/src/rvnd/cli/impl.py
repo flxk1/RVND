@@ -29,16 +29,17 @@ from ..policy import (
     OVERSIGHT_DISCLAIMER,
     LOCK_DISCLAIMER,
     disable_discipline,
-    disable_oversight,
-    disable_lock,
+    disable_oversight_for_deployment,
+    disable_lock_for_deployment,
     enable_discipline,
-    enable_oversight,
-    enable_lock,
+    enable_oversight_for_deployment,
+    enable_lock_for_deployment,
     load_policy,
     policy_path,
     set_oversight_level,
     OVERSIGHT_LEVELS,
 )
+from ..policy import effective_policy
 
 
 def _confirm(prompt: str, *, stream: IO[str] | None = None) -> bool:
@@ -472,7 +473,7 @@ def cmd_policy_show(args: argparse.Namespace) -> int:
         print(f"error: {e}", file=sys.stderr)
         return 3
 
-    pol = load_policy(folder)
+    pol = effective_policy(folder, log_root=_log_root(args))
     print(f"folder: {folder}")
     print(f"policy file: {policy_path(folder)}")
     print(f"  privacy_lock_enabled:   {pol.privacy_lock_enabled}")
@@ -510,11 +511,11 @@ def cmd_policy_disable_lock(args: argparse.Namespace) -> int:
               f"--i-accept-the-risk --reason 'why'")
         return 2
 
-    disable_lock(folder, accepted_by=args.accepted_by,
+    disable_lock_for_deployment(accepted_by=args.accepted_by,
                    reason=args.reason or "",
                    log_root=_log_root(args))
-    print(f"Privacy Lock DISABLED for {folder}")
-    print(f"  audit-logged. Re-enable with: workspaces policy enable-lock --folder {folder}")
+    print("Privacy Lock DISABLED for this DEPLOYMENT (every folder, and egress\n  with no folder at all). It is not scoped to a directory: RVND enforces\n  where there is no folder to consult.")
+    print("  audit-logged. Re-enable with: workspaces policy enable-lock")
     return 0
 
 def cmd_policy_enable_lock(args: argparse.Namespace) -> int:
@@ -523,9 +524,9 @@ def cmd_policy_enable_lock(args: argparse.Namespace) -> int:
     except NoFolderContextError as e:
         print(f"error: {e}", file=sys.stderr)
         return 3
-    enable_lock(folder, actor=args.actor or "user",
+    enable_lock_for_deployment(actor=args.actor or "user",
                   log_root=_log_root(args))
-    print(f"Privacy Lock ENABLED for {folder}")
+    print("Privacy Lock ENABLED for this DEPLOYMENT.")
     return 0
 
 def cmd_policy_disable_oversight(args: argparse.Namespace) -> int:
@@ -541,10 +542,10 @@ def cmd_policy_disable_oversight(args: argparse.Namespace) -> int:
         print("To proceed, re-run with --i-accept-the-risk.")
         return 2
 
-    disable_oversight(folder, accepted_by=args.accepted_by,
+    disable_oversight_for_deployment(accepted_by=args.accepted_by,
                       reason=args.reason or "",
                       log_root=_log_root(args))
-    print(f"Oversight DISABLED for {folder}")
+    print("Oversight DISABLED for this DEPLOYMENT (every folder, not just one).")
     print(f"  audit-logged. Re-enable with: workspaces policy enable-oversight --folder {folder}")
     return 0
 
@@ -554,9 +555,9 @@ def cmd_policy_enable_oversight(args: argparse.Namespace) -> int:
     except NoFolderContextError as e:
         print(f"error: {e}", file=sys.stderr)
         return 3
-    enable_oversight(folder, actor=args.actor or "user",
+    enable_oversight_for_deployment(actor=args.actor or "user",
                      log_root=_log_root(args))
-    print(f"Oversight ENABLED for {folder}")
+    print("Oversight ENABLED for this DEPLOYMENT.")
     return 0
 
 def cmd_publish(args: argparse.Namespace) -> int:
@@ -2412,8 +2413,8 @@ def cmd_lock(args: argparse.Namespace) -> int:
         return 2
     did_shield = False
     if not args.no_shield:
-        from ..policy import enable_lock
-        enable_lock(folder, actor=args.actor or "user", log_root=_log_root(args))
+        from ..policy import enable_lock_for_deployment
+        enable_lock_for_deployment(actor=args.actor or "user", log_root=_log_root(args))
         did_shield = True
     sealed = None
     if not args.no_seal:
@@ -2526,7 +2527,7 @@ def cmd_oversight(args: argparse.Namespace) -> int:
         print(f"error: {e}", file=sys.stderr)
         return 3
     if not args.level:                       # show
-        pol = load_policy(folder)
+        pol = effective_policy(folder, log_root=_log_root(args))
         active = "active" if pol.oversight_is_active else "muted"
         print(f"oversight for {folder}")
         print(f"  level:  {pol.oversight_default_level}")
@@ -2550,10 +2551,11 @@ def cmd_mute(args: argparse.Namespace) -> int:
         print()
         print("To proceed, re-run with --i-accept-the-risk.")
         return 2
-    disable_oversight(folder, accepted_by=args.accepted_by,
+    disable_oversight_for_deployment(accepted_by=args.accepted_by,
                       reason=args.reason or "", log_root=_log_root(args))
-    print(f"oversight MUTED for {folder} (audit chain still records).")
-    print(f"  re-enable with: workspaces unmute --folder {folder}")
+    print("oversight MUTED for this DEPLOYMENT, not just this folder "
+          "(audit chain still records).")
+    print("  re-enable with: workspaces unmute")
     return 0
 
 def cmd_unmute(args: argparse.Namespace) -> int:
@@ -2562,8 +2564,8 @@ def cmd_unmute(args: argparse.Namespace) -> int:
     except NoFolderContextError as e:
         print(f"error: {e}", file=sys.stderr)
         return 3
-    enable_oversight(folder, actor=args.actor or "user", log_root=_log_root(args))
-    print(f"oversight UN-MUTED for {folder}")
+    enable_oversight_for_deployment(actor=args.actor or "user", log_root=_log_root(args))
+    print("oversight UN-MUTED for this DEPLOYMENT.")
     return 0
 
 

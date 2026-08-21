@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import pytest
 
-from rvnd import disable_lock
+from rvnd import disable_lock_for_deployment
 from rvnd.lock import l0_bridge
 from rvnd.lock.core import AuditLog, Mode
 from rvnd.lock.gate import gate_for_cloud
@@ -57,7 +57,7 @@ def test_negative_control_lock_on_refuses(folder):
 # ── lock OFF: clean text still passes silently ───────────────────────────────
 
 def test_lockoff_clean_text_allows_without_bypass(folder):
-    disable_lock(folder, accepted_by="alex", log_root=_log_root(folder))
+    disable_lock_for_deployment(accepted_by="alex", log_root=_log_root(folder))
     d = gate_for_cloud("perfectly harmless sentence", folder_context=folder,
                        oversight=OversightLevel.APPROVE, mode=Mode.STANDARD)
     assert d.action == "allow"
@@ -67,7 +67,7 @@ def test_lockoff_clean_text_allows_without_bypass(folder):
 # ── lock OFF: a would-be refuse routes to a person + is audited (CL2) ─────────
 
 def test_lockoff_would_refuse_routes_to_ask_user_and_audits(folder, tmp_path):
-    disable_lock(folder, accepted_by="alex", log_root=_log_root(folder))
+    disable_lock_for_deployment(accepted_by="alex", log_root=_log_root(folder))
     audit = AuditLog(tmp_path / "audit.jsonl")
     d = gate_for_cloud(REFUSING, folder_context=folder,
                        oversight=OversightLevel.APPROVE, mode=Mode.STRICT, audit=audit)
@@ -83,7 +83,7 @@ def test_lockoff_would_refuse_routes_to_ask_user_and_audits(folder, tmp_path):
 def test_lockoff_would_refuse_low_oversight_allows_but_audits(folder, tmp_path, ov):
     # Below APPROVE: the bypass passes (off = no enforcement) — but it is
     # AUDITED, never silent. (The old code allowed it with no record at all.)
-    disable_lock(folder, accepted_by="alex", log_root=_log_root(folder))
+    disable_lock_for_deployment(accepted_by="alex", log_root=_log_root(folder))
     audit = AuditLog(tmp_path / "audit.jsonl")
     d = gate_for_cloud(REFUSING, folder_context=folder,
                        oversight=ov, mode=Mode.STRICT, audit=audit)
@@ -94,7 +94,7 @@ def test_lockoff_would_refuse_low_oversight_allows_but_audits(folder, tmp_path, 
 
 
 def test_bypass_audit_records_oversight_and_final_action(folder, tmp_path):
-    disable_lock(folder, accepted_by="alex", log_root=_log_root(folder))
+    disable_lock_for_deployment(accepted_by="alex", log_root=_log_root(folder))
     audit = AuditLog(tmp_path / "audit.jsonl")
     gate_for_cloud(REFUSING, folder_context=folder,
                    oversight=OversightLevel.APPROVE, mode=Mode.STRICT, audit=audit)
@@ -107,7 +107,7 @@ def test_bypass_audit_records_oversight_and_final_action(folder, tmp_path):
 def test_lockoff_bypass_fails_closed_when_audit_write_fails(folder):
     # FAIL-CLOSED: if an audit sink is configured but the bypass write fails, the
     # bypass must NOT proceed — off disables enforcement, never the audit trail.
-    disable_lock(folder, accepted_by="alex", log_root=_log_root(folder))
+    disable_lock_for_deployment(accepted_by="alex", log_root=_log_root(folder))
 
     class BoomAudit:
         def write_text(self, *a, **k):
@@ -124,7 +124,7 @@ def test_lockoff_bypass_fails_closed_when_audit_write_fails(folder):
 def test_lockoff_pattern_preview_is_redacted(folder):
     # The flagged content must not ride along on the GateDecision (e.g. into an
     # ask_user prompt): pattern_preview is redacted.
-    disable_lock(folder, accepted_by="alex", log_root=_log_root(folder))
+    disable_lock_for_deployment(accepted_by="alex", log_root=_log_root(folder))
     d = gate_for_cloud(REFUSING, folder_context=folder,
                        oversight=OversightLevel.APPROVE, mode=Mode.STRICT)
     assert d.action == "ask_user"

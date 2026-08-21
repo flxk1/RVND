@@ -14,7 +14,7 @@ from rvnd import (
     VerbosityLevel,
     capture_llm_exchange,
     decide_verbosity,
-    disable_oversight,
+    disable_oversight_for_deployment,
 )
 
 
@@ -285,7 +285,7 @@ def test_interactive_at_approve_with_callback_yes(folder, log_root):
 def test_oversight_disabled_agentic_captures_max(folder, log_root):
     """User disabled oversight in this folder → agentic still captures (audit floor),
     at MAX verbosity since we can't ask mid-flow."""
-    disable_oversight(folder, accepted_by="alex", log_root=log_root)
+    disable_oversight_for_deployment(accepted_by="alex", log_root=log_root)
 
     result = capture_llm_exchange(
         _exchange(),
@@ -301,7 +301,7 @@ def test_oversight_disabled_agentic_captures_max(folder, log_root):
 
 def test_oversight_disabled_interactive_skips(folder, log_root):
     """User disabled oversight + interactive = no capture (treat as silence)."""
-    disable_oversight(folder, accepted_by="alex", log_root=log_root)
+    disable_oversight_for_deployment(accepted_by="alex", log_root=log_root)
 
     result = capture_llm_exchange(
         _exchange(),

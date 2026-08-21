@@ -98,10 +98,10 @@ def test_llm_folder_lock_disabled_allows_benign(folder, monkeypatch):
     outcome is a plain allow. (A would-be refuse under lock-off is covered in
     test_lock_off_human_cl2.py.) Capture still lands — lock is about egress, not memory.
     """
-    from rvnd import disable_lock
+    from rvnd import disable_lock_for_deployment
     log_root = monkeypatch.delenv("WORKSPACE_L0_LOG_ROOT", raising=False) or str(folder.parent / "logs")
     monkeypatch.setenv("WORKSPACE_L0_LOG_ROOT", log_root)
-    disable_lock(folder, accepted_by="alex", log_root=log_root)
+    disable_lock_for_deployment(accepted_by="alex", log_root=log_root)
 
     result = gate_and_capture_llm(
         prompt="Plain text that would normally pass.",

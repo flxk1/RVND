@@ -261,11 +261,11 @@ def test_calling_cloud_without_lock_disable_ack_is_refused(isolated_env):
 
 def test_policy_disable_lock_requires_explicit_accepted_by(isolated_env):
     """``policy.disable_lock`` raises if ``accepted_by`` is empty."""
-    from rvnd.policy import disable_lock
+    from rvnd.policy import disable_lock_for_deployment
     ws = isolated_env["workspace"]
     log_root = isolated_env["log_root"]
     with pytest.raises(ValueError, match="accepted_by"):
-        disable_lock(ws, accepted_by="", reason="silent", log_root=log_root)
+        disable_lock_for_deployment(accepted_by="", reason="silent", log_root=log_root)
 
 
 # ---------------------------------------------------------------------------

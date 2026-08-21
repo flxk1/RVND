@@ -14,7 +14,7 @@ from rvnd import (
     WebSearchExchange,
     WebSearchResult,
     capture_web_search,
-    disable_oversight,
+    disable_oversight_for_deployment,
     decide_verbosity,
 )
 
@@ -216,7 +216,7 @@ def test_interactive_approve_user_declines(folder, log_root):
 
 
 def test_agentic_with_oversight_disabled_max_verbosity(folder, log_root):
-    disable_oversight(folder, accepted_by="alex", log_root=log_root)
+    disable_oversight_for_deployment(accepted_by="alex", log_root=log_root)
     result = capture_web_search(
         _exchange(),
         mode=IngestMode.AGENTIC,
@@ -230,7 +230,7 @@ def test_agentic_with_oversight_disabled_max_verbosity(folder, log_root):
 
 
 def test_interactive_with_oversight_disabled_skips(folder, log_root):
-    disable_oversight(folder, accepted_by="alex", log_root=log_root)
+    disable_oversight_for_deployment(accepted_by="alex", log_root=log_root)
     result = capture_web_search(
         _exchange(),
         mode=IngestMode.INTERACTIVE,
