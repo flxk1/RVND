@@ -1,0 +1,4 @@
+interface:
+  display_name: "Verify a Receipt"
+  short_description: "Prove one decision really happened, unaltered"
+  default_prompt: "Use $verify-a-receipt to prove this decision really happened and hasn't been altered — check the receipt against RVND's signed chain, attribute it to its rule and key, announce that verification appends an audit-of-audit event, surface the new event's hash, and report the limits of what the chain proves."

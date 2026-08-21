@@ -1,0 +1,4 @@
+interface:
+  display_name: "Revoke or Erase"
+  short_description: "Pull an authority or erase a person from the governed record"
+  default_prompt: "Use $revoke-or-erase to revoke a grant or record erasure through the exact live RVND operations on the signed chain. Tightening is immediate; restoring authority needs a named approver and rationale; no engine means fail-closed."

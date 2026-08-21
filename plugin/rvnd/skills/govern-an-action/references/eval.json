@@ -1,0 +1,50 @@
+{
+  "skill": "govern-an-action",
+  "provides": "rvnd.govern-an-action",
+  "merges": [
+    "reason-governance-rules"
+  ],
+  "drives": "RVND governance MCP server (action gate, operate, governance_lane_list/register, governance_graph, officer preview) via the host's MCP client",
+  "wraps_kernel": false,
+  "scripted": false,
+  "fail_closed": true,
+  "cascade": "local-first | fallback DELEGATES to the free plane skills (loomground/loomground-ingest/deontic), never re-authoring a lowering",
+  "loomground_governance": "0.8.2",
+  "manifest": "manifest.yaml",
+  "modes": [
+    "dry-run (read-only operate verdict)",
+    "full-cycle (propose-validate-preview-confirm-apply)"
+  ],
+  "cycle_steps": [
+    "discover",
+    "query",
+    "propose",
+    "validate",
+    "preview",
+    "confirm",
+    "apply",
+    "display"
+  ],
+  "invariants": [
+    "operates the shared dimensioned Subgraph via loomground_ingest and cascades local-first - the engine decides, signs, and enforces when present; the LLM only builds/enriches the same Subgraph in-grammar (degraded, advisory) when it is absent",
+    "server decides, host renders - no host-side verdict",
+    "the skill never writes .lg; RVND generates/validates the constructs",
+    "dry-run changes nothing; human and reserved are rendered as escalation, never as permission",
+    "unexpressible meaning stays in the residual ledger, never approximated into a construct",
+    "constructs restricted to the real 0.8.2 vocabulary (../../references/vocabulary.md)",
+    "requested state is never rendered as granted",
+    "loosening requires a new lane version, named approver, and rationale",
+    "no governed action without a resolved principal (no-id wall)"
+  ],
+  "grounding": "six links per ../../references/grounding.md; typed operation protocol ../../references/operation-protocol.md; proposal envelope ../../schemas/proposal.schema.json (official patch + observation)",
+  "real_ops": "workspace_workflow op=operate (dry-run verdict)/governance_graph/governance_netlist/patch_validate/patch_apply/governance_lane_list/governance_lane_register/policy_ingest; workspace_audit op=verify_chain (see ../../references/catalogue.md; discover via op=help)",
+  "corpus": "../../references/corpus.md (14 classes + equivalence via canonical observation)",
+  "provenance": "Authored for loomground; drives the AGPL-3.0-only RVND governance server. No third-party skill source.",
+  "notes": "Progressive-disclosure: lean SKILL.md + references/ pair + shared plugin references. Merges the former reason-governance-rules skill as the read-only dry-run mode.",
+  "review": "Validated against the declared compatible RVND release range.",
+  "delegates_to": [
+    "loomground-ingest",
+    "deontic",
+    "loomground"
+  ]
+}

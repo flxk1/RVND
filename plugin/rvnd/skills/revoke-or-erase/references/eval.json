@@ -1,0 +1,23 @@
+{
+  "skill": "revoke-or-erase",
+  "provides": "rvnd.revoke-or-erase",
+  "drives": "RVND authority revocation and signed erasure through the host's MCP client",
+  "wraps_kernel": false,
+  "scripted": false,
+  "fail_closed": true,
+  "loomground_governance": "0.8.2",
+  "manifest": "manifest.yaml",
+  "grounding": "references/grounding.md; removing authority, adding prohibition, or lowering grade is a Loomground proposal",
+  "cycle_steps": ["revoke", "apply", "display"],
+  "invariants": [
+    "runtime containment is not a Loomground declaration; only an actual policy change proposes a construct",
+    "revocation is immediate; restoring authority needs a named approver and rationale",
+    "revocation is a signed tombstone that cannot recall what already left the boundary",
+    "only exact manifest-declared revoke and erasure operations are invoked",
+    "no-id wall holds even during an incident",
+    "cascade is local-first: the engine performs and signs the write; no engine means fail-closed, the LLM never fakes a revocation"
+  ],
+  "provenance": "Authored for loomground; drives the AGPL-3.0-only RVND governance server. No third-party skill source.",
+  "notes": "Progressive-disclosure: lean SKILL.md + references/ pair + shared plugin references.",
+  "review": "Validated against the declared compatible RVND release range."
+}

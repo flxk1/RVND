@@ -37,7 +37,7 @@ plugin's compatible range (kept in step with `package.json`'s
 
 ### `rvnd-lint`
 `rvnd-lint [FILE|-]` — a thin launcher over the canonical linter in
-`skills/rvnd-build-surface/scripts/lint_surface.py` (one implementation, no
+`skills/build-a-surface/scripts/lint_surface.py` (one implementation, no
 duplication). The structural floor always runs and is fail-closed; `jsonschema`,
 if present, adds full schema validation. Validation is never silently downgraded.
 

@@ -1,0 +1,57 @@
+# Loomground manifest for govern-an-action.
+# Declares which real Loomground constructs (loomground-governance 0.8.2) this
+# skill may read and propose. Not authority enforcement - the RVND server still
+# enforces authority - but it makes the package reviewable and bounds what the
+# skill will ever put in a proposal envelope. Constructs outside this list stay
+# residual (see ../../references/grounding.md).
+# Merges in reason-governance-rules (the read-only dry-run over `operate`); its
+# ops are already covered below.
+name: govern-an-action
+cascade: local-first
+loomground_governance: 0.8.2
+loomground:
+  reads:
+    - actor
+    - human
+    - gate
+    - master
+    - authority
+    - pipe
+    - egress
+    - reservation
+    - quorum
+    - prohibition
+    - temporal
+    - egress-obligation
+    - redress
+    - party
+    - delegation
+    - autonomy-grade
+  proposes:
+    - actor
+    - human
+    - gate
+    - authority
+    - pipe
+    - egress
+    - reservation
+    - quorum
+    - prohibition
+    - temporal
+    - egress-obligation
+    - redress
+    - party
+    - delegation
+    - autonomy-grade
+  never_applies_directly: true   # the skill never writes .lg; RVND generates/validates
+# Real MCP surface. Discover live via
+# workspace_workflow(op="help"). Verb -> tool+op mapping in ../../references/catalogue.md.
+rvnd:
+  discovery: workspace_workflow(op="help")
+  tools:
+    - tool: workspace_workflow
+      ops: [governance_graph, governance_netlist, patch_validate, patch_apply, operate, governance_lane_register, governance_lane_list, policy_ingest]
+    - tool: workspace_audit
+      ops: [verify_chain]
+confirmation:
+  mutations: required
