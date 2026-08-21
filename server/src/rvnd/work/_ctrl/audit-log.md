@@ -1,0 +1,2 @@
+- 2026-08-21T12:13:35 | HOTL | Bash | reversible shell command | session:aa4f24fd-6ffb-473b-ae29-02ac96e4c476
+- 2026-08-21T12:14:27 | HOTL | Bash | reversible shell command | session:aa4f24fd-6ffb-473b-ae29-02ac96e4c476

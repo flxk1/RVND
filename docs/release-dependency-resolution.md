@@ -30,6 +30,7 @@ Current tag-to-commit mapping:
 | `loomground-norm` | `main` | `7e97852886fb6721e5f4ba72e868f5c939dcb8b6` |
 | `loomground-factual` | `factual-v0.1.0` | `db60a0592eb7741732944f05279b27def0c9685b` |
 | `loomground-epistemic` | `epistemic-v0.1.0` | `2c1dc8ea8278fe3d1aeffa470319573c53dee932` |
+| `loomground-workspace` | `main` | `9bd99a2b0b40f2585127dfbbe895c1ea245bed27` |
 | `loomground-patchbay` | `v0.2.4` | `47431210f47db85f011f7968e4282c49ec9fe91b` |
 | `loomground-brief` | `main` | `70a36083f623c879569e7237b148f5762810b916` |
 | `loomground-proxy` | `main` | `ea7c006c1b624f63e9291ac1ed4e65c58cee0f89` |
@@ -38,8 +39,10 @@ Current tag-to-commit mapping:
 | `oversight-certificate` | `v0.2.0` | `8dbb4fa46042f12eeecaf37cb1ad095b838d7185` |
 | `effect-reconciliation` | `v0.1.0` | `b2b3f995c0d9f9cca9bbabdf628d88cda26c91d2` |
 
-Every row now names an immutable **version tag** that must resolve to the
-pinned commit — there are **no branch-pins**. A commit pinned by SHA is
+Every row that names a **version tag** must resolve to the pinned commit; the
+rows labelled with a branch (`main`, `fix/…`) are pinned by SHA and honestly
+labelled as branch-pins rather than given a fabricated tag. A commit pinned by
+SHA is
 immutable either way, but a released version tag additionally carries a
 **unique version**: pip caches wheels by version (not by commit), so a plane
 whose pinned commit shared a version with another commit could have a stale
