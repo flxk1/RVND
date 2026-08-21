@@ -14,7 +14,9 @@ import pytest
 
 from rvnd import subject as S
 from rvnd.policy import (DEPLOYMENT_POLICY_FILENAME, FolderPolicy,
-                         deployment_policy, resolve_policy, save_policy)
+                         deployment_policy, disable_lock,
+                         disable_lock_for_deployment, load_policy,
+                         resolve_policy, save_deployment_policy, save_policy)
 
 
 @pytest.fixture
@@ -93,8 +95,6 @@ def test_the_deployment_posture_is_settable(tmp_path):
     supported path at all — the split would remove a capability rather than
     relocate it.
     """
-    from rvnd.policy import save_deployment_policy
-
     log_root = tmp_path / "lr"
     assert deployment_policy(log_root).privacy_lock_enabled is True
 
@@ -106,8 +106,6 @@ def test_the_deployment_posture_is_settable(tmp_path):
 
 def test_a_folder_still_cannot_widen_a_deployment_that_is_locked_down(tmp_path):
     """The direction that matters: deployment ON, folder asks OFF, ON wins."""
-    from rvnd.policy import save_deployment_policy
-
     log_root = tmp_path / "lr"
     save_deployment_policy(FolderPolicy(privacy_lock_enabled=True), log_root)
     folder = tmp_path / "ws"; folder.mkdir()
@@ -125,7 +123,6 @@ def test_enforcement_reads_the_deployment_posture_not_the_folders(tmp_path, monk
     and still readable, it just no longer decides this.
     """
     import rvnd.mcp_serving as MS
-    import rvnd.policy as P
     from rvnd.workspace_registry import add_known_workspace
 
     log_root = tmp_path / "lr"; log_root.mkdir()
@@ -133,8 +130,8 @@ def test_enforcement_reads_the_deployment_posture_not_the_folders(tmp_path, monk
     monkeypatch.setenv("WORKSPACE_L0_LOG_ROOT", str(log_root))
     add_known_workspace(str(ws), log_root=log_root)
 
-    P.disable_lock(ws, accepted_by="alex", reason="test", log_root=log_root)
-    assert P.load_policy(ws).lock_is_active is False, "fixture must really disable it"
+    disable_lock(ws, accepted_by="alex", reason="test", log_root=log_root)
+    assert load_policy(ws).lock_is_active is False, "fixture must really disable it"
 
     assert MS._folder_lock_on(str(ws)) is True, (
         "a folder switched off enforcement for itself — the Lock posture is the "
@@ -144,10 +141,10 @@ def test_enforcement_reads_the_deployment_posture_not_the_folders(tmp_path, monk
     # The deployment CAN still turn it off — the capability moved, not vanished.
     # Note it needs the acknowledgement too: a flipped boolean alone never
     # disables a protection, at either level. That safeguard survives the move.
-    P.save_deployment_policy(P.FolderPolicy(privacy_lock_enabled=False), log_root)
+    save_deployment_policy(FolderPolicy(privacy_lock_enabled=False), log_root)
     assert MS._folder_lock_on(str(ws)) is True, (
         "an un-acknowledged boolean disabled the Lock — the acknowledgement "
         "requirement must apply to the deployment policy as well")
 
-    P.disable_lock_for_deployment(accepted_by="alex", reason="test", log_root=log_root)
+    disable_lock_for_deployment(accepted_by="alex", reason="test", log_root=log_root)
     assert MS._folder_lock_on(str(ws)) is False
