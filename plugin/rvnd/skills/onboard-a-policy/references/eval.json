@@ -1,0 +1,27 @@
+{
+  "skill": "onboard-a-policy",
+  "provides": "governance.onboard-policy",
+  "drives": "The loomground ingest plane (loomground_ingest: GovernanceIngester + DeonticIngester + legal/factual/epistemic grammars) → one dimensioned Subgraph, and the RVND ingest/validate path when the engine is present. Consumes; never regrows a lowering.",
+  "merges": ["extract-policy-norms", "compile-loomground-policy"],
+  "wraps_kernel": false,
+  "scripted": false,
+  "fail_closed": true,
+  "read_only": false,
+  "loomground_governance": "0.8.3",
+  "manifest": "manifest.yaml",
+  "grounding": "../../references/ingest-cascade.md — verified this session: GovernanceIngester/DeonticIngester lower policy text to a Subgraph (dimension nD, edges on the 5 axes); ALLOWED_FACETS={5D,nD}; LLM enrichment yields a valid loomground_norm.DeonticFormula in-grammar; governance patch validates against schema('patch')",
+  "cycle_steps": ["scope", "lower", "enrich", "report", "hand-off"],
+  "cascade": "local-first: RVND engine lowering when present (precise, signable); else loomground_ingest ingesters + in-grammar LLM enrichment (coarse, advisory) — never the reverse",
+  "invariants": [
+    "one object — produces the shared dimensioned Subgraph via the ingest plane; never a hand-built .lg patch or bespoke shape",
+    "consume, don't regrow — a meaning with no construct becomes a visible residual, never an invented one",
+    "cascade local-first — the engine's lowering wins when present; the LLM path is the labelled fallback",
+    "enrichment stays in-grammar — the LLM corrects fields into valid plane objects (e.g. DeonticFormula), never a new shape, so an engine ingesting the fallback graph later sees the same object",
+    "never applies — onboarding ends at a validated graph + residuals; applying/signing is sign-off + the engine",
+    "consumes governance + deontic + legal + norm (+ factual + epistemic) into one graph",
+    "degraded mode is labelled — standalone builds carry no solver/versum precision and no signature, and say so"
+  ],
+  "provenance": "Authored for loomground; drives the AGPL-3.0-only RVND server and consumes the loomground planes. Grounded in a running-code survey of the ingest/norm/legal planes. No third-party skill source.",
+  "notes": "Reference implementation of the ingest-cascade architecture; the pattern the other user-action skills follow. Merges the former extract-policy-norms + compile-loomground-policy pipeline steps into one user action.",
+  "review": "Architecture proven in running code; skill wiring authored, NOT yet registered in package.json (the 8-skill set is not yet finalised) and NOT committed."
+}

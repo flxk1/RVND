@@ -1,4 +1,0 @@
-interface:
-  display_name: "RVND Audit"
-  short_description: "Verify the tamper-evident audit chain"
-  default_prompt: "Use $rvnd-audit to verify this receipt against RVND's signed chain, attribute it to its rule and key, and report the limits of what the chain proves."

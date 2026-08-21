@@ -34,26 +34,28 @@ runtime, evidence, version) and the residual ledger; `references/vocabulary.md` 
 is the acceptance corpus, headed by the equivalence test (chat / CLI / sheet / `.lg` → one canonical
 observation). Each skill carries a `manifest.yaml` declaring the constructs it may read and propose.
 
-## The nine skills
+## The eight skills
 
-- **rvnd-govern** — the core cycle: put a consequential action through query → validate → confirm
-  → apply → display.
-- **rvnd-decide** — the human oversight sign-off: approve / hold / deny, with the named approver
-  and rationale a loosening needs.
-- **rvnd-audit** — verify a receipt against the per-folder Ed25519-signed hash chain; attributed,
-  not asserted; honest about the chain's limits.
-- **rvnd-incident** — revoke authority or record erasure through exact live operations;
-  tightening is immediate, restoring authority needs approval.
-- **rvnd-build-surface** — compose and lint the MCP App surface (the five cards) so a built surface
-  cannot show a request as a grant. The one skill that drives no server.
-- **extract-policy-norms** — ask RVND to ingest grounded policy requirements while preserving
-  source spans and residual meaning; never applies the proposal.
-- **compile-loomground-policy** — assemble a typed delta and obtain RVND's `patch_validate` result;
-  never writes `.lg` or treats validation as authorization.
-- **reason-governance-rules** — call the governed `operate` path and render RVND's discrete verdict
-  and evidence without computing a host-side answer.
-- **resolve-rule-conflicts** — validate a candidate resolving delta or surface a residual decision;
-  never invents a conflict-resolution operation or chooses a winner in the host.
+Named for the user's goal, not the pipeline step. Each operates the one shared dimensioned
+Subgraph and cascades local-first (engine → LLM fallback); see `references/ingest-cascade.md`.
+
+- **govern-an-action** — "is this allowed, and put it on the record": dry-run the verdict, or run the
+  full cycle query → validate → confirm → apply → display. (folds in the read-only reason step)
+- **onboard-a-policy** — "bring this regulation/contract into governance": lower it into the shared
+  5D+nD graph via the ingest plane (governance + deontic + legal), hand it to sign-off. (folds in
+  extract + compile)
+- **sign-off** — "what's waiting on me": the human decision, approve / hold / deny, with the named
+  approver and the rationale a loosening needs.
+- **resolve-a-conflict** — "two rules clash": validate a resolving delta (consuming legal precedence)
+  or surface a residual for a person; never picks a host-side winner.
+- **audit-the-ai** — "what may this AI do, and where's the proof": the pure-read board, everything the
+  console reports, in two versions (without-RVND transparency vs with-RVND governance), reconciliation first.
+- **verify-a-receipt** — "prove this one decision happened, unaltered": checked against the Ed25519
+  chain; announces its audit-of-audit append before running; attributed, not asserted.
+- **revoke-or-erase** — "pull that authority / erase this subject": tightening is immediate, restoring
+  authority needs approval; erasure is a signed tombstone.
+- **build-a-surface** — "assemble a governed app screen": compose and lint the five cards so a built
+  surface cannot show a request as a grant. The one skill that drives no server.
 
 ## Structure
 
@@ -62,7 +64,7 @@ observation). Each skill carries a `manifest.yaml` declaring the constructs it m
 - `apps/` — the five MCP App card specs: context, proposal, patch, decision, receipt.
 - `schemas/` — the surface-card and composition schemas the linter enforces.
 - `references/` — the shared protocol and catalogue, and the `offline-floor.md` guide.
-- `skills/` — nine composable skills, each with a lean `SKILL.md`, interface metadata, an operation
+- `skills/` — eight composable skills, each with a lean `SKILL.md`, interface metadata, an operation
   manifest, and focused references.
 - `bin/` — the zero-install **offline floor**: stdlib-only tools (`rvnd-probe`, `rvnd-lint`,
   `rvnd-preview`, `rvnd-verify`) that work before the engine is installed and route to the governed
@@ -71,7 +73,7 @@ observation). Each skill carries a `manifest.yaml` declaring the constructs it m
 
 ## Relationship to the kernel
 
-This is **not** a set of kernel wrappers. All nine skills drive the RVND server, which is built on the
+This is **not** a set of kernel wrappers. All eight skills drive the RVND server, which is built on the
 Loomground language and the `loomground-solver` kernel. RVND supplies the policy, corpus, custody
 and audit adapters; the Solver has no RVND dependency. (The previous 0.1.x version of this plugin
 wrapped the kernel directly — a mis-layering — and is superseded by this MCP-driver design.)

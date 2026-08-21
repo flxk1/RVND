@@ -1,0 +1,29 @@
+{
+  "skill": "verify-a-receipt",
+  "provides": "rvnd.verify-receipt",
+  "drives": "RVND Ed25519 signed hash chain + security_dashboard (security/v1) via the host's MCP client",
+  "wraps_kernel": false,
+  "scripted": false,
+  "fail_closed": true,
+  "read_only": false,
+  "cascade": "local-first",
+  "loomground_governance": "0.8.2",
+  "manifest": "manifest.yaml",
+  "grounding": "references/grounding.md; audit explanation is grounded in the ordered trace + verdict join (auto/human/refused/reserved/prohibited; only auto releases), not generic prose",
+  "cycle_steps": ["announce-append", "verify", "display"],
+  "invariants": [
+    "verification is a write: it announces the audit-of-audit append BEFORE running and surfaces the new event's hash; the skill never signs or erases directly",
+    "attributed, not asserted - no verdict without rule, key, and approver",
+    "cascade local-first: the engine verifies and appends; with no engine the skill fails closed and cannot verify - it never simulates a pass or fabricates an event hash",
+    "verification is a discrete lamp, not a score",
+    "the chain's limits (key-directory adversary, tombstone erasure) are always reported"
+  ],
+  "cross_refs": {
+    "whole_board": "audit-the-ai",
+    "verifies_receipts_from": ["govern-an-action", "sign-off"],
+    "on_finding": "revoke-or-erase"
+  },
+  "provenance": "Authored for loomground; drives the AGPL-3.0-only RVND governance server. No third-party skill source.",
+  "notes": "Progressive-disclosure: lean SKILL.md + references/ pair + shared plugin references.",
+  "review": "Validated against the declared compatible RVND release range."
+}

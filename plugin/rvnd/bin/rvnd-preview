@@ -15,7 +15,7 @@ unambiguous without the governance grammar:
     and non-empty in the request.
 
 It NEVER emits a binding decision. When real RVND is installed the mode line
-says so and directs you to the governed cycle (the rvnd-decide skill) for the
+says so and directs you to the governed cycle (the sign-off skill) for the
 authoritative, signed verdict. Advisory exit codes: 0 allow, 3 hold, 4 deny,
 2 malformed (fail-closed).
 
