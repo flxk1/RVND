@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-from workspaces import mcp_server as M
+from rvnd import mcp_server as M
 
 
 @pytest.fixture

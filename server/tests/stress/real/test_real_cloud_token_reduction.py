@@ -30,7 +30,7 @@ from collections import Counter
 from dataclasses import dataclass
 
 
-from workspaces.lock.core import (
+from rvnd.lock.core import (
     _detect_confusable_bypass,
     tier_b_scan_text,
     tier_c_semantic_check,
@@ -110,7 +110,7 @@ def _run_mode_b(workload, cloud: MockCloudLLM,
             counter.record_local(ms=call_ms)
             continue
         model_count = max(1, len(c.per_model))
-        for _mid in c.per_model:
+        for _ in c.per_model:
             counter.record_local(ms=call_ms / model_count)
         if c.label == "pii_yes":
             outcomes["refused"] += 1
@@ -136,7 +136,7 @@ def _run_mode_b(workload, cloud: MockCloudLLM,
     )
 
 
-def test_real_cloud_token_reduction(real_llm_or_skip, capsys):
+def test_real_cloud_token_reduction(real_llm_or_skip, capsys):  # noqa: F811  -- pytest fixture: the parameter intentionally shadows the imported fixture
     """Measure cloud-token spend with vs. without the REAL validator.
 
     Print a comparison table. Assert only the structural invariants;

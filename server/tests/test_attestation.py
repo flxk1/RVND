@@ -13,7 +13,7 @@ Pins the §4.5 rule and the coupling to the Breaker:
 
 import pytest
 
-from workspaces.attestation.core import (
+from rvnd.attestation.core import (
     EXPLAINED_DRIFT,
     PASS,
     UNLOGGED_LEARNING,
@@ -23,7 +23,7 @@ from workspaces.attestation.core import (
     green_checks,
     signature,
 )
-from workspaces.breaker import Breaker, BreakerState, Lease, default_tripwires
+from rvnd.breaker import Breaker, BreakerState, Lease, default_tripwires
 
 
 def _gold():

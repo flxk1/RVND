@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from workspaces.mirror_editor import (
+from rvnd.mirror_editor import (
     ControllerSignatureRequired,
     LockHeldError,
     approve_revision,
@@ -20,7 +20,7 @@ from workspaces.mirror_editor import (
     revisions_list,
     un_redact,
 )
-from workspaces.mutation_log import MutationLog
+from rvnd.mutation_log import MutationLog
 
 
 def _make_lock_mirror(tmp_path: Path) -> tuple[Path, Path]:
@@ -244,7 +244,7 @@ def test_discard_revision_destroys_draft_writes_event(tmp_path):
 def test_mcp_tools_registered():
     """0.6.6+: the mirror_* tools collapsed into the workspace_mirror facade;
     the facade is declared and every editor op stays reachable through it."""
-    from workspaces.mcp_server import _DECLARED_TOOLS, workspace_mirror
+    from rvnd.mcp_server import _DECLARED_TOOLS, workspace_mirror
     assert "workspace_mirror" in _DECLARED_TOOLS
     ops = {o["op"] for o in workspace_mirror("help")["ops"]}
     for op in ("edit", "un_redact", "history", "diff", "discard",

@@ -19,9 +19,9 @@ from pathlib import Path
 
 
 def _fresh_mcp(monkeypatch, log_root: Path):
-    import workspaces.mcp_server as srv
+    import rvnd.mcp_server as srv
     importlib.reload(srv)
-    monkeypatch.setattr("workspaces.mcp_serving._log_root", lambda: log_root)
+    monkeypatch.setattr("rvnd.mcp_serving._log_root", lambda: log_root)
     return srv
 
 
@@ -69,7 +69,7 @@ def test_classify_email_detected(tmp_path, monkeypatch):
 
 def test_classify_writes_no_audit_event(tmp_path, monkeypatch):
     """No mutation-log side-effects from a classify call."""
-    from workspaces.mutation_log import MutationLog
+    from rvnd.mutation_log import MutationLog
     folder = tmp_path / "wks"; folder.mkdir()
     log_root = tmp_path / "log"
     srv = _fresh_mcp(monkeypatch, log_root)
@@ -158,7 +158,7 @@ def test_threshold_non_numeric_rejected(tmp_path, monkeypatch):
 
 def test_threshold_persists_across_load(tmp_path, monkeypatch):
     """Threshold set via MCP survives a policy file reload."""
-    from workspaces.policy import load_policy
+    from rvnd.policy import load_policy
     folder = tmp_path / "wks"; folder.mkdir()
     log_root = tmp_path / "log"
     srv = _fresh_mcp(monkeypatch, log_root)

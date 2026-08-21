@@ -37,7 +37,7 @@ def _live_ops() -> dict[str, set[str]]:
     each facade's own ``op="ops"`` — the same discovery the skills rely on.
     """
     m = pytest.importorskip(
-        "workspaces.mcp_server",
+        "rvnd.mcp_server",
         reason="RVND package not installed in this environment; run this in the "
                "CI job that installs it (server-tests) so drift is actually checked.")
     live: dict[str, set[str]] = {}

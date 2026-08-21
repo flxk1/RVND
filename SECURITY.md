@@ -15,7 +15,7 @@ Do **not** open a public issue for a suspected vulnerability. Use GitHub's
 for this repository (Security → Report a vulnerability). Include:
 
 - a description of the issue and the affected component/version (`__version__`
-  in `server/src/workspaces/_version.py`);
+  in `server/src/rvnd/_version.py`);
 - reproduction steps or a proof of concept;
 - the impact you believe it has.
 

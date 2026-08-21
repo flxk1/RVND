@@ -35,7 +35,7 @@ serve = _load_serve()
 # ── allowlist is curated, accurate, and excludes dangerous bare callables ─────
 
 def test_every_allowed_tool_is_a_real_callable():
-    from workspaces import mcp_server
+    from rvnd import mcp_server
     for tool in serve.ALLOWED_TOOLS:
         assert callable(getattr(mcp_server, tool, None)), f"{tool} missing/!callable"
 
@@ -64,7 +64,7 @@ def test_facade_call_allows_a_listed_tool():
 def test_allowlist_exactly_equals_declared_tools():
     # The strongest sync guarantee: the bridge's surface IS the registered MCP
     # surface — no folded tool leaks in, no declared tool is unreachable.
-    from workspaces import mcp_server
+    from rvnd import mcp_server
     assert serve.ALLOWED_TOOLS == frozenset(mcp_server._DECLARED_TOOLS)
 
 

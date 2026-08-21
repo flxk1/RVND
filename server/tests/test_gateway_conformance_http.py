@@ -3,7 +3,7 @@
 """Gateway conformance over REAL streamable HTTP (committed G4).
 
 Spawns the actual gateway app (auth middleware + FastMCP streamable-http)
-on a uvicorn server in-process, then runs `workspaces.gateway_verify` against it
+on a uvicorn server in-process, then runs `rvnd.gateway_verify` against it
 exactly the way a host's MCP client would — network and all. This is the
 repo-resident version of the G4 smoke test: every claim a host guide makes
 about the gateway side is asserted here, not documented.
@@ -19,8 +19,8 @@ import time
 
 import pytest
 
-from workspaces import gateway_verify
-from workspaces.gateway import build_app
+from rvnd import gateway_verify
+from rvnd.gateway import build_app
 
 HOST_LABEL = "conformance"
 TOKEN = "tok-conformance-e2e"

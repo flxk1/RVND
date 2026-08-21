@@ -19,8 +19,8 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces import erasure, forgotten_subjects, seal
-from workspaces.mutation_log import LogEvent, MutationLog
+from rvnd import erasure, forgotten_subjects, seal
+from rvnd.mutation_log import LogEvent, MutationLog
 
 pytestmark = pytest.mark.security  # privacy / subject-rights integrity
 
@@ -28,7 +28,7 @@ pytestmark = pytest.mark.security  # privacy / subject-rights integrity
 @pytest.fixture()
 def env(tmp_path, monkeypatch):
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(tmp_path / "keys"))
-    from workspaces import signing
+    from rvnd import signing
     signing.ensure_keypair()
     signing.ensure_controller_keypair()
     ws = tmp_path / "ws"

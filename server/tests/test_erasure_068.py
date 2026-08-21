@@ -17,8 +17,8 @@ import json
 
 import pytest
 
-from workspaces import erasure, forgotten_subjects
-from workspaces.mutation_log import LogEvent, MutationLog
+from rvnd import erasure, forgotten_subjects
+from rvnd.mutation_log import LogEvent, MutationLog
 
 
 # ---------------------------------------------------------------------------
@@ -35,7 +35,7 @@ def isolated_env(tmp_path, monkeypatch):
     log_root.mkdir(parents=True, exist_ok=True)
     keydir = tmp_path / "keys"
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(keydir))
-    from workspaces import signing
+    from rvnd import signing
     signing.ensure_keypair()
     signing.ensure_controller_keypair()
 
@@ -317,7 +317,7 @@ def test_execute_single_key_without_controller(tmp_path, monkeypatch):
     the controller key, and keep the chain verifying."""
     keydir = tmp_path / "keys-no-controller"
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(keydir))
-    from workspaces import signing
+    from rvnd import signing
     signing.ensure_keypair()
     assert signing.public_controller_key_fingerprint() is None
 

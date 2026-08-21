@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from workspaces import (
+from rvnd import (
     DefaultExtractor,
     ExtractedFile,
     INBOX_SUBDIR,
@@ -299,7 +299,7 @@ def test_delete_document_cascades_for_watcher_ingest(folder, log_root):
 
 
 def test_cli_ingest_command(folder, log_root, capsys, tmp_path):
-    from workspaces.cli import main
+    from rvnd.cli import main
     p = folder / "f.txt"
     p.write_text("cli ingest")
 
@@ -311,7 +311,7 @@ def test_cli_ingest_command(folder, log_root, capsys, tmp_path):
 
 
 def test_cli_ingest_idempotent(folder, log_root, capsys, tmp_path):
-    from workspaces.cli import main
+    from rvnd.cli import main
     p = folder / "f.txt"
     p.write_text("x")
     main(["--log-root", str(log_root), "ingest",
@@ -326,14 +326,14 @@ def test_cli_ingest_idempotent(folder, log_root, capsys, tmp_path):
 
 
 def test_cli_ingest_missing_file(folder, log_root, capsys, tmp_path):
-    from workspaces.cli import main
+    from rvnd.cli import main
     rc = main(["--log-root", str(log_root), "ingest",
                "--folder", str(folder), str(tmp_path / "missing.txt")])
     assert rc == 1
 
 
 def test_cli_watch_once(folder, log_root, capsys):
-    from workspaces.cli import main
+    from rvnd.cli import main
     _drop(folder, "a.txt", "alpha")
     _drop(folder, "b.txt", "beta")
 
@@ -345,7 +345,7 @@ def test_cli_watch_once(folder, log_root, capsys):
 
 
 def test_cli_watch_once_empty_inbox(folder, log_root, capsys):
-    from workspaces.cli import main
+    from rvnd.cli import main
     rc = main(["--log-root", str(log_root), "watch",
                "--folder", str(folder), "--once"])
     assert rc == 0

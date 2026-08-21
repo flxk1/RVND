@@ -7,7 +7,7 @@ boundary withholds (fail-closed). Closes the audit's "obligations_attached" gap 
 reference engine had hardcoded it True). Loomground / visual-editors panel."""
 from __future__ import annotations
 
-import workspaces.loomground_lang as L
+import rvnd.loomground_lang as L
 
 _BASE = (
     "actor bot\n"

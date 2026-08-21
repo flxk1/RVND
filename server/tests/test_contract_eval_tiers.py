@@ -9,12 +9,12 @@ conflicting governing law abstains, time quantities never become money,
 written-out dates parse, OCR-shattered party names never emit as garbage."""
 
 
-from workspaces.contracts.eval import run_tiers
-from workspaces.contracts.extractor import (classify_contract_type,
+from rvnd.contracts.eval import run_tiers
+from rvnd.contracts.extractor import (classify_contract_type,
                                       extract_effective_date,
                                       extract_governing_law, extract_parties)
-from workspaces.predicate import parse_condition
-from workspaces.temporal import Date
+from rvnd.predicate import parse_condition
+from rvnd.temporal import Date
 
 
 class TestTierStructure:
@@ -93,30 +93,30 @@ class TestHardCaseBehaviours:
         assert classify_contract_type(text)[0] == "amendment"
 
     def test_pinpoint_german_section_and_absatz(self):
-        from workspaces.contracts.extractor import derive_pinpoint
+        from rvnd.contracts.extractor import derive_pinpoint
         text = ("§ 1 Begriffe\n\nEgal.\n\n§ 2 Pflichten\n\n(1) Erstens.\n\n"
                 "(2) Die Auftragnehmerin muss melden.\n")
         pos = text.find("Die Auftragnehmerin muss")
         assert derive_pinpoint(text, pos) == "§ 2 (2)"
 
     def test_pinpoint_decimal_clause(self):
-        from workspaces.contracts.extractor import derive_pinpoint
+        from rvnd.contracts.extractor import derive_pinpoint
         text = "3. INVOICING\n\n3.1 The Client shall pay.\n\n3.2 Late payment.\n"
         assert derive_pinpoint(text, text.find("Late payment")) == "3.2"
 
     def test_pinpoint_numbered_heading(self):
-        from workspaces.contracts.extractor import derive_pinpoint
+        from rvnd.contracts.extractor import derive_pinpoint
         text = "4. Breach notification. The Processor shall notify.\n"
         assert derive_pinpoint(text, text.find("The Processor")) == "4."
 
     def test_pinpoint_absent_structure_is_empty_not_guessed(self):
-        from workspaces.contracts.extractor import derive_pinpoint
+        from rvnd.contracts.extractor import derive_pinpoint
         text = "The parties agree as follows. The Supplier shall deliver.\n"
         assert derive_pinpoint(text, text.find("The Supplier")) == ""
 
     def test_ingested_clause_spans_carry_fundstelle(self, tmp_path):
-        from workspaces.contracts.extractor import ingest_contract
-        from workspaces.rule_registry import RuleRegistry
+        from rvnd.contracts.extractor import ingest_contract
+        from rvnd.rule_registry import RuleRegistry
         text = ("TEST AGREEMENT\n\nThis Agreement is made between A GmbH "
                 "(the \"Processor\") and B AG (the \"Controller\").\n\n"
                 "4. Breach notification. The Processor shall notify the "

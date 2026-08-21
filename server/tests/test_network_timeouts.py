@@ -34,7 +34,7 @@ pytestmark = pytest.mark.security  # fail-closed boundary behaviour
 @pytest.fixture(autouse=True)
 def _identity_keypair():
     """EgressProxy construction needs an identity trust root on disk."""
-    from workspaces import signing
+    from rvnd import signing
     signing.ensure_keypair()
     yield
 
@@ -96,8 +96,8 @@ def _make_upstream(mode: str, *, hang_s: float = 30.0):
 
 
 def _start_proxy(upstream_port: int):
-    from workspaces.lock import OversightLevel
-    from workspaces.lock.egress_proxy import EgressProxy, autonomous_callback
+    from rvnd.lock import OversightLevel
+    from rvnd.lock.egress_proxy import EgressProxy, autonomous_callback
 
     proxy_port = _free_port()
     proxy = EgressProxy(
@@ -273,7 +273,7 @@ def test_egress_max_concurrency_is_configurable():
     """The concurrency cap honours WORKSPACE_EGRESS_MAX_CONCURRENCY, defaults to
     64, and ignores a non-positive / unparseable override (fail-safe default)."""
     import os
-    from workspaces.lock.egress_proxy import _egress_max_concurrency
+    from rvnd.lock.egress_proxy import _egress_max_concurrency
 
     saved = os.environ.get("WORKSPACE_EGRESS_MAX_CONCURRENCY")
     try:
@@ -296,7 +296,7 @@ def test_egress_timeout_is_configurable():
     """The forward deadline honours WORKSPACE_EGRESS_TIMEOUT_SECS, defaulting
     to 60s, and ignores a non-positive / unparseable override."""
     import os
-    from workspaces.lock.egress_proxy import _egress_timeout_secs
+    from rvnd.lock.egress_proxy import _egress_timeout_secs
 
     saved = os.environ.get("WORKSPACE_EGRESS_TIMEOUT_SECS")
     try:
@@ -325,7 +325,7 @@ def test_local_llm_real_hang_returns_typed_error_within_timeout():
     {ok: False} within the timeout, never block indefinitely. The mocked
     robustness suite proves the pipeline tolerates a timeout-shaped return;
     this proves the transport itself is deadline-bounded."""
-    from workspaces.local_llm import complete_via
+    from rvnd.local_llm import complete_via
 
     upstream, up_port = _make_upstream("hang_before_headers", hang_s=30.0)
     try:

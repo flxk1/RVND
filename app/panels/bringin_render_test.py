@@ -25,7 +25,9 @@ os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 sys.path.insert(0, str(HERE.parent))
 sys.path.insert(0, str(HERE.parent.parent / "server" / "src"))
 import serve                          # noqa: E402
-import workspaces.mcp_server as S          # noqa: E402,F401
+import importlib                      # noqa: E402
+importlib.import_module("rvnd.mcp_server")   # imported for its side effect:
+                                      # registering the tools. Not a name we use.
 
 F = os.path.join(tmp, "org")
 os.makedirs(F, exist_ok=True)
@@ -60,7 +62,7 @@ def _start_loopback():
 def main() -> int:
     # Admit only the test hostname and keep the production API free of a
     # private-network bypass.
-    from workspaces import url_ingest
+    from rvnd import url_ingest
     httpd, url = _start_loopback()
     production_resolver = url_ingest._resolve_public
     test_port = httpd.server_address[1]

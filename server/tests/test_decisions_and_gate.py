@@ -8,14 +8,14 @@ import json
 
 import pytest
 
-from workspaces.lock import (
+from rvnd.lock import (
     AuditLog,
     DecisionsStore,
     GateDecision,
     OversightLevel,
     gate_for_cloud,
 )
-from workspaces.lock.tier_c import reset_backend_cache
+from rvnd.lock.tier_c import reset_backend_cache
 
 
 # ===========================================================================

@@ -9,8 +9,8 @@ import os
 
 import pytest
 
-from workspaces import erasure, forgotten_subjects
-from workspaces.mutation_log import LogEvent, MutationLog
+from rvnd import erasure, forgotten_subjects
+from rvnd.mutation_log import LogEvent, MutationLog
 
 
 def test_ensure_is_idempotent_and_owner_only(tmp_path):

@@ -5,7 +5,7 @@ op enum — proving capabilities can be grouped instead of 1 tool per function."
 
 from __future__ import annotations
 
-from workspaces.workspace_legal_facade import workspace_legal_op, ops_catalogue
+from rvnd.workspace_legal_facade import workspace_legal_op, ops_catalogue
 
 
 def test_one_tool_exposes_the_legal_ops():

@@ -24,7 +24,7 @@ import os
 
 import pytest
 
-from workspaces.parties import list_parties, register_party, set_party_status
+from rvnd.parties import list_parties, register_party, set_party_status
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 
@@ -50,7 +50,7 @@ def _status(env, pid):
 
 
 def _chain_kinds(env):
-    from workspaces.mutation_log import MutationLog
+    from rvnd.mutation_log import MutationLog
     log = MutationLog(env["ws"], log_root=env["lr"])
     return [(e.extra or {}).get("kind") for e in log.replay()]
 
@@ -58,12 +58,12 @@ def _chain_kinds(env):
 # --- the closed action vocabulary -------------------------------------------
 
 def test_vocabulary_is_pause_and_escalate_only():
-    from workspaces.guardian import GUARDIAN_ACTIONS
+    from rvnd.guardian import GUARDIAN_ACTIONS
     assert tuple(sorted(GUARDIAN_ACTIONS)) == ("escalate", "pause")
 
 
 def test_pause_restricts_agent(env):
-    from workspaces.guardian import guardian_act
+    from rvnd.guardian import guardian_act
     r = guardian_act(env["ws"], "pause", "agent-x", reason="rate limit",
                      guardian_id="guardian-1", log_root=env["lr"])
     assert r["ok"] is True
@@ -71,7 +71,7 @@ def test_pause_restricts_agent(env):
 
 
 def test_escalate_changes_no_status(env):
-    from workspaces.guardian import guardian_act
+    from rvnd.guardian import guardian_act
     r = guardian_act(env["ws"], "escalate", "agent-x", reason="drift",
                      guardian_id="guardian-1", log_root=env["lr"])
     assert r["ok"] is True
@@ -84,7 +84,7 @@ def test_escalate_changes_no_status(env):
 @pytest.mark.parametrize("kind", ["resume", "activate", "approve", "expand",
                                   "kill", "killed", "go", ""])
 def test_expansion_or_kill_attempt_refused_and_logged(env, kind):
-    from workspaces.guardian import GuardianRefused, guardian_act
+    from rvnd.guardian import GuardianRefused, guardian_act
     with pytest.raises(GuardianRefused):
         guardian_act(env["ws"], kind, "agent-x", reason="attempt",
                      guardian_id="guardian-1", log_root=env["lr"])
@@ -96,7 +96,7 @@ def test_guardian_never_loosens_a_status(env):
     """Property over the status order active < suspended < killed: any
     accepted guardian action leaves the target at the same or a stricter
     status — and a killed agent stays killed."""
-    from workspaces.guardian import guardian_act
+    from rvnd.guardian import guardian_act
     order = {"active": 0, "suspended": 1, "killed": 2}
     set_party_status(env["ws"], "agent-x", "killed", actor="alex",
                      log_root=env["lr"])
@@ -108,7 +108,7 @@ def test_guardian_never_loosens_a_status(env):
 
 
 def test_pause_is_idempotent_not_a_toggle(env):
-    from workspaces.guardian import guardian_act
+    from rvnd.guardian import guardian_act
     for _ in range(2):
         guardian_act(env["ws"], "pause", "agent-x", reason="r",
                      guardian_id="guardian-1", log_root=env["lr"])
@@ -118,7 +118,7 @@ def test_pause_is_idempotent_not_a_toggle(env):
 # --- invariant 2: the root key is un-gateable --------------------------------
 
 def test_guardian_cannot_target_a_human(env):
-    from workspaces.guardian import GuardianRefused, guardian_act
+    from rvnd.guardian import GuardianRefused, guardian_act
     with pytest.raises(GuardianRefused):
         guardian_act(env["ws"], "pause", "alex", reason="attempt",
                      guardian_id="guardian-1", log_root=env["lr"])
@@ -128,7 +128,7 @@ def test_guardian_cannot_target_a_human(env):
 
 def test_guardian_cannot_target_unregistered_party(env):
     """No anonymous targets: acting on a party not on the chain is refused."""
-    from workspaces.guardian import GuardianRefused, guardian_act
+    from rvnd.guardian import GuardianRefused, guardian_act
     with pytest.raises(GuardianRefused):
         guardian_act(env["ws"], "pause", "ghost", reason="attempt",
                      guardian_id="guardian-1", log_root=env["lr"])
@@ -138,7 +138,7 @@ def test_human_kill_switch_works_over_a_paused_guardian(env):
     """The root path is independent of guardian state: the human kills an
     agent (even the guardian itself) with the same plain append, and no
     guardian action can undo it."""
-    from workspaces.guardian import GuardianRefused, guardian_act
+    from rvnd.guardian import GuardianRefused, guardian_act
     guardian_act(env["ws"], "pause", "agent-x", reason="r",
                  guardian_id="guardian-1", log_root=env["lr"])
     r = set_party_status(env["ws"], "guardian-1", "killed",
@@ -156,7 +156,7 @@ def test_human_kill_switch_works_over_a_paused_guardian(env):
 # --- recursive supervision: the guardian is itself logged --------------------
 
 def test_every_guardian_act_appends_an_event(env):
-    from workspaces.guardian import GuardianRefused, guardian_act
+    from rvnd.guardian import GuardianRefused, guardian_act
     n0 = len(_chain_kinds(env))
     guardian_act(env["ws"], "pause", "agent-x", reason="r",
                  guardian_id="guardian-1", log_root=env["lr"])
@@ -170,8 +170,8 @@ def test_every_guardian_act_appends_an_event(env):
 
 def test_guardian_acts_carry_the_guardian_as_actor(env):
     """Accountability: the acting party is the guardian, stamped on the event."""
-    from workspaces.guardian import guardian_act
-    from workspaces.mutation_log import MutationLog
+    from rvnd.guardian import guardian_act
+    from rvnd.mutation_log import MutationLog
     guardian_act(env["ws"], "pause", "agent-x", reason="r",
                  guardian_id="guardian-1", log_root=env["lr"])
     log = MutationLog(env["ws"], log_root=env["lr"])

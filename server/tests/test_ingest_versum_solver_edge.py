@@ -2,9 +2,9 @@
 # Copyright 2026 flxk1
 from pathlib import Path
 
-from workspaces.adapters.solver.reasoning import compose_paths
-from workspaces.adapters.solver.versum import dimensioned_edges
-from workspaces.ingest.versum import ingest_into_versum
+from rvnd.adapters.solver.reasoning import compose_paths
+from rvnd.adapters.solver.versum import dimensioned_edges
+from rvnd.ingest.versum import ingest_into_versum
 
 
 def test_policy_ingest_reaches_versum_and_solver(tmp_path: Path):

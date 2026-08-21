@@ -11,14 +11,14 @@ drop; reject at write over defensive parse at read."""
 
 import pytest
 
-from workspaces.defined_terms import (DefinedTermsRegistry, extract_defined_terms)
-from workspaces.norm_contract import (check_pair, check_predicate_floor,
+from rvnd.defined_terms import (DefinedTermsRegistry, extract_defined_terms)
+from rvnd.norm_contract import (check_pair, check_predicate_floor,
                                  check_typed_dates)
-from workspaces.predicate import (PREDICATE_CONFIDENCE_FLOOR, Predicate,
+from rvnd.predicate import (PREDICATE_CONFIDENCE_FLOOR, Predicate,
                              PredicateError, attach_predicates,
                              parse_condition)
-from workspaces.rule_extractor import RuleFacet
-from workspaces.rule_registry import RuleRegistry
+from rvnd.rule_extractor import RuleFacet
+from rvnd.rule_registry import RuleRegistry
 
 
 # ── Predicate type ────────────────────────────────────────────────────────────
@@ -270,31 +270,31 @@ class TestNT12:
 
 class TestRetrofit:
     def test_standing_approval_valid_until(self):
-        from workspaces.action_gate import StandingApproval
+        from rvnd.action_gate import StandingApproval
         sa = StandingApproval(agent="a", action_class="notify",
                               obligation_pair="p1", until="2026-12-31")
         assert sa.until == "2026-12-31"
 
     def test_standing_approval_malformed_until_rejected_at_write(self):
-        from workspaces.action_gate import StandingApproval
+        from rvnd.action_gate import StandingApproval
         with pytest.raises(ValueError, match="NT-11"):
             StandingApproval(agent="a", action_class="notify",
                              obligation_pair="p1", until="31.12.2026")
 
     def test_standing_approval_no_expiry_allowed(self):
-        from workspaces.action_gate import StandingApproval
+        from rvnd.action_gate import StandingApproval
         sa = StandingApproval(agent="a", action_class="notify", obligation_pair="p1")
         assert sa.until is None
 
     def test_approval_request_malformed_deadline_rejected(self, tmp_path):
-        from workspaces.contracts.reviews import request_contract_approval
+        from rvnd.contracts.reviews import request_contract_approval
         with pytest.raises(ValueError, match="NT-11"):
             request_contract_approval(tmp_path, contract_id="c1",
                                       signers=["alex"], deadline="soon",
                                       log_root=tmp_path / "log")
 
     def test_approval_request_valid_deadline_ok(self, tmp_path):
-        from workspaces.contracts.reviews import request_contract_approval
+        from rvnd.contracts.reviews import request_contract_approval
         out = request_contract_approval(tmp_path, contract_id="c1",
                                         signers=["alex"], deadline="2026-12-31",
                                         log_root=tmp_path / "log")

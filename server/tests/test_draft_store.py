@@ -9,10 +9,10 @@ import json
 
 import pytest
 
-from workspaces import draft_store as D
-from workspaces import seal
-from workspaces.memory import WorkspaceMemory
-from workspaces.mutation_log import MutationLog
+from rvnd import draft_store as D
+from rvnd import seal
+from rvnd.memory import WorkspaceMemory
+from rvnd.mutation_log import MutationLog
 
 
 @pytest.fixture
@@ -76,7 +76,7 @@ def test_oversize_payload_refused_with_size_named(env):
 
 def test_sealed_workspace_refuses_save_load_discard(env, tmp_path, monkeypatch):
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(tmp_path / "keys"))
-    from workspaces import signing
+    from rvnd import signing
     signing.ensure_keypair()
     mem = WorkspaceMemory(env["folder"], log_root=env["log_root"], actor="t")
     mem.remember({
@@ -114,7 +114,8 @@ def test_corrupt_file_reported_and_preserved(env):
     assert r["ok"] and r["unreadable"] == {"map": str(path)}
     assert D.load_all(env["folder"], log_root=env["log_root"]) == {}
     # discard is the explicit recovery
-    assert D.discard(env["folder"], "map", log_root=env["log_root"])["discarded"] == ["map"]
+    discarded = D.discard(env["folder"], "map", log_root=env["log_root"])
+    assert discarded["discarded"] == ["map"]
     assert not path.exists()
 
 
@@ -123,7 +124,8 @@ def test_discard_all_and_idempotent(env):
     D.save(env["folder"], "map", {"b": 2}, log_root=env["log_root"])
     r = D.discard(env["folder"], log_root=env["log_root"])
     assert r["ok"] and sorted(r["discarded"]) == ["chat", "map"]
-    assert D.discard(env["folder"], log_root=env["log_root"])["discarded"] == []
+    again = D.discard(env["folder"], log_root=env["log_root"])
+    assert again["discarded"] == []
 
 
 def test_atomic_write_leaves_no_tmp_file(env):

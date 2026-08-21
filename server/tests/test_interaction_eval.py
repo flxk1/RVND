@@ -2,7 +2,7 @@
 # Copyright 2026 flxk1
 """Eval gold-set harness — measures retrieve-and-propose; seeds the interaction ND."""
 
-import workspaces.interaction_eval as ev
+import rvnd.interaction_eval as ev
 
 
 def _pair(pid, domain, body):

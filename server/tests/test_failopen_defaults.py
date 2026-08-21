@@ -6,9 +6,9 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces import verdict as V
-from workspaces import policy_matrix as pm
-from workspaces.breaker import cap_grade
+from rvnd import verdict as V
+from rvnd import policy_matrix as pm
+from rvnd.breaker import cap_grade
 
 
 # ── verdict mappers: absent → PERMIT (no constraint); unrecognised → DENY ────
@@ -60,7 +60,7 @@ def test_cap_grade_unrecognised_requested_is_L0():
 
 # ── oversight_compose.binds_grade: same fail-safe as cap_grade ──────────────
 def test_binds_grade_failsafe():
-    from workspaces.oversight_compose import binds_grade, ComposedOversight
+    from rvnd.oversight_compose import binds_grade, ComposedOversight
     assert binds_grade(ComposedOversight(grade_ceiling="garbage"), "L4") == "L0"  # unrecognised → L0
     assert binds_grade(ComposedOversight(grade_ceiling=""), "L4") == "L4"          # absent → no cap
     assert binds_grade(ComposedOversight(grade_ceiling="L1"), "L4") == "L1"        # normal meet

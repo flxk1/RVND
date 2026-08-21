@@ -6,15 +6,15 @@ Run: python -m pytest server/tests/test_ingest_skeleton.py -q
 """
 from __future__ import annotations
 
-from workspaces.ingest import (
+from rvnd.ingest import (
     CollectingWriter,
     Subgraph,
     default_registry,
     ingest_text,
     versum_writer,
 )
-from workspaces.ingest import IngesterRegistry
-from workspaces.ingest import Ingester
+from rvnd.ingest import IngesterRegistry
+from rvnd.ingest import Ingester
 
 _POLICY = ("A human must approve every automated refund over 500 EUR. "
            "Users may appeal a decision within 14 days.")
@@ -27,7 +27,7 @@ _CASE_LAW = ("Bundesgerichtshof, Urteil vom 12. Mai. Die Revision wird "
 
 
 def test_policy_ingester_satisfies_protocol():
-    from workspaces.adapters.ingest.governance import GovernanceIngester as PolicyIngester
+    from rvnd.adapters.ingest.governance import GovernanceIngester as PolicyIngester
     assert isinstance(PolicyIngester(), Ingester)
 
 
@@ -63,7 +63,7 @@ def test_grammar_ingester_wins_over_fallback():
 
 
 def test_policy_lowers_to_an_nd_subgraph():
-    from workspaces.adapters.ingest.governance import GovernanceIngester as PolicyIngester
+    from rvnd.adapters.ingest.governance import GovernanceIngester as PolicyIngester
     sg = PolicyIngester().ingest(_POLICY, {})
     assert isinstance(sg, Subgraph)
     assert sg.dimension == "nD"

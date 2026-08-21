@@ -2,8 +2,8 @@
 # Copyright 2026 flxk1
 """The decides connection: a decision applied a rule (cross-layer edge)."""
 
-from workspaces.legal_connection import Connection, VOCABULARY, dimension, is_connection
-from workspaces.dimensions import Dimension
+from rvnd.legal_connection import Connection, VOCABULARY, dimension, is_connection
+from rvnd.dimensions import Dimension
 
 
 def test_decides_is_in_the_connection_vocabulary():

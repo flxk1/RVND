@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces.step_contract import derive_contract, RISK_LEVELS
+from rvnd.step_contract import derive_contract, RISK_LEVELS
 
 
 def test_more_risk_never_raises_autonomy():                       # S1

@@ -29,12 +29,12 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-import workspaces.decisions.queue as DQ
-import workspaces.mcp_server as S
-from workspaces.mcp_impl import (decision_claim, decision_open,
+import rvnd.decisions.queue as DQ
+import rvnd.mcp_server as S
+from rvnd.mcp_impl import (decision_claim, decision_open,
                                  decision_pending, decision_record,
                                  decision_release)
-from workspaces.parties import register_party
+from rvnd.parties import register_party
 
 SURFACE = {
     "query": "Erase K.'s record while invoices sit in the retention window?",

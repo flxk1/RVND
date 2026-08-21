@@ -6,7 +6,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import versum
-from workspaces.memory import WorkspaceMemory
+from rvnd.memory import WorkspaceMemory
 
 _PAIR = {
     "id": "sha256:abc123",

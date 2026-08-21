@@ -5,9 +5,9 @@
 import os
 from pathlib import Path
 
-from workspaces import cli, workspace_hooks
-from workspaces.workspace_orchestrate import ask_workspace
-from workspaces.workspace_contract import describe_workspace
+from rvnd import cli, workspace_hooks
+from rvnd.workspace_orchestrate import ask_workspace
+from rvnd.workspace_contract import describe_workspace
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 

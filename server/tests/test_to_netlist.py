@@ -4,7 +4,7 @@
 silently drop grant kinds/risks, reserve duration, or node party/name."""
 from __future__ import annotations
 
-from workspaces import loomground_lang as L
+from rvnd import loomground_lang as L
 
 
 def test_roundtrip_rich_patch():

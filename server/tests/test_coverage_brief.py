@@ -12,8 +12,8 @@ and the property, not the plane's internals.
 """
 from __future__ import annotations
 
-from workspaces.evidence_coverage import EvidenceDoc, coverage_brief, map_coverage
-from workspaces.requirements_house import RequirementsHouse, Room
+from rvnd.evidence_coverage import EvidenceDoc, coverage_brief, map_coverage
+from rvnd.requirements_house import RequirementsHouse, Room
 
 
 def _house(n_furnished: int = 2, with_gap: bool = True) -> RequirementsHouse:

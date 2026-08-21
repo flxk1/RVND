@@ -2,14 +2,14 @@
 # Copyright 2026 flxk1
 """Tests for the Math ND, dimensioned edges, and routing of the domain suite."""
 
-from workspaces.dimensions import Dimension
-from workspaces.math_extractor import extract_math
-from workspaces.domain_nds import (
+from rvnd.dimensions import Dimension
+from rvnd.math_extractor import extract_math
+from rvnd.domain_nds import (
     GDPRRuleND,
     MathND,
     register_default_domain_nds,
 )
-from workspaces.nd_routing import DefaultClassifier, NDRouter
+from rvnd.nd_routing import DefaultClassifier, NDRouter
 
 
 VALID_DIMS = {d.value for d in Dimension}

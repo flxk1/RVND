@@ -18,9 +18,9 @@ from __future__ import annotations
 import os
 import pytest
 
-from workspaces import mcp_server as M
-from workspaces.adapters.ingest.governance import compiler as P
-from workspaces.governance import decide_action
+from rvnd import mcp_server as M
+from rvnd.adapters.ingest.governance import compiler as P
+from rvnd.governance import decide_action
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 
@@ -128,7 +128,7 @@ def test_multiple_approvers_on_one_gate_all_survive(ws):
     reserved = [u for u in _use_cases(res) if u["reserved"]]
     assert reserved, "no reserved act landed"
     # the chain carries both approvers for the gate
-    from workspaces.use_case import get_use_case
+    from rvnd.use_case import get_use_case
     uc_id = reserved[0]["id"][3:]
     acts = get_use_case(ws, uc_id, log_root=M._log_root())["reserved_acts"]
     approvers = {a.get("reserved_to") for a in acts}
@@ -147,7 +147,7 @@ def test_prohibition_is_sticky_across_reapply(ws):
 def test_decide_action_fails_closed_when_lookup_raises(ws, monkeypatch):
     # If the use-case store cannot be read, an action whose prohibition we cannot
     # verify must be treated as prohibited (NO-GO), not waved through (panel blocker).
-    import workspaces.use_case as UC
+    import rvnd.use_case as UC
     monkeypatch.setattr(UC, "get_use_case",
                         lambda *a, **k: (_ for _ in ()).throw(OSError("store unreadable")))
     d = decide_action(ws, action_class="anything", grade="L4", actor="bot7", log_root=M._log_root())

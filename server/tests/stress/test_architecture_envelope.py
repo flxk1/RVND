@@ -5,7 +5,7 @@
 Full-pipeline integration tests. Each test pins one architectural
 invariant the design promises: validator-before-commit, air-gap mode,
 cross-surface equivalence, audit-chain ordering. All Workspace internals
-(mutation_log, workspaces.lock, mirrors, erasure) run for real; only the
+(mutation_log, rvnd.lock, mirrors, erasure) run for real; only the
 cloud-LLM boundary and the local-LLM endpoint are mocked.
 """
 
@@ -15,9 +15,9 @@ import json
 
 import pytest
 
-from workspaces import signing
-from workspaces.mutation_log import LogEvent, MutationLog
-from workspaces.pinned_skills import pin_skill, record_dispatch
+from rvnd import signing
+from rvnd.mutation_log import LogEvent, MutationLog
+from rvnd.pinned_skills import pin_skill, record_dispatch
 
 from tests.stress._harness import MockCloudLLM, MockLocalLLM
 
@@ -53,8 +53,8 @@ def test_full_pipeline_ingest_to_audit(isolated_env):
     """One end-to-end run: ingest a file, dispatch a skill (with cloud
     validator-before-commit), capture the exchange, and verify the audit
     chain contains the expected event sequence."""
-    from workspaces.inbox_watcher import ingest_file
-    from workspaces.lock.core import lock_text, Mode
+    from rvnd.inbox_watcher import ingest_file
+    from rvnd.lock.core import lock_text, Mode
 
     ws = isolated_env["workspace"]
     log_root = isolated_env["log_root"]
@@ -126,7 +126,7 @@ def test_validator_before_commit_blocks_bad_draft(isolated_env):
     log_before = list(MutationLog(ws, log_root=log_root).replay())
 
     with cloud, local:
-        from workspaces.lock.core import tier_c_semantic_check
+        from rvnd.lock.core import tier_c_semantic_check
         cloud_response = cloud.dispatch("Generate an answer to this question.")
         verdict = tier_c_semantic_check(cloud_response)
         # Validator says reject → write a validator_rejected event, do
@@ -177,7 +177,7 @@ def test_validator_insufficient_escalates_to_human_review(isolated_env):
     oversight_queue: list[dict] = []
 
     with cloud, local:
-        from workspaces.lock.core import tier_c_semantic_check
+        from rvnd.lock.core import tier_c_semantic_check
         draft = cloud.dispatch("Generate an answer.")
         verdict = tier_c_semantic_check(draft)
         if verdict is not None and verdict.label == "insufficient":
@@ -218,13 +218,13 @@ def test_cross_surface_invariant_same_envelope_from_cli_and_mcp(isolated_env):
     pin_skill(ws, "workspace:cross-surface", log_root=log_root)
 
     # CLI invocation.
-    r_cli = record_dispatch(
+    record_dispatch(
         ws, "workspace:cross-surface", log_root=log_root,
         actor="cli", chosen_via="cli",
         extra={"invoked_via": "cli"},
     )
     # MCP invocation.
-    r_mcp = record_dispatch(
+    record_dispatch(
         ws, "workspace:cross-surface", log_root=log_root,
         actor="mcp", chosen_via="mcp",
         extra={"invoked_via": "mcp"},
@@ -274,7 +274,7 @@ def test_three_surface_verify_chain_parity(isolated_env):
     monkey_env = os.environ.copy()
     os.environ["WORKSPACE_L0_LOG_ROOT"] = str(log_root)
     try:
-        from workspaces.mcp_server import audit_verify_chain
+        from rvnd.mcp_server import audit_verify_chain
         mcp_result = audit_verify_chain(folder_context=str(ws), actor="test")
     finally:
         os.environ.clear()
@@ -342,7 +342,7 @@ def test_lock_disabled_with_ack_does_not_bypass_local_validator(isolated_env):
     """Even with lock off (and a recorded ack), the local validator
     still runs on any cloud draft. A validator refusal at this stage
     must NOT be blocked by the lock-disable acknowledgement."""
-    from workspaces.policy import disable_lock, load_policy
+    from rvnd.policy import disable_lock, load_policy
     ws = isolated_env["workspace"]
     log_root = isolated_env["log_root"]
 
@@ -361,7 +361,7 @@ def test_lock_disabled_with_ack_does_not_bypass_local_validator(isolated_env):
 
     with cloud, local:
         draft = cloud.dispatch("Generate an answer.")
-        from workspaces.lock.core import tier_c_semantic_check
+        from rvnd.lock.core import tier_c_semantic_check
         verdict = tier_c_semantic_check(draft)
         # Validator runs irrespective of lock being off.
         assert verdict is not None

@@ -12,8 +12,8 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces.nd_routing import NDRouter, DefaultClassifier
-from workspaces.norm_contract import ContractViolation
+from rvnd.nd_routing import NDRouter, DefaultClassifier
+from rvnd.norm_contract import ContractViolation
 
 
 class _ConformingND:
@@ -54,14 +54,14 @@ def _classify():
 
 
 def test_dispatch_without_enforcement_is_unchanged():
-    from workspaces.domain_nds import AIActRuleND
+    from rvnd.domain_nds import AIActRuleND
     r = NDRouter(); r.register(AIActRuleND())
     res = r.dispatch("The provider shall establish a risk management system.", _classify())
     assert res.contract_report is None        # opt-in: default off, nothing changes
 
 
 def test_dispatch_refuses_noncompliant_nd_output_class_c():
-    from workspaces.domain_nds import AIActRuleND
+    from rvnd.domain_nds import AIActRuleND
     r = NDRouter(); r.register(AIActRuleND())
     with pytest.raises(ContractViolation):
         r.dispatch("The provider shall establish a risk management system.",

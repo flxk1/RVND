@@ -24,7 +24,7 @@ import importlib.util
 
 import pytest
 
-from workspaces.mcp_impl import SkillBodyUnreadable, _try_read_workspace_skill_body
+from rvnd.mcp_impl import SkillBodyUnreadable, _try_read_workspace_skill_body
 
 ART22 = ("---\nname: probe\n---\n\nThe data subject shall not be subject to a decision "
          "based solely on automated processing which produces legal effects.\n")
@@ -33,7 +33,7 @@ ART22 = ("---\nname: probe\n---\n\nThe data subject shall not be subject to a de
 @pytest.fixture
 def skill_dir(tmp_path, monkeypatch):
     """Point the reader's candidate search at a temporary tree."""
-    pkg = tmp_path / "runtime" / "src" / "workspaces"
+    pkg = tmp_path / "runtime" / "src" / "rvnd"
     pkg.mkdir(parents=True)
     (pkg / "__init__.py").write_text("", encoding="utf-8")
 
@@ -71,8 +71,8 @@ def test_a_body_that_exists_but_cannot_be_decoded_raises(skill_dir):
 
 
 def test_the_declared_ceiling_survives_a_readable_body(skill_dir):
-    from workspaces.oversight_compose import compose_facets
-    from workspaces.oversight_extractor import extract_oversight
+    from rvnd.oversight_compose import compose_facets
+    from rvnd.oversight_extractor import extract_oversight
     (skill_dir / "SKILL.md").write_text(ART22, encoding="utf-8")
     body = _try_read_workspace_skill_body("probe")
     assert compose_facets(extract_oversight(body)).grade_ceiling == "L2"
@@ -81,8 +81,8 @@ def test_the_declared_ceiling_survives_a_readable_body(skill_dir):
 def test_unreadable_and_unparseable_fail_the_same_way(skill_dir):
     """The point of the fix: one ignorance, one outcome. Both clamp to L0."""
     def resolve(skill_id: str) -> str:
-        from workspaces.oversight_compose import compose_facets
-        from workspaces.oversight_extractor import extract_oversight
+        from rvnd.oversight_compose import compose_facets
+        from rvnd.oversight_extractor import extract_oversight
         try:
             body = _try_read_workspace_skill_body(skill_id)
         except SkillBodyUnreadable:

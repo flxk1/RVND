@@ -8,7 +8,7 @@ import time
 
 import pytest
 
-from workspaces.queue import (
+from rvnd.queue import (
     LeaseStolen,
     enqueue_run,
     get_run,
@@ -82,7 +82,7 @@ def test_lease_stolen_when_lease_expired(tmp_path, monkeypatch):
 
 
 def test_back_compat_mark_done_without_worker_id_still_works(tmp_path):
-    from workspaces.queue import mark_done
+    from rvnd.queue import mark_done
     log_root = tmp_path
     folder = tmp_path / "folder"
     folder.mkdir()

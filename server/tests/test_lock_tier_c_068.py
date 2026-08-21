@@ -14,7 +14,7 @@ monkey-patched with predetermined returns.
 from __future__ import annotations
 
 
-from workspaces.lock.core import (
+from rvnd.lock.core import (
     TierCEnsembleResult,
     tier_b_scan_text,
     tier_c_semantic_check,
@@ -106,7 +106,7 @@ def _make_classify_stub(per_model_label: dict[str, str], ok: bool = True):
 
 
 def _patch_classify(monkeypatch, fn):
-    import workspaces.mcp_server as mcp_server
+    import rvnd.mcp_server as mcp_server
     monkeypatch.setattr(mcp_server, "local_llm_classify", fn, raising=True)
 
 

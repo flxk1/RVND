@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces.lock.scanned_response import (
+from rvnd.lock.scanned_response import (
     Cleartext,
     CleartextEgressError,
     ScannedResponse,
@@ -152,7 +152,7 @@ def test_pair_safe_context_returns_scanned_payload(tmp_path, monkeypatch):
     folder = tmp_path / "vault"
     folder.mkdir()
 
-    from workspaces.memory import WorkspaceMemory
+    from rvnd.memory import WorkspaceMemory
     WorkspaceMemory(str(folder), log_root=str(log_root), actor="test").remember({
         "id": "sha256:test-pair-1",
         "problem": {
@@ -170,7 +170,7 @@ def test_pair_safe_context_returns_scanned_payload(tmp_path, monkeypatch):
         },
     }, channel="document")
 
-    from workspaces.mcp_server import pair_safe_context
+    from rvnd.mcp_server import pair_safe_context
     response = pair_safe_context(
         folder_context=str(folder),
         pair_id="sha256:test-pair-1",

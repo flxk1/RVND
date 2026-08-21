@@ -12,9 +12,9 @@ import logging
 
 import pytest
 
-from workspaces import forgotten_subjects
-from workspaces.inbox_watcher import ingest_file
-from workspaces.mutation_log import MutationLog
+from rvnd import forgotten_subjects
+from rvnd.inbox_watcher import ingest_file
+from rvnd.mutation_log import MutationLog
 
 
 @pytest.fixture()
@@ -32,7 +32,7 @@ def test_md_is_text_regardless_of_host_mime_tables(tmp_path):
     must yield the file's text on every platform."""
     import mimetypes
 
-    import workspaces.inbox_watcher as iw
+    import rvnd.inbox_watcher as iw
 
     assert mimetypes.guess_type("x.md")[0] == "text/markdown"
     f = tmp_path / "note.md"
@@ -45,7 +45,7 @@ def test_md_is_text_regardless_of_host_mime_tables(tmp_path):
 def test_guard_import_is_top_level_not_optional():
     """The guard must not be lazily/optionally imported: a module-level
     attribute on inbox_watcher proves the import happens at import time."""
-    import workspaces.inbox_watcher as iw
+    import rvnd.inbox_watcher as iw
 
     assert getattr(iw, "_fs", None) is forgotten_subjects
 
@@ -62,7 +62,7 @@ def test_refusal_survives_audit_append_failure(env, monkeypatch, caplog):
         raise OSError("simulated audit failure")
 
     monkeypatch.setattr(MutationLog, "append", boom)
-    with caplog.at_level(logging.ERROR, logger="workspaces.inbox_watcher"):
+    with caplog.at_level(logging.ERROR, logger="rvnd.inbox_watcher"):
         with pytest.raises(forgotten_subjects.EraseGuardHit):
             ingest_file(bad, ws, log_root=log_root, actor="test")
     assert any("could NOT be audited" in r.message for r in caplog.records)

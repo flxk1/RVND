@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from workspaces import lens_service as ls
+from rvnd import lens_service as ls
 
 
 # --- classify: admit / hold / reject (default-deny) ---
@@ -102,7 +102,7 @@ def test_budget_rejects_nonpositive_cap():
 # --- the MCP facade is registered + dispatches ---
 
 def test_workspace_lens_facade_registered_and_dispatches():
-    from workspaces import mcp_server
+    from rvnd import mcp_server
     assert "workspace_lens" in mcp_server._DECLARED_TOOLS
     res = mcp_server.workspace_lens("help")
     assert any(o["op"] == "classify" for o in res["ops"])
@@ -176,7 +176,7 @@ def test_admission_log_surfaces_cap_and_over(tmp_path):
 
 
 def test_facade_precedent_and_cap_ops(tmp_path):
-    from workspaces import mcp_server
+    from rvnd import mcp_server
     help_ops = {o["op"] for o in mcp_server.workspace_lens("help")["ops"]}
     assert {"precedent_declare", "precedent_list", "precedent_revoke",
             "budget_cap_get", "budget_cap_set"} <= help_ops

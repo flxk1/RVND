@@ -39,7 +39,7 @@ def _writer(workspace_str: str, log_root_str: str, key_dir: str,
             accepted_path: str, refused_flag: str) -> None:
     """Append until sealed-out; record every ACCEPTED audit_id durably."""
     os.environ["WORKSPACE_KEY_DIR"] = key_dir
-    from workspaces.mutation_log import LogEvent, MutationLog, SealedWriteError
+    from rvnd.mutation_log import LogEvent, MutationLog, SealedWriteError
 
     workspace = Path(workspace_str)
     log = MutationLog(workspace, log_root=Path(log_root_str))
@@ -66,7 +66,7 @@ def _writer(workspace_str: str, log_root_str: str, key_dir: str,
 
 
 def _sealer(workspace_str: str, log_root_str: str, delay_s: float) -> None:
-    from workspaces import seal
+    from rvnd import seal
     time.sleep(delay_s)  # let the writer get going mid-stream
     seal.seal_folder(workspace_str, passphrase=_PASSPHRASE,
                      log_root=log_root_str)
@@ -106,8 +106,8 @@ def test_seal_mid_stream_loses_no_accepted_write(tmp_path: Path,
 
     # End state: cleanly sealed — blob present, NO plaintext dir beside it
     # (a recreated plaintext dir would brick unseal).
-    from workspaces.mutation_log import MutationLog
-    from workspaces import seal
+    from rvnd.mutation_log import MutationLog
+    from rvnd import seal
     probe = MutationLog(workspace, log_root=log_root)
     blob = log_root / (probe.folder_id + ".sealed")
     plaintext_dir = log_root / probe.folder_id

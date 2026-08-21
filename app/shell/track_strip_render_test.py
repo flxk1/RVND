@@ -21,7 +21,7 @@ os.environ["WORKSPACE_L0_LOG_ROOT"] = os.path.join(tmp, "logs")
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 os.environ["STRIP_TOK"] = "STRIP-SECRET-VALUE"     # resolves -> armed; must never reach the DOM
 sys.path.insert(0, str(HERE.parent)); sys.path.insert(0, str(HERE.parent.parent / "server" / "src"))
-import serve, workspaces.mcp_server as S  # noqa: E402
+import serve, rvnd.mcp_server as S  # noqa: E402
 A = os.path.join(tmp, "alpha")
 os.makedirs(A, exist_ok=True)
 S.workspace_workspace("add", {"folder_context": A})

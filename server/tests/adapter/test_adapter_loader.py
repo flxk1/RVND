@@ -8,7 +8,7 @@ import pytest
 
 # adapter_loader was absorbed into the workspaces package
 # (was workspace-adapter/runtime/adapter_loader.py).
-from workspaces import adapter_loader  # noqa: E402
+from rvnd import adapter_loader  # noqa: E402
 
 
 # -----------------------------------------------------------------------------
@@ -169,7 +169,7 @@ def test_local_llm_adapter_uses_audited_completion(monkeypatch, tmp_path):
         seen.update(kwargs)
         return {"ok": True, "response": "local result", "captured": True}
 
-    monkeypatch.setattr("workspaces.mcp_impl.local_llm_complete", fake_complete)
+    monkeypatch.setattr("rvnd.mcp_impl.local_llm_complete", fake_complete)
     out = adapter.dispatch(
         {"prompt": "Summarise", "max_tokens": 64},
         folder_context=str(tmp_path),

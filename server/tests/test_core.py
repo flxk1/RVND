@@ -9,7 +9,7 @@ import time
 from pathlib import Path
 
 
-from workspaces.lock import (
+from rvnd.lock import (
     AuditLog,
     CapabilityToken,
     Mode,
@@ -18,7 +18,7 @@ from workspaces.lock import (
     egress,
     ingress,
 )
-from workspaces.lock.core import (
+from rvnd.lock.core import (
     _flatten_argument_fields,
     tier_a_check_arguments,
     tier_a_check_response,

@@ -7,8 +7,8 @@ from __future__ import annotations
 import os
 import pytest
 
-from workspaces import mcp_server as M
-from workspaces import loomground_lang as L
+from rvnd import mcp_server as M
+from rvnd import loomground_lang as L
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 

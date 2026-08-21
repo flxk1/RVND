@@ -9,9 +9,9 @@ from __future__ import annotations
 
 import os
 
-from workspaces import model_capability as MC
-from workspaces import models_registry as MR
-from workspaces.models_registry import ModelEntry
+from rvnd import model_capability as MC
+from rvnd import models_registry as MR
+from rvnd.models_registry import ModelEntry
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 
@@ -78,7 +78,7 @@ def test_readiness_projection(monkeypatch):
 
 
 def test_capability_op_is_readonly_and_discoverable(monkeypatch):
-    from workspaces import mcp_server as M
+    from rvnd import mcp_server as M
     monkeypatch.setattr(MR, "list_models", lambda: [ModelEntry(id="qwen-32b")])
     full = M.workspace_workflow("model_capability", {"folder_context": ""})
     assert full["version"] == "model_capability/v1" and "extraction" in full["ready"]

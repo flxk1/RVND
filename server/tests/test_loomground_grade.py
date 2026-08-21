@@ -12,7 +12,7 @@ precedence. Delegation may not amplify a grade.
 """
 from __future__ import annotations
 
-from workspaces import loomground_lang as L
+from rvnd import loomground_lang as L
 
 
 def _tok(kind: str = "act") -> dict:

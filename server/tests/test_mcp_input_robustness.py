@@ -39,8 +39,8 @@ import pytest
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "app"))   # serve.py lives under app/, like test_deploy_bind.py
 import serve  # noqa: E402
-import workspaces.mcp_server as S  # noqa: E402
-from workspaces.mcp_server import _DECLARED_TOOLS, _require_op_params  # noqa: E402
+import rvnd.mcp_server as S  # noqa: E402
+from rvnd.mcp_server import _DECLARED_TOOLS, _require_op_params  # noqa: E402
 
 BASELINE = REPO / "docs" / "evidence" / "mcp-surface-baseline.json"
 

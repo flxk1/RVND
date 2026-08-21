@@ -125,11 +125,11 @@ def _contract_membership_violations(registry, committed_modules, package_dir):
 
 
 def _committed_workspace_modules():
-    """Dotted module names committed under server/src/workspaces at HEAD
+    """Dotted module names committed under server/src/rvnd at HEAD
     (a package's __init__.py contributes the package name itself), or None
     when git cannot resolve the committed tree."""
     committed = subprocess.run(
-        ["git", "ls-tree", "-r", "--name-only", "HEAD", "server/src/workspaces"],
+        ["git", "ls-tree", "-r", "--name-only", "HEAD", "server/src/rvnd"],
         capture_output=True, text=True, timeout=60, cwd=str(REPO))
     if committed.returncode != 0:
         return None
@@ -137,7 +137,7 @@ def _committed_workspace_modules():
     for line in committed.stdout.splitlines():
         if not line.endswith(".py"):
             continue
-        rel = Path(line).relative_to("server/src/workspaces")
+        rel = Path(line).relative_to("server/src/rvnd")
         parts = list(rel.with_suffix("").parts)
         if parts[-1] == "__init__":
             parts = parts[:-1]

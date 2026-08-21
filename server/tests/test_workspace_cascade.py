@@ -6,7 +6,7 @@ import json
 
 import pytest
 
-from workspaces.workspace_cascade import (cascade_for_workspace, tiers_for_workspace,
+from rvnd.workspace_cascade import (cascade_for_workspace, tiers_for_workspace,
                                 write_local_config, config_path, _local_config,
                                 LOCAL_URL_ENV, LOCAL_MODEL_ENV, CONFIG_PATH_ENV)
 
@@ -131,7 +131,7 @@ def test_workspace_standard_is_the_single_default_local_tier(tmp_path, monkeypat
     monkeypatch.setenv(CONFIG_PATH_ENV, str(tmp_path / "absent.json"))  # no config
     reg = tmp_path / "models"
     monkeypatch.setenv("WORKSPACE_MODELS_DIR", str(reg))
-    from workspaces import models_registry
+    from rvnd import models_registry
     # workspace standard (qwen-3b) + the coder's own model (qwen-7b, code-fix)
     for mid, role, n in (("qwen2_5-coder-3b-q4", "workspace", 4),
                          ("qwen2_5-coder-7b-q4", "code-fix", 8)):
@@ -150,7 +150,7 @@ def test_no_workspace_role_falls_back_to_single_smallest(tmp_path, monkeypatch):
     monkeypatch.setenv(CONFIG_PATH_ENV, str(tmp_path / "absent.json"))
     reg = tmp_path / "models"
     monkeypatch.setenv("WORKSPACE_MODELS_DIR", str(reg))
-    from workspaces import models_registry
+    from rvnd import models_registry
     for mid, n in (("phi-3_5-mini-q4", 2), ("qwen2_5-coder-7b-q4", 8)):
         d = reg / mid; d.mkdir(parents=True)
         g = d / f"{mid}.gguf"; g.write_bytes(b"\x00" * n)

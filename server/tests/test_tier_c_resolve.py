@@ -6,7 +6,7 @@ Default stays "mock" (fast, no model loaded per ingest). 'auto' resolves a real
 local GGUF from the workspace models registry so the same model the cascade pulls
 serves Tier C too. String resolution only — no model is loaded here.
 """
-from workspaces.lock import tier_c
+from rvnd.lock import tier_c
 
 
 def _iso_registry(monkeypatch, tmp_path):
@@ -35,7 +35,7 @@ def test_auto_with_empty_registry_falls_back_to_mock(monkeypatch, tmp_path):
 def test_auto_prefers_lock_role_model(monkeypatch, tmp_path):
     _iso_registry(monkeypatch, tmp_path)
     monkeypatch.setenv("AGENT_TOOL_LOCK_LLM_BACKEND", "auto")
-    from workspaces import models_registry
+    from rvnd import models_registry
     reg = tmp_path / "models"
     # a drafter model (big) and a lock-role model (small) both on disk
     for mid, role, n in (("qwen2_5-coder-7b-q4", "drafter", 8),
@@ -50,7 +50,7 @@ def test_auto_prefers_lock_role_model(monkeypatch, tmp_path):
 def test_auto_falls_back_to_any_gguf(monkeypatch, tmp_path):
     _iso_registry(monkeypatch, tmp_path)
     monkeypatch.setenv("AGENT_TOOL_LOCK_LLM_BACKEND", "auto")
-    from workspaces import models_registry
+    from rvnd import models_registry
     reg = tmp_path / "models"
     d = reg / "qwen2_5-coder-3b-q4"; d.mkdir(parents=True)
     g = d / "qwen2_5-coder-3b-q4.gguf"; g.write_bytes(b"\x00\x00")

@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import json
 
-from workspaces.adapters.solver.datapump import RvndDataPump
+from rvnd.adapters.solver.datapump import RvndDataPump
 
 
 # a fake signed audit chain: signed PASS, signed VIOLATION, UNSIGNED pass, a dupe

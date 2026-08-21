@@ -16,8 +16,8 @@ import json
 
 import pytest
 
-from workspaces import loomground_assets as A
-from workspaces import loomground_lang as L
+from rvnd import loomground_assets as A
+from rvnd import loomground_lang as L
 
 _LIVE = A.live_root()
 pytestmark = pytest.mark.skipif(

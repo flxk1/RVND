@@ -27,11 +27,11 @@ os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 sys.path.insert(0, str(HERE.parent))
 sys.path.insert(0, str(HERE.parent.parent / "server" / "src"))
 import serve                               # noqa: E402
-import workspaces.mcp_server as S          # noqa: E402
-from workspaces.governance_lane import GovernanceLane, register_lane   # noqa: E402
-from workspaces.parties import register_party, set_party_status        # noqa: E402
-from workspaces.session_admission import governance_open               # noqa: E402
-from workspaces.mcp_serving import clear_request_principal, set_request_principal  # noqa: E402
+import rvnd.mcp_server as S          # noqa: E402
+from rvnd.governance_lane import GovernanceLane, register_lane   # noqa: E402
+from rvnd.parties import register_party, set_party_status        # noqa: E402
+from rvnd.session_admission import governance_open               # noqa: E402
+from rvnd.mcp_serving import clear_request_principal, set_request_principal  # noqa: E402
 
 F = os.path.join(tmp, "org")
 os.makedirs(F, exist_ok=True)

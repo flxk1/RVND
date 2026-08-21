@@ -9,9 +9,9 @@ from __future__ import annotations
 
 import os
 
-from workspaces import governance_kg as KG
-from workspaces import governance_map as GM
-from workspaces import duty_identification as DI
+from rvnd import governance_kg as KG
+from rvnd import governance_map as GM
+from rvnd import duty_identification as DI
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 
@@ -87,7 +87,7 @@ _PROV = [{"pinpoint": a, "text": t} for a, t in AI_ACT.items()]
 
 
 def test_kg_op_projects_over_the_same_rules_as_the_map():
-    from workspaces import mcp_server as M
+    from rvnd import mcp_server as M
     g = M.workspace_workflow("governance_kg", {
         "folder_context": "", "provisions": _PROV, "instrument": "AI Act", "level": "detail"})
     assert g["version"] == KG.SCHEMA_VERSION and g["level"] == "detail"
@@ -98,7 +98,7 @@ def test_kg_op_projects_over_the_same_rules_as_the_map():
 
 
 def test_kg_op_returns_a_reasoning_path():
-    from workspaces import mcp_server as M
+    from rvnd import mcp_server as M
     rid = GM._rule_id("AI Act", "Art. 16")
     p = M.workspace_workflow("governance_kg", {
         "folder_context": "", "provisions": _PROV, "instrument": "AI Act",
@@ -108,6 +108,6 @@ def test_kg_op_returns_a_reasoning_path():
 
 
 def test_kg_op_is_discoverable_in_the_catalog():
-    from workspaces import mcp_server as M
+    from rvnd import mcp_server as M
     ops = {row["op"] for row in M.workspace_workflow("ops", {"folder_context": ""})["ops"]}
     assert "governance_kg" in ops

@@ -28,11 +28,11 @@ import os
 
 import pytest
 
-from workspaces import parties as pt
-from workspaces.governance_graph import governance_query
-from workspaces.matrix_coverage import coverage_matrix
-from workspaces.operations import operate
-from workspaces.use_case import register_use_case
+from rvnd import parties as pt
+from rvnd.governance_graph import governance_query
+from rvnd.matrix_coverage import coverage_matrix
+from rvnd.operations import operate
+from rvnd.use_case import register_use_case
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 
@@ -151,7 +151,7 @@ _PERMISSIVE_G = {
 
 
 def test_finding_and_gaps_only(monkeypatch):                     # C4
-    import workspaces.matrix_coverage as MC
+    import rvnd.matrix_coverage as MC
     monkeypatch.setattr(MC, "governance_graph", lambda *a, **k: _PERMISSIVE_G)
     m = MC.coverage_matrix("/x")
     send = _cell(m, "external_send", "high")
@@ -171,7 +171,7 @@ def test_unknown_preset_refused(env):
 
 
 def test_facade_routes(env):                                     # C6
-    from workspaces import mcp_server as M
+    from rvnd import mcp_server as M
     assert len(M._DECLARED_TOOLS) == 24
     r = M.workspace_workflow(op="coverage_matrix",
                              params={"folder_context": env["ws"]})
@@ -255,7 +255,7 @@ def test_task_role_gap_is_a_finding(roles):                      # T2
 def test_task_role_gaps_only_and_listed(roles):                  # T3
     m = _tr(roles, gaps_only=True)
     assert m["rows"] == ["uc-pay"]
-    from workspaces.matrix_coverage import presets
+    from rvnd.matrix_coverage import presets
     assert any(p["preset"] == "task_role" for p in presets())
 
 
@@ -268,8 +268,8 @@ def test_task_role_gaps_only_and_listed(roles):                  # T3
 #       reserved acts forward, and refuses an agent with nothing to revoke
 #   A3  the facade routes authority_revoke; the revoked cell reads none after
 def test_task_agent_grid_and_revoke(roles):                      # A1 A2 A3
-    from workspaces import mcp_server as M
-    from workspaces.use_case import get_use_case, revoke_agent
+    from rvnd import mcp_server as M
+    from rvnd.use_case import get_use_case, revoke_agent
     pt.register_party(roles["ws"], "bot9", "agent", name="bot9",
                       actor="alex", log_root=roles["lr"])
     register_use_case(roles["ws"], use_case_id="uc-send", name="uc-send",

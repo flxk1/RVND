@@ -30,8 +30,8 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 
 import pytest
 
-from workspaces import local_llm
-from workspaces.cascade import (Tier, run_cascade, nonempty_verifier)
+from rvnd import local_llm
+from rvnd.cascade import (Tier, run_cascade, nonempty_verifier)
 
 
 # ── a real in-process OpenAI-compatible server ────────────────────────────────
@@ -111,7 +111,7 @@ def cloud_server():
 
 
 # A shield that lets everything through, so cloud-path tests don't depend on
-# workspaces.lock being installed; the Shield-specific tests exercise the real gate.
+# rvnd.lock being installed; the Shield-specific tests exercise the real gate.
 def _allow_shield(prompt):
     return "allow", prompt
 

@@ -3,10 +3,10 @@
 """Shadow-workflow classification over recorded cross-workspace crossings."""
 from pathlib import Path
 
-from workspaces.mutation_log import LogEvent, MutationLog
-from workspaces.shadow_workflow import (classify_shadow_workflows,
+from rvnd.mutation_log import LogEvent, MutationLog
+from rvnd.shadow_workflow import (classify_shadow_workflows,
                                    SHADOW)
-from workspaces.workflows import Workflow, WorkflowStep, define_workflow
+from rvnd.workflows import Workflow, WorkflowStep, define_workflow
 
 
 def _crossing(folder, lr, source, verdict, pair_ids=("p1",), role="source"):

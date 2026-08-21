@@ -12,7 +12,7 @@ import os
 
 import pytest
 
-from workspaces import seal
+from rvnd import seal
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 

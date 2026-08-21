@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # Copyright 2026 flxk1
-"""Tests for the PreToolUse enforcement hook (``workspaces.hook``).
+"""Tests for the PreToolUse enforcement hook (``rvnd.hook``).
 
 The safety-critical invariants, in order of importance:
   1. A block reaches the host as ``exit 2`` (the only exit it always honours).
@@ -19,7 +19,7 @@ from pathlib import Path
 
 import pytest
 
-from workspaces import hook as H
+from rvnd import hook as H
 
 SRC = Path(__file__).resolve().parents[1] / "src"
 REPO = Path(__file__).resolve().parents[2]
@@ -167,7 +167,7 @@ def _run(stdin: str, env_extra: dict) -> subprocess.CompletedProcess:
     env = dict(os.environ)
     env["PYTHONPATH"] = str(SRC) + os.pathsep + env.get("PYTHONPATH", "")
     env.update(env_extra)
-    return subprocess.run([sys.executable, "-m", "workspaces.hook"],
+    return subprocess.run([sys.executable, "-m", "rvnd.hook"],
                           input=stdin, capture_output=True, text=True, env=env, cwd=str(REPO))
 
 
@@ -209,14 +209,14 @@ def test_install_uninstall_roundtrip(tmp_path):
             {"matcher": "Bash", "hooks": [{"type": "command", "command": "other.sh"}]}]},
     }))
 
-    p = H._install("project", str(tmp_path), 30, command="PY -m workspaces.hook")
+    p = H._install("project", str(tmp_path), 30, command="PY -m rvnd.hook")
     assert p == settings
     data = json.loads(settings.read_text())
     pre = data["hooks"]["PreToolUse"]
     ours = [e for e in pre if H._is_ours(e)]
     assert len(ours) == 1
     assert ours[0]["matcher"] == "*"
-    assert ours[0]["hooks"][0]["command"] == "PY -m workspaces.hook"
+    assert ours[0]["hooks"][0]["command"] == "PY -m rvnd.hook"
     # unrelated settings preserved
     assert data["model"] == "sonnet"
     assert any(e.get("matcher") == "Bash" for e in pre)
@@ -224,7 +224,7 @@ def test_install_uninstall_roundtrip(tmp_path):
     assert (tmp_path / ".claude" / "settings.json.rvnd-bak").exists()
 
     # idempotent: second install adds no duplicate
-    H._install("project", str(tmp_path), 30, command="PY -m workspaces.hook")
+    H._install("project", str(tmp_path), 30, command="PY -m rvnd.hook")
     pre2 = json.loads(settings.read_text())["hooks"]["PreToolUse"]
     assert len([e for e in pre2 if H._is_ours(e)]) == 1
 
@@ -238,21 +238,21 @@ def test_install_uninstall_roundtrip(tmp_path):
 
 
 def test_install_into_absent_settings(tmp_path):
-    p = H._install("project", str(tmp_path), 30, command="py -m workspaces.hook")
+    p = H._install("project", str(tmp_path), 30, command="py -m rvnd.hook")
     data = json.loads(p.read_text())
     assert any(H._is_ours(e) for e in data["hooks"]["PreToolUse"])
 
 
 # ── deinstall wizard ────────────────────────────────────────────────────────
 def test_scan_and_installed_at(tmp_path):
-    p = H._install("project", str(tmp_path), 30, command="py -m workspaces.hook")
+    p = H._install("project", str(tmp_path), 30, command="py -m rvnd.hook")
     assert H._installed_at(p) is True
     scanned = dict((scope, ok) for scope, _, ok in H._scan(str(tmp_path)))
     assert scanned["project"] is True
 
 
 def test_uninstall_wizard_removes_on_confirm(tmp_path, capsys):
-    p = H._install("project", str(tmp_path), 30, command="py -m workspaces.hook")
+    p = H._install("project", str(tmp_path), 30, command="py -m rvnd.hook")
     rc = H._uninstall_wizard(str(tmp_path), assume_yes=False, confirm=lambda s, path: True)
     assert rc == 0
     assert not H._installed_at(p)
@@ -260,7 +260,7 @@ def test_uninstall_wizard_removes_on_confirm(tmp_path, capsys):
 
 
 def test_uninstall_wizard_keeps_on_decline(tmp_path):
-    p = H._install("project", str(tmp_path), 30, command="py -m workspaces.hook")
+    p = H._install("project", str(tmp_path), 30, command="py -m rvnd.hook")
     H._uninstall_wizard(str(tmp_path), assume_yes=False, confirm=lambda s, path: False)
     assert H._installed_at(p)  # declined → still there
 
@@ -272,7 +272,7 @@ def test_uninstall_wizard_nothing_found(tmp_path, capsys):
 
 
 def test_install_registers_both_events(tmp_path):
-    H._install("project", str(tmp_path), 30, command="py -m workspaces.hook")
+    H._install("project", str(tmp_path), 30, command="py -m rvnd.hook")
     data = json.loads((tmp_path / ".claude" / "settings.json").read_text())
     for event in ("PreToolUse", "PostToolUse"):
         assert any(H._is_ours(e) for e in data["hooks"][event]), event
@@ -292,7 +292,7 @@ def test_classify_carries_evidence_spans():
 def test_cert_loop_marks_then_mints_on_approval(tmp_path, monkeypatch):
     monkeypatch.setenv("RVND_HOOK_LOG_ROOT", str(tmp_path))
     captured = {}
-    import workspaces.governance_cert as gc
+    import rvnd.governance_cert as gc
     monkeypatch.setattr(gc, "emit_governance_certification",
                         lambda folder, *, marker, log_root=None:
                         captured.update(folder=folder, marker=marker) or {"ok": True})
@@ -315,7 +315,7 @@ def test_cert_loop_marks_then_mints_on_approval(tmp_path, monkeypatch):
 
 
 def test_governance_cert_predicate_is_grounded_both_sides():
-    from workspaces import governance_cert as gc
+    from rvnd import governance_cert as gc
     marker = {
         "action_class": "shell.exec", "audit_id": "a1", "at": "2026-01-01T00:00:00Z",
         "evidence": [{"tag": "security-control", "matched": "sudo", "start": 0, "end": 4}],
@@ -334,7 +334,7 @@ def test_governance_cert_predicate_is_grounded_both_sides():
 
 
 def test_predicate_carries_grounding_signal_and_traffic_light():
-    from workspaces import governance_cert as gc
+    from rvnd import governance_cert as gc
     for grounded, light in [(False, "amber"), (True, "green")]:
         pred = gc.build_predicate({"action_class": "shell.exec", "at": "t",
                                    "grounded": grounded, "traffic_light": light})
@@ -345,7 +345,7 @@ def test_predicate_carries_grounding_signal_and_traffic_light():
 # ── universal-proxy unification: egress governs through the one chokepoint ───
 def test_govern_egress_composes_through_chokepoint(tmp_path, monkeypatch):
     monkeypatch.setenv("WORKSPACES_ALLOW_UNREGISTERED", "1")
-    from workspaces.governance import govern_egress
+    from rvnd.governance import govern_egress
     clean = govern_egress(str(tmp_path), actor="a", log_root=tmp_path)
     conf = govern_egress(str(tmp_path), actor="a", confidential=True, pii=True, log_root=tmp_path)
     # both flow through decide_action → carry the unified signal (loomground verdict,
@@ -358,7 +358,7 @@ def test_govern_egress_composes_through_chokepoint(tmp_path, monkeypatch):
 
 
 def test_permit_egress_cert_has_no_human_pillar_but_is_enforcement_bound():
-    from workspaces import governance_cert as gc
+    from rvnd import governance_cert as gc
     pred = gc.build_predicate({"action_class": "egress.cloud-llm", "at": "t",
                                "verdict": "permit", "mechanism": "egress-proxy",
                                "grounded": False, "traffic_light": "amber"})
@@ -371,7 +371,7 @@ def test_permit_egress_cert_has_no_human_pillar_but_is_enforcement_bound():
 def test_govern_egress_mints_verifiable_permit_cert(tmp_path, monkeypatch):
     monkeypatch.setenv("WORKSPACES_ALLOW_UNREGISTERED", "1")
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(tmp_path / "keys"))
-    from workspaces import governance_cert as gc
+    from rvnd import governance_cert as gc
     marker = {"at": "2026-01-01T00:00:00Z", "agent": "a", "folder": str(tmp_path),
               "action_class": "egress.cloud-llm", "audit_id": "eg1", "verdict": "permit",
               "mechanism": "egress-proxy", "grounded": False, "traffic_light": "amber"}
@@ -385,8 +385,8 @@ def test_govern_egress_mints_verifiable_permit_cert(tmp_path, monkeypatch):
 
 
 def test_egress_policy_composition_is_escalate_only(monkeypatch):
-    from workspaces.lock import egress_proxy as ep, host_deps
-    from workspaces.lock.gate import GateDecision
+    from rvnd.lock import egress_proxy as ep, host_deps
+    from rvnd.lock.gate import GateDecision
     monkeypatch.setattr(host_deps, "_wired", True)   # skip real wiring; inject our stub
     # policy says BLOCK → escalate a permissive data gate to refuse
     monkeypatch.setattr(host_deps, "govern_egress",
@@ -401,7 +401,7 @@ def test_egress_policy_composition_is_escalate_only(monkeypatch):
 
 
 def test_egress_policy_folder_opt_in(monkeypatch):
-    from workspaces.lock import egress_proxy as ep
+    from rvnd.lock import egress_proxy as ep
     monkeypatch.delenv("RVND_EGRESS_POLICY", raising=False)
     assert ep._egress_policy_folder(object()) is None          # default: off → unchanged
     monkeypatch.setenv("RVND_EGRESS_POLICY", "1")
@@ -412,7 +412,7 @@ def test_egress_policy_folder_opt_in(monkeypatch):
 def test_posttooluse_without_marker_is_noop(tmp_path, monkeypatch):
     monkeypatch.setenv("RVND_HOOK_LOG_ROOT", str(tmp_path))
     called = {"n": 0}
-    import workspaces.governance_cert as gc
+    import rvnd.governance_cert as gc
     monkeypatch.setattr(gc, "emit_governance_certification",
                         lambda *a, **k: called.update(n=called["n"] + 1))
     # a tool that was never HELD → no marker → nothing minted

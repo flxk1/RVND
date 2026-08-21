@@ -23,8 +23,8 @@ from pathlib import Path
 
 import pytest
 
-from workspaces.mutation_log import LogEvent, MutationLog, folder_hash
-from workspaces.workspace_migrate import (
+from rvnd.mutation_log import LogEvent, MutationLog, folder_hash
+from rvnd.workspace_migrate import (
     _MIGRATION_MARKER,
     WorkspaceMigrateError,
     gc_orphans,

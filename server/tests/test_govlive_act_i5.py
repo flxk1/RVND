@@ -38,14 +38,14 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "app"))
 import serve  # noqa: E402
 
-from workspaces import signing  # noqa: E402
-from workspaces import workspace_registry as _registry  # noqa: E402
-from workspaces.approvals import (  # noqa: E402
+from rvnd import signing  # noqa: E402
+from rvnd import workspace_registry as _registry  # noqa: E402
+from rvnd.approvals import (  # noqa: E402
     request_from_reservation, resolve_approval)
-from workspaces.governance_live import governance_live  # noqa: E402
-from workspaces.mutation_log import (  # noqa: E402
+from rvnd.governance_live import governance_live  # noqa: E402
+from rvnd.mutation_log import (  # noqa: E402
     MutationLog, _canonical_event_hash, _signed_bytes)
-from workspaces.parties import register_party  # noqa: E402
+from rvnd.parties import register_party  # noqa: E402
 
 _TOKEN = "govlive-act-test-token"
 _PRINCIPAL_HEADER = "X-Auth-Request-Email"

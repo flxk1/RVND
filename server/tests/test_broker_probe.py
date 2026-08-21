@@ -8,10 +8,10 @@ from __future__ import annotations
 
 import socket
 
-from workspaces import connectors
-from workspaces.lock import OversightLevel
-from workspaces.lock.broker_probe import probe_broker
-from workspaces.lock.egress_proxy import EgressProxy, autonomous_callback
+from rvnd import connectors
+from rvnd.lock import OversightLevel
+from rvnd.lock.broker_probe import probe_broker
+from rvnd.lock.egress_proxy import EgressProxy, autonomous_callback
 
 
 def _free_port() -> int:

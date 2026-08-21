@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import os
 
-from workspaces import card_gate as CG
+from rvnd import card_gate as CG
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 

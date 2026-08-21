@@ -9,7 +9,7 @@ build-loop blocker (mcp_impl defaulted accepted_by → silent disable)."""
 from __future__ import annotations
 import os, tempfile
 
-import workspaces.mcp_server as M
+import rvnd.mcp_server as M
 
 
 def _ws():

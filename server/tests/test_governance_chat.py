@@ -8,8 +8,8 @@ from __future__ import annotations
 
 import os
 
-from workspaces import governance_chat as GC
-from workspaces import governance_map as GM
+from rvnd import governance_chat as GC
+from rvnd import governance_map as GM
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 

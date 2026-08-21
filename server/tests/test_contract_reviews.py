@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from workspaces.contracts import reviews as cr
+from rvnd.contracts import reviews as cr
 
 
 @pytest.fixture
@@ -301,7 +301,7 @@ def test_list_approvals_replay_error_surfaces_not_empty(workspace, monkeypatch):
     wsp, lr = workspace
     cr.request_contract_approval(wsp, contract_id="X", signers=["a"], log_root=lr)
 
-    from workspaces.mutation_log import MutationLog
+    from rvnd.mutation_log import MutationLog
 
     def _boom(self):
         raise OSError("simulated decrypt/IO failure mid-replay")
@@ -340,7 +340,7 @@ def test_replayed_unknown_decision_is_skipped(workspace):
     req = cr.request_contract_approval(wsp, contract_id="X",
                                         signers=["a"], log_root=lr)
     # Forge a signoff event with a bogus decision directly on the log.
-    from workspaces.mutation_log import LogEvent, MutationLog
+    from rvnd.mutation_log import LogEvent, MutationLog
     log = MutationLog(wsp, log_root=lr)
     log.append(LogEvent(
         event="system",

@@ -14,8 +14,8 @@ import tempfile
 
 import pytest
 
-from workspaces import parties as P
-from workspaces import party_resolver as PR
+from rvnd import parties as P
+from rvnd import party_resolver as PR
 
 
 @pytest.fixture
@@ -83,7 +83,6 @@ def test_adapter_overrides_globally(ws):
 
 
 def test_set_resolver_none_restores_local(ws):
-    org, lr = ws
     PR.set_resolver(PR.LocalPartyResolver())
     PR.set_resolver(None)
     assert isinstance(PR.get_resolver(), PR.LocalPartyResolver)

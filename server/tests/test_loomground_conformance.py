@@ -11,7 +11,7 @@ import json
 
 import pytest
 
-from workspaces import loomground_lang as L
+from rvnd import loomground_lang as L
 
 try:
     _LG = L._loomground_core()

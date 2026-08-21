@@ -38,12 +38,12 @@ def _identity_keypair():
     test in a run fails with 'identity trust root unavailable' and later ones
     only pass because an earlier test happened to mint a key — an isolation
     bug. Mint one up front so every test in this module stands alone."""
-    from workspaces import signing
+    from rvnd import signing
     signing.ensure_keypair()
     yield
 
-from workspaces.lock import Finding, OversightLevel
-from workspaces.lock.egress_proxy import (
+from rvnd.lock import Finding, OversightLevel
+from rvnd.lock.egress_proxy import (
     ApprovalDecision,
     EgressProxy,
     GateDecision,
@@ -64,8 +64,8 @@ from workspaces.lock.egress_proxy import (
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
-from workspaces import agent_keys as _agent_keys
-from workspaces import web_bot_auth as _wba
+from rvnd import agent_keys as _agent_keys
+from rvnd import web_bot_auth as _wba
 
 
 # ---------------------------------------------------------------------------
@@ -172,7 +172,7 @@ def test_scan_prompt_with_email_flags_tier_b():
 
 def test_scan_uses_tier_c_via_mock_backend(monkeypatch):
     monkeypatch.setenv("AGENT_TOOL_LOCK_LLM_BACKEND", "mock")
-    from workspaces.lock.tier_c import reset_backend_cache
+    from rvnd.lock.tier_c import reset_backend_cache
     reset_backend_cache()
     findings = scan_prompt("patient prescribed chemotherapy and recovering well")
     assert any(f.tier == "C" for f in findings)
@@ -433,7 +433,7 @@ def test_proxy_writes_audit_log_on_decision(tmp_path):
 def test_proxy_audit_log_records_findings_summary(tmp_path, monkeypatch):
     """End-to-end: prompt with email triggers Tier B; audit records the finding."""
     monkeypatch.setenv("AGENT_TOOL_LOCK_LLM_BACKEND", "mock")
-    from workspaces.lock.tier_c import reset_backend_cache
+    from rvnd.lock.tier_c import reset_backend_cache
     reset_backend_cache()
 
     port = _free_port()
@@ -637,7 +637,7 @@ def test_proxy_waiver_path_logs_waived_findings(tmp_path):
 def test_proxy_audit_records_new_gate_fields(tmp_path, monkeypatch):
     """The audit entry must carry the new gate fields alongside the legacy 'action'."""
     monkeypatch.setenv("AGENT_TOOL_LOCK_LLM_BACKEND", "mock")
-    from workspaces.lock.tier_c import reset_backend_cache
+    from rvnd.lock.tier_c import reset_backend_cache
     reset_backend_cache()
 
     port = _free_port()
@@ -681,7 +681,7 @@ def test_proxy_audit_records_new_gate_fields(tmp_path, monkeypatch):
 def test_proxy_vault_context_refuses_confidential_term(tmp_path, monkeypatch):
     """End-to-end: a vault declares 'Workspaceversum' confidential; a prompt mentioning it refuses."""
     monkeypatch.setenv("AGENT_TOOL_LOCK_LLM_BACKEND", "mock")
-    from workspaces.lock.tier_c import reset_backend_cache
+    from rvnd.lock.tier_c import reset_backend_cache
     reset_backend_cache()
 
     vault = tmp_path / "vault"
@@ -726,8 +726,8 @@ def test_proxy_decisions_store_short_circuits_refusal(tmp_path, monkeypatch):
       2. After decisions.remember(text, allow, scope=always), proxy short-circuits → allow.
     """
     monkeypatch.setenv("AGENT_TOOL_LOCK_LLM_BACKEND", "mock")
-    from workspaces.lock.tier_c import reset_backend_cache
-    from workspaces.lock import DecisionsStore
+    from rvnd.lock.tier_c import reset_backend_cache
+    from rvnd.lock import DecisionsStore
     reset_backend_cache()
 
     decisions_path = tmp_path / "decisions.jsonl"
@@ -777,7 +777,7 @@ def test_proxy_minimise_redacts_request_body_before_forward(tmp_path, monkeypatc
     # mostly returns refuse on HIGH-severity findings under STANDARD mode, so the
     # minimise path is rarely hit through the proxy in practice — but the helper
     # is invoked when it does fire.
-    from workspaces.lock.egress_proxy import redact_body_in_place
+    from rvnd.lock.egress_proxy import redact_body_in_place
 
     body = json.dumps({"messages": [{"role": "user", "content": "write to alice\x40example.com please"}]}).encode()
     redacted = redact_body_in_place(body, "api.anthropic.com")
@@ -788,7 +788,7 @@ def test_proxy_minimise_redacts_request_body_before_forward(tmp_path, monkeypatc
 
 
 def test_minimise_redacts_structured_system_prompt():
-    from workspaces.lock.egress_proxy import redact_body_in_place
+    from rvnd.lock.egress_proxy import redact_body_in_place
 
     body = json.dumps({
         "system": [{"type": "text", "text": "Contact alice\x40example.com"}],
@@ -829,8 +829,8 @@ def test_proxy_blocks_pii_in_structured_system_even_with_clean_message():
 def test_proxy_interactive_callback_persist_marker_remembers_decision(tmp_path, monkeypatch):
     """When the interactive callback returns ['scope:always'], the proxy persists the decision."""
     monkeypatch.setenv("AGENT_TOOL_LOCK_LLM_BACKEND", "mock")
-    from workspaces.lock.tier_c import reset_backend_cache
-    from workspaces.lock import DecisionsStore
+    from rvnd.lock.tier_c import reset_backend_cache
+    from rvnd.lock import DecisionsStore
     reset_backend_cache()
 
     decisions_path = tmp_path / "decisions.jsonl"
@@ -947,7 +947,7 @@ def test_extract_nested_tool_use_input():
 def test_minimise_redacts_new_block_shapes():
     """The minimise path must redact the same shapes extraction scans — else PII
     the scan saw is forwarded unredacted (the D3-panel blocker)."""
-    from workspaces.lock.egress_proxy import redact_body_in_place
+    from rvnd.lock.egress_proxy import redact_body_in_place
     body = json.dumps({"messages": [{"role": "user", "content": [
         {"type": "tool_result", "content": "patient alice\x40example.com"},
         {"type": "tool_use", "input": {"deep": {"mail": "bob\x40example.com"}}},
@@ -1093,7 +1093,7 @@ def test_proxy_attributes_agent_identity_per_request(monkeypatch):
         seen_actors.append(kw.get("actor"))
         return GateDecision(action="allow", reason="test", source="cloud_llm_request")
 
-    monkeypatch.setattr("workspaces.lock.egress_proxy.gate_prompt", spy_gate)
+    monkeypatch.setattr("rvnd.lock.egress_proxy.gate_prompt", spy_gate)
 
     upstream_port = _free_port()
     proxy_port = _free_port()
@@ -1271,7 +1271,7 @@ def test_proxy_audits_verified_identity_end_to_end(monkeypatch, tmp_path):
 
 
 def test_require_verified_env_parsing(monkeypatch):
-    from workspaces.lock.egress_proxy import _require_verified_egress
+    from rvnd.lock.egress_proxy import _require_verified_egress
     monkeypatch.delenv("RVND_REQUIRE_VERIFIED_EGRESS", raising=False)
     assert _require_verified_egress() is False
     for on in ("1", "on", "true", "YES"):

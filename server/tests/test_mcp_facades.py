@@ -15,7 +15,7 @@ from __future__ import annotations
 import asyncio
 import pytest
 
-mcp_server = pytest.importorskip("workspaces.mcp_server")
+mcp_server = pytest.importorskip("rvnd.mcp_server")
 
 FACADES = [
     "workspace_legal", "workspace_folder", "workspace_mirror", "workspace_policy", "workspace_workflow",

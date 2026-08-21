@@ -18,8 +18,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 import serve  # noqa: E402
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "server" / "src"))
-import workspaces.mcp_server as S  # noqa: E402
-from workspaces import use_case as UC  # noqa: E402
+import rvnd.mcp_server as S  # noqa: E402
+from rvnd import use_case as UC  # noqa: E402
 
 EXPECTED = ("no model tier configured", "no local-llm", "not sealed", "no local-llm endpoint")
 

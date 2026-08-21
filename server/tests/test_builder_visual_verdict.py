@@ -4,7 +4,7 @@ import hashlib
 import json
 import struct
 
-from workspaces.release import visual_verdict as POLICY
+from rvnd.release import visual_verdict as POLICY
 
 
 

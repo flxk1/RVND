@@ -2,8 +2,8 @@
 # Copyright 2026 flxk1
 """Fingerprint composition + separation of duties (L4)."""
 
-from workspaces.oversight_extractor import OversightFacet
-from workspaces.oversight_compose import (
+from rvnd.oversight_extractor import OversightFacet
+from rvnd.oversight_compose import (
     ControlChange, compose_facets, binds_grade,
     check_separation, approves_clean)
 

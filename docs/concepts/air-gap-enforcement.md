@@ -9,7 +9,7 @@ actually enable.
 
 ## Tier 1 — code-path enforcement (weakest)
 
-`is_air_gapped()` in `server/src/workspaces/policy.py` reads the folder's
+`is_air_gapped()` in `server/src/rvnd/policy.py` reads the folder's
 `local_llm.mode` and fails closed: a policy file that is present but unreadable,
 malformed, or carries an unrecognised mode counts as air-gapped, so a corrupt
 policy can never silently re-open cloud egress. `workspace_cascade.py` consults

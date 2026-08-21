@@ -6,7 +6,7 @@ sentinel cases pin erasure convergence — a rewrite removes exactly what the
 scan counts, and a re-run finds nothing and changes nothing."""
 from __future__ import annotations
 
-from workspaces.redaction import (
+from rvnd.redaction import (
     REDACTED,
     count_ci,
     redact_value,

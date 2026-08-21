@@ -32,8 +32,8 @@ import os
 
 import pytest
 
-from workspaces.calibration import calibration_report, judge_sample, log_reuse
-from workspaces.parties import register_party, set_party_status
+from rvnd.calibration import calibration_report, judge_sample, log_reuse
+from rvnd.parties import register_party, set_party_status
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 

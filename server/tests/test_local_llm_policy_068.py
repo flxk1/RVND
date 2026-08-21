@@ -3,7 +3,7 @@
 """Tests for the local_llm policy block (0.6.8.2 — re-panel P0).
 
 Validates that the BYOM + air-gap commitment YAML schema is actually parsed
-by ``workspaces.policy``, not just published as design intent. The schema
+by ``rvnd.policy``, not just published as design intent. The schema
 Local model policy:
 
     policy:
@@ -22,7 +22,7 @@ import json
 
 import pytest
 
-from workspaces import (
+from rvnd import (
     FolderPolicy,
     InvalidPolicy,
     LocalLlmPolicy,
@@ -201,7 +201,7 @@ def test_policy_with_route_by_kind_resolves_validator_model(folder, tmp_path, mo
     # Point the registry at a tmp dir so the test is hermetic.
     monkeypatch.setenv("WORKSPACE_MODELS_DIR", str(tmp_path / "models"))
 
-    from workspaces import models_registry
+    from rvnd import models_registry
     models_registry.register_model(
         "phi-3.5-mini-q4",
         role="validator",

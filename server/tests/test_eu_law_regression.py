@@ -18,12 +18,12 @@ The provisions are inlined (not network-fetched) so the test is hermetic.
 
 from __future__ import annotations
 
-from workspaces.nd_routing import DefaultClassifier
-from workspaces.adapters.deontic import OP_PROHIBITION, OP_PERMISSION
-from workspaces.deontic_facets import extract_formulae
-from workspaces.crossref_extractor import extract_cross_references
-from workspaces.decisions.extractor import extract_decisions
-from workspaces.instrument_obligation_extractor import extract_required_artifacts
+from rvnd.nd_routing import DefaultClassifier
+from rvnd.adapters.deontic import OP_PROHIBITION, OP_PERMISSION
+from rvnd.deontic_facets import extract_formulae
+from rvnd.crossref_extractor import extract_cross_references
+from rvnd.decisions.extractor import extract_decisions
+from rvnd.instrument_obligation_extractor import extract_required_artifacts
 
 
 GDPR_ART28 = (

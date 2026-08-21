@@ -24,8 +24,8 @@ import json
 
 import pytest
 
-import workspaces.mcp_server as S
-from workspaces.mcp_impl import decision_build, decision_record
+import rvnd.mcp_server as S
+from rvnd.mcp_impl import decision_build, decision_record
 
 CANDS = [
     {"id": "erase", "label": "Erase everything now",

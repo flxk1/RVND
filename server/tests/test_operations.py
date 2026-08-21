@@ -33,9 +33,9 @@ import os
 
 import pytest
 
-from workspaces.operations import operate, resolve_timeout
-from workspaces.parties import register_party, set_party_status
-from workspaces.use_case import register_use_case
+from rvnd.operations import operate, resolve_timeout
+from rvnd.parties import register_party, set_party_status
+from rvnd.use_case import register_use_case
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 
@@ -98,7 +98,7 @@ def test_missing_contract_grade_is_human_fail_closed(env, monkeypatch):  # O3b
     # Defensive: a (malformed/legacy) use case whose contract carries NO grade must
     # NOT auto-run — an unknown earned autonomy is ungraded, and ungraded never meets
     # the AUTO_GRADE_MIN threshold. Force the gap by doctoring the projection.
-    import workspaces.operations as ops
+    import rvnd.operations as ops
     _register(env, risk="low", approvals=20)          # would be L4 → auto if grade kept
     real = ops.get_use_case(env["ws"], "uc1", log_root=env["lr"])
     real["contract"] = {k: v for k, v in (real.get("contract") or {}).items()
@@ -191,7 +191,7 @@ def test_registered_active_agent_can_operate(env):
 
 def test_agent_registry_read_failure_refuses(env, monkeypatch):
     _register(env, risk="low", approvals=20)
-    import workspaces.parties as parties
+    import rvnd.parties as parties
 
     def _unreadable(*args, **kwargs):
         raise OSError("registry unavailable")

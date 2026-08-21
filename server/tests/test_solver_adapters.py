@@ -2,7 +2,7 @@
 
 from loomground_solver.ports import Governance, NormSource
 
-from workspaces.adapters.solver import (
+from rvnd.adapters.solver import (
     RvndGovernance,
     RvndNormSource,
 )
@@ -51,8 +51,8 @@ def test_governance_conforms_and_records():
 
 
 def test_folder_contract_uses_live_governance_adapter(tmp_path, monkeypatch):
-    from workspaces import reasoning_contract
-    from workspaces.adapters.solver import governance as adapter
+    from rvnd import reasoning_contract
+    from rvnd.adapters.solver import governance as adapter
 
     seen = {}
 

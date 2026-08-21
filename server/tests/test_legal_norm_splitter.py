@@ -13,8 +13,8 @@ exercises actual legal drafting, not synthetic sentences.
 
 from __future__ import annotations
 
-from workspaces import legal_corpus
-from workspaces.rule_registry import RuleRegistry
+from rvnd import legal_corpus
+from rvnd.rule_registry import RuleRegistry
 
 
 # Real GDPR operative text (abridged to a few articles; wording verbatim).
@@ -83,6 +83,6 @@ def test_distinct_articles_are_distinct_rule_items(tmp_path):
 def test_ingest_routes_law_text_to_article_extraction(tmp_path):
     # the public hook recognises GDPR and routes to per-article extraction
     legal_corpus.seed_registry(tmp_path)
-    from workspaces import rule_registry
+    from rvnd import rule_registry
     out = rule_registry.place_into_registry(str(tmp_path), GDPR, source_document="gdpr.txt")
     assert out.get("instrument") == "gdpr" and out["count"] >= 5

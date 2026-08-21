@@ -13,9 +13,9 @@ import json
 
 import pytest
 
-from workspaces import mcp_server as srv
-from workspaces.lock.onboarding.config import Config, load_config, save_config
-from workspaces.lock.tier_c import reset_backend_cache
+from rvnd import mcp_server as srv
+from rvnd.lock.onboarding.config import Config, load_config, save_config
+from rvnd.lock.tier_c import reset_backend_cache
 
 _WIZARD_ENV = ("AGENT_TOOL_LOCK_LLM_BACKEND", "AGENT_TOOL_LOCK_AUDIT_LOG",
                "AGENT_TOOL_LOCK_DEFAULT_MODE", "AGENT_TOOL_LOCK_DEFAULT_OVERSIGHT")

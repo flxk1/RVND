@@ -4,9 +4,9 @@
 
 RVND no longer owns a deontic *language*: the grammar (formula shape, the
 ``O`` / ``P`` / ``F`` operators, incidents, conflict detection) is consumed
-from the ``deontic`` package through :mod:`workspaces.adapters.deontic`. RVND
+from the ``deontic`` package through :mod:`rvnd.adapters.deontic`. RVND
 owns only the *facet extraction* that wires that grammar to its surface reader
-(:mod:`workspaces.deontic_facets`). There is no ``R`` operator — a right is
+(:mod:`rvnd.deontic_facets`). There is no ``R`` operator — a right is
 CONSTRUCTED as ``P`` (privilege) or the correlative ``O`` (claim), carried by
 the Hohfeld incident.
 """
@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces.adapters.deontic import (
+from rvnd.adapters.deontic import (
     DeonticFormula,
     VALID_OPERATORS,
     OP_OBLIGATION,
@@ -24,12 +24,12 @@ from workspaces.adapters.deontic import (
     correlative,
     detect_conflicts,
 )
-from workspaces.deontic_facets import (
+from rvnd.deontic_facets import (
     extract_deontic_pairs,
     extract_formulae,
     formula_from_rule,
 )
-from workspaces.rule_extractor import RuleFacet
+from rvnd.rule_extractor import RuleFacet
 
 
 # --- the consumed grammar is O/P/F only ------------------------------------

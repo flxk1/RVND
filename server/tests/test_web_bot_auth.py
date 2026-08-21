@@ -10,8 +10,8 @@ import time
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
-from workspaces import agent_keys as AK
-from workspaces import web_bot_auth as W
+from rvnd import agent_keys as AK
+from rvnd import web_bot_auth as W
 
 COVERED = ["@authority", "signature-agent"]
 

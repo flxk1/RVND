@@ -10,7 +10,7 @@ stated lex-relation is never auto-resolved into a winner.
 
 import pytest
 
-from workspaces.norm_contract import (
+from rvnd.norm_contract import (
     check_pair, enforce, gate, ContractViolation, Level,
 )
 
