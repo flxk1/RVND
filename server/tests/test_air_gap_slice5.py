@@ -16,7 +16,7 @@ from rvnd.policy import (
     POLICY_FILENAME, LEGACY_POLICY_FILENAME,
     LOCAL_LLM_MODE_LOCAL_ONLY, LOCAL_LLM_MODE_CLOUD_FALLBACK,
 )
-from rvnd import workspace_cascade as CC
+from rvnd import cascade_binding as CC
 
 
 # ── is_air_gapped: verified read, fail-closed on unverifiable ────────────────

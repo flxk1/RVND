@@ -5,9 +5,9 @@
 import os
 from pathlib import Path
 
-from rvnd import cli, workspace_hooks
-from rvnd.workspace_orchestrate import ask_workspace
-from rvnd.workspace_contract import describe_workspace
+from rvnd import cli, hooks
+from rvnd.orchestrate import ask_workspace
+from rvnd.contract import describe_workspace
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 
@@ -24,12 +24,12 @@ def test_access_check_seam_denies_then_resets(tmp_path):
     c = tmp_path / "c"
     _ingest(c, "a.txt", "x", lr)
     try:
-        workspace_hooks.set_access_check(lambda actor, workspace: False)   # overlay: deny all
+        hooks.set_access_check(lambda actor, workspace: False)   # overlay: deny all
         r = ask_workspace("hi", c, log_root=lr)
         assert r["ok"] is False
         assert "access denied" in r["error"]
     finally:
-        workspace_hooks.reset_hooks()
+        hooks.reset_hooks()
     # default restored: not access-denied (may still lack a model tier)
     r2 = ask_workspace("hi", c, log_root=lr)
     assert "access denied" not in (r2.get("error") or "")
@@ -46,12 +46,12 @@ def test_policy_resolver_seam_overrides_context(tmp_path):
         lock_mode = "clean-room"
 
     try:
-        workspace_hooks.set_policy_resolver(lambda folder: _FakePolicy())
+        hooks.set_policy_resolver(lambda folder: _FakePolicy())
         cc = describe_workspace(c, depth=0, log_root=lr)
         assert cc.context["oversight"] == "manual"
         assert cc.governance["oversight"] == "manual"
     finally:
-        workspace_hooks.reset_hooks()
+        hooks.reset_hooks()
 
     # default restored: real policy again (default oversight is "approve")
     cc2 = describe_workspace(c, depth=0, log_root=lr)

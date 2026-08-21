@@ -161,7 +161,7 @@ def test_guard_refuses_before_touching_any_folder(tmp_path):
 # ---- the workspace_session facade (S12 wiring) ---------------------------------
 
 def test_facade_new_materializes_and_registers_beside(tmp_path):
-    from rvnd import mcp_server, workspace_registry as WR
+    from rvnd import mcp_server, registry as WR
     listed = mcp_server.workspace_session("template_list")
     assert listed["ok"]
     assert {"kids-ai", "enterprise-baseline"} <= {t["id"] for t in listed["templates"]}
@@ -178,7 +178,7 @@ def test_facade_new_materializes_and_registers_beside(tmp_path):
 
 
 def test_facade_mode_none_skips_the_registry(tmp_path):
-    from rvnd import mcp_server, workspace_registry as WR
+    from rvnd import mcp_server, registry as WR
     rlr = str(tmp_path / "registry")
     out = mcp_server.workspace_session("template_new", {
         "template_id": "kids-ai", "dest_root": str(tmp_path / "env"),

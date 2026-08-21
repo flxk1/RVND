@@ -431,7 +431,7 @@ def governance_netlist(folder_context: str, log_root: Optional[str] = None) -> d
 def governance_register_all(log_root: Optional[str] = None) -> dict[str, Any]:
     """Aggregate the register across every known workspace (read-only compose)."""
     try:
-        from .workspace_registry import list_known_workspaces
+        from .registry import list_known_workspaces
         ws = list_known_workspaces(log_root=log_root)
     except Exception:
         ws = []

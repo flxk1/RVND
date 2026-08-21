@@ -14,7 +14,7 @@ import os
 
 import pytest
 
-from rvnd.workspace_grounder import GroundingLedger
+from rvnd.grounder import GroundingLedger
 
 
 @pytest.fixture()
@@ -214,7 +214,7 @@ def test_classify_creator_roles_proposes_never_overwrites(ledger, monkeypatch):
 
 
 def test_classify_creator_roles_drives_citation_formatting(ledger, monkeypatch):
-    from rvnd.workspace_grounder import format_citation
+    from rvnd.grounder import format_citation
     w = ledger.register_work(title="Report", url="https://x.test/r", date="2024",
                              creators=[{"name": "European Data Protection Board"}])
     import rvnd.local_llm as ll

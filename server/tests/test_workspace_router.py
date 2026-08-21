@@ -5,7 +5,7 @@ no model/embedding, wall-respecting."""
 
 from __future__ import annotations
 
-from rvnd import workspace_router, seal, workspace_lock, workspace_registry
+from rvnd import router, seal, seal_binding, registry
 from rvnd.memory import WorkspaceMemory
 
 
@@ -29,14 +29,14 @@ def test_router_ranks_by_concept(tmp_path, monkeypatch):
     _seed(fin, logr, ["invoice vat payment for client", "royalty statement payout"])
     _seed(law, logr, ["ai act annex high-risk obligations", "gdpr dpia controller"])
 
-    r = workspace_router.route("prepare an invoice with vat", [str(fin), str(law)], log_root=logr)
+    r = router.route("prepare an invoice with vat", [str(fin), str(law)], log_root=logr)
     assert r and r[0]["folder"] == str(fin)
 
-    r2 = workspace_router.route("hiring agent high-risk under the ai act", [str(fin), str(law)], log_root=logr)
+    r2 = router.route("hiring agent high-risk under the ai act", [str(fin), str(law)], log_root=logr)
     assert r2 and r2[0]["folder"] == str(law)
 
     # zero-overlap query drops everything
-    assert workspace_router.route("zzzqqq nonsense", [str(fin), str(law)], log_root=logr) == []
+    assert router.route("zzzqqq nonsense", [str(fin), str(law)], log_root=logr) == []
 
 
 def test_router_sealed_locked_is_label_only(tmp_path, monkeypatch):
@@ -45,20 +45,20 @@ def test_router_sealed_locked_is_label_only(tmp_path, monkeypatch):
     fin = tmp_path / "Finance"; fin.mkdir()
     _seed(fin, logr, ["invoice vat payment"])
     seal.seal_folder(fin, passphrase="pw", log_root=logr)
-    workspace_lock.lock(fin, log_root=logr)
+    seal_binding.lock(fin, log_root=logr)
 
-    sig, label_only = workspace_router.signature_for_workspace(str(fin), log_root=logr, label="Finance")
+    sig, label_only = router.signature_for_workspace(str(fin), log_root=logr, label="Finance")
     assert label_only is True and "finance" in sig          # name token still routes
     assert "invoice" not in sig                              # sealed content not leaked
 
-    r = workspace_router.route("finance", [str(fin)], log_root=logr)
+    r = router.route("finance", [str(fin)], log_root=logr)
     assert r and r[0]["label_only"] is True
 
     # unlock → content now contributes
-    workspace_lock.unlock(fin, passphrase="pw", log_root=logr)
-    sig2, lo2 = workspace_router.signature_for_workspace(str(fin), log_root=logr, label="Finance")
+    seal_binding.unlock(fin, passphrase="pw", log_root=logr)
+    sig2, lo2 = router.signature_for_workspace(str(fin), log_root=logr, label="Finance")
     assert lo2 is False and "invoice" in sig2
-    workspace_lock.lock(fin, log_root=logr)
+    seal_binding.lock(fin, log_root=logr)
 
 
 def test_route_to_workspace_tool(tmp_path, monkeypatch):
@@ -71,8 +71,8 @@ def test_route_to_workspace_tool(tmp_path, monkeypatch):
     law = tmp_path / "Legal"; law.mkdir()
     _seed(fin, logr, ["invoice vat payment"])
     _seed(law, logr, ["ai act annex high-risk"])
-    workspace_registry.add_known_workspace(str(fin), label="Finance", log_root=logr)
-    workspace_registry.add_known_workspace(str(law), label="Legal", log_root=logr)
+    registry.add_known_workspace(str(fin), label="Finance", log_root=logr)
+    registry.add_known_workspace(str(law), label="Legal", log_root=logr)
 
     out = rtc("invoice vat")
     assert out["ok"] and out["count"] >= 1

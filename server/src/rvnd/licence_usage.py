@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any, Iterable, Optional
 
 from .mutation_log import MutationLog
-from .workspace_registry import list_known_workspaces
+from .registry import list_known_workspaces
 
 
 def _legacy_uid(folder: str, party_id: str) -> str:
