@@ -22,9 +22,10 @@ not the steps.
    is inferred that the text does not carry.
 2. **Lower — engine first.** If RVND is present and the folder is governed, lower through its own
    ingest → versum → solver. The result is a precise, signable Subgraph; skip to *report*.
-3. **Lower — fallback.** Otherwise run the ingest-plane ingesters (`GovernanceIngester`,
-   `DeonticIngester`, and the legal / factual / epistemic grammars). This is deterministic and
-   **coarse** — it will mis-resolve bearers, miss conditions, drop edges.
+3. **Lower — fallback (delegate).** Otherwise delegate to the free plane skills — `loomground-ingest`
+   to drive the lowering, `deontic` for the norm facet, `loomground` for the governance patch + the
+   express/policy/host litmus — and assemble their output. This deterministic pass is **coarse** — it
+   will mis-resolve bearers, miss conditions, drop edges. This skill does not re-author it.
 4. **Enrich, in-grammar.** The cloud LLM corrects the coarse graph — the bearer, the conditions, the
    deadlines, the legal cross-references — producing *valid plane objects* (a well-formed
    `DeonticFormula`, a governance patch that validates against `schema('patch')`). It never introduces
@@ -47,7 +48,7 @@ its authority is not, until the engine and a person ratify it.
 
 ## Guardrails
 
-- **Consume, don't regrow** — the lowering belongs to the planes; a meaning with no construct is a
+- **Delegate, don't regrow** — the lowering belongs to the plane skills (`loomground-ingest`, `deontic`, `loomground`); this skill assembles and enriches, never re-authors. A meaning with no construct is a
   residual.
 - **Local-first** — the engine's lowering wins when present; the LLM path is the labelled fallback,
   never the default.
