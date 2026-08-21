@@ -1,0 +1,48 @@
+# Loomground manifest for onboard-a-policy.
+# Brings a written policy/regulation/contract into governance by lowering it into the
+# shared dimensioned Subgraph through the loomground ingest plane, then handing the
+# validated graph to sign-off. Consumes the planes; never regrows a lowering; never
+# applies or signs (applying is a separate governed step).
+name: onboard-a-policy
+loomground_governance: 0.8.3
+loomground:
+  reads:
+    - actor
+    - human
+    - gate
+    - master
+    - authority
+    - reservation
+    - quorum
+    - prohibition
+    - obligation
+    - temporal
+    - egress-obligation
+    - redress
+    - party
+    - delegation
+    - autonomy-grade
+  proposes:
+    - reservation
+    - prohibition
+    - obligation
+    - redress
+  never_applies_directly: true
+  read_only: false
+# Consumed planes (installed, verified) — the lowering is theirs, not this skill's.
+consumes:
+  ingest: loomground_ingest        # GovernanceIngester, DeonticIngester, DimensionedSubgraphSink; ALLOWED_FACETS {5D,nD}
+  deontic_norm: loomground_norm    # DeonticFormula, operators O/P/F, Hohfeldian incidents
+  legal: loomground_legal          # Anchor / ApplicableLaw / Citation — source hierarchy, precedence
+  factual: loomground_factual
+  epistemic: loomground_epistemic
+  governance_grammar: loomground_governance   # schema('patch'), language_card
+cascade: local-first   # engine lowering when present; else ingest-plane + in-grammar LLM enrichment
+# Real MCP surface used when the engine IS present (verified names). See ../../references/catalogue.md.
+rvnd:
+  discovery: workspace_workflow(op="help")
+  tools:
+    - tool: workspace_workflow
+      ops: [policy_ingest, governance_netlist, patch_validate]
+confirmation:
+  mutations: none        # onboarding ends at a validated graph; applying/signing is sign-off + the engine

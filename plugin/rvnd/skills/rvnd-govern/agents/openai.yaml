@@ -1,4 +1,0 @@
-interface:
-  display_name: "RVND Govern"
-  short_description: "Run an action through RVND's governance cycle"
-  default_prompt: "Use $rvnd-govern to put this action through RVND: query the lane, propose it, let the server validate, preview, confirm, apply, and display the verdict."

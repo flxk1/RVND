@@ -1,4 +1,0 @@
-interface:
-  display_name: "Reason Governance Rules"
-  short_description: "Get a governed action verdict from RVND"
-  default_prompt: "Use $reason-governance-rules to check this action against the active RVND governance lane and show the server's evidence."
