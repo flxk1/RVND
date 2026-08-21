@@ -54,3 +54,23 @@ def test_a_principal_set_through_the_legacy_path_reaches_enforcement():
     assert seen is not None and seen.get("principal") == "intruder", (
         "a principal set through the legacy import path was invisible to the "
         "enforcement path — the per-principal scope would fail OPEN")
+
+
+def test_dash_m_under_the_legacy_name_refuses_clearly():
+    """The alias covers imports, not `python -m`.
+
+    Running an aliased package as a script re-enters it under the old name, so
+    its relative imports resolve above the package and fail. Supporting that
+    means rewriting __package__ and the parent chain — a lot of import machinery
+    for a legacy spelling. It refuses and names the command to run instead,
+    because the alternative was an AttributeError from inside runpy that says
+    nothing about what to do.
+    """
+    import subprocess
+    import sys
+
+    r = subprocess.run([sys.executable, "-m", "workspaces.cli", "--version"],
+                       capture_output=True, text=True)
+    assert r.returncode != 0
+    assert "python -m rvnd.cli" in (r.stderr + r.stdout), (
+        "the refusal must name the supported command, not just fail")

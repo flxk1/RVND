@@ -20,7 +20,7 @@ Real-transport evidence crosses a process/serialization boundary:
 
 | transport | boundary crossed | committed test |
 |---|---|---|
-| CLI | `python -m workspaces.cli` subprocess (argv in, text/exit out) | `server/tests/test_cli_channel.py` |
+| CLI | `python -m rvnd.cli` subprocess (argv in, text/exit out) | `server/tests/test_cli_channel.py` |
 | MCP stdio | started MCP host; `ClientSession` initialize → `call_tool` → deserialize | `server/tests/integration/test_host_mcp_protocol.py` |
 | HTTP `/tool` | booted `serve.py`; jsdom `fetch('/tool')` from the console | `app/{shell,panels}/*_render_test.py` (reconciled in `app/tests/ui_walk_reconcile_test.py`) |
 

@@ -65,6 +65,22 @@ class _SubmoduleAlias(importlib.abc.MetaPathFinder, importlib.abc.Loader):
     def exec_module(self, module):
         pass                                # already executed as rvnd.<name>
 
+    def get_code(self, fullname):
+        """`python -m workspaces.<mod>` asks the loader for code instead of
+        importing, and would otherwise die on AttributeError deep in runpy.
+
+        The alias covers IMPORTS, not `-m`. Running an aliased package as a
+        script re-enters it under the old name, so its relative imports resolve
+        one level above the package and fail — supporting that properly means
+        rewriting __package__ and the parent chain, which is a lot of import
+        machinery for a legacy spelling. So it refuses clearly and says what to
+        run instead, rather than failing somewhere unrecognisable.
+        """
+        raise ImportError(
+            f"`python -m {fullname}` is not supported: `workspaces` is a "
+            f"compatibility alias for `rvnd`, and it covers imports, not `-m`. "
+            f"Run `python -m rvnd.{fullname[len(self._PREFIX):]}` instead.")
+
 
 # Returning `rvnd.X` under the name `workspaces.X` is exactly what makes the two
 # names one object, and it is also what CPython's import machinery notices: it
