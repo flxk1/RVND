@@ -1,0 +1,177 @@
+#!/usr/bin/env python3
+"""rvnd-verify — offline linkage check of an RVND audit chain / receipt.
+
+RVND's audit record is a per-folder Ed25519-signed hash chain. FULL verification
+(recomputing each content hash under RFC 8785 canonicalisation and checking the
+Ed25519 signatures) requires the signing/canonicalising libraries the engine
+ships. This floor verifies what CAN be verified honestly offline and states
+precisely which checks ran:
+
+  * linkage contiguity  — always, stdlib only. Each entry's prev-hash must equal
+    the previous entry's hash; the first entry's prev-hash must be null/genesis.
+    A broken link is tamper-evidence and fails the tool (exit 5).
+  * signature           — only if `cryptography` is importable AND an entry
+    carries public_key + signature + a signed body. Otherwise reported as
+    "not checked", never as passed.
+
+Field names are read tolerantly: hash|entry_hash, prev_hash|prev, signature|sig,
+public_key|pubkey, body|payload. Input is a single entry, or a chain as a list,
+or {"chain": [...]} (stdin or a file path arg).
+
+When real RVND is installed, the mode line points you at `workspaces audit-tail`
+for the authoritative, signed verification. Exit: 0 linkage-ok, 5 linkage-broken,
+2 malformed.
+"""
+from __future__ import annotations
+
+import hashlib
+import pathlib
+import sys
+from typing import Any
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent / "scripts"))
+from rvnd_floor_lib import die, emit, mode_line, probe_engine, read_json_arg  # noqa: E402
+
+_OK, _BROKEN, _MALFORMED = 0, 5, 2
+
+
+def _get(entry: dict[str, Any], *names: str) -> Any:
+    for n in names:
+        if n in entry:
+            return entry[n]
+    return None
+
+
+def _as_chain(doc: Any) -> list[dict[str, Any]]:
+    if isinstance(doc, dict) and "chain" in doc:
+        # A {"chain": ...} wrapper must wrap a list; anything else is malformed
+        # rather than a single entry that happens to carry a 'chain' key.
+        if not isinstance(doc["chain"], list):
+            raise ValueError("'chain' must be a list of entries")
+        doc = doc["chain"]
+    elif isinstance(doc, dict):
+        doc = [doc]
+    if not isinstance(doc, list) or not all(isinstance(e, dict) for e in doc):
+        raise ValueError("input must be an entry object, a list of entries, or {chain:[...]}")
+    if not doc:
+        raise ValueError("empty chain")
+    # Every entry must carry a hash; linkage over a hashless entry would be a
+    # meaningless "pass", which is exactly the silent overclaim we forbid.
+    for i, entry in enumerate(doc):
+        if not _get(entry, "hash", "entry_hash"):
+            raise ValueError(f"entry {i} has no hash field; cannot verify linkage")
+    return doc
+
+
+def _try_signature_verifier():
+    """Return an Ed25519 verify callable if `cryptography` is available, else None.
+    We do not hand-roll crypto in the floor."""
+    try:
+        from cryptography.hazmat.primitives.asymmetric.ed25519 import (
+            Ed25519PublicKey,
+        )
+    except Exception:
+        return None
+
+    def _verify(pubkey_hex: str, sig_hex: str, body: bytes) -> bool:
+        try:
+            key = Ed25519PublicKey.from_public_bytes(bytes.fromhex(pubkey_hex))
+            key.verify(bytes.fromhex(sig_hex), body)
+            return True
+        except Exception:
+            return False
+
+    return _verify
+
+
+def verify(doc: Any) -> tuple[dict[str, Any], int]:
+    chain = _as_chain(doc)
+    verifier = _try_signature_verifier()
+
+    linkage_ok = True
+    broken_at: int | None = None
+    prev_hash: Any = None
+    sig_checked = 0
+    sig_failed: list[int] = []
+    sig_present = 0
+
+    for i, entry in enumerate(chain):
+        this_hash = _get(entry, "hash", "entry_hash")
+        this_prev = _get(entry, "prev_hash", "prev")
+
+        if i == 0:
+            if this_prev not in (None, "", "genesis", "0", "GENESIS"):
+                linkage_ok, broken_at = False, i
+                break
+        elif this_prev != prev_hash:
+            linkage_ok, broken_at = False, i
+            break
+        prev_hash = this_hash
+
+        # Signature: only when a verifier and all parts exist.
+        pub = _get(entry, "public_key", "pubkey")
+        sig = _get(entry, "signature", "sig")
+        body = _get(entry, "body", "payload")
+        if pub and sig and body is not None:
+            sig_present += 1
+            if verifier is not None:
+                raw = body.encode("utf-8") if isinstance(body, str) else \
+                    hashlib.sha256(repr(body).encode("utf-8")).digest()
+                if verifier(str(pub), str(sig), raw):
+                    sig_checked += 1
+                else:
+                    sig_failed.append(i)
+
+    checks = ["linkage-contiguity"]
+    notes: list[str] = []
+    if verifier is None:
+        notes.append(
+            "signature: NOT checked — `cryptography` unavailable offline. "
+            "Install the engine for authoritative signed verification."
+        )
+    else:
+        checks.append("ed25519-signature")
+        if sig_present == 0:
+            notes.append("signature: no signed bodies present to check")
+        else:
+            notes.append(
+                f"signature: checked {sig_checked}/{sig_present}"
+                + (f", FAILED at {sig_failed}" if sig_failed else "")
+            )
+        # Without RFC 8785 we cannot guarantee our body bytes match the signer's
+        # canonical form; say so rather than over-claim.
+        notes.append(
+            "signature basis: raw/utf-8 body — RFC 8785 canonicalisation not "
+            "reproduced offline; treat a pass as indicative, not authoritative"
+        )
+
+    ok = linkage_ok and not sig_failed
+    payload: dict[str, Any] = {
+        "entries": len(chain),
+        "linkage_ok": linkage_ok,
+        "checks_run": checks,
+        "authoritative": False,
+        "notes": notes,
+    }
+    if not linkage_ok:
+        payload["broken_at_entry"] = broken_at
+    if sig_failed:
+        payload["signature_failed_entries"] = sig_failed
+    return payload, (_OK if ok else _BROKEN)
+
+
+def main(argv: list[str]) -> int:
+    try:
+        doc = read_json_arg(argv)
+    except Exception as exc:
+        return die(f"could not read JSON input: {exc}", _MALFORMED)
+    try:
+        payload, code = verify(doc)
+    except ValueError as exc:
+        return die(str(exc), _MALFORMED)
+    emit(payload, mode_line(probe_engine(), verb="verify"))
+    return code
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv[1:]))

@@ -1,0 +1,28 @@
+#!/usr/bin/env python3
+"""rvnd-lint — validate an RVND surface card / composition / proposal / delta /
+observation. Thin launcher over the canonical linter in
+skills/rvnd-build-surface/scripts/lint_surface.py so there is ONE implementation.
+
+That linter is already adaptive: a complete stdlib structural floor always runs,
+and if `jsonschema` is installed it additionally runs full JSON-Schema
+validation against the bundled schemas. Validation is never silently downgraded.
+
+Usage: rvnd-lint [FILE|-]   (reads stdin when FILE is '-' or absent)
+"""
+from __future__ import annotations
+
+import pathlib
+import runpy
+import sys
+
+_PLUGIN_ROOT = pathlib.Path(__file__).resolve().parent.parent
+_LINTER = _PLUGIN_ROOT / "skills" / "rvnd-build-surface" / "scripts" / "lint_surface.py"
+
+if not _LINTER.is_file():
+    print(f"error: canonical linter not found at {_LINTER}", file=sys.stderr)
+    raise SystemExit(2)
+
+# Hand argv straight through and run the canonical linter in-process so its exit
+# code (fail-closed on any violation) is ours.
+sys.argv = [str(_LINTER), *sys.argv[1:]]
+runpy.run_path(str(_LINTER), run_name="__main__")
