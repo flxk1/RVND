@@ -1,0 +1,97 @@
+#!/usr/bin/env python3
+"""rvnd-attest — build the boundary attestation (the plugin/offline version).
+
+One accountability record spanning the whole rvnd boundary. This is the FLOOR
+version: it fills only the DECLARED, host-attested fields (provider, models,
+user, tokens) and leaves EVERY authoritative field null — because the plugin
+cannot enforce, cannot read RVND's decision record, and cannot sign the chain.
+Null, never fabricated.
+
+The authoritative version (boundaries kept, policy fingerprint, verified
+identity, signed chain link) is produced only by the real RVND engine. When the
+engine is present this tool says so and points at it, but it still emits only the
+advisory version itself — it never fills an authoritative field it cannot stand
+behind.
+
+Input (stdin or a file path): the declared provenance the host knows.
+  {
+    "boundary": {"scope": "/companies/acme/HR/", "session_id": "s-1"},
+    "declared": {"provider": "anthropic", "models": ["claude-opus-4-8"],
+                 "user": "f@nullpunktrec.eu", "tokens": {"input": 1000, "output": 500}}
+  }
+"""
+from __future__ import annotations
+
+import pathlib
+import sys
+from typing import Any
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent / "scripts"))
+from rvnd_floor_lib import die, emit, mode_line, probe_engine, read_json_arg  # noqa: E402
+
+
+def build(doc: Any) -> dict[str, Any]:
+    if not isinstance(doc, dict):
+        raise ValueError("top-level value must be an object")
+    boundary = doc.get("boundary") or {}
+    declared_in = doc.get("declared") or {}
+    if not isinstance(boundary, dict) or not boundary.get("scope"):
+        raise ValueError("boundary.scope is required")
+    if not isinstance(declared_in, dict):
+        raise ValueError("declared must be an object")
+
+    tokens = declared_in.get("tokens")
+    return {
+        "kind": "rvnd-boundary-attestation",
+        "schemaVersion": 1,
+        "mode": "advisory-plugin",
+        "boundary": {
+            "scope": boundary["scope"],
+            "session_id": boundary.get("session_id"),
+            "opened_ts": boundary.get("opened_ts"),
+            "closed_ts": boundary.get("closed_ts"),
+        },
+        "declared": {
+            "provider": declared_in.get("provider"),
+            "models": declared_in.get("models"),
+            "user": declared_in.get("user"),
+            "tokens": {
+                "input": (tokens or {}).get("input"),
+                "output": (tokens or {}).get("output"),
+            } if tokens is not None else None,
+            "attested_not_verified": True,
+        },
+        # Mirror of governance_live's keys, all null: the plugin cannot run the
+        # engine's board, so it fills none of them.
+        "authoritative": {
+            "ok": None,
+            "summary": None,
+            "sessions": None,
+            "leases": None,
+            "chain": None,
+            "certificates": None,
+            "reconciliation": None,
+        },
+    }
+
+
+def main(argv: list[str]) -> int:
+    try:
+        doc = read_json_arg(argv)
+    except Exception as exc:
+        return die(f"could not read JSON input: {exc}", 2)
+    try:
+        payload = build(doc)
+    except ValueError as exc:
+        return die(str(exc), 2)
+
+    engine = probe_engine()
+    line = mode_line(engine, verb="attest")
+    if engine.get("present") and engine.get("compatible"):
+        line += "\nnote: the AUTHORITATIVE, signed attestation is available from the engine (workspace_audit) — this tool still emits only the advisory version"
+    emit(payload, line)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv[1:]))

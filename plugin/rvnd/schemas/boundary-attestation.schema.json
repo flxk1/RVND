@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://loomground.local/schemas/boundary-attestation.schema.json",
+  "title": "RVND boundary attestation",
+  "description": "One accountability record spanning the whole rvnd plugin boundary. Two field groups with different trust: DECLARED is host-attested and NOT verified by RVND; AUTHORITATIVE mirrors the EXACT output of the real engine's governance_live board (server/src/rvnd/governance_live.py) and is filled ONLY by the engine. The plugin (offline) version fills DECLARED and leaves every AUTHORITATIVE field null — never fabricated. Which mode produced the record is always stated.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "schemaVersion", "mode", "boundary", "declared", "authoritative"],
+  "properties": {
+    "kind": { "const": "rvnd-boundary-attestation" },
+    "schemaVersion": { "const": 1 },
+    "mode": {
+      "description": "advisory-plugin = offline floor, AUTHORITATIVE fields null, unsigned. authoritative-rvnd = engine-filled from governance_live.",
+      "enum": ["advisory-plugin", "authoritative-rvnd"]
+    },
+    "boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scope"],
+      "properties": {
+        "scope": { "type": "string", "description": "folder_context the boundary covers" },
+        "session_id": { "type": ["string", "null"] },
+        "opened_ts": { "type": ["number", "null"] },
+        "closed_ts": { "type": ["number", "null"] }
+      }
+    },
+    "declared": {
+      "description": "Host-attested provenance. RVND records what was DECLARED; it does not confirm it (non-punitive disclosure: it says they SAID it, not that they WERE it). These are NOT in governance_live because RVND does not capture them.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["attested_not_verified"],
+      "properties": {
+        "provider": { "type": ["string", "null"], "description": "e.g. anthropic, openai" },
+        "models": { "type": ["array", "null"], "items": { "type": "string" } },
+        "user": { "type": ["string", "null"] },
+        "tokens": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "properties": { "input": { "type": ["integer", "null"] }, "output": { "type": ["integer", "null"] } }
+        },
+        "attested_not_verified": { "const": true }
+      }
+    },
+    "authoritative": {
+      "description": "EXACT mirror of governance_live's return (governance_live.py:277). Filled ONLY by the real engine; every field is null in the plugin version. Fields verified by reading the return assembly AND running the op.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ok", "summary", "sessions", "leases", "chain", "certificates", "reconciliation"],
+      "properties": {
+        "ok": { "type": ["boolean", "null"] },
+        "summary": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "properties": {
+            "sessions_open": { "type": "integer" },
+            "admitted": { "type": "integer" },
+            "run_leases_held": { "type": "integer" },
+            "escalations": { "type": "integer" },
+            "unauthorised_effects": { "type": "integer" }
+          }
+        },
+        "sessions": {
+          "description": "Per governance session (governance_live.py:_sessions). Derived by GovernanceSessionOpened replay; verdict/grade/escalation from lane_capabilities (strictest-wins, fail-closed refused).",
+          "type": ["array", "null"],
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "sid": { "type": "string" },
+              "admitted": { "type": "boolean" },
+              "verdict": { "type": ["string", "null"] },
+              "grade": { "type": ["string", "null"] },
+              "escalation": { "type": "boolean" },
+              "folder_context": { "type": "string" },
+              "expires": { "type": ["string", "null"] }
+            }
+          }
+        },
+        "leases": {
+          "description": "Run-leases that serialize workflow execution (queue.list_queue).",
+          "type": ["array", "null"],
+          "items": { "type": "object", "additionalProperties": true, "properties": { "run_id": { "type": "string" } } }
+        },
+        "chain": {
+          "description": "Contiguous replay tail of the signed mutation-log (governance_live.py:_chain). chain[i].prev_hash == chain[i+1].hash.",
+          "type": ["array", "null"],
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "seq": { "type": "integer" },
+              "actor": { "type": "string" },
+              "extra": { "type": "string", "description": "the event kind" },
+              "hash": { "type": "string" },
+              "prev_hash": { "type": "string" }
+            }
+          }
+        },
+        "certificates": {
+          "description": "Portable oversight certificates persisted beside the chain ({audit_id, certificate}).",
+          "type": ["array", "null"],
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": { "audit_id": { "type": "string" }, "certificate": {} }
+          }
+        },
+        "reconciliation": {
+          "description": "Effect-reconciliation: authorisation ledger vs observed effects (complete-mediation evidence).",
+          "type": ["object", "null"],
+          "additionalProperties": true,
+          "properties": {
+            "status": { "type": "string" },
+            "unauthorised_rate": { "type": "number" },
+            "matched": { "type": "integer" },
+            "authorised_not_observed": { "type": "integer" },
+            "observed_not_authorised": { "type": "integer" }
+          }
+        }
+      }
+    }
+  }
+}

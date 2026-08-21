@@ -1,0 +1,32 @@
+{
+  "authoritative": {
+    "certificates": null,
+    "chain": null,
+    "leases": null,
+    "ok": null,
+    "reconciliation": null,
+    "sessions": null,
+    "summary": null
+  },
+  "boundary": {
+    "closed_ts": null,
+    "opened_ts": null,
+    "scope": "/companies/acme/HR/",
+    "session_id": "s-1"
+  },
+  "declared": {
+    "attested_not_verified": true,
+    "models": [
+      "claude-opus-4-8"
+    ],
+    "provider": "anthropic",
+    "tokens": {
+      "input": 1000,
+      "output": 500
+    },
+    "user": "f@nullpunktrec.eu"
+  },
+  "kind": "rvnd-boundary-attestation",
+  "mode": "advisory-plugin",
+  "schemaVersion": 1
+}

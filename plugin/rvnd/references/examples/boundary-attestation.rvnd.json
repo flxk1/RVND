@@ -1,0 +1,22 @@
+{
+  "kind": "rvnd-boundary-attestation",
+  "schemaVersion": 1,
+  "mode": "authoritative-rvnd",
+  "boundary": { "scope": "/companies/acme/HR/", "session_id": "s-1", "opened_ts": 1716230400.1, "closed_ts": 1716234000.9 },
+  "declared": {
+    "provider": "anthropic", "models": ["claude-opus-4-8"], "user": "f@nullpunktrec.eu",
+    "tokens": { "input": 1000, "output": 500 }, "attested_not_verified": true
+  },
+  "authoritative": {
+    "ok": true,
+    "summary": { "sessions_open": 1, "admitted": 1, "run_leases_held": 1, "escalations": 0, "unauthorised_effects": 0 },
+    "sessions": [ { "sid": "sess-abc", "admitted": true, "verdict": "auto", "grade": "L2", "escalation": false, "folder_context": "/companies/acme/HR/", "expires": "2026-05-20T18:00:00Z" } ],
+    "leases": [ { "run_id": "run-7" } ],
+    "chain": [
+      { "seq": 0, "actor": "agent:rvnd-govern", "extra": "GovernanceSessionOpened", "hash": "sha256:aaa", "prev_hash": "" },
+      { "seq": 1, "actor": "agent:rvnd-govern", "extra": "mcp_tool_call_descriptor", "hash": "sha256:bbb", "prev_hash": "sha256:aaa" }
+    ],
+    "certificates": [ { "audit_id": "uuid-1", "certificate": "oversight-cert-b64" } ],
+    "reconciliation": { "status": "reconciled", "unauthorised_rate": 0.0, "matched": 2, "authorised_not_observed": 0, "observed_not_authorised": 0 }
+  }
+}
