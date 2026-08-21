@@ -42,13 +42,6 @@
       ]
     },
     {
-      "name": "governance-audit",
-      "path": "skills/governance-audit",
-      "provides": [
-        "rvnd.governance-audit"
-      ]
-    },
-    {
       "name": "rvnd-incident",
       "path": "skills/rvnd-incident",
       "provides": [
@@ -104,10 +97,6 @@
       "mode": "read-write",
       "humanConfirmation": true
     },
-    "rvnd.governance-audit": {
-      "mode": "read",
-      "humanConfirmation": false
-    },
     "rvnd.incident": {
       "mode": "read-write",
       "humanConfirmation": true
@@ -147,7 +136,7 @@
       "interface": {
         "displayName": "RVND Governance",
         "shortDescription": "Drive the RVND governance MCP server safely",
-        "longDescription": "Ten composable skills drive RVND's typed governance cycle, policy extraction and validation, governed action decisions, conflict handling, oversight, audit verification, whole-console governance reporting, incident response, and surface linting. The server decides and the host renders, so a request is never shown as a grant.",
+        "longDescription": "Nine composable skills drive RVND's typed governance cycle, policy extraction and validation, governed action decisions, conflict handling, oversight, audit verification, incident response, and surface linting. The server decides and the host renders, so a request is never shown as a grant.",
         "developerName": "Flxk1",
         "category": "Productivity",
         "capabilities": [
