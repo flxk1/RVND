@@ -29,15 +29,18 @@ loomground:
     - redress
   never_applies_directly: true
   read_only: false
-# Consumed planes (installed, verified) — the lowering is theirs, not this skill's.
-consumes:
-  ingest: loomground_ingest        # GovernanceIngester, DeonticIngester, DimensionedSubgraphSink; ALLOWED_FACETS {5D,nD}
-  deontic_norm: loomground_norm    # DeonticFormula, operators O/P/F, Hohfeldian incidents
+# Delegates the lowering to the free loomground-marketplace plane SKILLS — the lowering is theirs,
+# not this skill's. This skill orchestrates and assembles; it never re-authors a plane's job.
+delegates_to:
+  ingest: loomground-ingest        # drive the network-free ingest plane -> a dimensioned Subgraph
+  deontic: deontic                 # loomground-deontic: each norm -> a verified DeonticFormula (O/P/F, incidents)
+  governance: loomground           # loomground-governance: the governance .lg patch + express/policy/host litmus
+# Underlying planes those skills stand on (installed packages, for reference only).
+consumes_packages:
   legal: loomground_legal          # Anchor / ApplicableLaw / Citation — source hierarchy, precedence
   factual: loomground_factual
   epistemic: loomground_epistemic
-  governance_grammar: loomground_governance   # schema('patch'), language_card
-cascade: local-first   # engine lowering when present; else ingest-plane + in-grammar LLM enrichment
+cascade: local-first   # engine lowering when present; else DELEGATE to the plane skills + in-grammar enrichment
 # Real MCP surface used when the engine IS present (verified names). See ../../references/catalogue.md.
 rvnd:
   discovery: workspace_workflow(op="help")
