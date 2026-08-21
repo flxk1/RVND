@@ -13,6 +13,8 @@ import inspect
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
+from pathlib import Path
+
 import pytest
 
 pytestmark = pytest.mark.security  # red-team-relevant: runs in the `-m security` gate
@@ -135,7 +137,7 @@ def test_allowed_url_is_fetched_and_ingested(tmp_path, admitted_server):
     # Saved file exists under sources/<host>/ with provenance front-matter.
     saved = row["saved_path"]
     assert saved and "/sources/" in saved
-    text = open(saved, encoding="utf-8").read()
+    text = Path(saved).read_text(encoding="utf-8")
     assert "source_url:" in text
     assert "lawful_access: user_selected" in text
     assert "Digital Laws" in text          # title captured

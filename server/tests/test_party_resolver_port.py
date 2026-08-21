@@ -83,7 +83,6 @@ def test_adapter_overrides_globally(ws):
 
 
 def test_set_resolver_none_restores_local(ws):
-    org, lr = ws
     PR.set_resolver(PR.LocalPartyResolver())
     PR.set_resolver(None)
     assert isinstance(PR.get_resolver(), PR.LocalPartyResolver)

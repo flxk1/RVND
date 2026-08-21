@@ -185,9 +185,9 @@ def _akn_walk(el: ET.Element, parent_eId: str, out: list[ProvisionNode]) -> None
         num=num,
         text=" ".join(t for t in own_text_parts if t).strip(),
         parent_eId=parent_eId,
-        refs=_akn_refs(el) if not child_containers else [
-            r for c in el for r in []  # refs gathered per-leaf below
-        ],
+        # Container nodes carry no refs of their own; they are gathered per-leaf
+        # below. This was written as a comprehension over an empty iterable.
+        refs=_akn_refs(el) if not child_containers else [],
     )
     # If this container has child containers, its own refs still belong to its
     # intro text; gather refs only from non-container children to avoid

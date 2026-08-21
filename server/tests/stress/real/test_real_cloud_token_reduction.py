@@ -110,7 +110,7 @@ def _run_mode_b(workload, cloud: MockCloudLLM,
             counter.record_local(ms=call_ms)
             continue
         model_count = max(1, len(c.per_model))
-        for _mid in c.per_model:
+        for _ in c.per_model:
             counter.record_local(ms=call_ms / model_count)
         if c.label == "pii_yes":
             outcomes["refused"] += 1

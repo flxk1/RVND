@@ -67,15 +67,6 @@ def test_doctor_clean_install_returns_zero(isolated_env, capsys):
 def test_doctor_missing_optional_dep_warns_not_errors(isolated_env, monkeypatch,
                                                        capsys):
     """If pypdf/python-docx/mcp aren't importable, the check is WARN level."""
-    import importlib
-
-    real_import = importlib.import_module
-
-    def _fail_optional(name, *args, **kwargs):
-        if name in ("pypdf", "docx", "mcp"):
-            raise ImportError(f"simulated missing: {name}")
-        return real_import(name, *args, **kwargs)
-
     # Monkeypatch __import__ so the doctor's optional-dep probe sees them missing
     import builtins
     real_builtin_import = builtins.__import__

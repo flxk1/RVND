@@ -51,7 +51,7 @@ def test_apply_writes_via_bijection(env, monkeypatch):
     r = M.workspace_workflow(op="patch_apply", params={
         "folder_context": env["ws"], "actor": "alex", "netlist": V05})
     assert r["ok"], r.get("errors")
-    g = governance_graph(env["ws"], log_root=None) if False else r["graph"]
+    g = r["graph"]
     agents = {n["id"] for n in g["nodes"] if n["kind"] == "agent"}
     humans = {n["id"] for n in g["nodes"] if n["kind"] == "human"}
     ucs = {n["id"] for n in g["nodes"] if n["kind"] == "use_case"}

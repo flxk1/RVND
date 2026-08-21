@@ -91,10 +91,9 @@ def test_a2_resign_with_stolen_key_chain_passes_signature_check(
         _canonical_event_hash(lines[1]) if len(lines) > 1 else "GENESIS"
     )
     for i in range(2, len(lines)):
-        if i > 0:
-            lines[i]["prev_hash"] = (
-                _canonical_event_hash(lines[i - 1]) if i > 0 else "GENESIS"
-            )
+        # i starts at 2, so the old `if i > 0` guard and its GENESIS branch were
+        # both unreachable.
+        lines[i]["prev_hash"] = _canonical_event_hash(lines[i - 1])
         # Re-sign with the stolen key.
         signed = _signed_bytes({**lines[i], "signature": ""})
         lines[i]["signature"] = signing.sign_bytes(signed)
