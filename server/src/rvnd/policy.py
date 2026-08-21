@@ -684,6 +684,105 @@ def is_air_gapped(folder_path: str | Path) -> bool:
     return False                         # cloud-allowed / cloud-fallback → cloud egress legal
 
 
+DEPLOYMENT_POLICY_FILENAME = "deployment-policy.json"
+
+
+def deployment_policy(log_root: "str | Path | None" = None) -> FolderPolicy:
+    """The policy the DEPLOYMENT declares, independent of any folder.
+
+    RVND governs egress with no folder at all -- ``lock_text`` takes none,
+    ``gate_for_cloud`` takes one optionally, the proxy enforces with
+    ``track_folder`` unset. So its posture cannot live in a user's directory.
+    It lives beside the other deployment state, under the log root, and falls
+    back to the defaults (full protection) when absent.
+    """
+    from ._storage_paths import LOG_ROOT_DEFAULT
+    root = Path(log_root) if log_root else LOG_ROOT_DEFAULT
+    path = Path(root) / DEPLOYMENT_POLICY_FILENAME
+    if not path.exists():
+        return FolderPolicy()
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        # Same fail-safe as load_policy: a corrupt policy file must not silently
+        # drop protection.
+        return FolderPolicy()
+    if not isinstance(raw, dict):
+        return FolderPolicy()
+    return FolderPolicy.from_dict(raw)
+
+
+def save_deployment_policy(policy: FolderPolicy,
+                           log_root: "str | Path | None" = None) -> Path:
+    """Write the deployment's policy.
+
+    Without this there is no way to set the posture at all: the folder route no
+    longer reaches it by design, so an operator who legitimately needs the Lock
+    off (or a lower oversight default) would have been left with no supported
+    path. Moving a decision out of the folder has to put it somewhere, not
+    nowhere.
+    """
+    from ._storage_paths import LOG_ROOT_DEFAULT
+    root = Path(log_root) if log_root else LOG_ROOT_DEFAULT
+    root.mkdir(parents=True, exist_ok=True)
+    path = root / DEPLOYMENT_POLICY_FILENAME
+    path.write_text(json.dumps(policy.to_dict(), indent=2, sort_keys=True) + "\n",
+                    encoding="utf-8")
+    return path
+
+
+def disable_lock_for_deployment(*, accepted_by: str, reason: str = "",
+                                log_root: "str | Path | None" = None) -> FolderPolicy:
+    """Turn the Lock off for the DEPLOYMENT, acknowledgement and all.
+
+    The folder-level ``disable_lock`` no longer reaches the enforcement posture,
+    so this is where that decision now lives. It keeps the safeguard that made
+    the folder version safe: a flipped boolean alone never disables a
+    protection — ``lock_is_active`` requires a recorded acknowledgement, so a
+    policy file edited by hand (or by something that got write access) cannot
+    quietly open the posture.
+    """
+    pol = deployment_policy(log_root)
+    pol.privacy_lock_enabled = False
+    pol.acknowledgements["lock_disable"] = Acknowledgement(
+        accepted_at=_now_iso(),
+        accepted_by=accepted_by,
+        disclaimer_version=CURRENT_DISCLAIMER_VERSION,
+        reason=reason,
+    )
+    save_deployment_policy(pol, log_root)
+    return pol
+
+
+def resolve_policy(subj: "Any", *, log_root: "str | Path | None" = None) -> FolderPolicy:
+    """The policy in force for ``subj``.
+
+    The deployment's policy is the base. A non-global subject may override only
+    the fields that describe ITSELF -- see ``subject.FOLDER_SCOPED``. It cannot
+    reach the enforcement posture, so dropping a ``.workspace-policy.json`` into
+    a directory can no longer turn the Lock off for that scope: those fields are
+    the deployment's and a folder never wins them.
+
+    A folder subject with no policy file simply contributes nothing, which is
+    why this is safe to call for any subject.
+    """
+    from . import subject as _subject
+    base = deployment_policy(log_root)
+    if getattr(subj, "kind", _subject.GLOBAL) == _subject.GLOBAL:
+        return base
+    if subj.kind != _subject.FOLDER:
+        # agent / session subjects have no store of their own yet; they inherit
+        # the deployment untouched rather than silently falling back to a folder.
+        return base
+    own = load_policy(subj.id)
+    merged = base.to_dict()
+    own_d = own.to_dict()
+    for field_name in sorted(_subject.FOLDER_SCOPED):
+        if field_name in own_d:
+            merged[field_name] = own_d[field_name]
+    return FolderPolicy.from_dict(merged)
+
+
 def save_policy(folder_path: str | Path, policy: FolderPolicy) -> None:
     """Write the policy file atomically.
 
