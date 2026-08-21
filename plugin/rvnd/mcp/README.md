@@ -23,7 +23,7 @@ fabricate verdicts.
 ## How the skills find the tools
 
 The skills never hardcode tool names. At run time they read the host's live MCP tool list for the
-`rvnd-governance` server and resolve the canonical verbs to whatever the server currently exposes
+`rvnd` server and resolve the canonical verbs to whatever the server currently exposes
 (`references/catalogue.md` holds the mapping and the discovery procedure). If an expected
 operation is absent, the skills treat it as unavailable and stop — they do not emulate governance
 locally.
