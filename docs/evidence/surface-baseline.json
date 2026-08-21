@@ -1,4 +1,5 @@
 {
+ "schema": "surface-baseline-1",
  "unsurfaced_ops": [
   "workspace_audit.accountability",
   "workspace_audit.completeness",
