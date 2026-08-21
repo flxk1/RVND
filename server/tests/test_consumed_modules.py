@@ -290,15 +290,15 @@ def test_adapters_workspace_is_the_only_workspace_plane_import_site() -> None:
     session-token checks that authorize egress. That failure is silent: the
     happy path still works, the list is merely bigger.
 
-    So the scan covers ``app/`` as well as ``server/src/workspaces/`` — the
+    So the scan covers ``app/`` as well as the import package — the
     adapter-boundary gate only walks the latter, and the bridge lives in the
     former.
     """
     importers = _importers_of(
         "loomground_workspace",
-        [WORKSPACES_ROOT, REPO_ROOT / "app"],
+        [PACKAGE_ROOT, REPO_ROOT / "app"],
     )
-    assert importers == {"server/src/workspaces/adapters/workspace.py"}, (
+    assert importers == {f"server/src/{PKG}/adapters/workspace.py"}, (
         "loomground_workspace must be imported only in "
         "adapters/workspace.py (it is where the per-principal read scope is "
         f"defaulted); got {sorted(importers)}")
@@ -315,7 +315,7 @@ def test_workspace_seam_defaults_the_principal_scope() -> None:
     """
     from workspaces.adapters import workspace as seam
 
-    src = (WORKSPACES_ROOT / "adapters" / "workspace.py").read_text(encoding="utf-8")
+    src = (PACKAGE_ROOT / "adapters" / "workspace.py").read_text(encoding="utf-8")
     assert "scope=_principal_scope if scope is None else scope" in src, (
         "adapters.workspace.list_known_workspaces must default the principal "
         "scope filter; a caller must not be able to get the unscoped registry "
@@ -337,7 +337,7 @@ def test_workspace_concept_modules_are_shims_over_the_seam() -> None:
     seam = re.compile(r"from\s+\.adapters\.workspace\s+import")
     offenders: list[str] = []
     for name in ("folder_context.py", "workspace_registry.py", "_storage_paths.py"):
-        text = (WORKSPACES_ROOT / name).read_text(encoding="utf-8")
+        text = (PACKAGE_ROOT / name).read_text(encoding="utf-8")
         if not seam.search(text):
             offenders.append(f"{name}: does not consume adapters.workspace")
         tree = ast.parse(text, filename=name)
