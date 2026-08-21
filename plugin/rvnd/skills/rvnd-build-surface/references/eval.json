@@ -17,7 +17,7 @@
     "a composition rendering 'proposal' must also render 'patch' and 'receipt'",
     "forbids_scores and attributed must be true (discrete lamps, attributed-not-asserted)",
     "proposal status_vocabulary excludes granted/enabled/active/in-effect",
-    "every composition is fail_closed and drives the rvnd-governance server",
+    "every composition is fail_closed and drives the rvnd server",
     "a proposal carries a residual ledger, records its language version, and its constructs are structurally typed and restricted to the real 0.8.2 vocabulary (node classes, cord types, guard domain kind/risk/party/tags)",
     "well_formed:false is never applyable; validation must state applyable explicitly",
     "canonical_observation validates against the official observation object; a delta's construct is structurally typed with additionalProperties:false",
