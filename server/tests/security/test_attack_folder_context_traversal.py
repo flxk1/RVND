@@ -40,12 +40,12 @@ def _patch_default_log_root(monkeypatch, root):
     patches the definition site, keeps RVND's re-exported copy honest for
     anyone reading it, and asserts the reader actually moved.
     """
-    from workspaces import workspace_registry
+    from workspaces import registry
     from workspaces.adapters.workspace import _registry as _upstream_registry
 
     monkeypatch.setattr(_upstream_registry, "LOG_ROOT_DEFAULT", root)
-    monkeypatch.setattr(workspace_registry, "LOG_ROOT_DEFAULT", root)
-    assert workspace_registry._registry_path() == Path(root) / "known-workspaces.json", (
+    monkeypatch.setattr(registry, "LOG_ROOT_DEFAULT", root)
+    assert registry._registry_path() == Path(root) / "known-workspaces.json", (
         "LOG_ROOT_DEFAULT patch no longer reaches the code that reads it — the "
         "A6 enforcement assertions below would pass vacuously against the real "
         "registry")
@@ -56,21 +56,21 @@ def test_a6_workspace_registry_surface_exists():
     """Substrate check: ``list_known_workspaces`` exists so a future
     allowlist check has something to consult. Without this, A6 cannot be
     mitigated short of a fresh registry build."""
-    from rvnd import workspace_registry
+    from rvnd import registry
 
-    assert hasattr(workspace_registry, "list_known_workspaces"), (
+    assert hasattr(registry, "list_known_workspaces"), (
         "VULNERABILITY: workspace_registry.list_known_workspaces missing — "
         "the allowlist substrate for the A6 mitigation is not in place."
     )
-    assert hasattr(workspace_registry, "add_known_workspace")
-    assert hasattr(workspace_registry, "remove_known_workspace")
+    assert hasattr(registry, "add_known_workspace")
+    assert hasattr(registry, "remove_known_workspace")
 
 
 def test_a6_unregistered_path_resolves_only_under_override(tmp_path, monkeypatch):
     """The permissive behavior is opt-in: an unregistered folder_context
     resolves only while ``WORKSPACES_ALLOW_UNREGISTERED=1`` is set, and is
     refused the moment the override is absent."""
-    from rvnd import workspace_registry
+    from rvnd import registry
     from rvnd.folder_context import (
         FolderContextNotAllowed,
         resolve_folder_context,
@@ -94,7 +94,7 @@ def test_a6_path_traversal_to_unregistered_sibling_is_refused(tmp_path, monkeypa
     reach an unregistered sibling by `..` traversal. The registry is the
     allowlist — descendants of a registered workspace pass, the sibling
     does not."""
-    from rvnd import workspace_registry
+    from rvnd import registry
     from rvnd.folder_context import (
         FolderContextNotAllowed,
         resolve_folder_context,
@@ -107,7 +107,7 @@ def test_a6_path_traversal_to_unregistered_sibling_is_refused(tmp_path, monkeypa
     competitor = tmp_path / "tenants" / "competitor"
     acme.mkdir(parents=True)
     competitor.mkdir(parents=True)
-    workspace_registry.add_known_workspace(acme,
+    registry.add_known_workspace(acme,
                                            log_root=tmp_path / "logroot")
 
     # The registered folder and its descendants resolve.
@@ -124,7 +124,7 @@ def test_allowlist_resolution_does_not_reenter_principal_membership(
 ):
     """A verified request may resolve a registered workspace without the
     allowlist recursively trying to prove membership through MutationLog."""
-    from rvnd import workspace_registry
+    from rvnd import registry
     from rvnd.folder_context import resolve_folder_context
     from rvnd.mcp_serving import clear_request_principal, set_request_principal
     from rvnd.parties import register_party
@@ -136,7 +136,7 @@ def test_allowlist_resolution_does_not_reenter_principal_membership(
     monkeypatch.setenv("WORKSPACE_L0_LOG_ROOT", str(log_root))
     monkeypatch.setenv("WORKSPACES_ALLOW_UNREGISTERED", "1")
     register_party(str(folder), "agent", "agent", log_root=str(log_root))
-    workspace_registry.add_known_workspace(folder, log_root=log_root)
+    registry.add_known_workspace(folder, log_root=log_root)
     monkeypatch.delenv("WORKSPACES_ALLOW_UNREGISTERED")
 
     set_request_principal("local-session", "agent", rung="loopback-session")
@@ -174,7 +174,7 @@ def test_a6_persistence_stores_enforce_workspace_allowlist(tmp_path, monkeypatch
     stdio-MCP or Python call paths must not turn a folder argument into an
     arbitrary host write.
     """
-    from rvnd import workspace_registry
+    from rvnd import registry
     from rvnd.decisions.queue import DecisionQueue
     from rvnd.folder_context import FolderContextNotAllowed
     from rvnd.legal_corpus import EntityRegistry
@@ -213,7 +213,7 @@ def test_a6_allowlist_is_scoped_to_the_active_log_root(tmp_path, monkeypatch):
     prior tests never caught it because they monkeypatch ``LOG_ROOT_DEFAULT`` to
     equal the ``log_root`` they register under; here the two roots differ.
     """
-    from rvnd import workspace_registry
+    from rvnd import registry
     from rvnd.folder_context import (
         FolderContextNotAllowed,
         resolve_folder_context,
@@ -229,8 +229,8 @@ def test_a6_allowlist_is_scoped_to_the_active_log_root(tmp_path, monkeypatch):
     under_default = tmp_path / "ws-registered-under-default"
     under_custom.mkdir()
     under_default.mkdir()
-    workspace_registry.add_known_workspace(under_custom, log_root=custom_root)
-    workspace_registry.add_known_workspace(under_default, log_root=default_root)
+    registry.add_known_workspace(under_custom, log_root=custom_root)
+    registry.add_known_workspace(under_default, log_root=default_root)
 
     # (1) Registered under the CUSTOM root → honoured when the op runs under it.
     # This is the reported bug: pre-fix, enforcement read the default registry
@@ -295,13 +295,13 @@ def test_a6_documented_gap_is_in_red_team_findings():
 def _bridge_allowlist(log_root):
     """The bridge's line, verbatim: the same import, the same call shape, no
     ``scope=`` argument. If this stops being scoped, so does ``app/serve.py``."""
-    from workspaces.workspace_registry import list_known_workspaces
+    from workspaces.registry import list_known_workspaces
 
     return list_known_workspaces(log_root=str(log_root))
 
 
 def _register_two_tenants(tmp_path, monkeypatch):
-    from workspaces import workspace_registry
+    from workspaces import registry
     from workspaces.parties import register_party
 
     log_root = _patch_default_log_root(monkeypatch, tmp_path / "logroot")
@@ -313,7 +313,7 @@ def _register_two_tenants(tmp_path, monkeypatch):
     acme.mkdir(parents=True)
     globex.mkdir(parents=True)
     for folder in (acme, globex):
-        workspace_registry.add_known_workspace(folder, log_root=log_root)
+        registry.add_known_workspace(folder, log_root=log_root)
     register_party(str(acme), "acme-agent", "agent", log_root=str(log_root))
     register_party(str(globex), "globex-agent", "agent",
                    log_root=str(log_root))
@@ -402,7 +402,7 @@ def test_workspace_seam_scope_default_is_not_reachable_around(tmp_path,
     there.
     """
     import loomground_workspace as lw
-    from workspaces import workspace_registry
+    from workspaces import registry
     from workspaces.adapters import workspace as seam
     from workspaces.mcp_serving import (
         clear_request_principal,
@@ -411,8 +411,8 @@ def test_workspace_seam_scope_default_is_not_reachable_around(tmp_path,
 
     log_root, acme, globex = _register_two_tenants(tmp_path, monkeypatch)
 
-    assert workspace_registry.list_known_workspaces is seam.list_known_workspaces
-    assert workspace_registry.list_known_workspaces is not lw.list_known_workspaces
+    assert registry.list_known_workspaces is seam.list_known_workspaces
+    assert registry.list_known_workspaces is not lw.list_known_workspaces
 
     set_request_principal("intruder", "intruder", rung="proxy-verified")
     try:

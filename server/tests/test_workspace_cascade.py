@@ -6,7 +6,7 @@ import json
 
 import pytest
 
-from rvnd.workspace_cascade import (cascade_for_workspace, tiers_for_workspace,
+from rvnd.cascade_binding import (cascade_for_workspace, tiers_for_workspace,
                                 write_local_config, config_path, _local_config,
                                 LOCAL_URL_ENV, LOCAL_MODEL_ENV, CONFIG_PATH_ENV)
 

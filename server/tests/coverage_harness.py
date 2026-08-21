@@ -115,7 +115,7 @@ def new_workspace(register: bool = True) -> WS:
     log_root = str(tmp / "log")
     if register:
         try:
-            from rvnd.workspace_registry import add_known_workspace
+            from rvnd.registry import add_known_workspace
             add_known_workspace(folder, log_root=Path(log_root))
         except Exception:
             pass

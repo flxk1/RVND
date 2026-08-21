@@ -240,7 +240,7 @@ from .workflows import (
     recent_dispatches,
     run_workflow,
 )
-from .workspace_registry import (
+from .registry import (
     DEFAULT_WORKSPACE_DIR,
     add_known_workspace,
     bootstrap_default_workspace,

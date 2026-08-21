@@ -13,7 +13,7 @@ import json
 
 import pytest
 
-from rvnd.workspace_grounder import (
+from rvnd.grounder import (
     CITATION_STYLES,
     GroundingLedger,
     format_citation,

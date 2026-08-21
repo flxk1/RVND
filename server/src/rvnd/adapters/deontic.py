@@ -45,6 +45,16 @@ detect_conflicts = _deontic.detect_conflicts
 
 # -- Hohfeld vocabulary + version ------------------------------------------
 INCIDENTS = _deontic.INCIDENTS
+
+# Re-exported for `norm`, which classified incidents and read counterparties by
+# importing `deontic` directly — past the seam this module exists to be.
+extract_counterparty = _deontic.extract_counterparty
+classify_condition_kind = _deontic.classify_condition_kind
+
+#: The module itself, for the ONE caller that needs the object rather than a
+#: name: `policy_languages` reports which language packages are installed. It
+#: used to `import deontic` for this, which is the same bypass by another route.
+module = _deontic
 language_version = _deontic.language_version
 
 
@@ -64,4 +74,7 @@ __all__ = [
     "detect_conflicts",
     "INCIDENTS",
     "language_version",
+    "extract_counterparty",
+    "classify_condition_kind",
+    "module",
 ]

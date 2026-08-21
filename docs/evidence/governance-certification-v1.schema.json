@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://loomground.org/schema/governance-certification/v1",
+  "title": "GovernanceCertification predicate (v1)",
+  "description": "The five-pillar predicate carried by an in-toto Statement inside a DSSE envelope. Derived from what build_predicate() actually emits, not from prose: governance_cert.py previously pointed at a schema path that did not exist, and a schema written from intent is how that happens. test_governance_certification.py asserts the emitted predicate still validates against this file, so the two cannot drift apart silently.",
+  "type": "object",
+  "required": ["verdict", "action_class", "issued_at", "risk", "enforced",
+               "overseen", "grounded", "intact", "legitimate"],
+  "additionalProperties": false,
+  "properties": {
+    "verdict": {
+      "enum": ["hold-approved", "permit"],
+      "description": "hold-approved: held by PreToolUse and then approved by a human. permit: the gate allowed it with no human step required."
+    },
+    "action_class": {"type": "string"},
+    "issued_at": {"type": "string"},
+    "risk": {
+      "type": "object",
+      "required": ["grounded", "traffic_light"],
+      "additionalProperties": false,
+      "description": "A grounding SIGNAL plus a human-facing light. Grounding grounds the POLICY; the light organises risk for a person and is not an automated decision.",
+      "properties": {
+        "grounded": {"type": "boolean"},
+        "traffic_light": {"enum": ["green", "amber", "red"]}
+      }
+    },
+    "enforced": {
+      "type": "object",
+      "required": ["mechanism", "blocked_unless_permitted", "decision_ref"],
+      "additionalProperties": false,
+      "description": "The load-bearing pillar. NOTE what backs it: blocked_unless_permitted is emitted as a constant true, so the field carries no information on its own. What makes it true is the CALL PATH: hook.py mints only when a PreToolUse marker exists, verifies that marker's Ed25519 signature against this installation's key, and consumes it once. The signature covers the tool_use_id, so a genuine marker cannot be replayed against another action; an unsigned or altered one mints nothing and is reported through audit_drop. See test_hold_marker_signature.py.",
+      "properties": {
+        "mechanism": {"type": "string"},
+        "blocked_unless_permitted": {"type": "boolean"},
+        "decision_ref": {"type": "string"}
+      }
+    },
+    "overseen": {
+      "type": "object",
+      "required": ["required", "qualifier"],
+      "additionalProperties": false,
+      "properties": {
+        "required": {"type": "boolean"},
+        "qualifier": {"type": "string"},
+        "disposition": {"enum": ["DECIDED", "ESCALATED", "ABSTAINED"]},
+        "oversight_certificate": {
+          "type": "object",
+          "description": "A full portable oversight-certificate, embedded only when the [oversight-cert] extra is installed. Absent means not installed — never that oversight was absent."
+        }
+      }
+    },
+    "grounded": {
+      "type": "object",
+      "required": ["scheme", "ref", "digest"],
+      "additionalProperties": false,
+      "properties": {
+        "scheme": {"type": "string", "format": "uri"},
+        "ref": {"type": "array"},
+        "digest": {
+          "type": "object",
+          "required": ["sha256"],
+          "properties": {"sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}
+        }
+      }
+    },
+    "intact": {
+      "type": "object",
+      "required": ["type", "log_id", "entry_ref", "algorithm"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {"const": "native-chain"},
+        "log_id": {"type": "string"},
+        "entry_ref": {"type": "string"},
+        "algorithm": {"type": "string"}
+      }
+    },
+    "legitimate": {
+      "type": "object",
+      "required": ["policy_fingerprint", "anchors"],
+      "additionalProperties": false,
+      "properties": {
+        "policy_fingerprint": {"type": "string"},
+        "anchors": {
+          "type": "array",
+          "items": {"type": "object", "required": ["role"],
+                    "properties": {"role": {"type": "string"}}}
+        }
+      }
+    }
+  }
+}

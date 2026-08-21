@@ -10,7 +10,7 @@ import json
 
 import pytest
 
-from rvnd.workspace_grounder import GroundingLedger
+from rvnd.grounder import GroundingLedger
 from rvnd.grounder_extract import (
     extract_metadata,
     extract_metadata_tags,
@@ -196,7 +196,7 @@ def test_ingest_source_without_references(tmp_path):
 def test_ingest_source_grounded_claim_roundtrip(tmp_path):
     """The point of it all: ingest a page, then ground a claim on it and get
     a citation with the creators the page itself declared."""
-    from rvnd.workspace_grounder import format_citation
+    from rvnd.grounder import format_citation
     res = ingest_source(str(tmp_path), PAGE, url="https://x.test/self/page",
                         log_root=str(tmp_path / "log"))
     led = GroundingLedger(tmp_path, log_root=tmp_path / "log")

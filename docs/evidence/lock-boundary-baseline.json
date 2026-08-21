@@ -1,4 +1,5 @@
 {
+  "schema": "lock-boundary-baseline-1",
   "edges": [
     "host:lock_wiring -> lock",
     "host:mcp_impl -> lock.mcp_server",

@@ -34,7 +34,7 @@ import pytest
 # order-of-magnitude regression, tolerates slow/passively-cooled hardware.
 _BUDGET_1K_S = float(os.environ.get("WORKSPACE_STRESS_BUDGET_S", "240"))
 
-from rvnd.workspace_grounder import (
+from rvnd.grounder import (
     CITATION_STYLES,
     GroundingLedger,
     format_citation,
