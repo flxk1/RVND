@@ -18,7 +18,7 @@
       "type": "array",
       "minItems": 1,
       "items": {
-        "enum": ["rvnd-govern", "rvnd-decide", "rvnd-audit", "rvnd-incident", "rvnd-build-surface"]
+        "enum": ["govern-an-action", "onboard-a-policy", "sign-off", "resolve-a-conflict", "audit-the-ai", "verify-a-receipt", "revoke-or-erase", "build-a-surface"]
       },
       "uniqueItems": true
     },

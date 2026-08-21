@@ -1,0 +1,4 @@
+interface:
+  display_name: "Onboard a Policy"
+  short_description: "Bring a policy into governance as a 5D+nD graph"
+  default_prompt: "Use $onboard-a-policy to bring this policy/regulation/contract into RVND governance: lower it into the shared dimensioned graph via the ingest plane (governance + deontic + legal), enrich it in-grammar if no engine is present, show the graph and every residual, and hand it to sign-off. Do not apply or sign."

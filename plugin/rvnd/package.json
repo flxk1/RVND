@@ -4,7 +4,7 @@
   "name": "rvnd",
   "version": "0.6.0",
   "license": "AGPL-3.0-only",
-  "description": "The RVND governance skill layer: drive the typed MCP governance cycle, extract and validate grounded policy constructs, obtain server decisions for governed actions, surface rule conflicts without choosing a host-side winner, and verify signed receipts.",
+  "description": "The RVND governance skill layer: eight user-action skills that drive the typed MCP governance cycle, onboard policy into the shared 5D+nD graph, obtain server decisions, resolve rule conflicts, report the whole governance board, and verify signed receipts.",
   "author": {
     "name": "flxk1"
   },
@@ -21,105 +21,94 @@
   ],
   "skills": [
     {
-      "name": "rvnd-govern",
-      "path": "skills/rvnd-govern",
+      "name": "govern-an-action",
+      "path": "skills/govern-an-action",
       "provides": [
-        "rvnd.govern"
+        "rvnd.govern-an-action"
       ]
     },
     {
-      "name": "rvnd-decide",
-      "path": "skills/rvnd-decide",
+      "name": "onboard-a-policy",
+      "path": "skills/onboard-a-policy",
       "provides": [
-        "rvnd.decide"
+        "governance.onboard-policy"
       ]
     },
     {
-      "name": "rvnd-audit",
-      "path": "skills/rvnd-audit",
+      "name": "sign-off",
+      "path": "skills/sign-off",
       "provides": [
-        "rvnd.audit"
+        "rvnd.sign-off"
       ]
     },
     {
-      "name": "rvnd-incident",
-      "path": "skills/rvnd-incident",
+      "name": "resolve-a-conflict",
+      "path": "skills/resolve-a-conflict",
       "provides": [
-        "rvnd.incident"
+        "governance.resolve-conflict"
       ]
     },
     {
-      "name": "rvnd-build-surface",
-      "path": "skills/rvnd-build-surface",
+      "name": "audit-the-ai",
+      "path": "skills/audit-the-ai",
+      "provides": [
+        "rvnd.audit-the-ai"
+      ]
+    },
+    {
+      "name": "verify-a-receipt",
+      "path": "skills/verify-a-receipt",
+      "provides": [
+        "rvnd.verify-receipt"
+      ]
+    },
+    {
+      "name": "revoke-or-erase",
+      "path": "skills/revoke-or-erase",
+      "provides": [
+        "rvnd.revoke-or-erase"
+      ]
+    },
+    {
+      "name": "build-a-surface",
+      "path": "skills/build-a-surface",
       "provides": [
         "rvnd.build-surface"
-      ]
-    },
-    {
-      "name": "extract-policy-norms",
-      "path": "skills/extract-policy-norms",
-      "provides": [
-        "governance.extract-norms"
-      ]
-    },
-    {
-      "name": "compile-loomground-policy",
-      "path": "skills/compile-loomground-policy",
-      "provides": [
-        "governance.compile-policy"
-      ]
-    },
-    {
-      "name": "reason-governance-rules",
-      "path": "skills/reason-governance-rules",
-      "provides": [
-        "governance.reason"
-      ]
-    },
-    {
-      "name": "resolve-rule-conflicts",
-      "path": "skills/resolve-rule-conflicts",
-      "provides": [
-        "governance.resolve-conflicts"
       ]
     }
   ],
   "capabilities": {
-    "rvnd.govern": {
+    "rvnd.govern-an-action": {
       "mode": "read-write",
       "humanConfirmation": true
     },
-    "rvnd.decide": {
+    "governance.onboard-policy": {
+      "mode": "read-write",
+      "humanConfirmation": false
+    },
+    "rvnd.sign-off": {
       "mode": "read-write",
       "humanConfirmation": true
     },
-    "rvnd.audit": {
+    "governance.resolve-conflict": {
       "mode": "read-write",
       "humanConfirmation": true
     },
-    "rvnd.incident": {
+    "rvnd.audit-the-ai": {
+      "mode": "read",
+      "humanConfirmation": false
+    },
+    "rvnd.verify-receipt": {
+      "mode": "read-write",
+      "humanConfirmation": true
+    },
+    "rvnd.revoke-or-erase": {
       "mode": "read-write",
       "humanConfirmation": true
     },
     "rvnd.build-surface": {
       "mode": "read",
       "humanConfirmation": false
-    },
-    "governance.extract-norms": {
-      "mode": "read-write",
-      "humanConfirmation": true
-    },
-    "governance.compile-policy": {
-      "mode": "read",
-      "humanConfirmation": false
-    },
-    "governance.reason": {
-      "mode": "read-write",
-      "humanConfirmation": true
-    },
-    "governance.resolve-conflicts": {
-      "mode": "read-write",
-      "humanConfirmation": true
     }
   },
   "runtime": {
@@ -136,24 +125,24 @@
       "interface": {
         "displayName": "RVND Governance",
         "shortDescription": "Drive the RVND governance MCP server safely",
-        "longDescription": "Nine composable skills drive RVND's typed governance cycle, policy extraction and validation, governed action decisions, conflict handling, oversight, audit verification, incident response, and surface linting. The server decides and the host renders, so a request is never shown as a grant.",
+        "longDescription": "Eight user-action skills drive RVND's typed governance cycle: govern an action, onboard a policy into the shared 5D+nD graph, sign off, resolve a conflict, audit the AI, verify a receipt, revoke or erase, and build a surface. They cascade local-first — the engine decides when present, the cloud LLM is the labelled fallback — so a request is never shown as a grant.",
         "developerName": "Flxk1",
         "category": "Productivity",
         "capabilities": [
           "Governance cycle",
-          "Policy extraction and validation",
+          "Policy onboarding into the shared graph",
           "Governed rule decisions",
           "Human oversight",
-          "Signed audit",
+          "Whole-board audit + signed-receipt verification",
           "Incident response",
           "Local-first, fail-closed"
         ],
         "defaultPrompt": [
           "Run this action through RVND's governance cycle.",
-          "Extract and validate the rules in this policy.",
+          "Onboard this policy into the governance graph.",
           "Resolve this governance conflict without inventing a winner.",
           "Put this to a person for approve/hold/deny.",
-          "Verify this receipt against the signed chain."
+          "Audit what this AI may do, and verify a receipt against the signed chain."
         ]
       }
     },

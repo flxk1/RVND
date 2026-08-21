@@ -1,4 +1,0 @@
-interface:
-  display_name: "Resolve Rule Conflicts"
-  short_description: "Validate or escalate conflicting RVND rules"
-  default_prompt: "Use $resolve-rule-conflicts to surface these conflicting rules and obtain an RVND-validated resolution or residual decision."
