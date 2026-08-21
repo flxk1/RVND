@@ -47,10 +47,12 @@ Or, after the two `marketplace add` lines, run `/plugin` and click-install from 
 
 Swap `loomground-deontic` for any of the five free plugins.
 
-### C · Admins (whole team, one settings file)
+### C · The shared installer (one `settings.json` — both tiers, all 25 skills)
 
-Pre-register both marketplaces and pre-enable the plugins in `settings.json` — teammates get all 25
-with no per-user `/plugin` commands. Copy-paste:
+The whole stack in one paste. Registers **both** marketplaces and enables **every** plugin, so a user
+(or a whole team) gets all 25 skills with no per-user `/plugin` commands. This is the installer for the
+RVND audience — RVND needs both tiers, so the shared installer lives here. (A skill-only user doesn't
+want this; they use path B — one line, one plugin.)
 
 ```json
 {
