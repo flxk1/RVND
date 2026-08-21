@@ -27,12 +27,20 @@ def _run(monkeypatch, tmp_path, *, stdin: str = "", yes=False, dry=False):
     return rc, out.getvalue(), calls, home_log.parent
 
 
-def test_init_yes_writes_marker_and_sets_default(monkeypatch, tmp_path):
+def test_init_yes_sets_up_the_engine_and_creates_no_workspace(monkeypatch, tmp_path):
+    """Recommended defaults must not manufacture a workspace.
+
+    RVND governs egress with no folder: lock_text takes none, gate_for_cloud
+    takes one optionally, the proxy enforces with track_folder unset. A folder
+    is an optional binding, so `init --yes` sets up the engine and leaves the
+    user's filesystem alone. It used to create ~/Documents/Workspaces silently.
+    """
     rc, out, calls, home = _run(monkeypatch, tmp_path, yes=True)
     assert rc == 0
     assert (home / "init.json").is_file()
     assert (home / "keys").is_dir() and (home / "log").is_dir()
-    assert calls.get("target")           # the default workspace was set via the registry
+    assert calls == {}, f"no workspace may be created without being asked; got {calls}"
+    assert "optional" in out
     assert "Setup complete" in out
     assert "§5  Local model" in out              # the local-model step is present
     assert "connect-agent-hub.sh" in out         # the agent-hub step is present (now §7)
@@ -85,7 +93,7 @@ def test_init_interactive_offers_model_wizard_and_skills(monkeypatch, tmp_path):
     import rvnd.models_registry as mr
     monkeypatch.setattr(mr, "models_for_role", lambda role: [])
     # promise=y, ws folder=default, model wizard offer=n, skills offer=n
-    rc, out, _c, _h = _run(monkeypatch, tmp_path, stdin="y\n\nn\nn\n", yes=False)
+    rc, out, _c, _h = _run(monkeypatch, tmp_path, stdin="y\nn\nn\nn\n", yes=False)
     assert rc == 0
     assert "guided model wizard" in out              # §5 offers the real wizard
     assert "§6  Skills" in out
@@ -107,7 +115,7 @@ def test_init_launches_real_model_wizard_when_accepted(monkeypatch, tmp_path):
 
     monkeypatch.setattr(lock, "run_wizard", _fake_wizard)
     # promise=y, ws=default, model wizard offer=y, skills offer=n
-    rc, out, _c, _h = _run(monkeypatch, tmp_path, stdin="y\n\ny\nn\n", yes=False)
+    rc, out, _c, _h = _run(monkeypatch, tmp_path, stdin="y\nn\ny\nn\n", yes=False)
     assert rc == 0
     assert called.get("ran") is True                 # the BUILT wizard was invoked
     assert "model wizard finished" in out
@@ -126,6 +134,6 @@ def test_init_pins_skills_via_real_picker_when_accepted(monkeypatch, tmp_path):
     monkeypatch.setattr(ps, "pin_skill",
                         lambda folder, sid, **k: pinned.append(sid))
     # promise=y, ws=default, model offer=n, skills offer=y, pick "1"
-    rc, out, _c, _h = _run(monkeypatch, tmp_path, stdin="y\n\nn\ny\n1\n", yes=False)
+    rc, out, _c, _h = _run(monkeypatch, tmp_path, stdin="y\ny\n\nn\ny\n1\n", yes=False)
     assert rc == 0
     assert pinned == ["watch"]                        # the real picker actually pinned

@@ -2854,16 +2854,26 @@ def cmd_init(args: argparse.Namespace) -> int:
         return 1
     ts = datetime.now(tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    # §3 Where workspaces live
+    # §3 Workspaces — OPTIONAL. RVND governs egress with no folder at all:
+    # lock_text takes no folder, gate_for_cloud takes one optionally, and the
+    # egress proxy enforces with track_folder unset. A folder is a binding you
+    # attach when you want per-folder scoping and a signed chain, so first-run
+    # setup offers it rather than creating one.
     default_ws = str(Path.home() / "Documents" / "Workspaces")
-    _wsay(out, "\n§3  Where your workspaces live")
+    ws_home: str | None = None          # None = the user declined a workspace
+    _wsay(out, "\n§3  Workspaces (optional)")
     _wsay(out, "-" * 52)
-    _wsay(out, "A workspace is a folder RVND governs. New ones default here (any")
-    _wsay(out, "folder anywhere can still be a workspace).")
-    ws_home = default_ws if yes else _wask(inp, out, "Default workspaces folder", default_ws)
-    if dry:
+    _wsay(out, "RVND governs agent egress without any folder. A workspace is a folder")
+    _wsay(out, "you bind it to when you want policy scoped to that folder and its own")
+    _wsay(out, "signed audit chain. You can add one at any time with `workspaces add`.")
+    want_ws = False if yes else _wask_yn(inp, out, "Set up a default workspaces folder now?", default=False)
+    if not want_ws:
+        _wsay(out, "  · skipped — RVND enforces globally; no folder was created")
+    elif dry:
+        ws_home = _wask(inp, out, "Default workspaces folder", default_ws)
         _wsay(out, f"  [dry-run] would set default: {ws_home}")
     else:
+        ws_home = _wask(inp, out, "Default workspaces folder", default_ws)
         try:
             from ..workspace_registry import bootstrap_default_workspace
             bootstrap_default_workspace(target=ws_home)
@@ -2949,6 +2959,10 @@ def cmd_init(args: argparse.Namespace) -> int:
                 filter=None, by="init-wizard",
                 note="pinned during first-run setup",
                 log_root=getattr(args, "log_root", None))
+            if ws_home is None:
+                raise RuntimeError(
+                    "skills are pinned into a workspace folder; add one with "
+                    "`workspaces add <folder>` first")
             _cmd_pin_interactive(Path(ws_home), pin_args)
         except Exception as e:  # noqa: BLE001 — optional; never abort init
             _wsay(out, f"  (skill picker unavailable: {e}; "
@@ -3040,8 +3054,11 @@ def cmd_init(args: argparse.Namespace) -> int:
         _wsay(out, "  Skipped — connect anytime:  ./scripts/connect-agent-hub.sh")
 
     if not dry:
-        _marker: dict[str, Any] = {"initialized_at": ts, "workspaces_home": ws_home,
-                                   "promise_accepted": True}
+        _marker: dict[str, Any] = {"initialized_at": ts, "promise_accepted": True}
+        if ws_home is not None:
+            # Absent, not null: uninstall reads this with a .get() default, and a
+            # stored null would defeat the default and print "None" as a path.
+            _marker["workspaces_home"] = ws_home
         if policy_src:
             _marker["policy_source"] = policy_src
         marker.write_text(json.dumps(_marker, indent=2) + "\n", encoding="utf-8")

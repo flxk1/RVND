@@ -159,8 +159,9 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True)
 
     # init — first-run setup wizard
-    p_init = sub.add_parser("init", help="First-run setup wizard (foundations, "
-                                         "workspaces folder, Lock, local model, oversight, agent hub).")
+    p_init = sub.add_parser("init", help="First-run setup wizard (foundations, Lock, "
+                                         "local model, oversight, agent hub; a workspaces "
+                                         "folder is offered but not required).")
     p_init.add_argument("--yes", "-y", action="store_true",
                         help="non-interactive — accept all recommended defaults")
     p_init.add_argument("--dry-run", action="store_true",

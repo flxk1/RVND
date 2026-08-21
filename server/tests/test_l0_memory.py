@@ -266,13 +266,15 @@ def test_delete_hides_pair_from_reads(vault, log_root):
     pid = hr.remember(pair)
 
     assert hr.by_id(pid) is not None
-    assert hr.delete(pid) is True
+    deleted = hr.delete(pid)          # the mutation must happen outside the assert
+    assert deleted is True
     assert hr.by_id(pid) is None
 
 
 def test_delete_unknown_returns_false(vault, log_root):
     hr = WorkspaceMemory(vault["hr"], log_root=log_root)
-    assert hr.delete("sha256:never-existed") is False
+    deleted = hr.delete("sha256:never-existed")
+    assert deleted is False
 
 
 def test_delete_document_cascades(vault, log_root):

@@ -114,7 +114,8 @@ def test_corrupt_file_reported_and_preserved(env):
     assert r["ok"] and r["unreadable"] == {"map": str(path)}
     assert D.load_all(env["folder"], log_root=env["log_root"]) == {}
     # discard is the explicit recovery
-    assert D.discard(env["folder"], "map", log_root=env["log_root"])["discarded"] == ["map"]
+    discarded = D.discard(env["folder"], "map", log_root=env["log_root"])
+    assert discarded["discarded"] == ["map"]
     assert not path.exists()
 
 
@@ -123,7 +124,8 @@ def test_discard_all_and_idempotent(env):
     D.save(env["folder"], "map", {"b": 2}, log_root=env["log_root"])
     r = D.discard(env["folder"], log_root=env["log_root"])
     assert r["ok"] and sorted(r["discarded"]) == ["chat", "map"]
-    assert D.discard(env["folder"], log_root=env["log_root"])["discarded"] == []
+    again = D.discard(env["folder"], log_root=env["log_root"])
+    assert again["discarded"] == []
 
 
 def test_atomic_write_leaves_no_tmp_file(env):

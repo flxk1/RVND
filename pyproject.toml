@@ -128,19 +128,19 @@ Source = "https://github.com/flxk1/rvnd"
 # `workspaces` stays as the historic COMMAND prefix — only the package moved.
 [project.scripts]
 workspaces                = "rvnd.cli:main"
-workspaces-mcp            = "workspaces.mcp_server:main"
-workspaces-gateway        = "workspaces.gateway:main"
-workspaces-gateway-verify = "workspaces.gateway_verify:main"
+workspaces-mcp            = "rvnd.mcp_server:main"
+workspaces-gateway        = "rvnd.gateway:main"
+workspaces-gateway-verify = "rvnd.gateway_verify:main"
 workspaces-doctor         = "workspaces_doctor_bootstrap:main"
-workspace-lock            = "workspaces.lock.__main__:main"
-rvnd-visual-verdict       = "workspaces.release.visual_verdict:main"
+workspace-lock            = "rvnd.lock.__main__:main"
+rvnd-visual-verdict       = "rvnd.release.visual_verdict:main"
 # The PreToolUse enforcement hook (the teeth). With no args it runs AS the hook
 # (reads a PreToolUse event on stdin, emits a binding verdict); with --install /
 # --uninstall it manages its own .claude/settings.json entry.
-rvnd-hook                 = "workspaces.hook:main"
+rvnd-hook                 = "rvnd.hook:main"
 # Compatibility aliases.
 workspace                 = "rvnd.cli:main"
-workspace-mcp             = "workspaces.mcp_server:main"
+workspace-mcp             = "rvnd.mcp_server:main"
 
 # src layout: the import package `workspaces` lives under server/src. An editable install
 # (`pip install -e .`) puts it on the path so `python -m workspaces.mcp_server` runs and
