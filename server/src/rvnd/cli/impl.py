@@ -39,7 +39,6 @@ from ..policy import (
     set_oversight_level,
     OVERSIGHT_LEVELS,
 )
-from ..policy import effective_policy
 
 
 def _confirm(prompt: str, *, stream: IO[str] | None = None) -> bool:
@@ -473,7 +472,7 @@ def cmd_policy_show(args: argparse.Namespace) -> int:
         print(f"error: {e}", file=sys.stderr)
         return 3
 
-    pol = effective_policy(folder)
+    pol = load_policy(folder)
     print(f"folder: {folder}")
     print(f"policy file: {policy_path(folder)}")
     print(f"  privacy_lock_enabled:   {pol.privacy_lock_enabled}")
@@ -2527,7 +2526,7 @@ def cmd_oversight(args: argparse.Namespace) -> int:
         print(f"error: {e}", file=sys.stderr)
         return 3
     if not args.level:                       # show
-        pol = effective_policy(folder)
+        pol = load_policy(folder)
         active = "active" if pol.oversight_is_active else "muted"
         print(f"oversight for {folder}")
         print(f"  level:  {pol.oversight_default_level}")

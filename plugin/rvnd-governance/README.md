@@ -34,7 +34,7 @@ runtime, evidence, version) and the residual ledger; `references/vocabulary.md` 
 is the acceptance corpus, headed by the equivalence test (chat / CLI / sheet / `.lg` → one canonical
 observation). Each skill carries a `manifest.yaml` declaring the constructs it may read and propose.
 
-## The ten skills
+## The nine skills
 
 - **rvnd-govern** — the core cycle: put a consequential action through query → validate → confirm
   → apply → display.
@@ -42,10 +42,6 @@ observation). Each skill carries a `manifest.yaml` declaring the constructs it m
   and rationale a loosening needs.
 - **rvnd-audit** — verify a receipt against the per-folder Ed25519-signed hash chain; attributed,
   not asserted; honest about the chain's limits.
-- **governance-audit** — mirror the whole RVND console in chat: one row per declared panel
-  (`pack.json`, 22 panels), rendered twice on one skeleton — without RVND (host-declarable only,
-  engine rows left empty) and with RVND (the signed board) — leading with the reconciliation gap.
-  Pure-read; blank is never clean; the report skill to `rvnd-audit`'s single-row verify.
 - **rvnd-incident** — revoke authority or record erasure through exact live operations;
   tightening is immediate, restoring authority needs approval.
 - **rvnd-build-surface** — compose and lint the MCP App surface (the five cards) so a built surface
