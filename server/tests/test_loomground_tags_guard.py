@@ -9,7 +9,7 @@ ill-formed at apply stage. Mirrors the ratifier loomground_b.mjs; cross-checkabl
 """
 from __future__ import annotations
 
-from workspaces.loomground_lang import parse, validate, validate_token, evaluate
+from rvnd.loomground_lang import parse, validate, validate_token, evaluate
 
 
 def _tok(kind="transfer", tags=None, risk="low"):

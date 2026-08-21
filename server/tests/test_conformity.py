@@ -10,13 +10,13 @@ no op writes state.
 
 import pytest
 
-from workspaces import conformity as cf
-from workspaces import drift_monitor as dm
-from workspaces import incidents as inc
-from workspaces.action_gate import ActionRequest, Observables, gate
-from workspaces.decisions.surface import record_choice
-from workspaces.mutation_log import LogEvent, MutationLog
-from workspaces.workflows import Workflow, WorkflowStep, define_workflow, run_workflow
+from rvnd import conformity as cf
+from rvnd import drift_monitor as dm
+from rvnd import incidents as inc
+from rvnd.action_gate import ActionRequest, Observables, gate
+from rvnd.decisions.surface import record_choice
+from rvnd.mutation_log import LogEvent, MutationLog
+from rvnd.workflows import Workflow, WorkflowStep, define_workflow, run_workflow
 
 
 @pytest.fixture()

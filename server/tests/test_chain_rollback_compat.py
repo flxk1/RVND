@@ -20,8 +20,8 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces import mutation_log as ML
-from workspaces.mutation_log import LogEvent, MutationLog
+from rvnd import mutation_log as ML
+from rvnd.mutation_log import LogEvent, MutationLog
 
 pytestmark = pytest.mark.security  # chain-integrity / rollback safety
 
@@ -29,7 +29,7 @@ pytestmark = pytest.mark.security  # chain-integrity / rollback safety
 @pytest.fixture()
 def env(tmp_path, monkeypatch):
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(tmp_path / "keys"))
-    from workspaces import signing
+    from rvnd import signing
     signing.ensure_keypair()
     ws = tmp_path / "ws"
     ws.mkdir()

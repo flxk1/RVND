@@ -12,7 +12,7 @@ These tests pin down remediation payloads and lock threshold behavior.
 from __future__ import annotations
 
 
-from workspaces.lock.core import (
+from rvnd.lock.core import (
     RemediationAction,
     _detect_confusable_bypass,
     tier_b_scan_dict,

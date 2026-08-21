@@ -12,7 +12,7 @@ from __future__ import annotations
 import io
 from contextlib import redirect_stdout
 
-from workspaces.cli import main
+from rvnd.cli import main
 
 
 def _run(argv, capture=True):

@@ -10,9 +10,9 @@ import os
 
 import pytest
 
-from workspaces.mcp_impl import lock_egress_check
-from workspaces.mutation_log import MutationLog
-from workspaces.policy import FolderPolicy, load_policy, set_ai_training_optout
+from rvnd.mcp_impl import lock_egress_check
+from rvnd.mutation_log import MutationLog
+from rvnd.policy import FolderPolicy, load_policy, set_ai_training_optout
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 
@@ -125,7 +125,7 @@ def test_subfolder_cannot_silently_unreserve(ws, tmp_path):
 
 
 def test_tdm_declare_writes_file_asserts_and_audits(ws, tmp_path):
-    from workspaces.policy import TDM_DECLARATION_FILENAME, tdm_declare
+    from rvnd.policy import TDM_DECLARATION_FILENAME, tdm_declare
 
     res = tdm_declare(ws, actor="test", log_root=tmp_path / "logs")
     assert res["ok"] and res["asserted_now"] is True
@@ -143,7 +143,7 @@ def test_tdm_declare_writes_file_asserts_and_audits(ws, tmp_path):
 
 
 def test_workspace_policy_facade_routes_tdm_ops(ws):
-    from workspaces.mcp_server import workspace_policy
+    from rvnd.mcp_server import workspace_policy
 
     r = workspace_policy("tdm_optout", {"folder_context": str(ws),
                                    "enabled": True, "actor": "test"})

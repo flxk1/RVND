@@ -6,14 +6,14 @@ deadline → breach candidate surfaces, never auto-declared breach)."""
 
 import pytest
 
-from workspaces.contracts.instance import ContractInstance, ContractRegistry, PartyRef
-from workspaces.fact_source import (UNKNOWN, CsvFactSource, Fact, ManualFactSource,
+from rvnd.contracts.instance import ContractInstance, ContractRegistry, PartyRef
+from rvnd.fact_source import (UNKNOWN, CsvFactSource, Fact, ManualFactSource,
                                evaluate)
-from workspaces.obligation_runtime import (ObligationError,
+from rvnd.obligation_runtime import (ObligationError,
                                       ObligationRegistry)
-from workspaces.obligation_scheduler import ObligationScheduler, _target_state
-from workspaces.predicate import Predicate, parse_condition
-from workspaces.temporal import Date, Duration
+from rvnd.obligation_scheduler import ObligationScheduler, _target_state
+from rvnd.predicate import Predicate, parse_condition
+from rvnd.temporal import Date, Duration
 
 
 def dpa(version: int = 1, **kw) -> ContractInstance:
@@ -241,7 +241,7 @@ class TestScheduler:
         assert reminders[0].decision.verdict.value == "CONDITIONAL"
 
     def test_reminder_goes_with_standing_approval(self, tmp_path):
-        from workspaces.action_gate import StandingApproval
+        from rvnd.action_gate import StandingApproval
         setup_registry(tmp_path)
         sa = StandingApproval(agent="obligation-scheduler",
                               action_class="remind-obligor",

@@ -2,7 +2,7 @@
 
 Everything here runs **from the repository root**. Rvnd is a single
 distribution built from one `pyproject.toml` at the root; `server/` holds the
-import package (`server/src/workspaces`) but no build config of its own, so
+import package (`server/src/rvnd`) but no build config of its own, so
 `pip install` pointed at `server/` fails with "neither 'setup.py' nor
 'pyproject.toml' found".
 

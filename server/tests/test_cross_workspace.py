@@ -4,12 +4,12 @@
 import os
 from pathlib import Path
 
-from workspaces import cli
-from workspaces.cross_workspace import cross_workspace_read, ROLE_SOURCE, ROLE_COMPANION
-from workspaces.action_gate import StandingApproval, Verdict
-from workspaces.workspace_lock import replay
-from workspaces.mcp_serving import clear_request_principal, set_request_principal
-from workspaces.parties import register_party
+from rvnd import cli
+from rvnd.cross_workspace import cross_workspace_read, ROLE_SOURCE, ROLE_COMPANION
+from rvnd.action_gate import StandingApproval, Verdict
+from rvnd.workspace_lock import replay
+from rvnd.mcp_serving import clear_request_principal, set_request_principal
+from rvnd.parties import register_party
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 

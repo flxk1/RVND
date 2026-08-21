@@ -4,7 +4,7 @@
       "command": "python3",
       "args": [
         "-m",
-        "workspaces.mcp_server"
+        "rvnd.mcp_server"
       ],
       "env": {
         "RVND_GOVERNANCE_LAYER": "on"

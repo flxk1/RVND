@@ -12,8 +12,8 @@ from __future__ import annotations
 
 import os
 
-from workspaces import use_case_intake as UC
-from workspaces import subject_card as SC
+from rvnd import use_case_intake as UC
+from rvnd import subject_card as SC
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 

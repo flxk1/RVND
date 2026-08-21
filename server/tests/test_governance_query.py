@@ -10,10 +10,10 @@ from __future__ import annotations
 import os
 import pytest
 
-from workspaces import parties as pt
-from workspaces.governance_graph import governance_query
-from workspaces.use_case import register_use_case
-from workspaces.operations import operate
+from rvnd import parties as pt
+from rvnd.governance_graph import governance_query
+from rvnd.use_case import register_use_case
+from rvnd.operations import operate
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 
@@ -78,7 +78,7 @@ def test_agent_reach(env):
 
 
 def test_facade_and_surface(env):
-    from workspaces import mcp_server as M
+    from rvnd import mcp_server as M
     assert len(M._DECLARED_TOOLS) == 24
     r = M.workspace_workflow(op="governance_query", params={"folder_context": env["ws"], "query": "unfired"})
     assert "rows" in r and r["count"] >= 2

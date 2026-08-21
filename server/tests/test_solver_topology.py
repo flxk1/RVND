@@ -27,7 +27,7 @@ Invariants first:
 from __future__ import annotations
 
 
-from workspaces.solver_topology import (
+from rvnd.solver_topology import (
     Dep, SolverNode, build_topology, topo_order,
 )
 
@@ -104,7 +104,7 @@ def test_topology_is_stable_for_same_fingerprints():             # V6
 
 
 def test_valid_topology_projects_to_graph():                     # V7
-    from workspaces.kg_export import validate_graph
+    from rvnd.kg_export import validate_graph
     rep = build_topology(_nodes(), _deps(), roots=["root"])
     assert rep["ok"], rep["findings"]
     g = rep["graph"]

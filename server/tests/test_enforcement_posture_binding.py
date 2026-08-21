@@ -9,10 +9,10 @@ untouched — evidence, not control.
 """
 from __future__ import annotations
 
-from workspaces import enforcement_posture_binding as B
-from workspaces.mutation_log import MutationLog
-from workspaces.operations import operate
-from workspaces.use_case import register_use_case
+from rvnd import enforcement_posture_binding as B
+from rvnd.mutation_log import MutationLog
+from rvnd.operations import operate
+from rvnd.use_case import register_use_case
 
 
 def _controls(posture):
@@ -124,7 +124,7 @@ def test_enforcement_posture_is_immutably_commit_pinned():
 
 # ── Stage 2: evidence_pack projects the posture + coverage verdict ────────────
 
-from workspaces.conformity import evidence_pack
+from rvnd.conformity import evidence_pack
 
 
 def _attest(folder, lr):
@@ -158,7 +158,7 @@ def test_coverage_is_split_across_a_posture_change(tmp_path, monkeypatch):
 def test_coverage_is_uncovered_when_evidence_predates_attestation(tmp_path, monkeypatch):
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(tmp_path / "keys"))
     d, lr = str(tmp_path / "ws"), str(tmp_path / "logs")
-    from workspaces.mutation_log import LogEvent, MutationLog
+    from rvnd.mutation_log import LogEvent, MutationLog
     MutationLog(d, log_root=lr).append(LogEvent(
         event="system", folder_path=d, pair_id="pre", channel="system",
         actor="system", extra={"kind": "gate-verdict"}))     # evidence, no posture yet

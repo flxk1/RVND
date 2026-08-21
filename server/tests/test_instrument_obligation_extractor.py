@@ -4,11 +4,11 @@
 
 from __future__ import annotations
 
-from workspaces.instrument_obligation_extractor import (
+from rvnd.instrument_obligation_extractor import (
     RequiredArtifactExtractor,
     extract_required_artifacts,
 )
-from workspaces.nd_routing import Classification
+from rvnd.nd_routing import Classification
 
 
 def _cls(facets=None):

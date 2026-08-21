@@ -10,16 +10,16 @@ import string
 
 import pytest
 
-from workspaces.dimensions import (
+from rvnd.dimensions import (
     Dimension,
     classify_predicate,
     classify_query_dimension,
     compose,
 )
-from workspaces.math_extractor import extract_math
-from workspaces.domain_nds import GDPRRuleND, MathND
-from workspaces.nd_routing import DefaultClassifier
-import workspaces.mcp_server as srv
+from rvnd.math_extractor import extract_math
+from rvnd.domain_nds import GDPRRuleND, MathND
+from rvnd.nd_routing import DefaultClassifier
+import rvnd.mcp_server as srv
 
 VALID = {d.value for d in Dimension}
 RNG = random.Random(1729)

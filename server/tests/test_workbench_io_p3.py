@@ -8,9 +8,9 @@ import json
 
 import pytest
 
-from workspaces.contracts.extractor import ingest_contract
-from workspaces.obligation_runtime import ObligationRegistry
-from workspaces.workbench_io import apply_actions, build_demo, export_state
+from rvnd.contracts.extractor import ingest_contract
+from rvnd.obligation_runtime import ObligationRegistry
+from rvnd.workbench_io import apply_actions, build_demo, export_state
 
 DPA = """DATA PROCESSING AGREEMENT
 
@@ -132,7 +132,7 @@ class TestApply:
             "entity_code": "norddata-services-gmbh", "actor": "alex",
             "rationale": "matches the named party"}], log_root=folder / "log")
         assert out["ok"]
-        from workspaces.defined_terms import DefinedTermsRegistry
+        from rvnd.defined_terms import DefinedTermsRegistry
         assert DefinedTermsRegistry(folder).resolve("dpa-x@1", "Processor") \
             == "norddata-services-gmbh"
 
@@ -161,7 +161,7 @@ class TestPanelAdoptedFindings:
     """Findings adopted from legal review."""
 
     def test_obligor_resolves_to_party_role(self, folder):
-        from workspaces.obligation_runtime import ObligationRegistry
+        from rvnd.obligation_runtime import ObligationRegistry
         obs = ObligationRegistry(folder).for_contract("dpa-x@1")
         assert {o.obligor_role for o in obs} == {"processor"}   # not "the-processor"
 
@@ -187,7 +187,7 @@ class TestPanelAdoptedFindings:
         assert any(h.get("annotation") for h in ob.history(oid))
 
     def test_anonymous_annotation_refused(self, folder):
-        from workspaces.obligation_runtime import ObligationError, ObligationRegistry
+        from rvnd.obligation_runtime import ObligationError, ObligationRegistry
         obligations = ObligationRegistry(folder, log_root=folder / "log")
         oid = obligations.for_contract("dpa-x@1")[0].obligation_id
         with pytest.raises(ObligationError, match="name the actor"):
@@ -199,8 +199,8 @@ class TestPanelAdoptedFindings:
         assert any(p for p in pins)                              # joined from spans
 
     def test_garbage_subject_never_becomes_obligor_id(self, tmp_path):
-        from workspaces.contracts.instance import ContractInstance, PartyRef
-        from workspaces.obligation_runtime import _obligor_role
+        from rvnd.contracts.instance import ContractInstance, PartyRef
+        from rvnd.obligation_runtime import _obligor_role
         c = ContractInstance(contract_id="x", parties=(
             PartyRef(entity_code="a", role="licensee"),))
         leaked = "where the annual net revenue exceeds eur 100,000, the licensee"
@@ -217,8 +217,8 @@ class TestLegalPanelRound2:
     by a pack, an ND, or a caller. Detection neutral, application opt-in."""
 
     def _saturday_deadline_folder(self, tmp_path):
-        from workspaces.contracts.instance import ContractInstance, ContractRegistry, PartyRef
-        from workspaces.obligation_runtime import ObligationRegistry
+        from rvnd.contracts.instance import ContractInstance, ContractRegistry, PartyRef
+        from rvnd.obligation_runtime import ObligationRegistry
         c = ContractInstance(contract_id="wk-x",
                              parties=(PartyRef(entity_code="a", role="supplier"),))
         ContractRegistry(tmp_path, log_root=tmp_path / "log").register(c)
@@ -232,14 +232,14 @@ class TestLegalPanelRound2:
         return oid
 
     def test_weekend_shift_utility_arithmetic(self):
-        from workspaces.temporal import Date, weekend_shift
+        from rvnd.temporal import Date, weekend_shift
         assert weekend_shift(Date("2026-08-15")) == Date("2026-08-17")  # Sat
         assert weekend_shift(Date("2026-08-16")) == Date("2026-08-17")  # Sun
         assert weekend_shift(Date("2026-08-17")) == Date("2026-08-17")  # Mon
 
     def test_default_is_neutral_observes_and_flags_never_applies(self, tmp_path):
-        from workspaces.obligation_scheduler import ObligationScheduler
-        from workspaces.temporal import Date
+        from rvnd.obligation_scheduler import ObligationScheduler
+        from rvnd.temporal import Date
         self._saturday_deadline_folder(tmp_path)
         sched = ObligationScheduler(tmp_path, log_root=tmp_path / "log")
         report = sched.tick(Date("2026-08-16"))                  # the Sunday
@@ -250,8 +250,8 @@ class TestLegalPanelRound2:
         assert "public holidays not checked" in t["caveat"]
 
     def test_configured_shift_rule_applies_only_when_supplied(self, tmp_path):
-        from workspaces.obligation_scheduler import ObligationScheduler
-        from workspaces.temporal import Date, weekend_shift
+        from rvnd.obligation_scheduler import ObligationScheduler
+        from rvnd.temporal import Date, weekend_shift
         self._saturday_deadline_folder(tmp_path)
         sched = ObligationScheduler(tmp_path, log_root=tmp_path / "log",
                                     deadline_shift=weekend_shift)
@@ -262,13 +262,13 @@ class TestLegalPanelRound2:
 
     @staticmethod
     def _eu_checklist():
-        from workspaces.contracts.extractor import REFERENCE_PACKS_DIR, load_checklist
+        from rvnd.contracts.extractor import REFERENCE_PACKS_DIR, load_checklist
         ctype, name, checklist = load_checklist(
             REFERENCE_PACKS_DIR / "eu-gdpr-dpa.json")
         return {ctype: (name, checklist)}
 
     def test_checklist_engine_is_generic_checklists_are_pack_data(self):
-        from workspaces.contracts.extractor import (check_mandatory_content,
+        from rvnd.contracts.extractor import (check_mandatory_content,
                                               intake_contract)
         checklists = self._eu_checklist()
         name, checklist = checklists["dpa"]
@@ -292,10 +292,10 @@ class TestLegalPanelRound2:
         import ast
         import inspect
         import re as _re
-        from workspaces import (fact_source, hohfeld, obligation_runtime,
+        from rvnd import (fact_source, hohfeld, obligation_runtime,
                            obligation_scheduler, predicate, temporal,
                            workbench_io)
-        from workspaces.contracts import extractor as contract_extractor
+        from rvnd.contracts import extractor as contract_extractor
         statute = _re.compile(
             r"§\s*\d|\bArt(?:icle|\.)\s*\d+|\bBGB\b|\bGDPR\b|\bDSGVO\b|"
             r"\bHGB\b|\bUrhG\b|\d+\(\d\)\([a-z]\)")
@@ -324,7 +324,7 @@ class TestLegalPanelRound2:
         patterns; docstrings/comments (the seam description) are exempt."""
         import inspect
         import re as _re
-        from workspaces import conformity, disclosure
+        from rvnd import conformity, disclosure
         cite = _re.compile(r"Art\.\s*\d+|§\s*\d+|prEN\s*\d+|GDPR|\bDSA\b|"
                            r"NIS2|MiFID|Reg\.\s*\d|ISO/IEC\s*\d")
         for mod in (conformity, disclosure):
@@ -340,7 +340,7 @@ class TestLegalPanelRound2:
                     f"statute citation in engine code: {mod.__name__}: {line.strip()}"
 
     def test_mandatory_gap_reaches_decision_queue_when_opted_in(self, tmp_path):
-        from workspaces.contracts.extractor import ingest_contract
+        from rvnd.contracts.extractor import ingest_contract
         ingest_contract(tmp_path, DPA, contract_id="dpa-x",
                         log_root=tmp_path / "log",
                         checklists=self._eu_checklist())

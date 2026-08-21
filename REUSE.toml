@@ -63,13 +63,13 @@ SPDX-License-Identifier = "AGPL-3.0-only"
 # source-licence header sweep but are first-party RVND integration code.
 [[annotations]]
 path = [
-  "server/src/workspaces/adapters/solver/__init__.py",
-  "server/src/workspaces/adapters/versum/__init__.py",
+  "server/src/rvnd/adapters/solver/__init__.py",
+  "server/src/rvnd/adapters/versum/__init__.py",
   "server/tests/test_solver_adapters.py",
   "server/tests/test_upstream_consumption.py",
   "server/tests/test_versum_adapter.py",
   "server/tests/test_loomground_tags_guard.py",
-  "server/src/workspaces/release/visual_verdict.py",
+  "server/src/rvnd/release/visual_verdict.py",
   "server/tests/test_adapter_boundary.py",
   "server/tests/test_builder_visual_verdict.py",
   "server/tests/test_egress_capability.py",

@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from workspaces import (
+from rvnd import (
     WorkspaceMemory,
     NoFolderContextError,
     current_folder,

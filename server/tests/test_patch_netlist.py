@@ -18,8 +18,8 @@ from __future__ import annotations
 import os
 import pytest
 
-from workspaces import patch_netlist as pn
-from workspaces.governance_graph import governance_graph
+from rvnd import patch_netlist as pn
+from rvnd.governance_graph import governance_graph
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 
@@ -115,7 +115,7 @@ def test_facade_ops_now_speak_v05(env):                        # N6
     # reject this pre-standard agent/use-case/wire dialect. The v0.5 round-trip
     # is covered in test_loom_facade.py. patch_netlist (this module) stays the
     # internal helper the canvas still uses until the canvas migrates.
-    from workspaces import mcp_server as M
+    from rvnd import mcp_server as M
     assert len(M._DECLARED_TOOLS) == 24
     ops = {o["op"] for o in M.workspace_workflow(op="help")["ops"]}
     assert {"patch_validate", "patch_apply"} <= ops

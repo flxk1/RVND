@@ -53,7 +53,7 @@ _CONF_PAIR = {"id": "c1", "problem": {"id": "c1-p", "type": "rule", "facets": {
 
 def _card_saved(ws: WS) -> dict:
     with_parties(ws)
-    import workspaces.mcp_server as M
+    import rvnd.mcp_server as M
     r = M.workspace_legal("card.save", {
         "folder_context": ws.folder, "log_root": ws.log_root,
         "card": {"domain": "invoice", "subject_id": "acme",
@@ -63,7 +63,7 @@ def _card_saved(ws: WS) -> dict:
 
 def _ingestable_folder(ws: WS) -> dict:
     with_parties(ws)
-    from workspaces.workspace_registry import add_known_workspace
+    from rvnd.workspace_registry import add_known_workspace
     add_known_workspace(ws.folder)
     fp = Path(ws.folder) / "note.md"
     fp.write_text("GDPR Article 28 applies to this processing.", encoding="utf-8")
@@ -72,7 +72,7 @@ def _ingestable_folder(ws: WS) -> dict:
 
 def _stem_ingested(ws: WS) -> dict:
     with_parties(ws)
-    import workspaces.mcp_server as M
+    import rvnd.mcp_server as M
     fp = Path(ws.folder) / "kick.wav"
     fp.write_text("RIFF....audio....", encoding="utf-8")
     r = M.workspace_ingest("stem", {"folder_context": ws.folder, "file_path": str(fp),
@@ -93,14 +93,14 @@ def _plugin_root(ws: WS) -> dict:
 
 def _dpa_contract(ws: WS) -> dict:
     with_parties(ws)
-    import workspaces.mcp_server as M
+    import rvnd.mcp_server as M
     M.workspace_contract("ingest", {"folder_context": ws.folder, "text": DPA_TEXT,
                                     "contract_id": "dpa-x", "actor": ACTOR})
     return {"contract_ref": "dpa-x@1"}
 
 
 def _dpa_obligation(ws: WS) -> dict:
-    import workspaces.mcp_server as M
+    import rvnd.mcp_server as M
     _dpa_contract(ws)
     st = M.workspace_contract("state", {"folder_context": ws.folder})
     obs = st.get("obligations", [])
@@ -121,7 +121,7 @@ def _second_folder(ws: WS) -> Path:
     p = Path(ws.root) / "ws2"
     p.mkdir(exist_ok=True)
     try:
-        from workspaces.workspace_registry import add_known_workspace
+        from rvnd.workspace_registry import add_known_workspace
         add_known_workspace(p, log_root=Path(ws.log_root))
     except Exception:
         pass
@@ -130,7 +130,7 @@ def _second_folder(ws: WS) -> Path:
 
 def _session_saved(ws: WS) -> dict:
     with_parties(ws)
-    import workspaces.mcp_server as M
+    import rvnd.mcp_server as M
     path = str(Path(ws.root) / "sess.rvnd")
     M.workspace_session("save", {
         "workspaces": [{"folder_context": ws.folder, "id": "ws1", "name": "ws1"}],
@@ -140,7 +140,7 @@ def _session_saved(ws: WS) -> dict:
 
 def _session_import(ws: WS) -> dict:
     with_parties(ws)
-    import workspaces.mcp_server as M
+    import rvnd.mcp_server as M
     f2 = _second_folder(ws)
     env_path = str(Path(ws.root) / "env.rvnd")
     track_path = str(Path(ws.root) / "track.rvnd")
@@ -155,7 +155,7 @@ def _session_import(ws: WS) -> dict:
 
 
 def _session_template(ws: WS) -> dict:
-    from workspaces import session_templates
+    from rvnd import session_templates
     tpls = session_templates.list_templates()
     return {"template_id": tpls[0]["id"] if tpls else ""}
 
@@ -168,7 +168,7 @@ def _mk_src(ws: WS, name: str, body: str) -> str:
 
 def _mirror_gen(ws: WS) -> dict:
     with_parties(ws)
-    import workspaces.mcp_server as M
+    import rvnd.mcp_server as M
     src = _mk_src(ws, "note.md", "Contact jane.doe\x40example.com or call (555) 123-4567.\n")
     r = M.workspace_mirror("generate", {
         "folder_context": ws.folder, "source_path": src, "actor": ACTOR})
@@ -177,7 +177,7 @@ def _mirror_gen(ws: WS) -> dict:
 
 def _mirror_open(ws: WS) -> dict:
     ctx = _mirror_gen(ws)
-    from workspaces import mirror_editor
+    from rvnd import mirror_editor
     rd = mirror_editor.open_revision(ws.folder, ctx["mirror_path"],
                                      actor="system:editor", log_root=Path(ws.log_root))
     spans = rd.spans or []
@@ -187,7 +187,7 @@ def _mirror_open(ws: WS) -> dict:
 
 def _mirror_locked(ws: WS) -> dict:
     ctx = _mirror_gen(ws)
-    import workspaces.mcp_server as M
+    import rvnd.mcp_server as M
     M.workspace_mirror("lock_acquire", {
         "folder_context": ws.folder, "mirror_path": ctx["mirror_path"], "actor": ACTOR})
     return ctx
@@ -199,7 +199,7 @@ def _mirror_locked(ws: WS) -> dict:
 
 def _work_with_creator(ws: WS) -> dict:
     with_parties(ws)
-    import workspaces.mcp_server as M
+    import rvnd.mcp_server as M
     M.workspace_grounder("work.register", {
         "folder_context": ws.folder, "title": "A traced work",
         "creators": [{"name": "Ada Lovelace"}]})
@@ -212,7 +212,7 @@ def _work_with_creator(ws: WS) -> dict:
 
 def _erase_request(ws: WS) -> dict:
     with_parties(ws)
-    import workspaces.mcp_server as M
+    import rvnd.mcp_server as M
     r = M.workspace_erase("request", {
         "folder_context": ws.folder, "subject": "Jane Roe",
         "requester_ref": "DSAR-1", "reason": "consent withdrawn"})
@@ -220,7 +220,7 @@ def _erase_request(ws: WS) -> dict:
 
 
 def _sealed(ws: WS) -> dict:
-    import workspaces.seal as _seal
+    import rvnd.seal as _seal
     with_parties(ws)
     _seal.seal_folder(ws.folder, passphrase="cov-pass", log_root=Path(ws.log_root))
     return {"passphrase": "cov-pass"}
@@ -230,14 +230,14 @@ def _registered(ws: WS) -> dict:
     """Register the disposable folder in the (tmp) default registry so the
     allowlist gate admits it — without relaxing the principal gate."""
     with_parties(ws)
-    from workspaces.workspace_registry import add_known_workspace
+    from rvnd.workspace_registry import add_known_workspace
     add_known_workspace(ws.folder)
     return {}
 
 
 def _tmp_file(ws: WS) -> dict:
     with_parties(ws)
-    from workspaces.workspace_registry import add_known_workspace
+    from rvnd.workspace_registry import add_known_workspace
     add_known_workspace(ws.folder)
     p = Path(ws.folder) / "cov_doc.txt"
     p.write_text("Party A shall deliver the report by 2026-08-01.\n", encoding="utf-8")
@@ -246,7 +246,7 @@ def _tmp_file(ws: WS) -> dict:
 
 def _added_ws(ws: WS) -> dict:
     with_parties(ws)
-    import workspaces.mcp_server as M
+    import rvnd.mcp_server as M
     extra = str(Path(ws.root) / "ws_extra"); Path(extra).mkdir(exist_ok=True)
     M.workspace_workspace("add", {"folder_context": extra})
     return {"extra": extra}
@@ -264,7 +264,7 @@ def _bootstrap_targets(ws: WS) -> dict:
 
 
 def _lock_setup_paths(ws: WS) -> dict:
-    from workspaces.lock.onboarding.config import load_config, save_config
+    from rvnd.lock.onboarding.config import load_config, save_config
     prior = Path(ws.root) / "lock_prior.json"
     c = load_config(prior)
     c.setup_completed_at = "2026-01-01T00:00:00Z"

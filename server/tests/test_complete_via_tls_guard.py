@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces.local_llm import _is_secure_or_loopback, complete_via
+from rvnd.local_llm import _is_secure_or_loopback, complete_via
 
 
 @pytest.mark.parametrize("url,ok", [

@@ -13,11 +13,11 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces.folder_context import (
+from rvnd.folder_context import (
     _resolve_with_symlink_policy,
     symlink_mode,
 )
-from workspaces.mutation_log import folder_hash
+from rvnd.mutation_log import folder_hash
 
 
 @pytest.fixture(autouse=True)
@@ -69,7 +69,7 @@ def test_symlink_mode_status_displays_current_setting(tmp_path, monkeypatch, cap
     (tmp_path / "_home").mkdir(exist_ok=True)
 
     # Run `workspaces status --json` against a clean tmp workspace.
-    from workspaces.cli import main
+    from rvnd.cli import main
     rc = main(["--log-root", str(tmp_path / "_log_root"),
                "status", "--folder", str(tmp_path), "--json"])
     assert rc == 0

@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces.use_case_nd import (
+from rvnd.use_case_nd import (
     extract_use_case_facets, facets_from_json, looks_like_use_case,
     subsume, UseCaseND, FOOTPRINT_TAGS,
 )

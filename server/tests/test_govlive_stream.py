@@ -30,10 +30,10 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "app"))
 import serve  # noqa: E402
 
-from workspaces import seal as _seal  # noqa: E402
-from workspaces import workspace_registry as _registry  # noqa: E402
-from workspaces.governance_live import governance_live  # noqa: E402
-from workspaces.mutation_log import LogEvent, MutationLog  # noqa: E402
+from rvnd import seal as _seal  # noqa: E402
+from rvnd import workspace_registry as _registry  # noqa: E402
+from rvnd.governance_live import governance_live  # noqa: E402
+from rvnd.mutation_log import LogEvent, MutationLog  # noqa: E402
 
 _TOKEN = "govlive-stream-test-token"
 

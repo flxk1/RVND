@@ -18,8 +18,8 @@ import os
 
 import pytest
 
-from workspaces.lock.core import redact_for_capture
-from workspaces.llm_capture import (
+from rvnd.lock.core import redact_for_capture
+from rvnd.llm_capture import (
     LLMExchange,
     _project_pair,
     VerbosityLevel,
@@ -117,7 +117,7 @@ def test_redacted_hashing_does_not_collapse_distinct_exchanges():
 @pytest.mark.parametrize("v", list(VerbosityLevel))
 def test_web_capture_redacts(v):
     import json
-    from workspaces.web_capture import WebSearchExchange, WebSearchResult, _project_pair as web_pair
+    from rvnd.web_capture import WebSearchExchange, WebSearchResult, _project_pair as web_pair
     ex = WebSearchExchange(
         query=f"use {SECRET} with stripe",
         engine="ddg",
@@ -142,7 +142,7 @@ def test_extra_credential_classes(payload, leak):
 # ── WorkspaceMemory.web_capture (sibling path) redacts before the chain ──────────
 def test_workspacememory_web_capture_redacts(tmp_path, monkeypatch):
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(tmp_path / "keys"))
-    from workspaces.memory import WorkspaceMemory
+    from rvnd.memory import WorkspaceMemory
     ws = tmp_path / "org"; ws.mkdir()
     mem = WorkspaceMemory(str(ws), log_root=str(tmp_path / "logs"), actor="t")
     mem.web_capture(f"find {SECRET}", [{"url": URLCRED, "title": f"t {BEARER}",
@@ -154,7 +154,7 @@ def test_workspacememory_web_capture_redacts(tmp_path, monkeypatch):
 
 def test_workspacememory_llm_capture_redacts(tmp_path, monkeypatch):
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(tmp_path / "keys"))
-    from workspaces.memory import WorkspaceMemory
+    from rvnd.memory import WorkspaceMemory
     ws = tmp_path / "org"; ws.mkdir()
     mem = WorkspaceMemory(str(ws), log_root=str(tmp_path / "logs"), actor="t")
     mem.llm_capture(f"key {SECRET}", f"ok {BEARER}", model="m", cited_sources=[URLCRED])
@@ -176,13 +176,13 @@ def test_quoted_secret_assignment_redacted(payload, leak):
 # ── R4: cascade audit pair_id is a hash, not the raw prompt ─────────────────
 def test_cascade_pair_id_does_not_embed_prompt(tmp_path, monkeypatch):
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(tmp_path / "keys"))
-    from workspaces.workspace_cascade import cascade_for_workspace
+    from rvnd.workspace_cascade import cascade_for_workspace
     ws = tmp_path / "org"; ws.mkdir()
     secret_prompt = f"please use {SECRET} to authenticate"
     # no cloud/local tier configured → served locally/refused, but the audit
     # event is still written; we only assert the pair_id shape.
     cascade_for_workspace(str(ws), secret_prompt, log_root=str(tmp_path / "logs"))
-    from workspaces.mutation_log import MutationLog
+    from rvnd.mutation_log import MutationLog
     log = MutationLog(str(ws), log_root=str(tmp_path / "logs"))
     for ev in log.replay():
         pid = ev.pair_id if hasattr(ev, "pair_id") else (ev.get("pair_id", "") if isinstance(ev, dict) else "")

@@ -19,9 +19,9 @@ import re
 from pathlib import Path
 
 
-from workspaces.mutation_log import LogEvent, MutationLog
-from workspaces.pinned_skills import pin_skill, record_dispatch
-from workspaces.workflows import (
+from rvnd.mutation_log import LogEvent, MutationLog
+from rvnd.pinned_skills import pin_skill, record_dispatch
+from rvnd.workflows import (
     Workflow,
     WorkflowStep,
     active_workflows,
@@ -100,9 +100,9 @@ def test_active_workflows_carries_audit_id(tmp_path):
 
 def _fresh_mcp(monkeypatch, log_root: Path):
     """Reload mcp_server and patch _log_root to the test log."""
-    import workspaces.mcp_server as srv
+    import rvnd.mcp_server as srv
     importlib.reload(srv)
-    monkeypatch.setattr("workspaces.mcp_serving._log_root", lambda: log_root)
+    monkeypatch.setattr("rvnd.mcp_serving._log_root", lambda: log_root)
     return srv
 
 
@@ -175,7 +175,7 @@ def test_get_audit_event_discovery_scan(tmp_path, monkeypatch):
     log_root = tmp_path / "log"
     srv = _fresh_mcp(monkeypatch, log_root)
     # Register the folder so the discovery scan can see it
-    from workspaces.workspace_registry import add_known_workspace
+    from rvnd.workspace_registry import add_known_workspace
     add_known_workspace(str(folder), log_root=log_root)
 
     disp = srv.dispatch_skill(

@@ -4,9 +4,9 @@
 import os
 from pathlib import Path
 
-from workspaces import cli
-from workspaces.workspace_contract import describe_workspace, WorkspaceContract
-from workspaces.cross_workspace import cross_workspace_read
+from rvnd import cli
+from rvnd.workspace_contract import describe_workspace, WorkspaceContract
+from rvnd.cross_workspace import cross_workspace_read
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 

@@ -25,7 +25,7 @@ Invariants (written BEFORE the logic):
 from __future__ import annotations
 
 
-from workspaces.issue_token import (
+from rvnd.issue_token import (
     IssueToken, Span, assign_method, detect_issues, register_detector,
     token_to_subpayload,
 )
@@ -61,7 +61,7 @@ def test_unknown_issue_type_degrades_to_generic():
 
 
 def test_assigned_method_is_a_real_profile():
-    from workspaces.reasoning_contract import PROFILES
+    from rvnd.reasoning_contract import PROFILES
     for itype in ("liability_cap", "data_processing", "ip_assignment",
                   "good_faith_balancing"):
         assert assign_method(itype) in PROFILES or assign_method(itype) == "generic"
@@ -131,7 +131,7 @@ def test_one_clause_one_issue_type_is_one_token():
 # ── K7: tokens feed the existing visualiser ───────────────────────────────────
 
 def test_tokens_project_into_a_problem_set():
-    from workspaces.kg_export import case_set_to_cytoscape, validate_graph
+    from rvnd.kg_export import case_set_to_cytoscape, validate_graph
     toks = detect_issues(SNIPPET, domain="contract-de")
     parent = {"case": {"problem": {"text": "Review this services contract"},
                        "resolution": {"type": "residual"}, "profile": "generic"},

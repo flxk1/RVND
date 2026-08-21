@@ -25,7 +25,7 @@ os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 sys.path.insert(0, str(HERE.parent))
 sys.path.insert(0, str(HERE.parent.parent / "server" / "src"))
 import serve                          # noqa: E402
-import workspaces.mcp_server as S          # noqa: E402
+import rvnd.mcp_server as S          # noqa: E402
 
 F = os.path.join(tmp, "org")
 os.makedirs(F, exist_ok=True)
@@ -35,7 +35,7 @@ PASSPHRASE = "gate-passphrase"
 
 
 def _seed_pairs(folder: str, n: int) -> None:
-    from workspaces.memory import WorkspaceMemory
+    from rvnd.memory import WorkspaceMemory
     mem = WorkspaceMemory(folder, log_root=os.environ["WORKSPACE_L0_LOG_ROOT"], actor="alex")
     for i in range(n):
         mem.remember({
@@ -52,7 +52,7 @@ def main() -> int:
                                           "risk": "high", "allowed_agents": [], "actor": "alex"})
     _seed_pairs(F, 3)                      # reclassify sweeps these
     _seed_pairs(F2, 2)
-    from workspaces import seal
+    from rvnd import seal
     seal.seal_folder(F2, passphrase=PASSPHRASE,
                      log_root=os.environ["WORKSPACE_L0_LOG_ROOT"])
     os.environ["RVND_BRIDGE_TOKEN"] = os.urandom(24).hex()  # server + node share this session token

@@ -7,9 +7,9 @@ from __future__ import annotations
 
 import json
 
-from workspaces.subject_card import SubjectCard
-from workspaces.fact_intake import FactNeed, build_form, record_standing
-from workspaces import card_store as cs
+from rvnd.subject_card import SubjectCard
+from rvnd.fact_intake import FactNeed, build_form, record_standing
+from rvnd import card_store as cs
 
 
 NEEDS = [
@@ -130,7 +130,7 @@ def test_stale_rewrite_scratch_is_scanned_and_removed(tmp_path):
 
 
 def test_card_pair_id_is_opaque_on_chain(tmp_path):
-    from workspaces.mutation_log import MutationLog
+    from rvnd.mutation_log import MutationLog
     import re
     folder = tmp_path / "f"; log_root = tmp_path / ".log"
     cs.save_card(SubjectCard(domain="crm", facets={"tax_status": "a"},
@@ -146,7 +146,7 @@ def test_card_pair_id_is_opaque_on_chain(tmp_path):
 
 
 def test_card_pair_ref_stable_per_folder_salted_across_folders(tmp_path):
-    from workspaces.mutation_log import MutationLog
+    from rvnd.mutation_log import MutationLog
     log_root = tmp_path / ".log"
     card = SubjectCard(domain="crm", facets={}, subject_id="Anna Schmidt")
     f1, f2 = tmp_path / "f1", tmp_path / "f2"
@@ -162,8 +162,8 @@ def test_card_pair_ref_stable_per_folder_salted_across_folders(tmp_path):
 
 
 def test_card_pair_ref_domain_separated_from_forgotten_hash(tmp_path):
-    from workspaces import forgotten_subjects as fs
-    from workspaces.mutation_log import MutationLog
+    from rvnd import forgotten_subjects as fs
+    from rvnd.mutation_log import MutationLog
     folder = tmp_path / "f"; log_root = tmp_path / ".log"
     # lowercase subject == its forgotten normalisation: same salt, same text,
     # only the domain label differs — the refs must still be unrelated.

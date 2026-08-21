@@ -24,14 +24,14 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces.contracts.instance import ContractInstance, ContractRegistry, PartyRef
-from workspaces.obligation_runtime import ObligationRegistry
-from workspaces.obligation_scheduler import ObligationScheduler
-from workspaces.predicate import parse_condition
-from workspaces.temporal import Date
+from rvnd.contracts.instance import ContractInstance, ContractRegistry, PartyRef
+from rvnd.obligation_runtime import ObligationRegistry
+from rvnd.obligation_scheduler import ObligationScheduler
+from rvnd.predicate import parse_condition
+from rvnd.temporal import Date
 
-import workspaces.mcp_server as S
-from workspaces.mcp_impl import contract_obligations
+import rvnd.mcp_server as S
+from rvnd.mcp_impl import contract_obligations
 
 
 def dpa(version: int = 1, **kw) -> ContractInstance:

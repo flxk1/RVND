@@ -9,8 +9,8 @@ import json
 
 import pytest
 
-from workspaces import WorkspaceMemory
-from workspaces.cli import main
+from rvnd import WorkspaceMemory
+from rvnd.cli import main
 
 
 @pytest.fixture
@@ -205,7 +205,7 @@ def _cli_purge_keys(tmp_path, monkeypatch):
     """B1: purge requires a controller keypair. Bind WORKSPACE_KEY_DIR
     to a tmp dir + initialise both keypairs."""
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(tmp_path / "cli-keys"))
-    from workspaces import signing
+    from rvnd import signing
     signing.ensure_keypair()
     signing.ensure_controller_keypair()
     yield

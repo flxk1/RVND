@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # Copyright 2026 flxk1
-"""Tests for the dual-transport L0 bridge in :mod:`workspaces.lock.l0_bridge`.
+"""Tests for the dual-transport L0 bridge in :mod:`rvnd.lock.l0_bridge`.
 
 Covers:
 
@@ -23,7 +23,7 @@ import shutil
 
 import pytest
 
-from workspaces.lock import l0_bridge
+from rvnd.lock import l0_bridge
 
 
 # ===========================================================================

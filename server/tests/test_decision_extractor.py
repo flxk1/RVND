@@ -4,11 +4,11 @@
 
 from __future__ import annotations
 
-from workspaces.decisions.extractor import (
+from rvnd.decisions.extractor import (
     DecisionExtractor,
     extract_decisions,
 )
-from workspaces.nd_routing import Classification
+from rvnd.nd_routing import Classification
 
 
 def _cls(facets=None):

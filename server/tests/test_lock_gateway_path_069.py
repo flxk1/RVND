@@ -2,11 +2,11 @@
 # Copyright 2026 flxk1
 """Facade-path regression tests for workspace_lock egress/ingress (panel G0, 2026-06-04).
 
-The bug under test: ``workspaces.mcp_server.lock_egress_check`` re-assembled the
-``workspaces.lock.egress()`` call locally and drifted from the real signature —
+The bug under test: ``rvnd.mcp_server.lock_egress_check`` re-assembled the
+``rvnd.lock.egress()`` call locally and drifted from the real signature —
 it passed ``capability_token`` as a kwarg to ``egress()`` (which takes it on
 the ``ToolCall``), so EVERY call through the workspaces facade raised TypeError.
-The stdio surface most exercised in tests was ``workspaces.lock.mcp_server``
+The stdio surface most exercised in tests was ``rvnd.lock.mcp_server``
 directly, so the drift was invisible until the op was called through
 ``workspace_lock`` — the exact path the gateway will use.
 
@@ -20,7 +20,7 @@ from __future__ import annotations
 import json
 
 
-from workspaces.mcp_server import workspace_lock, lock_egress_check
+from rvnd.mcp_server import workspace_lock, lock_egress_check
 
 
 PII_TEXT = "Contact Maria Schneider, maria.schneider\x40example.de, +49 170 1234567."
@@ -99,7 +99,7 @@ def test_facade_egress_check_strips_over_collection():
 
 def test_direct_wrapper_matches_reference_implementation():
     """Delegation invariant: workspaces wrapper == workspaces.lock reference, same inputs."""
-    from workspaces.lock.mcp_server import egress_check as reference
+    from rvnd.lock.mcp_server import egress_check as reference
     kwargs = dict(
         tool="slack.post",
         arguments={"channel": "#legal", "text": PII_TEXT},
@@ -155,7 +155,7 @@ def test_facade_missing_param_returns_error_dict():
 def test_ingress_check_accepts_string_payload_g4():
     """G4: workflow engines hand the gate plain text (webhook/ticket body).
     A bare string must classify, not crash on payload.keys()."""
-    from workspaces import gateway as gw
+    from rvnd import gateway as gw
     out = gw.workspace_lock("ingress_check", {
         "task_scope": ["ticket-triage"],
         "payload": "mail maria.schneider\x40example.de +49 170 1234567 now"})

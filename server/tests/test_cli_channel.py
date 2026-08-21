@@ -3,7 +3,7 @@
 """CLI-channel proof — supported ops reachable through the real ``workspaces`` CLI.
 
 The capability register proves ops callable over the UI bridge, the gateway, and
-the MCP facade. The CLI (``python -m workspaces.cli``) is the operator's real
+the MCP facade. The CLI (``python -m rvnd.cli``) is the operator's real
 surface, and it is a curated argparse tree — only some supported ops have a
 subcommand. This gate maps each such subcommand to the register op it drives by
 SHARED IMPLEMENTATION (the CLI handler and the facade op call the same underlying
@@ -119,7 +119,7 @@ def _run(argv: list[str], workspace: Path, allow: bool) -> tuple[int, str]:
         env["WORKSPACES_ALLOW_UNREGISTERED"] = "1"
     else:
         env.pop("WORKSPACES_ALLOW_UNREGISTERED", None)
-    r = subprocess.run([sys.executable, "-m", "workspaces.cli", *argv],
+    r = subprocess.run([sys.executable, "-m", "rvnd.cli", *argv],
                        cwd=str(REPO), env=env, capture_output=True, text=True, timeout=60)
     return r.returncode, r.stdout + r.stderr
 

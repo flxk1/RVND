@@ -9,8 +9,8 @@ import shutil
 from pathlib import Path
 
 
-from workspaces.mutation_log import LogEvent, MutationLog, folder_hash
-from workspaces.workspace_migrate import gc_orphans
+from rvnd.mutation_log import LogEvent, MutationLog, folder_hash
+from rvnd.workspace_migrate import gc_orphans
 
 
 def _seed(folder: Path, log_root: Path, n: int = 2) -> str:
@@ -69,7 +69,7 @@ def test_gc_delete_removes_orphans(tmp_path):
 def test_gc_cli_requires_orphans_flag(tmp_path, capsys):
     log_root = tmp_path / "_log_root"
     log_root.mkdir()
-    from workspaces.cli import main
+    from rvnd.cli import main
     rc = main(["--log-root", str(log_root), "workspace", "gc"])
     assert rc == 0
     err = capsys.readouterr().err
@@ -79,7 +79,7 @@ def test_gc_cli_requires_orphans_flag(tmp_path, capsys):
 def test_gc_cli_delete_requires_yes_i_mean_it(tmp_path, capsys):
     log_root = tmp_path / "_log_root"
     log_root.mkdir()
-    from workspaces.cli import main
+    from rvnd.cli import main
     rc = main(["--log-root", str(log_root), "workspace", "gc",
                "--orphans", "--delete"])
     assert rc == 2
@@ -93,7 +93,7 @@ def test_gc_cli_json_output(tmp_path, capsys):
     _seed(gone, log_root)
     shutil.rmtree(gone)
 
-    from workspaces.cli import main
+    from rvnd.cli import main
     rc = main(["--log-root", str(log_root), "workspace", "gc",
                "--orphans", "--json"])
     assert rc == 0

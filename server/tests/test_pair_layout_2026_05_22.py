@@ -27,9 +27,9 @@ UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]
 
 def _fresh_mcp(monkeypatch, log_root: Path):
     """Reload mcp_server and patch _log_root to the test log."""
-    import workspaces.mcp_server as srv
+    import rvnd.mcp_server as srv
     importlib.reload(srv)
-    monkeypatch.setattr("workspaces.mcp_serving._log_root", lambda: log_root)
+    monkeypatch.setattr("rvnd.mcp_serving._log_root", lambda: log_root)
     return srv
 
 
@@ -194,7 +194,7 @@ def test_get_pair_layouts_requires_folder_context(tmp_path, monkeypatch):
 
 def test_get_pair_layouts_ignores_non_layout_events(tmp_path, monkeypatch):
     """Unrelated mutation-log events don't surface as layout entries."""
-    from workspaces.mutation_log import LogEvent, MutationLog
+    from rvnd.mutation_log import LogEvent, MutationLog
     folder = tmp_path / "wks"; folder.mkdir()
     log_root = tmp_path / "log"
     srv = _fresh_mcp(monkeypatch, log_root)
@@ -216,7 +216,7 @@ def test_get_pair_layouts_ignores_non_layout_events(tmp_path, monkeypatch):
 
 def test_get_pair_layouts_skips_malformed_layout_extras(tmp_path, monkeypatch):
     """A layout extra with non-numeric coords is silently skipped."""
-    from workspaces.mutation_log import LogEvent, MutationLog
+    from rvnd.mutation_log import LogEvent, MutationLog
     folder = tmp_path / "wks"; folder.mkdir()
     log_root = tmp_path / "log"
     srv = _fresh_mcp(monkeypatch, log_root)

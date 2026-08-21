@@ -3,7 +3,7 @@
 """PyInstaller entry shim — the binary boots the package properly.
 (cli.py uses relative imports; freezing it directly breaks them.)"""
 import sys
-from workspaces.cli import main
+from rvnd.cli import main
 
 if __name__ == "__main__":
     sys.exit(main())

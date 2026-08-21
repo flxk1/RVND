@@ -14,8 +14,8 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces import mcp_impl
-from workspaces import mcp_server
+from rvnd import mcp_impl
+from rvnd import mcp_server
 
 
 # ── N2: local_llm_complete writes the audit-floor capture row ────────────────
@@ -23,7 +23,7 @@ from workspaces import mcp_server
 @pytest.fixture
 def _stub_local_complete(monkeypatch):
     """Stub the real local completion so no model/network is needed."""
-    import workspaces.local_llm as local_llm
+    import rvnd.local_llm as local_llm
 
     def _fake_complete(prompt, model=None, temperature=0.0, max_tokens=512):
         return {
@@ -39,7 +39,7 @@ def _stub_local_complete(monkeypatch):
 def test_local_llm_complete_writes_capture_row(monkeypatch, tmp_path):
     # Stub completion to return a response containing an email, so we can prove
     # the persisted pair is redacted (D1), not just that a bool flipped.
-    import workspaces.local_llm as local_llm
+    import rvnd.local_llm as local_llm
     monkeypatch.setattr(local_llm, "complete", lambda prompt, model=None,
                         temperature=0.0, max_tokens=512: {
         "ok": True, "response": "contact alice\x40secret.example for details",
@@ -59,7 +59,7 @@ def test_local_llm_complete_writes_capture_row(monkeypatch, tmp_path):
     assert res.get("pair_id")                       # correlation id now surfaced
 
     # Deep check: the pair was really persisted AND the raw emails are redacted.
-    from workspaces.memory import WorkspaceMemory
+    from rvnd.memory import WorkspaceMemory
     mem = WorkspaceMemory(str(folder), log_root=str(log_root))
     pair = mem.by_id(res["pair_id"])
     assert pair is not None

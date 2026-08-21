@@ -25,10 +25,10 @@ from __future__ import annotations
 
 import os
 
-from workspaces import applicability as A
-from workspaces import subject_card as SC
-from workspaces import matcher as MT
-from workspaces.matcher import Match
+from rvnd import applicability as A
+from rvnd import subject_card as SC
+from rvnd import matcher as MT
+from rvnd.matcher import Match
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 

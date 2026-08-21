@@ -5,9 +5,9 @@ persisted per workspace and per user."""
 
 from __future__ import annotations
 
-from workspaces import rule_registry
-from workspaces.rule_registry import RuleRegistry
-from workspaces import legal_corpus
+from rvnd import rule_registry
+from rvnd.rule_registry import RuleRegistry
+from rvnd import legal_corpus
 
 
 _CLAUSE = ("The controller shall erase personal data on request under "
@@ -109,7 +109,7 @@ def test_canonical_urn_minted_on_place_span(tmp_path):
 
 def test_reanchor_preserves_the_canonical_urn(tmp_path):
     reg = RuleRegistry(tmp_path, user="alex")
-    doc_v1 = "Preamble. " + _CLAUSE
+    "Preamble. " + _CLAUSE
     placed = reg.place_span(_CLAUSE, source_document="msa.md",
                             document_hash="h1", document_version=1)
     urn_before = placed["canonical_urn"]

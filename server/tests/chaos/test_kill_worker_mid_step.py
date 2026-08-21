@@ -14,13 +14,13 @@ def test_step_running_event_is_written_before_dispatch(tmp_path: Path) -> None:
     crashes between ``step-running`` and ``done``, ``active_workflows()``
     can surface the run.
     """
-    from workspaces.workflows import (
+    from rvnd.workflows import (
         Workflow,
         WorkflowStep,
         define_workflow,
         run_workflow,
     )
-    from workspaces.mutation_log import MutationLog
+    from rvnd.mutation_log import MutationLog
 
     workspace = tmp_path / "chaos_workflow"
     workspace.mkdir(parents=True)
@@ -78,7 +78,7 @@ def test_active_workflows_surfaces_in_flight_run_after_simulated_crash(
     harness exists. It validates the audit-trail half of the recovery
     contract (the lease half is what the skipped test above will cover).
     """
-    from workspaces.workflows import (
+    from rvnd.workflows import (
         Workflow,
         WorkflowStep,
         define_workflow,

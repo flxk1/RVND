@@ -11,11 +11,11 @@ from decimal import Decimal
 
 import pytest
 
-from workspaces.contracts.instance import (ContractError, ContractInstance,
+from rvnd.contracts.instance import (ContractError, ContractInstance,
                                      ContractRegistry, PartyRef,
                                      _lei_checksum_ok)
-from workspaces.legal_corpus import EntityRegistry
-from workspaces.temporal import Date, Duration, Money, RelativeDeadline, Term
+from rvnd.legal_corpus import EntityRegistry
+from rvnd.temporal import Date, Duration, Money, RelativeDeadline, Term
 
 
 def make_lei(prefix: str = "529900T8BM49AURSDO") -> str:

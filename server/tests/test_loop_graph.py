@@ -2,11 +2,11 @@
 # Copyright 2026 flxk1
 """Control-loop topology and the drift-to-action runtime seam."""
 
-from workspaces.action_gate import ActionRequest
-from workspaces.governance_lane import GovernanceLane
-from workspaces.breaker import Breaker, Lease
-from workspaces.drift_monitor import DriftReport
-from workspaces.loop_graph import _control_bindings, assess_with_drift, graph_of_loops
+from rvnd.action_gate import ActionRequest
+from rvnd.governance_lane import GovernanceLane
+from rvnd.breaker import Breaker, Lease
+from rvnd.drift_monitor import DriftReport
+from rvnd.loop_graph import _control_bindings, assess_with_drift, graph_of_loops
 
 
 def _request(*, footprint=()):
@@ -81,7 +81,7 @@ def test_graph_reads_execution_state_and_latest_drift_baseline(tmp_path):
 
 
 def test_workflow_facade_exposes_the_loop_graph(tmp_path, monkeypatch):
-    from workspaces import mcp_server
+    from rvnd import mcp_server
 
     monkeypatch.setenv("WORKSPACES_LOG_ROOT", str(tmp_path / "log"))
     help_ops = {item["op"] for item in mcp_server.workspace_workflow("help")["ops"]}

@@ -9,16 +9,16 @@ from datetime import date
 
 import pytest
 
-from workspaces import law_sources as lsrc
-from workspaces import subsumption_path as sp
-from workspaces import subsumption_validator as sv
-from workspaces.norm_contract import Level
+from rvnd import law_sources as lsrc
+from rvnd import subsumption_path as sp
+from rvnd import subsumption_validator as sv
+from rvnd.norm_contract import Level
 
 
 # ── Law sources: coverage + EUR-Lex adapter ──────────────────────────────────
 
 def test_sources_cover_every_legal_system():
-    from workspaces import legal_systems as ls
+    from rvnd import legal_systems as ls
     for js in ls.available():
         assert lsrc.sources_for(js), f"no law source declared for {js}"
     # EU has EUR-Lex; US has CourtListener; DE has Gesetze im Internet
@@ -33,7 +33,7 @@ def test_eurlex_adapter_normalises_real_shaped_records_into_currency_rows():
          "dateEndValidity": "2018-05-25", "repealedBy": "32016R0679"},
     ]
     reg = lsrc.build_registry_from_records(records)
-    import workspaces.currency as cur
+    import rvnd.currency as cur
     assert cur.validity_status(reg.get("32016R0679"), date(2024, 1, 1)) == "in-force"
     assert cur.validity_status(reg.get("32016R0679"), date(2017, 1, 1)) == "not-yet-in-force"
     assert cur.validity_status(reg.get("31995L0046"), date(2024, 1, 1)) == "superseded"

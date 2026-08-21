@@ -17,8 +17,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from workspaces.mutation_log import MutationLog
-from workspaces.queue import (
+from rvnd.mutation_log import MutationLog
+from rvnd.queue import (
     cancel_run,
     enqueue_run,
     get_run,
@@ -114,7 +114,7 @@ def test_journalling_failure_never_breaks_the_run(tmp_path, monkeypatch):
     def _boom(*a, **k):
         raise RuntimeError("chain unavailable")
 
-    monkeypatch.setattr("workspaces.mutation_log.MutationLog", _boom)
+    monkeypatch.setattr("rvnd.mutation_log.MutationLog", _boom)
     assert mark_run_done(entry.run_id, "worker-A", log_root=log_root) is True
     assert get_run(entry.run_id, log_root=log_root).state == "done"
 
@@ -157,7 +157,7 @@ def test_evidence_pack_lifts_the_effect_detail(tmp_path, monkeypatch):
     entry = _lease(folder, log_root)
     mark_run_failed(entry.run_id, "worker-A", "disk full", log_root=log_root)
 
-    from workspaces import conformity
+    from rvnd import conformity
     pack = conformity.evidence_pack(folder, log_root=log_root)
     assert pack["counts_by_kind"].get("effect-observed") == 1
     rec = next(r for r in pack["records"] if r["record_kind"] == "effect-observed")

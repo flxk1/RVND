@@ -35,7 +35,7 @@ from collections import Counter
 from dataclasses import dataclass
 
 
-from workspaces.lock.core import (
+from rvnd.lock.core import (
     tier_b_scan_text,
     tier_c_semantic_check,
     _detect_confusable_bypass,

@@ -17,8 +17,8 @@ from pathlib import Path
 
 import pytest
 
-from workspaces import draft_store, session_io as S
-from workspaces.mutation_log import LogEvent, MutationLog
+from rvnd import draft_store, session_io as S
+from rvnd.mutation_log import LogEvent, MutationLog
 
 
 def _make_workspace(tmp: str, wid: str, n_events: int = 4) -> dict:

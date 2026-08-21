@@ -21,7 +21,7 @@ from __future__ import annotations
 import os
 
 
-from workspaces.kg_export import case_trace_to_cytoscape, validate_graph
+from rvnd.kg_export import case_trace_to_cytoscape, validate_graph
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 
@@ -87,8 +87,8 @@ def test_projection_is_pure():                                    # T5
 
 
 def test_real_deterministic_walk_projects_and_validates(tmp_path):  # T6
-    from workspaces import legal_corpus, reasoning_walker as rw
-    from workspaces.rule_registry import RuleRegistry
+    from rvnd import legal_corpus, reasoning_walker as rw
+    from rvnd.rule_registry import RuleRegistry
 
     legal_corpus.seed_registry(tmp_path)
     reg = RuleRegistry(tmp_path, user="alex")

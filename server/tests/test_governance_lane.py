@@ -4,8 +4,8 @@
 
 import pytest
 
-from workspaces.action_gate import ActionRequest
-from workspaces.governance_lane import (
+from rvnd.action_gate import ActionRequest
+from rvnd.governance_lane import (
     GovernanceLane, evaluate_lane, get_lane, list_lanes, register_lane,
 )
 
@@ -96,7 +96,7 @@ def test_lane_versions_are_signed_and_latest_wins(tmp_path):
 
 
 def test_workflow_facade_registers_and_lists_lanes(tmp_path, monkeypatch):
-    from workspaces import mcp_server
+    from rvnd import mcp_server
 
     monkeypatch.setenv("WORKSPACES_LOG_ROOT", str(tmp_path / "log"))
     folder = str(tmp_path / "workspace")
@@ -114,8 +114,8 @@ def test_workflow_facade_registers_and_lists_lanes(tmp_path, monkeypatch):
 
 
 def test_primary_chokepoint_denies_l0_agent_requesting_l1(tmp_path):
-    from workspaces.governance import decide_action
-    from workspaces.parties import register_party
+    from rvnd.governance import decide_action
+    from rvnd.parties import register_party
 
     folder = tmp_path / "workspace"
     log_root = tmp_path / "log"

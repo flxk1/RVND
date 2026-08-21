@@ -21,8 +21,8 @@ import itertools
 
 import pytest
 
-from workspaces import policy_matrix as pm
-from workspaces.controlforms import (
+from rvnd import policy_matrix as pm
+from rvnd.controlforms import (
     FORMS, from_traffic_light, guarantees, leq, name_of,
 )
 
@@ -114,7 +114,7 @@ def test_unknown_form_raises():
 # --- the workspace_matrix facade surfaces the algebra -----------------------------
 
 def test_workspace_matrix_explain_carries_control_form(tmp_path):
-    from workspaces import mcp_server
+    from rvnd import mcp_server
     f = str(tmp_path / "workspace")
     ex = mcp_server.workspace_matrix("explain", {
         "folder_context": f, "grade": "L4", "oversight": "supervised"})

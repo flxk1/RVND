@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces import (
+from rvnd import (
     IngestMode,
     WorkspaceMemory,
     OversightLevel,
@@ -314,7 +314,7 @@ def test_decide_verbosity_shared_with_llm_capture():
 
 
 def test_capture_writes_websearch_channel_event(folder, log_root):
-    from workspaces import MutationLog
+    from rvnd import MutationLog
     capture_web_search(
         _exchange(),
         mode=IngestMode.AGENTIC,

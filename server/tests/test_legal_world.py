@@ -6,13 +6,13 @@ the digital-law seed corpus, the ingest path, and the 5D projection.
 
 from __future__ import annotations
 
-from workspaces import legal_connection as lc
-from workspaces.legal_connection import Connection, ESCALATE
-from workspaces import legal_world as lw
-from workspaces.legal_world import Entity, EntityKind
-from workspaces import legal_corpus
-from workspaces.dimensions import Dimension
-from workspaces import reasoning
+from rvnd import legal_connection as lc
+from rvnd.legal_connection import Connection, ESCALATE
+from rvnd import legal_world as lw
+from rvnd.legal_world import Entity, EntityKind
+from rvnd import legal_corpus
+from rvnd.dimensions import Dimension
+from rvnd import reasoning
 
 
 # ── the algebra ───────────────────────────────────────────────────────────────

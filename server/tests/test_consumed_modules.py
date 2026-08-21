@@ -52,10 +52,22 @@ def _package_root() -> Path:
     src = REPO_ROOT / where
     found = sorted(d for d in src.iterdir()
                    if d.is_dir() and (d / "__init__.py").is_file())
-    assert len(found) == 1, (
-        f"expected exactly one import package under {src}; got "
-        f"{[d.name for d in found]} — teach this gate which one is RVND's")
-    return found[0]
+    assert found, f"no import package found under {src}"
+    if len(found) == 1:
+        return found[0]
+    # More than one: the rename ships a compat alias alongside the real package
+    # (server/src/workspaces re-points sys.modules at rvnd). Ask the build config
+    # which one is canonical rather than guessing by name -- the same source the
+    # wheel uses, so this cannot disagree with what actually gets shipped.
+    attr = _PYPROJECT.get("tool", {}).get("setuptools", {}) \
+        .get("dynamic", {}).get("version", {}).get("attr", "")
+    canonical = attr.split(".")[0] if attr else ""
+    match = [d for d in found if d.name == canonical]
+    assert len(match) == 1, (
+        f"{len(found)} import packages under {src} ({[d.name for d in found]}) and "
+        f"the version attr names {canonical!r}, which matches {len(match)} of them - "
+        f"point tool.setuptools.dynamic.version.attr at the canonical package")
+    return match[0]
 
 
 PACKAGE_ROOT = _package_root()

@@ -13,9 +13,9 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces import regulatory_population as rp
-from workspaces import legal_corpus
-from workspaces.rule_registry import RuleRegistry
+from rvnd import regulatory_population as rp
+from rvnd import legal_corpus
+from rvnd.rule_registry import RuleRegistry
 
 if rp.default_csv() is None:
     pytest.skip(
@@ -61,7 +61,7 @@ def test_supersedes_and_applies_in_edges_exist(tmp_path, instruments):
 def test_every_instrument_is_primary_law_authority(tmp_path, instruments):
     reg = legal_corpus.EntityRegistry(tmp_path)
     rp.populate_in_tranches(reg, instruments)
-    from workspaces.corpus import validate as corpus_validate
+    from rvnd.corpus import validate as corpus_validate
     summary = corpus_validate.validate_registry(reg)["summary"]
     primary = set(summary["by_authority"]["primary-law"])
     assert {"gdpr", "ai-act", "nis2", "dsa", "dma", "data-act", "cra"} <= primary

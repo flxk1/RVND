@@ -17,7 +17,7 @@ from pathlib import Path
 
 import pytest
 
-from workspaces.mutation_log import (
+from rvnd.mutation_log import (
     LogEvent,
     MutationLog,
     _canonical_event_hash,
@@ -32,7 +32,7 @@ def isolated_keys(tmp_path, monkeypatch):
     """Bind keys + log root to a per-test sandbox."""
     keydir = tmp_path / "keys"
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(keydir))
-    from workspaces import signing
+    from rvnd import signing
     signing.ensure_keypair()
     return keydir
 

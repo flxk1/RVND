@@ -16,8 +16,8 @@ import tarfile
 
 import pytest
 
-import workspaces.cli.impl as impl
-import workspaces.backup as backup
+import rvnd.cli.impl as impl
+import rvnd.backup as backup
 
 
 def _make_home(tmp_path):

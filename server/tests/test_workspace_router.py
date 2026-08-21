@@ -5,8 +5,8 @@ no model/embedding, wall-respecting."""
 
 from __future__ import annotations
 
-from workspaces import workspace_router, seal, workspace_lock, workspace_registry
-from workspaces.memory import WorkspaceMemory
+from rvnd import workspace_router, seal, workspace_lock, workspace_registry
+from rvnd.memory import WorkspaceMemory
 
 
 def _seed(folder, log_root, summaries):
@@ -64,7 +64,7 @@ def test_router_sealed_locked_is_label_only(tmp_path, monkeypatch):
 def test_route_to_workspace_tool(tmp_path, monkeypatch):
     monkeypatch.setenv("WORKSPACE_L0_LOG_ROOT", str(tmp_path / "log"))
     monkeypatch.setenv("WORKSPACES_ALLOW_UNREGISTERED", "1")
-    from workspaces import mcp_server as M
+    from rvnd import mcp_server as M
     rtc = getattr(M.route_to_workspace, "fn", M.route_to_workspace)
     logr = tmp_path / "log"
     fin = tmp_path / "Finance"; fin.mkdir()

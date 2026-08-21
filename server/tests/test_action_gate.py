@@ -4,8 +4,8 @@
 standing-approval-as-edge, promotion-gate-as-graph-query."""
 
 from datetime import date
-import workspaces.action_gate as ag
-from workspaces.action_gate import ActionRequest, StandingApproval, Verdict
+import rvnd.action_gate as ag
+from rvnd.action_gate import ActionRequest, StandingApproval, Verdict
 
 
 def test_benign_action_fast_path_go():

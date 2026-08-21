@@ -10,7 +10,7 @@ back to the historical defaults so out-of-the-box behaviour is
 preserved.
 
 The same lookup primitive (``resolve_models_for_role``) is exposed at the
-``workspaces.local_llm`` level so any future role-keyed dispatcher
+``rvnd.local_llm`` level so any future role-keyed dispatcher
 (validator, code-fix, drafter…) can use it without re-implementing the
 glue.
 
@@ -39,7 +39,7 @@ def isolated_models_dir(tmp_path, monkeypatch):
 
 def _register(model_id: str, role: str) -> None:
     """Register ``model_id`` under ``role`` in the isolated registry."""
-    from workspaces import models_registry
+    from rvnd import models_registry
     models_registry.register_model(model_id, role)
 
 
@@ -60,7 +60,7 @@ def _make_classify_stub(per_model_label: dict[str, str], ok: bool = True):
 
 
 def _patch_classify(monkeypatch, fn):
-    import workspaces.mcp_server as mcp_server
+    import rvnd.mcp_server as mcp_server
     monkeypatch.setattr(mcp_server, "local_llm_classify", fn, raising=True)
 
 
@@ -83,7 +83,7 @@ def test_tier_c_uses_explicit_models_when_passed(isolated_models_dir, monkeypatc
 
     _patch_classify(monkeypatch, stub)
 
-    from workspaces.lock.core import tier_c_semantic_check
+    from rvnd.lock.core import tier_c_semantic_check
 
     tier_c_semantic_check("Sample text", models=("explicit-model",))
 
@@ -106,7 +106,7 @@ def test_tier_c_reads_from_registry_when_models_none(isolated_models_dir, monkey
 
     _patch_classify(monkeypatch, stub)
 
-    from workspaces.lock.core import tier_c_semantic_check
+    from rvnd.lock.core import tier_c_semantic_check
 
     result = tier_c_semantic_check("nothing personal here")
 
@@ -129,7 +129,7 @@ def test_tier_c_falls_back_to_defaults_when_registry_empty(
 
     _patch_classify(monkeypatch, stub)
 
-    from workspaces.lock.core import ENSEMBLE_MODELS_DEFAULT, tier_c_semantic_check
+    from rvnd.lock.core import ENSEMBLE_MODELS_DEFAULT, tier_c_semantic_check
 
     tier_c_semantic_check("Hello world")
 
@@ -152,7 +152,7 @@ def test_tier_c_uses_only_role_matched_models(isolated_models_dir, monkeypatch):
 
     _patch_classify(monkeypatch, stub)
 
-    from workspaces.lock.core import tier_c_semantic_check
+    from rvnd.lock.core import tier_c_semantic_check
 
     tier_c_semantic_check("text")
 
@@ -174,7 +174,7 @@ def test_resolve_models_for_role_returns_registered_list(isolated_models_dir):
     _register("phi", "lock-c")
     _register("qwen", "lock-c")
 
-    from workspaces.local_llm import resolve_models_for_role
+    from rvnd.local_llm import resolve_models_for_role
 
     assert resolve_models_for_role("lock-c") == ["phi", "qwen"]
 
@@ -185,7 +185,7 @@ def test_resolve_models_for_role_returns_empty_when_no_role_match(
     """A role with no registered models returns an empty list (no exception)."""
     _register("phi", "lock-c")  # registered under a different role
 
-    from workspaces.local_llm import resolve_models_for_role
+    from rvnd.local_llm import resolve_models_for_role
 
     assert resolve_models_for_role("validator") == []
     assert resolve_models_for_role("code-fix") == []
@@ -197,7 +197,7 @@ def test_resolve_models_for_role_role_validator_works(isolated_models_dir):
     _register("phi-validator", "validator")
     _register("qwen-validator", "validator")
 
-    from workspaces.local_llm import resolve_models_for_role
+    from rvnd.local_llm import resolve_models_for_role
 
     out = resolve_models_for_role("validator")
     assert out == ["phi-validator", "qwen-validator"], (

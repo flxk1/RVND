@@ -1,12 +1,12 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # Copyright 2026 flxk1
-"""Tests for the five-dimensional edge model (workspaces.dimensions)."""
+"""Tests for the five-dimensional edge model (rvnd.dimensions)."""
 
 import itertools
 
 import pytest
 
-from workspaces.dimensions import (
+from rvnd.dimensions import (
     COMPOSITION_TABLE,
     DEFAULT_DIMENSION,
     Dimension,

@@ -15,8 +15,8 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces import parties as P
-from workspaces import party_resolver as PR
+from rvnd import parties as P
+from rvnd import party_resolver as PR
 
 MAP_YML = """\
 groups:

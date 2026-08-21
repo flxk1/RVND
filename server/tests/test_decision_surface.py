@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces.decisions import surface as ds
+from rvnd.decisions import surface as ds
 
 
 # the canonical residual: erasure (Art. 17(1)) vs retention duty (Art. 17(3)(b))
@@ -102,7 +102,7 @@ def test_valid_choice_is_recorded_and_audited(tmp_path):
 # ── canonical URN spine — the decision layer's address and decides edges ──────
 
 def _rule_in(folder):
-    from workspaces.rule_registry import RuleRegistry
+    from rvnd.rule_registry import RuleRegistry
     reg = RuleRegistry(folder, user="t")
     return reg.place_span(
         "The controller shall erase personal data on request.",
@@ -121,7 +121,7 @@ def test_decision_urn_is_deterministic_and_timestamp_free(tmp_path):
 
 
 def test_choice_emits_decides_edges_for_supporting_rules(tmp_path):
-    from workspaces.legal_corpus import EntityRegistry
+    from rvnd.legal_corpus import EntityRegistry
     placed = _rule_in(tmp_path)
     s = ds.build_surface("Erase?", [
         {"id": "a", "label": "Erase", "conclusion": "yes",

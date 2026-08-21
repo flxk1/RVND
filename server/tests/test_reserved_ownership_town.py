@@ -35,18 +35,18 @@ import json
 import pytest
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
-from workspaces import signing
-from workspaces.approvals import (
+from rvnd import signing
+from rvnd.approvals import (
     decide_approval, request_from_reservation, resolve_approval)
-from workspaces.governance_lane import GovernanceLane, register_lane
-from workspaces.mcp_serving import clear_request_principal, set_request_principal
-from workspaces.mutation_log import (
+from rvnd.governance_lane import GovernanceLane, register_lane
+from rvnd.mcp_serving import clear_request_principal, set_request_principal
+from rvnd.mutation_log import (
     LogEvent, MutationLog, _canonical_event_hash, _signed_bytes)
-from workspaces.parties import register_party
-from workspaces.queue import enqueue_run
-from workspaces import session_admission
-from workspaces.session_capability import CapabilityError
-from workspaces.use_case import agent_permitted, register_use_case
+from rvnd.parties import register_party
+from rvnd.queue import enqueue_run
+from rvnd import session_admission
+from rvnd.session_capability import CapabilityError
+from rvnd.use_case import agent_permitted, register_use_case
 
 pytestmark = [
     pytest.mark.live_session_admission,

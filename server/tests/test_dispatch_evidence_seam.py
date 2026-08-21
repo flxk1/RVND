@@ -22,8 +22,8 @@ import os
 
 import pytest
 
-from workspaces.case_index import record_case
-from workspaces.pinned_skills import pin_skill, resolve_skills_for_query
+from rvnd.case_index import record_case
+from rvnd.pinned_skills import pin_skill, resolve_skills_for_query
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 

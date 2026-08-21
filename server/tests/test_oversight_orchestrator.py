@@ -6,9 +6,9 @@ Proves the three layers compose into one verdict, and that the grade the gate
 sees is capped by the Breaker and the ceiling, never trusted from the request.
 """
 
-from workspaces.oversight import assess
-from workspaces.action_gate import ActionRequest
-from workspaces.breaker import Breaker, Lease, Tripwire
+from rvnd.oversight import assess
+from rvnd.action_gate import ActionRequest
+from rvnd.breaker import Breaker, Lease, Tripwire
 
 
 def _req(grade="L3", footprint=("financial",), action="pay-invoice", **kw):
@@ -64,7 +64,7 @@ def test_grade_ceiling_caps_below_request():
 
 
 def test_standing_approval_makes_it_go():
-    from workspaces.action_gate import StandingApproval
+    from rvnd.action_gate import StandingApproval
     appr = StandingApproval("bot", "pay-invoice", "pair:x")
     o = assess(_req(magnitude=50.0), standing_approvals=[appr])
     assert o.proceed
@@ -106,7 +106,7 @@ def test_prohibited_action_blocked_regardless():
 def test_quarantine_overrides_standing_approval():
     # Regression (oversight_demo): a quarantined agent must NOT ride a standing
     # approval to GO. Frozen means frozen.
-    from workspaces.action_gate import StandingApproval
+    from rvnd.action_gate import StandingApproval
     b = Breaker(Lease("bot", "L3", expires_at=1000.0),
                 tripwires=[Tripwire("err", "error_rate", 0.25, "max")])
     appr = StandingApproval("bot", "pay-invoice", "pair:x")
@@ -118,7 +118,7 @@ def test_quarantine_overrides_standing_approval():
 
 
 def test_decayed_lease_overrides_standing_approval():
-    from workspaces.action_gate import StandingApproval
+    from rvnd.action_gate import StandingApproval
     b = Breaker(Lease("bot", "L3", expires_at=1000.0), tripwires=[])
     appr = StandingApproval("bot", "pay-invoice", "pair:x")
     o = assess(_req(magnitude=50.0), breaker=b, standing_approvals=[appr],

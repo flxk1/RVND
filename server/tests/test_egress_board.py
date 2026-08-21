@@ -8,8 +8,8 @@ from __future__ import annotations
 
 import json
 
-from workspaces import connectors
-from workspaces.connectors import egress_board
+from rvnd import connectors
+from rvnd.connectors import egress_board
 
 
 def _seed(f, lr):
@@ -71,7 +71,7 @@ def test_floor_and_use_cases_ride_along(tmp_path):
 def test_facade_op_and_credential_ref_passthrough(tmp_path, monkeypatch):
     """workspace_workflow: connector_register accepts credential_ref; egress_board
     is reachable as an op."""
-    import workspaces.mcp_server as M
+    import rvnd.mcp_server as M
     monkeypatch.setenv("WORKSPACE_L0_LOG_ROOT", str(tmp_path / "logs"))
     f = str(tmp_path / "ws"); (tmp_path / "ws").mkdir()
     monkeypatch.setenv("WORKSPACES_ALLOW_UNREGISTERED", "1")
@@ -88,8 +88,8 @@ def test_facade_op_attests_llm_broker_from_probe(tmp_path, monkeypatch):
     """The egress_board op feeds the live broker probe into the board: a bound
     broker sets llm_broker.bound_here True, every probe failure resolves to
     False (fail-safe)."""
-    import workspaces.mcp_server as M
-    import workspaces.lock as L
+    import rvnd.mcp_server as M
+    import rvnd.lock as L
     monkeypatch.setenv("WORKSPACE_L0_LOG_ROOT", str(tmp_path / "logs"))
     monkeypatch.setenv("WORKSPACES_ALLOW_UNREGISTERED", "1")
     f = str(tmp_path / "ws"); (tmp_path / "ws").mkdir()
