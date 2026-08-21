@@ -26,6 +26,7 @@ VCS_FIRST_PARTY = {
     "loomground-norm",
     "loomground-factual",
     "loomground-epistemic",
+    "loomground-workspace",
     # Evidence layer (P0a): git-pinned like the planes, so it carries an exact
     # commit rather than a PyPI sha256.
     "enforcement-posture",
