@@ -1,4 +1,0 @@
-interface:
-  display_name: "RVND Decide"
-  short_description: "Run the human oversight sign-off"
-  default_prompt: "Use $rvnd-decide to put this item to a person as approve/hold/deny, capture the approver and rationale, and record the decision to the signed chain."

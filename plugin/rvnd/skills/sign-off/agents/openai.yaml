@@ -1,0 +1,4 @@
+interface:
+  display_name: "Sign Off"
+  short_description: "Approve, hold, or deny what's waiting for you"
+  default_prompt: "Use $sign-off to see what's waiting for my approval and put it to a person: approve / hold / deny for a ratification, or the server's unranked alternatives for a residual choice. Capture the named approver and the rationale a loosening needs, and record the decision to the signed chain. Do not pre-select or nudge."
