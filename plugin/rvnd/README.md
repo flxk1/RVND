@@ -38,6 +38,8 @@ observation). Each skill carries a `manifest.yaml` declaring the constructs it m
 
 Named for the user's goal, not the pipeline step. Each operates the one shared dimensioned
 Subgraph and cascades local-first (engine → LLM fallback); see `references/ingest-cascade.md`.
+The full catalog — these 8 plus the 17 free Loomground plane skills — and the install paths are in
+[`SKILLS.md`](SKILLS.md).
 
 - **govern-an-action** — "is this allowed, and put it on the record": dry-run the verdict, or run the
   full cycle query → validate → confirm → apply → display. (folds in the read-only reason step)
