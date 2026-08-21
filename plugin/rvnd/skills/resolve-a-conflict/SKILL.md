@@ -42,12 +42,15 @@ precedence in the host.
 This skill follows the shared architecture in `../../references/ingest-cascade.md` — one dimensioned
 Subgraph, operated through the ingest plane, **local-first**:
 
-- **Same object.** It reads and proposes deltas on the shared Subgraph, consuming `loomground_legal`
-  precedence to rank clashing norms — it does not invent a conflict or resolution format.
+- **Same object.** It reads and proposes deltas on the shared Subgraph and ranks clashing norms by
+  `loomground_legal` precedence — it does not invent a conflict or resolution format.
 - **Engine first, never the reverse.** When RVND is present and the folder is governed, the engine
   adjudicates precisely — validated deltas, precedence computed server-side. Only if the engine is
-  absent or cannot does the cloud LLM work the same Subgraph in-grammar. A standalone build is
-  **degraded / advisory** and says so, until the engine ratifies.
+  absent or cannot does the skill **delegate to the free plane skills** — `loomground-ingest` to read
+  and lower the graph, `deontic` and `loomground` for the norm and governance facets — and work the
+  assembled Subgraph in-grammar. Precedence is consumed from the `loomground_legal` **package**
+  directly (the legal plane ships no skill of its own). A delegated-only build is **degraded /
+  advisory** and says so, until the engine ratifies.
 - **Routes to sign-off.** Ratification always goes through `sign-off`; application through
   `govern-an-action`. The host never picks a winner.
 
