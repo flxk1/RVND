@@ -59,7 +59,7 @@ lg   : reserve external-publication by accountable-publisher
 ## Status
 
 These are the acceptance targets. The deterministic surface/proposal linter
-(`skills/rvnd-build-surface/scripts/lint_surface.py`) covers the offline shape checks (envelope
+(`skills/build-a-surface/scripts/lint_surface.py`) covers the offline shape checks (envelope
 well-formedness, residual present, constructs restricted to the real vocabulary). The classes that
 need a live RVND server (2, 5, 6, 7, 8, 9, 12, 13) run against the MCP boundary and are marked
 Each skill's `eval.json` records its compatibility review status.

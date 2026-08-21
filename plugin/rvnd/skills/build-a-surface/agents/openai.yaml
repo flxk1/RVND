@@ -1,0 +1,4 @@
+interface:
+  display_name: "Build a Surface"
+  short_description: "Compose and lint a governed app screen so it can't show a request as a grant"
+  default_prompt: "Use $build-a-surface to compose the cards and skills for this governed flow and lint the manifest so a built surface cannot show a request as a grant."

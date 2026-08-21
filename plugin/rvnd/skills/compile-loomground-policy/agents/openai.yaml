@@ -1,4 +1,0 @@
-interface:
-  display_name: "Compile Loomground Policy"
-  short_description: "Validate a typed governance patch through RVND"
-  default_prompt: "Use $compile-loomground-policy to validate these grounded policy constructs against the current RVND graph."

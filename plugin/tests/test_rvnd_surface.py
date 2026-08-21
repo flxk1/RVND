@@ -1,4 +1,4 @@
-"""Behaviour tests for the rvnd-build-surface linter.
+"""Behaviour tests for the build-a-surface linter.
 
 The linter is deterministic, offline, and FAIL-CLOSED. It must accept honest
 surfaces/proposals and reject anything that could show a request as a grant or
@@ -11,7 +11,7 @@ import hashlib, json, os, subprocess, sys
 from pathlib import Path
 
 LINT = (Path(__file__).resolve().parents[1] / "rvnd" / "skills"
-        / "rvnd-build-surface" / "scripts" / "lint_surface.py")
+        / "build-a-surface" / "scripts" / "lint_surface.py")
 
 
 def _run(payload, no_js=False):
@@ -33,7 +33,7 @@ def _both(payload):
 def test_valid_composition_passes():
     rc, out, err = _run({
         "name": "govern-flow", "server": "rvnd",
-        "skills": ["rvnd-govern"],
+        "skills": ["govern-an-action"],
         "cards": ["context", "proposal", "patch", "decision", "receipt"],
         "fail_closed": True, "human_confirmation": True})
     assert rc == 0, err
@@ -42,14 +42,14 @@ def test_valid_composition_passes():
 
 def test_proposal_without_receipt_fails_closed():
     for rc, _, err in _both({
-            "name": "bad", "server": "rvnd", "skills": ["rvnd-govern"],
+            "name": "bad", "server": "rvnd", "skills": ["govern-an-action"],
             "cards": ["context", "proposal", "patch"], "fail_closed": True}):
         assert rc == 1 and "receipt" in err
 
 
 def test_non_fail_closed_composition_rejected():
     for rc, _, err in _both({"name": "leaky", "server": "rvnd",
-                             "skills": ["rvnd-audit"], "cards": ["context"],
+                             "skills": ["verify-a-receipt"], "cards": ["context"],
                              "fail_closed": False}):
         assert rc == 1 and "fail_closed" in err
 
@@ -201,10 +201,10 @@ def test_policy_workflow_skills_ship_as_mcp_drivers():
     package_root = Path(__file__).resolve().parents[1] / "rvnd"
     package = json.loads((package_root / "package.json").read_text(encoding="utf-8"))
     expected = {
-        "extract-policy-norms",
-        "compile-loomground-policy",
-        "reason-governance-rules",
-        "resolve-rule-conflicts",
+        "onboard-a-policy",
+        "govern-an-action",
+        "resolve-a-conflict",
+        "sign-off",
     }
     declared = {skill["name"] for skill in package["skills"]}
     assert expected <= declared
@@ -233,7 +233,7 @@ def test_package_metadata_matches_release_contract():
     jsonschema.validate(package, schema)
     assert package["license"] == "AGPL-3.0-only"
     assert package["runtime"]["requires"] == ["rvnd>=0.6.8.4,<0.7"]
-    for capability in ("rvnd.audit", "governance.extract-norms", "governance.reason"):
+    for capability in ("rvnd.govern-an-action", "rvnd.sign-off", "governance.resolve-conflict"):
         assert package["capabilities"][capability] == {
             "mode": "read-write",
             "humanConfirmation": True,

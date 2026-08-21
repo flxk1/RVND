@@ -1,0 +1,4 @@
+interface:
+  display_name: "Govern an Action"
+  short_description: "Check an action against policy and put it on the record"
+  default_prompt: "Use $govern-an-action for this action: dry-run it against the active RVND lane for a read-only verdict, and — if I mean to go through with it — propose, validate, preview, confirm, apply, and display the signed verdict."
