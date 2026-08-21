@@ -51,7 +51,7 @@ def test_every_instrument_has_a_wellformed_eurlex_eli_url():
 
 def test_celex_is_wellformed_and_act_type_matches_short():
     by_celex = {r["celex"]: r for r in _rows()}
-    for celex, r in by_celex.items():
+    for celex, _r in by_celex.items():
         assert _CELEX.match(celex), f"bad CELEX {celex}"
     # regulations are 'R', directives are 'L' — a swap here would mis-class the source
     assert by_celex["32016R0679"]["celex"][5] == "R"     # GDPR

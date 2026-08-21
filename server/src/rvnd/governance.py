@@ -414,5 +414,5 @@ def _log_grounding(folder, action_class, grounded, verdict, ov, reason, actor,
             pair_id=f"grounding:{action_class}", channel="system", actor=actor,
             extra={"kind": "grounding-gate", "grounded": grounded,
                    "verdict": verdict, "oversight": ov, "reason": reason}))
-    except Exception as exc:                     # noqa: BLE001 — never lose it
+    except Exception:                     # noqa: BLE001 — never lose it
         return ""

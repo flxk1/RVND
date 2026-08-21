@@ -155,8 +155,8 @@ def test_private_pair_still_NOT_visible_to_descendants(vault, log_root):
 def test_remember_then_publish_makes_it_visible(vault, log_root):
     """remember (private) does NOT propagate; publish DOES."""
     acme = WorkspaceMemory(vault["acme"], log_root=log_root)
-    private_pid = acme.remember(_sample("private", summary="ceo private"))
-    published_pid = acme.publish(_sample("public", summary="company policy"))
+    acme.remember(_sample("private", summary="ceo private"))
+    acme.publish(_sample("public", summary="company policy"))
 
     hr = WorkspaceMemory(vault["hr"], log_root=log_root)
     summaries = {p["problem"]["summary"] for p in hr.all_pairs()}

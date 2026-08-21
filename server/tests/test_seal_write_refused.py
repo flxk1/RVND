@@ -63,7 +63,7 @@ def test_write_to_sealed_workspace_is_refused(tmp_path):
 def test_append_raises_typed_error(tmp_path):
     folder = tmp_path / "w"; folder.mkdir(); logr = tmp_path / "log"
     _seed(folder, logr, 1)
-    log = MutationLog(folder, log_root=logr)
+    MutationLog(folder, log_root=logr)
     seal.seal_folder(folder, passphrase="pw", log_root=logr)
     log2 = MutationLog(folder, log_root=logr)
     from rvnd.mutation_log import LogEvent

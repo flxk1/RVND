@@ -47,7 +47,8 @@ from .nd_routing import (
     Classification,
     Classifier,
     DefaultClassifier,
-    DispatchResult,
+    # shadowed at the package root by the later import; aliased so both are reachable
+    DispatchResult as RoutingDispatchResult,
     NDDispatcher,
     NDRouter,
     RoutingExtractor,
@@ -129,7 +130,8 @@ from .breaker import (
     Breaker,
     BreakerState,
     BreakerStatus,
-    Lease,
+    # shadowed at the package root by the later import; aliased so both are reachable
+    Lease as BreakerLease,
     Tripwire,
     cap_grade,
     default_tripwires,
@@ -285,18 +287,16 @@ from .pinned_skills import (
 )
 
 __all__ = [
-    # Mutation log (A1)
+    "__version__",
     "LogEvent",
     "MutationLog",
     "LOG_ROOT_DEFAULT",
     "folder_hash",
-    # WorkspaceMemory (A2)
     "WorkspaceMemory",
     "WebResult",
     "discover_folders",
     "discover_descendants",
     "discover_ancestors",
-    # Folder context (A3)
     "current_folder",
     "set_folder",
     "reset_folder",
@@ -305,14 +305,12 @@ __all__ = [
     "resolve_folder_context",
     "NoFolderContextError",
     "UNSCOPED_SENTINEL",
-    # Inbox watcher (B1)
     "InboxWatcher",
     "DefaultExtractor",
     "ExtractedFile",
     "Extractor",
     "ingest_file",
     "INBOX_SUBDIR",
-    # ND routing (B2)
     "Classification",
     "Classifier",
     "DefaultClassifier",
@@ -321,7 +319,6 @@ __all__ = [
     "NDRouter",
     "DispatchResult",
     "RoutingExtractor",
-    # Five-dimensional edge model (Federation adapter)
     "Dimension",
     "DEFAULT_DIMENSION",
     "COMPOSITION_TABLE",
@@ -329,7 +326,6 @@ __all__ = [
     "compose_weights",
     "classify_predicate",
     "classify_query_dimension",
-    # Folder policy (B6)
     "FolderPolicy",
     "Acknowledgement",
     "InvalidPolicy",
@@ -356,13 +352,11 @@ __all__ = [
     "enable_oversight",
     "enable_discipline",
     "disable_discipline",
-    # Published policy-pack import
     "ImportedPolicyPack",
     "PolicyPackDenied",
     "REQUIRED_REVIEWS",
     "import_published_policy_pack",
     "import_published_policy_pack_into_versum",
-    # LLM capture (B4)
     "LLMExchange",
     "IngestMode",
     "OversightLevel",
@@ -370,23 +364,18 @@ __all__ = [
     "CaptureResult",
     "capture_llm_exchange",
     "decide_verbosity",
-    # Web capture (B3)
     "WebSearchExchange",
     "WebSearchResult",
     "capture_web_search",
-    # Rule extractor (B2 — operative structure)
     "RuleFacet",
     "extract_rules",
-    # Oversight extractor (Oversight ND IN face)
     "OversightFacet",
     "extract_oversight",
-    # Oversight emitter (Oversight ND OUT face)
     "GroundsBundle",
     "DoubtDossier",
     "build_grounds_bundle",
     "build_dossier",
     "needs_dossier",
-    # The Breaker (USP 3 — interdiction at machine tempo)
     "Breaker",
     "BreakerState",
     "BreakerStatus",
@@ -394,7 +383,6 @@ __all__ = [
     "Tripwire",
     "cap_grade",
     "default_tripwires",
-    # Behavioral attestation (producer of the Breaker's integrity flag)
     "AttestationResult",
     "GreenChecks",
     "Probe",
@@ -402,7 +390,6 @@ __all__ = [
     "breaker_metrics",
     "green_checks",
     "signature",
-    # The Lens (USP 2 — in vivo oversight of learning)
     "Admission",
     "AdmissionVerdict",
     "LearningObject",
@@ -411,38 +398,30 @@ __all__ = [
     "UpdateBudget",
     "classify_admission",
     "select_precedent",
-    # Oversight orchestrator (embedded-engine entry point)
     "OversightOutcome",
     "assess",
-    # Fingerprint composition + separation of duties (L4)
     "ComposedOversight",
     "ControlChange",
     "compose_facets",
     "binds_grade",
     "check_separation",
     "approves_clean",
-    # Log glue + ground-id taint
     "TaintFinding",
     "record_admission",
     "taint_walk",
     "mark_tainted",
-    # Drift → Breaker (L2 evaluator)
     "DriftSignal",
     "drift_tripwire",
     "raise_floor",
     "evaluate_drift",
-    # Dispatch-record writer (connector Workspace-side)
-    "DispatchResult",
     "dispatch",
     "record_decision_return",
-    # Domain NDs (B2 — concrete dispatchers)
     "GDPRRuleND",
     "AIActRuleND",
     "MusicRightsRuleND",
     "ContractRuleND",
     "OversightND",
     "register_default_domain_nds",
-    # NotebookLM-grade legal analysis layer
     "CrossReference",
     "CrossReferenceExtractor",
     "extract_cross_references",
@@ -457,7 +436,6 @@ __all__ = [
     "RequiredArtifactExtractor",
     "extract_required_artifacts",
     "register_required_artifact_nd",
-    # Structure-aware legal XML (Layer-1: Akoma Ntoso / Formex)
     "DocumentTree",
     "ProvisionNode",
     "CrossRef",
@@ -466,12 +444,10 @@ __all__ = [
     "parse_legal_xml",
     "document_tree_to_text",
     "all_cross_refs",
-    # LLM extractor (Workspace operation, Lock-gated)
     "DomainProfile",
     "ExtractionResult",
     "llm_extract",
     "extract_obligations_hybrid",
-    # Folder-scoped pinned skills (#145)
     "PinnedSkill",
     "PinnedSkillStore",
     "load_pinned_skills",
@@ -483,7 +459,6 @@ __all__ = [
     "record_dispatch",
     "load_companion_catalogue",
     "suggest_companions",
-    # Workflows
     "Workflow",
     "WorkflowStep",
     "define_workflow",
@@ -494,8 +469,6 @@ __all__ = [
     "run_workflow",
     "recent_dispatches",
     "active_workflows",
-    # Background runner queue
-    "Lease",
     "QueueEntry",
     "enqueue_run",
     "list_queue",
@@ -510,19 +483,19 @@ __all__ = [
     "get_run",
     "inspect_stuck_runs",
     "resume_run",
-    # Background runner worker
     "WorkerConfig",
     "worker_run_forever",
     "worker_run_once",
     "stop_worker",
     "worker_status",
-    # Workspace registry (#134, #154)
     "DEFAULT_WORKSPACE_DIR",
     "add_known_workspace",
     "bootstrap_default_workspace",
     "list_known_workspaces",
     "load_registry",
     "remove_known_workspace",
+    "RoutingDispatchResult",
+    "BreakerLease",
 ]
 
 from ._version import __version__  # noqa: E402

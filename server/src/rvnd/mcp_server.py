@@ -238,7 +238,6 @@ from .mcp_impl import (
 
 # Serving helpers (extracted to keep this file the assembler, not the impl).
 from .mcp_serving import (
-    _log_root,
     _rerank_by_dimension,  # noqa: F401  -- re-export: reached as a module attribute, not an import
     )
 

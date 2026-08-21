@@ -62,7 +62,7 @@ def test_run_once_marks_failed_when_workflow_missing(tmp_path):
     fc = tmp_path / "wks"; fc.mkdir()
     log = tmp_path / "log"
     define_workflow(str(fc), _wf("intake", "p:a"), log_root=log)
-    entry = enqueue_run(str(fc), "intake", log_root=log)
+    enqueue_run(str(fc), "intake", log_root=log)
 
     # Delete the workflow definition before the worker picks it up
     from rvnd.workflows import delete_workflow

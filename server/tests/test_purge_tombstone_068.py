@@ -124,7 +124,7 @@ def test_purge_re_links_subsequent_events(tmp_path, isolated_keys):
         reason="re-link test",
     )
 
-    after = [json.loads(l) for l in log.log_file.read_text().splitlines() if l.strip()]
+    [json.loads(l) for l in log.log_file.read_text().splitlines() if l.strip()]
     # Every surviving event must still have a valid hash chain.
     result = log.verify_chain()
     assert result.ok, (

@@ -63,6 +63,19 @@ from .l0_bridge import (
 )
 
 __all__ = [
+    "LockAudit",
+    "ScannedResponse",
+    "apply_config_to_env",
+    "assert_scanned",
+    "default_config_path",
+    "describe",
+    "is_valid_ref",
+    "probe_broker",
+    "redact_for_capture",
+    "scan_document",
+    "scan_text",
+    "tier_b_scan_text",
+    "tier_c_requires_real_backend",
     "Mode",
     "ToolCall",
     "ToolResponse",

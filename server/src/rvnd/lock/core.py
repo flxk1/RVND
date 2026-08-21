@@ -111,6 +111,24 @@ class Finding:
     detail: str
     confidence: float = 1.0
     remediation_actions: list[RemediationAction] = field(default_factory=list)
+
+    @property
+    def finding_id(self) -> str:
+        """Stable identity, derived from what the finding says.
+
+        An ``OversightDecision`` records what a user decided about ONE finding.
+        Every producer used to fill its ``finding_id`` with a fresh uuid4, so the
+        decision pointed at nothing and the audit could not answer "which finding
+        did the operator accept?" -- the one question that record exists for.
+
+        Content-derived rather than allocated, so it needs no new state and so
+        the same finding carries the same id across processes and reviews.
+        ``remediation_actions`` is excluded: it is advice about the finding, not
+        part of what the finding IS, and it may be enriched later.
+        """
+        import hashlib
+        parts = (self.tier, self.type, self.severity, self.field or "", self.detail)
+        return hashlib.sha256("\x00".join(parts).encode("utf-8")).hexdigest()[:16]
     """Canonical set of user-actionable next steps for this finding (0.6.8 B3).
 
     Populated by Tier B / Tier B+ when the finding represents PII that the
@@ -922,15 +940,18 @@ def _decide_ingress(
     all_findings: list[Finding],
     mode: Mode,
 ) -> IngressDecision:
-    has_high = any(f.severity == "high" for f in all_findings)
-
     if mode == Mode.AUDIT_ONLY:
         return IngressDecision(action="allow", findings=all_findings, redacted_payload=None, reason="audit-only")
 
     if mode == Mode.PERMISSIVE:
         return IngressDecision(action="allow", findings=all_findings, redacted_payload=None, reason="permissive")
 
-    # STANDARD and STRICT both redact response over-returns + high-severity PII findings
+    # STANDARD and STRICT both redact response over-returns + high-severity PII findings.
+    # This captures every high-severity finding ONLY because every finding on the
+    # ingress path carries a field: tier_a_check_response sets it, and
+    # tier_b_scan_dict sets f.field = key for each value it scans. A high-severity
+    # finding with field=None would produce no redaction and fall through to allow
+    # below. test_ingress_findings_always_carry_a_field pins that.
     redacted = dict(response.payload)
     fields_to_redact = {f.field for f in over_return_findings if f.field is not None}
     fields_to_redact |= {f.field for f in all_findings if f.severity == "high" and f.field is not None}

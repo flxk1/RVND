@@ -104,7 +104,7 @@ class TestDnaPropagation:
 
     def test_intake_rules_carry_the_layer(self):
         rules = intake_contract(self.TEXT).rules
-        by_action = {f.raw_sentence[:20]: f for f in rules}
+        {f.raw_sentence[:20]: f for f in rules}
         report = next(f for f in rules if "report" in f.raw_sentence)
         use = next(f for f in rules if "use the Software" in f.raw_sentence)
         term = next(f for f in rules if "terminate" in f.raw_sentence)

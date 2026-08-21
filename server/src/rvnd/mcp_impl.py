@@ -29,7 +29,6 @@ from .web_capture import (
     capture_web_search,
 )
 from .mcp_serving import (
-    _log_root,
     _lock_string,
     _resolve_mode_for_folder,
     _lock_gate_text,

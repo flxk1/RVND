@@ -122,7 +122,7 @@ def _smoke_test_backend(spec: str) -> dict:
                 "results": []}
 
     results = []
-    for text, expected_pii, expected_type in cases:
+    for text, expected_pii, _expected_type in cases:
         out = backend.classify(text)
         matched_pii = out.get("contains_pii") == expected_pii
         results.append({

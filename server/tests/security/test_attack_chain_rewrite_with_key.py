@@ -87,7 +87,7 @@ def test_a2_resign_with_stolen_key_chain_passes_signature_check(
     log_file = log.log_file
     lines = [json.loads(l) for l in log_file.read_text().splitlines() if l.strip()]
     lines.pop(2)
-    prev_canon = (
+    (
         _canonical_event_hash(lines[1]) if len(lines) > 1 else "GENESIS"
     )
     for i in range(2, len(lines)):

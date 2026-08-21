@@ -121,7 +121,7 @@ def test_sealed_blob_is_not_plaintext(tmp_path):
     folder = tmp_path / "wks"; folder.mkdir()
     log_root = tmp_path / "log"
     _seed(folder, log_root, n=1)
-    out = seal.seal_folder(folder, passphrase="pw", log_root=log_root)
+    seal.seal_folder(folder, passphrase="pw", log_root=log_root)
     blob = (log_root).rglob("*.sealed")
     raw = next(blob).read_text()
     # The summary text must not appear in the sealed file.

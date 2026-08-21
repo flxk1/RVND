@@ -94,7 +94,7 @@ def _read_pdf(p: Path) -> str:
             raise RuntimeError("PDF is encrypted; skipping")
 
     parts: list[str] = []
-    for i, page in enumerate(reader.pages):
+    for _i, page in enumerate(reader.pages):
         try:
             txt = page.extract_text() or ""
         except Exception:

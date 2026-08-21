@@ -31,34 +31,10 @@ Exit codes:
 from __future__ import annotations
 
 import argparse
-import json
-import os
 import sys
-import time
-from pathlib import Path
-from typing import IO, Any
 
-from ..folder_context import (
-    NoFolderContextError,
-    resolve_folder_context,
-)
-from ..inbox_watcher import InboxWatcher, ingest_file
-from ..memory import WorkspaceMemory, discover_folders
-from ..mutation_log import LOG_ROOT_DEFAULT, MutationLog
-from ..policy import (
-    OVERSIGHT_DISCLAIMER,
-    LOCK_DISCLAIMER,
-    disable_discipline,
-    disable_oversight,
-    disable_lock,
-    enable_discipline,
-    enable_oversight,
-    enable_lock,
-    load_policy,
-    policy_path,
-    set_oversight_level,
-    OVERSIGHT_LEVELS,
-)
+from ..mutation_log import LOG_ROOT_DEFAULT
+from ..policy import OVERSIGHT_LEVELS
 
 
 # ---------------------------------------------------------------------------
@@ -807,7 +783,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     keys_sub = p_keys.add_subparsers(dest="keys_command", required=True)
 
-    p_keys_ic = keys_sub.add_parser(
+    keys_sub.add_parser(
         "init-controller",
         help="Initialise the controller co-signing keypair. Idempotent — "
              "running twice is a no-op. Prints the controller pubkey fingerprint.",
@@ -1248,19 +1224,19 @@ def build_parser() -> argparse.ArgumentParser:
 # the doctor surface from this module, not from the impl module.
 from .impl import (
     _DISPATCH,
-    DOCTOR_EXIT_ERROR,
-    DOCTOR_EXIT_OK,
-    DOCTOR_EXIT_WARN,
-    DOCTOR_LEVEL_ERROR,
-    DOCTOR_LEVEL_INFO,
-    DOCTOR_LEVEL_OK,
-    DOCTOR_LEVEL_WARN,
-    _doctor_check_controller_key,
-    _doctor_check_optional_deps,
-    _doctor_check_python_binding,
-    _doctor_check_required_deps,
-    _doctor_check_sample_round_trip,
-    _doctor_overall_exit,
+    DOCTOR_EXIT_ERROR,  # noqa: F401  -- re-export: read as an attribute of this module
+    DOCTOR_EXIT_OK,  # noqa: F401  -- re-export: read as an attribute of this module
+    DOCTOR_EXIT_WARN,  # noqa: F401  -- re-export: read as an attribute of this module
+    DOCTOR_LEVEL_ERROR,  # noqa: F401  -- re-export: read as an attribute of this module
+    DOCTOR_LEVEL_INFO,  # noqa: F401  -- re-export: read as an attribute of this module
+    DOCTOR_LEVEL_OK,  # noqa: F401  -- re-export: read as an attribute of this module
+    DOCTOR_LEVEL_WARN,  # noqa: F401  -- re-export: read as an attribute of this module
+    _doctor_check_controller_key,  # noqa: F401  -- re-export: read as an attribute of this module
+    _doctor_check_optional_deps,  # noqa: F401  -- re-export: read as an attribute of this module
+    _doctor_check_python_binding,  # noqa: F401  -- re-export: read as an attribute of this module
+    _doctor_check_required_deps,  # noqa: F401  -- re-export: read as an attribute of this module
+    _doctor_check_sample_round_trip,  # noqa: F401  -- re-export: read as an attribute of this module
+    _doctor_overall_exit,  # noqa: F401  -- re-export: read as an attribute of this module
 )
 
 def main(argv: list[str] | None = None) -> int:

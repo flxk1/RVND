@@ -8,7 +8,6 @@ server's tools share. No FastMCP tools here — pure helpers.
 """
 
 from __future__ import annotations
-import os
 from pathlib import Path
 from typing import Any
 from .workspace_identity import opaque_doc_token

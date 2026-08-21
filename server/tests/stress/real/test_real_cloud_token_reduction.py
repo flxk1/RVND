@@ -136,7 +136,7 @@ def _run_mode_b(workload, cloud: MockCloudLLM,
     )
 
 
-def test_real_cloud_token_reduction(real_llm_or_skip, capsys):
+def test_real_cloud_token_reduction(real_llm_or_skip, capsys):  # noqa: F811  -- pytest fixture: the parameter intentionally shadows the imported fixture
     """Measure cloud-token spend with vs. without the REAL validator.
 
     Print a comparison table. Assert only the structural invariants;

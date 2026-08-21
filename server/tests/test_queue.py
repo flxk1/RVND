@@ -113,7 +113,7 @@ def test_take_next_returns_oldest_pending(tmp_path):
 
     first = enqueue_run(str(f1), "a", log_root=log)
     time.sleep(0.01)  # ensure ordering by enqueued_at
-    second = enqueue_run(str(f2), "b", log_root=log)
+    enqueue_run(str(f2), "b", log_root=log)
 
     claimed = take_next_run("worker-1", log_root=log)
     assert claimed is not None

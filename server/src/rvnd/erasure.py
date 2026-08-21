@@ -235,7 +235,7 @@ def _event_text_haystack(evt: LogEvent, pair: dict | None = None) -> str:
                     parts.append(src)
     # Extra payload (system events / capture metadata).
     if isinstance(evt.extra, dict):
-        for k, v in evt.extra.items():
+        for _k, v in evt.extra.items():
             if isinstance(v, str):
                 parts.append(v)
     return "\n".join(parts)

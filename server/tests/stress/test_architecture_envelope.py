@@ -218,13 +218,13 @@ def test_cross_surface_invariant_same_envelope_from_cli_and_mcp(isolated_env):
     pin_skill(ws, "workspace:cross-surface", log_root=log_root)
 
     # CLI invocation.
-    r_cli = record_dispatch(
+    record_dispatch(
         ws, "workspace:cross-surface", log_root=log_root,
         actor="cli", chosen_via="cli",
         extra={"invoked_via": "cli"},
     )
     # MCP invocation.
-    r_mcp = record_dispatch(
+    record_dispatch(
         ws, "workspace:cross-surface", log_root=log_root,
         actor="mcp", chosen_via="mcp",
         extra={"invoked_via": "mcp"},

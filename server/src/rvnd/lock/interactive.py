@@ -20,7 +20,6 @@ from __future__ import annotations
 import json
 import sys
 import time
-import uuid
 from dataclasses import asdict
 from typing import IO
 
@@ -156,11 +155,11 @@ def review_findings(
         # autonomous / notify / review — no per-finding interaction
         return [
             OversightDecision(
-                finding_id=str(uuid.uuid4()),
+                finding_id=f.finding_id,
                 user_action="auto-accepted",
                 reason=f"oversight={oversight.label}",
             )
-            for _ in findings
+            for f in findings
         ]
 
     render_header(f"finding review — oversight: {oversight.label} (level {oversight.value})", stdout)
@@ -178,7 +177,7 @@ def review_findings(
         action = "accept" if raw.startswith("y") else "reject"
         for f in findings:
             decisions.append(OversightDecision(
-                finding_id=str(uuid.uuid4()),
+                finding_id=f.finding_id,
                 user_action=action,
                 reason="batch decision in approve mode",
             ))
@@ -191,7 +190,7 @@ def review_findings(
         action, reason = _prompt(f, stdin=stdin, stdout=stdout, auto_decision=auto_decision)
         elapsed_ms = int((time.time() - t0) * 1000)
         decisions.append(OversightDecision(
-            finding_id=str(uuid.uuid4()),
+            finding_id=f.finding_id,
             user_action=action,
             reason=reason,
             elapsed_ms=elapsed_ms,

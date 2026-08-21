@@ -49,7 +49,7 @@ def _next_prompt(i: int) -> str:
     return _PROMPTS[i % len(_PROMPTS)]
 
 
-def test_real_latency_distribution_per_model(real_llm_or_skip, capsys):
+def test_real_latency_distribution_per_model(real_llm_or_skip, capsys):  # noqa: F811  -- pytest fixture: the parameter intentionally shadows the imported fixture
     """100 classification calls per registered model. Record latency,
     parse the label, assert on the invariants, print the distribution.
     """

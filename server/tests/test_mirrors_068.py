@@ -224,7 +224,7 @@ def test_list_mirrors_returns_both_kinds(folder, log_root):
     src1 = _write_source(folder, "a.md", "Email: a\x40example.com")
     src2 = _write_source(folder, "b.md", "Email: b\x40example.com")
     m1 = generate_lock_mirror(folder, src1, log_root=log_root)
-    m2 = generate_lock_mirror(folder, src2, log_root=log_root)
+    generate_lock_mirror(folder, src2, log_root=log_root)
     approve_lock_mirror(folder, m1.mirror_path, approver="alex",
                           log_root=log_root)
 

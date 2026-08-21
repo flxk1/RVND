@@ -47,7 +47,7 @@ def test_homoglyph_email_bypasses_tier_b_but_b_plus_catches():
 
     # Tier B should MISS this (the bypass we're trying to close)
     tier_b_findings = tier_b_scan_text(bypass_email)
-    email_caught_by_b = any(f.type == "email" for f in tier_b_findings)
+    any(f.type == "email" for f in tier_b_findings)
     # If Tier B accidentally matches it (because regex allows the char or
     # the engine normalised somewhere), the test still passes downstream;
     # the point is Tier B+ catches it independently.
