@@ -112,17 +112,26 @@ def test_rvnd_deontic_language_is_retired() -> None:
     (``.deontic`` / ``rvnd.deontic``), never the bare package."""
     assert not (SRC / "deontic.py").exists(), (
         "workspaces/deontic.py (RVND-grown deontic language) reappeared")
-    patterns = (
-        r"^\s*from\s+\.deontic\s+import\b",                       # from .deontic import ...
+    # Absolute forms name the retired RVND module wherever they appear.
+    absolute = (
         r"^\s*from\s+workspaces\.deontic\s+import\b",             # from rvnd.deontic import ...
         r"^\s*import\s+workspaces\.deontic\b",                    # import rvnd.deontic
         r"^\s*from\s+workspaces\s+import\s+[^\n]*\bdeontic\b",    # from rvnd import deontic
-        r"^\s*from\s+\.\s+import\s+[^\n]*\bdeontic\b",            # from . import deontic
+    )
+    # Single-dot forms resolve against the importing file's OWN package: inside
+    # adapters/ they name adapters.deontic (the sanctioned seam), at the package
+    # root they name the retired rvnd.deontic. Same text, opposite meaning — so
+    # routing a module THROUGH the seam must not read as re-importing the copy
+    # the seam replaced.
+    relative = (
+        r"^\s*from\s+\.deontic\s+import\b",                       # from .deontic import ...
+        r"^\s*from\s+\.\s+import\s+[^\n]*\bdeontic\b",          # from . import deontic
     )
     offenders: list[str] = []
     for path in _py_files():
         text = path.read_text(encoding="utf-8")
-        if any(re.search(p, text, re.MULTILINE) for p in patterns):
+        pats = absolute if path.parent.name == "adapters" else absolute + relative
+        if any(re.search(p, text, re.MULTILINE) for p in pats):
             offenders.append(str(path.relative_to(SRC)))
     assert not offenders, f"retired RVND deontic module re-imported: {offenders}"
 

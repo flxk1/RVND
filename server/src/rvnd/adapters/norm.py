@@ -88,7 +88,7 @@ from .legal import (
 from .solver.norm_contract import INCIDENTS, Level
 
 # -- deontic classification engine (consumed; label mapped back below) -------
-from deontic import (
+from .deontic import (          # through the seam, never `import deontic`
     classify_incident as _deontic_classify_incident,
     extract_counterparty,
     classify_condition_kind,
