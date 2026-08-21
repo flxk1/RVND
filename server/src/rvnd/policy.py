@@ -122,6 +122,16 @@ CURRENT_DISCLAIMER_VERSION = "1"
 # ---------------------------------------------------------------------------
 
 
+class PolicyScopeError(ValueError):
+    """A subject tried to set something the deployment owns.
+
+    Raised rather than ignored. A mutator that writes a file enforcement will not
+    read is worse than one that refuses, because the caller is told it worked —
+    the same shape as an audit write that returns success while dropping the
+    record.
+    """
+
+
 class InvalidPolicy(ValueError):
     """Raised when a policy YAML/JSON declaration contains an invalid value
     (e.g. a ``local_llm.mode`` outside the three allowed states). The policy
@@ -687,6 +697,21 @@ def is_air_gapped(folder_path: str | Path) -> bool:
 DEPLOYMENT_POLICY_FILENAME = "deployment-policy.json"
 
 
+def _deployment_root(log_root: "str | Path | None" = None) -> Path:
+    """Where deployment-scoped state lives: explicit > operator-set > default.
+
+    ``principal._log_root()`` reads the operator's ``WORKSPACE_L0_LOG_ROOT`` at
+    CALL time. ``LOG_ROOT_DEFAULT`` is bound at import, so consulting it alone
+    left the posture at the built-in path while every other store followed the
+    operator elsewhere -- enforcement reading a file nobody configured.
+    """
+    if log_root:
+        return Path(log_root)
+    from ._storage_paths import LOG_ROOT_DEFAULT
+    from .principal import _log_root as _operator_root
+    return _operator_root() or LOG_ROOT_DEFAULT
+
+
 def deployment_policy(log_root: "str | Path | None" = None) -> FolderPolicy:
     """The policy the DEPLOYMENT declares, independent of any folder.
 
@@ -696,8 +721,7 @@ def deployment_policy(log_root: "str | Path | None" = None) -> FolderPolicy:
     It lives beside the other deployment state, under the log root, and falls
     back to the defaults (full protection) when absent.
     """
-    from ._storage_paths import LOG_ROOT_DEFAULT
-    root = Path(log_root) if log_root else LOG_ROOT_DEFAULT
+    root = _deployment_root(log_root)
     path = Path(root) / DEPLOYMENT_POLICY_FILENAME
     if not path.exists():
         return FolderPolicy()
@@ -712,6 +736,37 @@ def deployment_policy(log_root: "str | Path | None" = None) -> FolderPolicy:
     return FolderPolicy.from_dict(raw)
 
 
+def _declared_floor(log_root, field_name):
+    """The deployment's floor for ``field_name``, or None if it never set one.
+
+    Returning None means "no floor": `subject.weakens` then finds nothing to
+    weaken and the folder's value stands. This is what keeps a built-in default
+    from silently becoming a policy the deployment never wrote.
+    """
+    if field_name not in deployment_declared(log_root):
+        return None
+    return deployment_policy(log_root).to_dict().get(field_name)
+
+
+def deployment_declared(log_root: "str | Path | None" = None) -> "frozenset[str]":
+    """Which fields the deployment EXPLICITLY set, as opposed to defaulted.
+
+    Read from the raw file, because a FolderPolicy cannot tell the two apart:
+    an absent policy file produces the same object as one declaring every
+    built-in default. The ratchet needs the difference -- a floor nobody set is
+    not a floor, and enforcing it would refuse folders on the strength of a
+    default value.
+    """
+    path = _deployment_root(log_root) / DEPLOYMENT_POLICY_FILENAME
+    if not path.exists():
+        return frozenset()
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return frozenset()
+    return frozenset(raw) if isinstance(raw, dict) else frozenset()
+
+
 def save_deployment_policy(policy: FolderPolicy,
                            log_root: "str | Path | None" = None) -> Path:
     """Write the deployment's policy.
@@ -722,8 +777,7 @@ def save_deployment_policy(policy: FolderPolicy,
     path. Moving a decision out of the folder has to put it somewhere, not
     nowhere.
     """
-    from ._storage_paths import LOG_ROOT_DEFAULT
-    root = Path(log_root) if log_root else LOG_ROOT_DEFAULT
+    root = _deployment_root(log_root)
     root.mkdir(parents=True, exist_ok=True)
     path = root / DEPLOYMENT_POLICY_FILENAME
     path.write_text(json.dumps(policy.to_dict(), indent=2, sort_keys=True) + "\n",
@@ -731,17 +785,110 @@ def save_deployment_policy(policy: FolderPolicy,
     return path
 
 
+def enable_lock_for_deployment(*, actor: str = "user",
+                               log_root: "str | Path | None" = None) -> FolderPolicy:
+    """Turn the Lock back on for the DEPLOYMENT, clearing the acknowledgement.
+
+    Audited like the disable. The protective direction is the one nobody
+    investigates, so an unrecorded re-enable would leave a gap in the trail
+    precisely where the trail is used to reconstruct when protection was off.
+    """
+    pol = deployment_policy(log_root)
+    pol.privacy_lock_enabled = True
+    pol.acknowledgements.pop("lock_disable", None)
+    save_deployment_policy(pol, log_root)
+    log = MutationLog.for_deployment(log_root)
+    log.append(LogEvent(
+        event="system",
+        folder_path=str(log.folder_path),
+        pair_id="policy-event",
+        lifecycle_state="",
+        channel="system",
+        actor=actor,
+        extra={
+            "policy_change": "lock_enabled",
+            "scope": "deployment",
+        },
+    ))
+    return pol
+
+
+def enable_oversight_for_deployment(*, actor: str = "user",
+                                    log_root: "str | Path | None" = None) -> FolderPolicy:
+    """Turn Oversight back on for the DEPLOYMENT, clearing the acknowledgement."""
+    pol = deployment_policy(log_root)
+    pol.oversight_enabled = True
+    pol.acknowledgements.pop("oversight_disable", None)
+    save_deployment_policy(pol, log_root)
+    log = MutationLog.for_deployment(log_root)
+    log.append(LogEvent(
+        event="system",
+        folder_path=str(log.folder_path),
+        pair_id="policy-event",
+        lifecycle_state="",
+        channel="system",
+        actor=actor,
+        extra={
+            "policy_change": "oversight_enabled",
+            "scope": "deployment",
+        },
+    ))
+    return pol
+
+
+def disable_oversight_for_deployment(*, accepted_by: str, reason: str = "",
+                                     log_root: "str | Path | None" = None) -> FolderPolicy:
+    """Turn Oversight off for the DEPLOYMENT. Same contract as the Lock's.
+
+    Raises ``ValueError`` if ``accepted_by`` is empty (refuse silent disables).
+    """
+    if not accepted_by or not accepted_by.strip():
+        raise ValueError("accepted_by is required (refuse silent disables)")
+
+    pol = deployment_policy(log_root)
+    pol.oversight_enabled = False
+    pol.acknowledgements["oversight_disable"] = Acknowledgement(
+        accepted_at=_now_iso(),
+        accepted_by=accepted_by,
+        disclaimer_version=CURRENT_DISCLAIMER_VERSION,
+        reason=reason,
+    )
+    save_deployment_policy(pol, log_root)
+    log = MutationLog.for_deployment(log_root)
+    log.append(LogEvent(
+        event="system",
+        folder_path=str(log.folder_path),
+        pair_id="policy-event",
+        lifecycle_state="",
+        channel="system",
+        actor=accepted_by,
+        extra={
+            "policy_change": "oversight_disabled",
+            "scope": "deployment",
+            "disclaimer_version": CURRENT_DISCLAIMER_VERSION,
+            "reason": reason,
+        },
+    ))
+    return pol
+
+
 def disable_lock_for_deployment(*, accepted_by: str, reason: str = "",
                                 log_root: "str | Path | None" = None) -> FolderPolicy:
     """Turn the Lock off for the DEPLOYMENT, acknowledgement and all.
 
     The folder-level ``disable_lock`` no longer reaches the enforcement posture,
-    so this is where that decision now lives. It keeps the safeguard that made
-    the folder version safe: a flipped boolean alone never disables a
-    protection — ``lock_is_active`` requires a recorded acknowledgement, so a
-    policy file edited by hand (or by something that got write access) cannot
-    quietly open the posture.
+    so this is where that decision now lives, and it has to carry everything
+    that made the folder version safe rather than just the part that writes the
+    file: a flipped boolean alone never disables a protection
+    (``lock_is_active`` requires a recorded acknowledgement), an empty
+    ``accepted_by`` is refused rather than defaulted, and the change is
+    audited. Moving a decision must not shed its safeguards on the way.
+
+    Raises ``ValueError`` if ``accepted_by`` is empty (refuse silent disables).
     """
+    if not accepted_by or not accepted_by.strip():
+        raise ValueError("accepted_by is required (refuse silent disables)")
+
     pol = deployment_policy(log_root)
     pol.privacy_lock_enabled = False
     pol.acknowledgements["lock_disable"] = Acknowledgement(
@@ -751,7 +898,39 @@ def disable_lock_for_deployment(*, accepted_by: str, reason: str = "",
         reason=reason,
     )
     save_deployment_policy(pol, log_root)
+    log = MutationLog.for_deployment(log_root)
+    log.append(LogEvent(
+        event="system",
+        folder_path=str(log.folder_path),
+        pair_id="policy-event",
+        lifecycle_state="",
+        channel="system",
+        actor=accepted_by,
+        extra={
+            "policy_change": "lock_disabled",
+            "scope": "deployment",
+            "disclaimer_version": CURRENT_DISCLAIMER_VERSION,
+            "reason": reason,
+        },
+    ))
     return pol
+
+
+def effective_policy(folder_path: "str | Path | None" = None,
+                     log_root: "str | Path | None" = None) -> FolderPolicy:
+    """What actually applies at ``folder_path`` — the answer enforcement wants.
+
+    ``load_policy`` says what a FOLDER declares: right for editing or displaying
+    it, wrong for deciding anything. Which of the two a call site uses says what
+    that site is doing.
+
+    ``folder_path=None`` is a first-class answer: RVND governs egress with no
+    folder, and then the deployment's policy is the whole of it.
+    """
+    from . import subject as _subject
+    subj = (_subject.global_subject() if folder_path is None
+            else _subject.folder(str(folder_path)))
+    return resolve_policy(subj, log_root=log_root)
 
 
 def resolve_policy(subj: "Any", *, log_root: "str | Path | None" = None) -> FolderPolicy:
@@ -774,12 +953,42 @@ def resolve_policy(subj: "Any", *, log_root: "str | Path | None" = None) -> Fold
         # agent / session subjects have no store of their own yet; they inherit
         # the deployment untouched rather than silently falling back to a folder.
         return base
-    own = load_policy(subj.id)
-    merged = base.to_dict()
-    own_d = own.to_dict()
-    for field_name in sorted(_subject.FOLDER_SCOPED):
-        if field_name in own_d:
-            merged[field_name] = own_d[field_name]
+    # Folder first, then force the regime. The reverse dropped every folder field
+    # not enumerated in an allowlist, which cannot be kept exhaustive.
+    merged = load_policy(subj.id).to_dict()
+    base_d = base.to_dict()
+    for field_name in sorted(_subject.DEPLOYMENT_OWNED):
+        if field_name in base_d:
+            merged[field_name] = base_d[field_name]
+        else:
+            merged.pop(field_name, None)
+
+    # Ratcheted fields: the deployment sets a floor, the folder may stand above
+    # it. Taking the folder's value outright would let it drop below; taking the
+    # deployment's outright would discard a folder asking for stricter handling
+    # of its own contents, which was never the risk.
+    declared = deployment_declared(log_root)
+    for field_name in sorted(_subject.RATCHETED):
+        if field_name not in declared:
+            continue          # no floor was set; the folder's value stands
+        won = _subject.strictest(field_name, merged.get(field_name),
+                                 base_d.get(field_name))
+        if won is None:
+            merged.pop(field_name, None)
+        else:
+            merged[field_name] = won
+
+    acks = dict(merged.get("acknowledgements") or {})
+    base_acks = base_d.get("acknowledgements") or {}
+    for key in _subject.DEPLOYMENT_OWNED_ACKS:
+        if key in base_acks:
+            acks[key] = base_acks[key]
+        else:
+            acks.pop(key, None)
+    if acks:
+        merged["acknowledgements"] = acks
+    else:
+        merged.pop("acknowledgements", None)
     return FolderPolicy.from_dict(merged)
 
 
@@ -814,43 +1023,21 @@ def disable_lock(
     reason: str = "",
     log_root: str | Path | None = None,
 ) -> FolderPolicy:
-    """Disable Privacy Lock for this folder.
+    """Refused: this scope does not own the enforcement posture.
 
-    Caller is responsible for confirming the user has read the disclaimer
-    (e.g. by checking the ``--i-accept-the-risk`` CLI flag). This function
-    does NOT show the disclaimer — it records the acceptance + writes the
-    policy + emits an audit-log event.
+    Privacy Lock is the deployment's posture, not a folder's. A folder may still declare what
+    describes itself; it may not declare whether the protection is on, because
+    RVND governs egress with no folder at all and would never read it. Writing
+    the file anyway would report success for a change that has no effect --
+    worst of all in the protective direction, where nobody goes looking.
 
-    Raises ``ValueError`` if ``accepted_by`` is empty (refuse silent disables).
+    Raises:
+        PolicyScopeError: always. Use ``disable_lock_for_deployment(accepted_by=...)``.
     """
-    if not accepted_by:
-        raise ValueError("accepted_by is required (refuse silent disables)")
-
-    policy = load_policy(folder_path)
-    policy.privacy_lock_enabled = False
-    policy.acknowledgements["lock_disable"] = Acknowledgement(
-        accepted_at=_now_iso(),
-        accepted_by=accepted_by,
-        disclaimer_version=CURRENT_DISCLAIMER_VERSION,
-        reason=reason,
-    )
-    save_policy(folder_path, policy)
-
-    log = MutationLog(folder_path, log_root=log_root)
-    log.append(LogEvent(
-        event="system",
-        folder_path=str(Path(folder_path).expanduser().resolve()),
-        pair_id="policy-event",
-        lifecycle_state="",
-        channel="system",
-        actor=accepted_by,
-        extra={
-            "policy_change": "lock_disabled",
-            "disclaimer_version": CURRENT_DISCLAIMER_VERSION,
-            "reason": reason,
-        },
-    ))
-    return policy
+    raise PolicyScopeError(
+        "Privacy Lock is the deployment's posture, not a folder's. Writing "
+        f"{folder_path} would record a declaration that enforcement does not "
+        "read. Use disable_lock_for_deployment(accepted_by=...).")
 
 
 def enable_lock(
@@ -859,24 +1046,21 @@ def enable_lock(
     actor: str = "user",
     log_root: str | Path | None = None,
 ) -> FolderPolicy:
-    """Re-enable Privacy Lock for this folder. No disclaimer required —
-    enabling protection is the safer direction."""
-    policy = load_policy(folder_path)
-    policy.privacy_lock_enabled = True
-    policy.acknowledgements.pop("lock_disable", None)
-    save_policy(folder_path, policy)
+    """Refused: this scope does not own the enforcement posture.
 
-    log = MutationLog(folder_path, log_root=log_root)
-    log.append(LogEvent(
-        event="system",
-        folder_path=str(Path(folder_path).expanduser().resolve()),
-        pair_id="policy-event",
-        lifecycle_state="",
-        channel="system",
-        actor=actor,
-        extra={"policy_change": "lock_enabled"},
-    ))
-    return policy
+    Privacy Lock is the deployment's posture, not a folder's. A folder may still declare what
+    describes itself; it may not declare whether the protection is on, because
+    RVND governs egress with no folder at all and would never read it. Writing
+    the file anyway would report success for a change that has no effect --
+    worst of all in the protective direction, where nobody goes looking.
+
+    Raises:
+        PolicyScopeError: always. Use ``enable_lock_for_deployment()``.
+    """
+    raise PolicyScopeError(
+        "Privacy Lock is the deployment's posture, not a folder's. Writing "
+        f"{folder_path} would record a declaration that enforcement does not "
+        "read. Use enable_lock_for_deployment().")
 
 
 def disable_oversight(
@@ -886,35 +1070,21 @@ def disable_oversight(
     reason: str = "",
     log_root: str | Path | None = None,
 ) -> FolderPolicy:
-    """Disable Oversight prompts for this folder. Requires acknowledgement."""
-    if not accepted_by:
-        raise ValueError("accepted_by is required (refuse silent disables)")
+    """Refused: this scope does not own the enforcement posture.
 
-    policy = load_policy(folder_path)
-    policy.oversight_enabled = False
-    policy.acknowledgements["oversight_disable"] = Acknowledgement(
-        accepted_at=_now_iso(),
-        accepted_by=accepted_by,
-        disclaimer_version=CURRENT_DISCLAIMER_VERSION,
-        reason=reason,
-    )
-    save_policy(folder_path, policy)
+    Oversight is the deployment's posture, not a folder's. A folder may still declare what
+    describes itself; it may not declare whether the protection is on, because
+    RVND governs egress with no folder at all and would never read it. Writing
+    the file anyway would report success for a change that has no effect --
+    worst of all in the protective direction, where nobody goes looking.
 
-    log = MutationLog(folder_path, log_root=log_root)
-    log.append(LogEvent(
-        event="system",
-        folder_path=str(Path(folder_path).expanduser().resolve()),
-        pair_id="policy-event",
-        lifecycle_state="",
-        channel="system",
-        actor=accepted_by,
-        extra={
-            "policy_change": "oversight_disabled",
-            "disclaimer_version": CURRENT_DISCLAIMER_VERSION,
-            "reason": reason,
-        },
-    ))
-    return policy
+    Raises:
+        PolicyScopeError: always. Use ``disable_oversight_for_deployment(accepted_by=...)``.
+    """
+    raise PolicyScopeError(
+        "Oversight is the deployment's posture, not a folder's. Writing "
+        f"{folder_path} would record a declaration that enforcement does not "
+        "read. Use disable_oversight_for_deployment(accepted_by=...).")
 
 
 def set_lock_mode(
@@ -942,9 +1112,19 @@ def set_lock_mode(
 
     Returns the updated policy.
     """
+
     if mode not in VALID_LOCK_MODES:
         raise ValueError(f"unknown lock mode: {mode!r}; "
                          f"valid: {sorted(VALID_LOCK_MODES)}")
+
+    from . import subject as _subject
+    _floor = _declared_floor(log_root, "lock_mode_explicit")
+    if _subject.weakens("lock_mode_explicit", mode, _floor):
+        raise PolicyScopeError(
+            f"a folder may not set lock_mode_explicit below the deployment's floor "
+            f"({_floor!r}). A folder may ask for MORE restriction over its own "
+            f"contents, never less -- the deployment's floor is not a default it "
+            f"can opt out of. Change it with the deployment-level API.")
     policy = load_policy(folder_path)
     current = policy.lock_mode
 
@@ -998,23 +1178,21 @@ def enable_oversight(
     actor: str = "user",
     log_root: str | Path | None = None,
 ) -> FolderPolicy:
-    """Re-enable Oversight prompts for this folder."""
-    policy = load_policy(folder_path)
-    policy.oversight_enabled = True
-    policy.acknowledgements.pop("oversight_disable", None)
-    save_policy(folder_path, policy)
+    """Refused: this scope does not own the enforcement posture.
 
-    log = MutationLog(folder_path, log_root=log_root)
-    log.append(LogEvent(
-        event="system",
-        folder_path=str(Path(folder_path).expanduser().resolve()),
-        pair_id="policy-event",
-        lifecycle_state="",
-        channel="system",
-        actor=actor,
-        extra={"policy_change": "oversight_enabled"},
-    ))
-    return policy
+    Oversight is the deployment's posture, not a folder's. A folder may still declare what
+    describes itself; it may not declare whether the protection is on, because
+    RVND governs egress with no folder at all and would never read it. Writing
+    the file anyway would report success for a change that has no effect --
+    worst of all in the protective direction, where nobody goes looking.
+
+    Raises:
+        PolicyScopeError: always. Use ``enable_oversight_for_deployment()``.
+    """
+    raise PolicyScopeError(
+        "Oversight is the deployment's posture, not a folder's. Writing "
+        f"{folder_path} would record a declaration that enforcement does not "
+        "read. Use enable_oversight_for_deployment().")
 
 
 OVERSIGHT_LEVELS = ("autonomous", "notify", "review", "approve",
@@ -1035,11 +1213,21 @@ def set_oversight_level(
     default position — it does NOT disable prompts (that is ``disable_oversight``,
     which carries the disclaimer). Raises ``ValueError`` on an unknown level.
     """
+
     lv = (level or "").strip().lower()
     if lv not in OVERSIGHT_LEVELS:
         raise ValueError(
             f"unknown oversight level {level!r}; choose one of "
             f"{', '.join(OVERSIGHT_LEVELS)}")
+
+    from . import subject as _subject
+    _floor = _declared_floor(log_root, "oversight_default_level")
+    if _subject.weakens("oversight_default_level", level, _floor):
+        raise PolicyScopeError(
+            f"a folder may not set oversight_default_level below the deployment's floor "
+            f"({_floor!r}). A folder may ask for MORE restriction over its own "
+            f"contents, never less -- the deployment's floor is not a default it "
+            f"can opt out of. Change it with the deployment-level API.")
     policy = load_policy(folder_path)
     previous = policy.oversight_default_level
     policy.oversight_default_level = lv
@@ -1239,6 +1427,15 @@ def disable_discipline(
 ) -> FolderPolicy:
     """Turn the discipline gate OFF for this folder. No disclaimer — a quality
     gate is not a protection, so disabling it carries no acknowledgement."""
+    from . import subject as _subject
+    _floor = _declared_floor(log_root, "discipline_enabled")
+    if _subject.weakens("discipline_enabled", False, _floor):
+        raise PolicyScopeError(
+            f"a folder may not set discipline_enabled below the deployment's floor "
+            f"({_floor!r}). A folder may ask for MORE restriction over its own "
+            f"contents, never less -- the deployment's floor is not a default it "
+            f"can opt out of. Change it with the deployment-level API.")
+
     policy = load_policy(folder_path)
     policy.discipline_enabled = False
     save_policy(folder_path, policy)

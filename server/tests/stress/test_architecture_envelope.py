@@ -342,12 +342,12 @@ def test_lock_disabled_with_ack_does_not_bypass_local_validator(isolated_env):
     """Even with lock off (and a recorded ack), the local validator
     still runs on any cloud draft. A validator refusal at this stage
     must NOT be blocked by the lock-disable acknowledgement."""
-    from rvnd.policy import disable_lock, load_policy
+    from rvnd.policy import disable_lock_for_deployment, load_policy
     ws = isolated_env["workspace"]
     log_root = isolated_env["log_root"]
 
     # Disable lock with an explicit ack.
-    pol = disable_lock(ws, accepted_by="auditor",
+    pol = disable_lock_for_deployment(accepted_by="auditor",
                           reason="audit-only test",
                           log_root=log_root)
     assert not pol.lock_is_active
@@ -368,6 +368,8 @@ def test_lock_disabled_with_ack_does_not_bypass_local_validator(isolated_env):
         # And its "reject" verdict stands.
         assert verdict.label == "pii_yes"
 
-    # Confirm the disable-ack is still on file.
-    pol2 = load_policy(ws)
+    # Confirm the disable-ack is still on file -- at the deployment, which is
+    # where the acknowledgement lives now that the posture does.
+    from rvnd.policy import deployment_policy
+    pol2 = deployment_policy(log_root)
     assert "lock_disable" in pol2.acknowledgements

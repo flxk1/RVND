@@ -19,9 +19,17 @@ class RvndGovernance:
         self._log = log_sink
 
     def _policy(self):
+        """The policy IN FORCE, not the folder's declaration.
+
+        This seam decides (RC-4 turns on its answer), and the enforcement
+        posture is the deployment's. An injected ``policy_loader`` still wins
+        -- tests and hosts substitute their own -- but the default has to be
+        the effective policy or a deployment that disabled Oversight would
+        still see folder-scoped cases pass the oversight floor.
+        """
         if self._load_policy is None:
-            from ...policy import load_policy
-            self._load_policy = load_policy
+            from ...policy import effective_policy
+            self._load_policy = effective_policy
         return self._load_policy(self._folder)
 
     def oversight_level(self) -> str:

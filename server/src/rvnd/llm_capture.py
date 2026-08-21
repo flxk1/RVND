@@ -39,6 +39,7 @@ from typing import Any, Callable
 
 from .memory import WorkspaceMemory
 from .policy import load_policy
+from .policy import effective_policy
 
 
 # ---------------------------------------------------------------------------
@@ -358,7 +359,7 @@ def capture_llm_exchange(
         actor: who's performing the capture (recorded in the audit log).
     """
     oversight_level = _coerce_oversight(oversight)
-    policy = load_policy(folder_context)
+    policy = effective_policy(folder_context, log_root=log_root)
     oversight_active = policy.oversight_is_active
 
     verbosity, will_prompt = decide_verbosity(

@@ -40,6 +40,7 @@ from .llm_capture import (
     decide_verbosity,
 )
 from .policy import load_policy
+from .policy import effective_policy
 
 
 # ---------------------------------------------------------------------------
@@ -235,7 +236,7 @@ def capture_web_search(
     Returns a :class:`CaptureResult` reporting verbosity + pair_id + audit_id.
     """
     oversight_level = _coerce_oversight(oversight)
-    policy = load_policy(folder_context)
+    policy = effective_policy(folder_context, log_root=log_root)
     oversight_active = policy.oversight_is_active
 
     verbosity, will_prompt = decide_verbosity(

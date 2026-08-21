@@ -327,14 +327,14 @@ def test_m4_no_http_egress_in_mcp_surface():
 
 
 def test_m5_policy_disable_requires_acknowledgement(tmp_path):
-    from rvnd.policy import disable_lock, load_policy
+    from rvnd.policy import disable_lock_for_deployment, load_policy
 
     folder = tmp_path / "vault"
     folder.mkdir()
 
     # Direct call: empty accepted_by must raise ValueError.
     with pytest.raises(ValueError):
-        disable_lock(str(folder), accepted_by="",
+        disable_lock_for_deployment(accepted_by="",
                        log_root=str(tmp_path / "log"))
 
     # Policy must still be at default (lock enabled).

@@ -16,12 +16,24 @@ def test_a_folder_cannot_reach_the_deployment_posture():
     deployment, so a folder subject cannot set them at all.
     """
     f = S.folder("/some/user/dir")
-    for posture in ("privacy_lock_enabled", "oversight_enabled",
-                    "oversight_default_level", "lock_mode_explicit",
-                    "lock_confidence_threshold"):
+    for posture in ("privacy_lock_enabled", "oversight_enabled"):
         assert not S.may_override(f, posture), (
             f"a folder must not be able to set {posture} — it governs the "
             f"deployment, not the folder's contents")
+
+    # These three were in the list above at first, which took a capability the
+    # split had no reason to take: a folder asking for MORE restriction over its
+    # own contents threatens nothing the deployment declared. They ratchet
+    # instead — settable upward, refused downward (test_policy_scope_is_enforced).
+    for graded in ("oversight_default_level", "lock_mode_explicit",
+                   "discipline_enabled"):
+        assert graded in S.RATCHETED
+        assert S.weakens(graded, S.RATCHETED[graded][0], S.RATCHETED[graded][-1]), (
+            f"{graded} would accept the weakest value over the strictest floor")
+
+    # lock_confidence_threshold is per-folder BY DEFINITION (policy.py says so
+    # at its declaration): it filters findings over that folder's contents.
+    assert S.may_override(f, "lock_confidence_threshold")
 
 
 def test_a_folder_may_decide_about_its_own_contents():

@@ -106,11 +106,17 @@ def decide_action(
     UI ceiling fader and for audit)."""
     from .action_gate import ActionRequest, gate as _gate
     from .incidents import log_gate_decision
-    from .policy import load_policy
+    from .policy import effective_policy
     from .breaker import cap_grade
 
     requested_grade = grade if grade in _pm.GRADES else "L1"
-    ov = (oversight_level or load_policy(folder).oversight_default_level or "approve")
+    # The effective level: the deployment sets the floor, the folder may
+    # ratchet above it. The folder's own declaration alone would read as
+    # unset here and fall through to a hardcoded "approve" -- below a
+    # deployment that requires more.
+    ov = (oversight_level
+          or effective_policy(folder, log_root=log_root).oversight_default_level
+          or "approve")
     if ov not in _pm.OVERSIGHT:
         ov = "approve"
 
@@ -398,9 +404,10 @@ def grounding_feed(folder: str | Path, *, log_root: Optional[Path] = None,
             "events": rows[:max(1, limit)]}
 
 
-def _load_oversight(folder: str | Path) -> str:
-    from .policy import load_policy
-    return load_policy(folder).oversight_default_level or "approve"
+def _load_oversight(folder: str | Path, log_root=None) -> str:
+    """The level in force. See decide_action: the floor is the deployment's."""
+    from .policy import effective_policy
+    return effective_policy(folder, log_root=log_root).oversight_default_level or "approve"
 
 
 def _log_grounding(folder, action_class, grounded, verdict, ov, reason, actor,

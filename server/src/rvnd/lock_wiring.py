@@ -13,6 +13,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from .lock import host_deps
+from .policy import effective_policy
 
 
 def _models_for_role(role):
@@ -64,7 +65,7 @@ def _list_connectors(folder_context, log_root=None):
 
 def _l0_load_policy(folder_context):
     from . import load_policy
-    p = load_policy(folder_context)
+    p = effective_policy(folder_context)
     return {"lock_is_active": p.lock_is_active,
             "oversight_is_active": p.oversight_is_active,
             "oversight_default_level": p.oversight_default_level,
