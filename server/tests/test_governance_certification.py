@@ -78,12 +78,13 @@ def test_the_enforced_pillar_is_backed_by_the_marker_not_by_itself():
     no information. What makes it true is the CALL PATH: hook.py mints only when
     a PreToolUse marker file exists, and consumes it.
 
-    That marker is unsigned JSON at a predictable path under
-    `<log_root>/hook-pending/`. Anyone who can write there can cause a validly
-    signed certificate to be minted for an action that was never held. This test
-    exists to keep that visible: the pillar's strength is the marker's
-    authenticity, and today the marker has none. If the marker ever becomes
-    signed, this test should assert that instead.
+    The marker is now SIGNED, with the tool_use_id inside the signed payload, and
+    the mint path verifies before issuing — so the pillar is backed by something
+    only this installation could produce, and a marker cannot be replayed against
+    a different action. See test_hold_marker_signature.py.
+
+    The constant stays a constant: what changed is not the field but what stands
+    behind it.
     """
     pred = build_predicate(_marker(mechanism="anything", audit_id=""))
     assert pred["enforced"]["blocked_unless_permitted"] is True, (
@@ -96,9 +97,12 @@ def test_the_enforced_pillar_is_backed_by_the_marker_not_by_itself():
     assert "_marker_path" in src and "unlink" in src, (
         "the enforcement claim rests on a marker being present and consumed "
         "exactly once; if that changed, what backs the pillar changed too")
-    assert "sign" not in inspect.getsource(hook._mark_held), (
-        "the marker is now signed — update this test and the schema note: the "
-        "enforced pillar is finally backed by something unforgeable")
+    assert "sign_bytes" in inspect.getsource(hook._mark_held), (
+        "the hold marker stopped being signed — the enforced pillar is back to "
+        "resting on a file anyone with directory access could write")
+    assert "verify_signature" in inspect.getsource(hook._run_posttooluse), (
+        "minting stopped verifying the marker; signing it is worth nothing if "
+        "an unsigned one is still accepted")
 
 
 def test_grounded_digest_covers_the_evidence_it_names():
