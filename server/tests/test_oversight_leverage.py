@@ -28,7 +28,7 @@ Claims under test (written BEFORE the logic):
 from __future__ import annotations
 
 
-from workspaces.oversight_leverage import leverage_report, sampling_adequacy
+from rvnd.oversight_leverage import leverage_report, sampling_adequacy
 
 
 def _edge(itype, rooms=()):

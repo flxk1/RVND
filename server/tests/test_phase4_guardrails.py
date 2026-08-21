@@ -16,10 +16,10 @@ import os
 
 import pytest
 
-from workspaces import approvals as AP
-from workspaces import reservation_bridge as B
-from workspaces.mutation_log import MutationLog
-from workspaces.parties import register_party
+from rvnd import approvals as AP
+from rvnd import reservation_bridge as B
+from rvnd.mutation_log import MutationLog
+from rvnd.parties import register_party
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 T = 1_900_000_000.0

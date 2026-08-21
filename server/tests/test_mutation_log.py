@@ -11,13 +11,13 @@ from pathlib import Path
 
 import pytest
 
-from workspaces import (
+from rvnd import (
     LOG_ROOT_DEFAULT,
     LogEvent,
     MutationLog,
     folder_hash,
 )
-from workspaces import mutation_log as mutation_log_module
+from rvnd import mutation_log as mutation_log_module
 
 
 class _LockTestFile:
@@ -393,7 +393,7 @@ def _purge_kwargs():
 def _init_controller_key(tmp_path, monkeypatch):
     """B1 prereq: purge() refuses if no controller keypair is present."""
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(tmp_path / "keys"))
-    from workspaces import signing
+    from rvnd import signing
     signing.ensure_controller_keypair()
 
 
@@ -437,7 +437,7 @@ def test_purge_preserves_other_pairs_malformed_lines(tmp_path, monkeypatch):
     assert "sha256:p2" in raw
     # The raw pair id is gone entirely — the tombstone names it only
     # through the opaque folder-salted ref.
-    from workspaces.forgotten_subjects import purged_pair_ref
+    from rvnd.forgotten_subjects import purged_pair_ref
     assert "sha256:p1" not in raw
     assert purged_pair_ref(log.folder_path, "sha256:p1") in raw
 

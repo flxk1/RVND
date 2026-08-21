@@ -6,7 +6,7 @@ through the handler. The required-param schema is enforced AND kept in sync with
 help catalogue. MCP-integration panel."""
 from __future__ import annotations
 
-from workspaces.mcp_server import workspace_policy, _require_op_params, _WORKSPACE_POLICY_REQUIRED
+from rvnd.mcp_server import workspace_policy, _require_op_params, _WORKSPACE_POLICY_REQUIRED
 
 
 def test_missing_required_param_is_rejected_up_front():

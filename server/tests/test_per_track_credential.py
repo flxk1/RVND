@@ -15,8 +15,8 @@ import os
 
 import pytest
 
-from workspaces import connectors
-from workspaces.lock import credential_resolver as C
+from rvnd import connectors
+from rvnd.lock import credential_resolver as C
 
 
 # ---- credential_resolver: parsing --------------------------------------------
@@ -118,7 +118,7 @@ def test_egress_connector_stores_reference_not_secret(tmp_path):
     got = {c["connector_id"]: c for c in connectors.list_connectors(f, log_root=lr)}
     assert got["out"]["credential_ref"] == "env:JIRA_TOKEN"
     # the chain carries the REFERENCE, never a secret value
-    from workspaces.mutation_log import MutationLog
+    from rvnd.mutation_log import MutationLog
     raw = MutationLog(f, log_root=lr).log_file.read_bytes()
     assert b"env:JIRA_TOKEN" in raw and b"JIRA_TOKEN" in raw   # the ref, fine
     # (there is no secret to leak — the point is the field is a ref by construction)

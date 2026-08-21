@@ -3,7 +3,7 @@
 """RVND consumes oversight-certificate — prove the portable export round-trips.
 
 RVND is a *consumer* of the upstream ``oversight-certificate`` package (its own
-repo). These tests exercise ``workspaces.oversight_cert``: issue a certificate
+repo). These tests exercise ``rvnd.oversight_cert``: issue a certificate
 from RVND-side data, then re-check it the way a third-party auditor would —
 offline, from the DSSE envelope and a public verify function alone.
 
@@ -23,7 +23,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import (  # noqa: E402
     Ed25519PrivateKey,
 )
 
-from workspaces import oversight_cert as oc  # noqa: E402
+from rvnd import oversight_cert as oc  # noqa: E402
 
 
 def _ephemeral_signer():
@@ -172,7 +172,7 @@ def test_verify_op_through_workspace_workflow():
     from cryptography.hazmat.primitives import serialization
     from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
-    from workspaces import mcp_server
+    from rvnd import mcp_server
     priv = Ed25519PrivateKey.generate()
     pem = priv.public_key().public_bytes(
         encoding=serialization.Encoding.PEM,
@@ -209,7 +209,7 @@ def test_govlive_board_carries_certificates(tmp_path, monkeypatch):
         evidence_refs=["sha256:abc"], at="2026-08-13T10:00:00Z",
         audit_id="evt-9", log_root=str(logs))
     assert env is not None
-    from workspaces.governance_live import governance_live
+    from rvnd.governance_live import governance_live
     board = governance_live(str(folder), log_root=str(logs))
     assert board["ok"]
     assert len(board.get("certificates", [])) == 1

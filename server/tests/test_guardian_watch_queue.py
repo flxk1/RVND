@@ -23,9 +23,9 @@ import time
 
 import pytest
 
-from workspaces.guardian import GuardianRefused
-from workspaces.mutation_log import MutationLog
-from workspaces.parties import list_parties, register_party
+from rvnd.guardian import GuardianRefused
+from rvnd.mutation_log import MutationLog
+from rvnd.parties import list_parties, register_party
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 
@@ -48,7 +48,7 @@ def env(tmp_path, monkeypatch):
 def _enqueue(env, n, by="agent-x"):
     from pathlib import Path
 
-    from workspaces.queue import enqueue_run
+    from rvnd.queue import enqueue_run
     for i in range(n):
         enqueue_run(env["ws"], f"wf-{by}-{i}", enqueued_by=by,
                     log_root=Path(env["lr"]))
@@ -65,7 +65,7 @@ def _chain_kinds(env):
 
 
 def _tick(env, rules, now=None):
-    from workspaces.guardian_watch import watch_tick
+    from rvnd.guardian_watch import watch_tick
     return watch_tick(env["ws"], rules, guardian_id="guardian-1",
                       log_root=env["lr"], now=now)
 
@@ -75,8 +75,8 @@ def _tick(env, rules, now=None):
 def test_pending_stale_run_escalates_and_is_not_mutated(env):
     from pathlib import Path
 
-    from workspaces.guardian_watch import WatchRule
-    from workspaces.queue import list_queue
+    from rvnd.guardian_watch import WatchRule
+    from rvnd.queue import list_queue
     _enqueue(env, 1)
     # inspect_stuck_runs floors BOTH timestamps to whole seconds, so the
     # boundary has up to 2s of slack — sleep past the worst case (the 300s
@@ -92,14 +92,14 @@ def test_pending_stale_run_escalates_and_is_not_mutated(env):
 
 
 def test_fresh_pending_run_is_not_stuck(env):
-    from workspaces.guardian_watch import WatchRule
+    from rvnd.guardian_watch import WatchRule
     _enqueue(env, 1)
     r = _tick(env, [WatchRule(kind="queue_stuck", window_seconds=300)])
     assert [x for x in r["findings"] if x["rule"] == "queue_stuck"] == []
 
 
 def test_queue_stuck_with_pause_is_refused(env):
-    from workspaces.guardian_watch import WatchRule
+    from rvnd.guardian_watch import WatchRule
     with pytest.raises(GuardianRefused):
         _tick(env, [WatchRule(kind="queue_stuck", window_seconds=1,
                               action="pause")])
@@ -109,7 +109,7 @@ def test_queue_stuck_with_pause_is_refused(env):
 # --- queue_flood: budget at the queue, attributed via enqueued_by -------------
 
 def test_agent_flooding_the_queue_is_paused(env):
-    from workspaces.guardian_watch import WatchRule
+    from rvnd.guardian_watch import WatchRule
     _enqueue(env, 3, by="agent-x")
     r = _tick(env, [WatchRule(kind="queue_flood", limit=2)])
     f = [x for x in r["findings"] if x["rule"] == "queue_flood"]
@@ -118,7 +118,7 @@ def test_agent_flooding_the_queue_is_paused(env):
 
 
 def test_flood_under_limit_is_quiet(env):
-    from workspaces.guardian_watch import WatchRule
+    from rvnd.guardian_watch import WatchRule
     _enqueue(env, 2, by="agent-x")
     r = _tick(env, [WatchRule(kind="queue_flood", limit=2)])
     assert [x for x in r["findings"] if x["rule"] == "queue_flood"] == []
@@ -126,7 +126,7 @@ def test_flood_under_limit_is_quiet(env):
 
 
 def test_human_enqueuer_never_flagged(env):
-    from workspaces.guardian_watch import WatchRule
+    from rvnd.guardian_watch import WatchRule
     _enqueue(env, 4, by="alex")
     r = _tick(env, [WatchRule(kind="queue_flood", limit=1)])
     assert [x for x in r["findings"] if x["rule"] == "queue_flood"] == []
@@ -134,7 +134,7 @@ def test_human_enqueuer_never_flagged(env):
 
 
 def test_empty_queue_is_quiet(env):
-    from workspaces.guardian_watch import WatchRule
+    from rvnd.guardian_watch import WatchRule
     r = _tick(env, [WatchRule(kind="queue_stuck", window_seconds=1),
                     WatchRule(kind="queue_flood", limit=1)])
     assert r["findings"] == [] and r["ok"] is True

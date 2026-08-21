@@ -13,7 +13,7 @@ global state that other suite tests may seal or make unwritable.
 """
 from __future__ import annotations
 
-from workspaces.contracts.reviews import (
+from rvnd.contracts.reviews import (
     list_contract_approvals,
     record_contract_approval,
     request_contract_approval,
@@ -79,7 +79,7 @@ def test_action_summary_persisted_and_listed(tmp_path):
 def test_idempotency_through_gateway_facade(tmp_path, monkeypatch):
     """The gateway path (what n8n actually calls) must dedupe too."""
     monkeypatch.setenv("WORKSPACE_L0_LOG_ROOT", str(_root(tmp_path)))
-    from workspaces import gateway as gw
+    from rvnd import gateway as gw
     p = {"folder_context": str(tmp_path), "contract_id": "g4",
          "signers": ["alex"], "requested_by": "n8n",
          "action_summary": "post summary", "idempotency_key": "flow-123"}

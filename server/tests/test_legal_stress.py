@@ -26,16 +26,16 @@ from datetime import date
 
 import pytest
 
-import workspaces.currency as cur
-from workspaces.dimensions import Dimension, classify_query_dimension
-from workspaces.reasoning import extract_edges, compose_paths
-from workspaces.adapters.deontic import (
+import rvnd.currency as cur
+from rvnd.dimensions import Dimension, classify_query_dimension
+from rvnd.reasoning import extract_edges, compose_paths
+from rvnd.adapters.deontic import (
     DeonticFormula, OP_OBLIGATION, OP_PROHIBITION, detect_conflicts,
 )
-from workspaces.deontic_facets import extract_formulae
-from workspaces.requirements_house import build_house_from_text
-from workspaces.evidence_coverage import EvidenceDoc, map_coverage
-from workspaces.norm_contract import gate, check_pair, Level, ContractViolation
+from rvnd.deontic_facets import extract_formulae
+from rvnd.requirements_house import build_house_from_text
+from rvnd.evidence_coverage import EvidenceDoc, map_coverage
+from rvnd.norm_contract import gate, check_pair, Level, ContractViolation
 
 
 # ───────────────────────── shared scenario corpus ──────────────────────────
@@ -202,7 +202,7 @@ class TestAspect4Mismatch:
         assert classify_query_dimension("why does the obligation arise") == Dimension.CAUSAL
 
     def test_layperson_query_retrieves_the_differently_worded_norm(self):
-        from workspaces.hybrid_retrieval import Document, HybridIndex, baseline_retrieve
+        from rvnd.hybrid_retrieval import Document, HybridIndex, baseline_retrieve
         corpus = [
             Document("GOV", "Von der Einziehung kann abgesehen werden, soweit sie "
                      "nach Lage des Einzelfalls unbillig wäre.", authority_tier=1),
@@ -254,7 +254,7 @@ class TestAspect5Dilution:
     def test_german_prohibition_not_misread_as_obligation(self):
         """Regression for 'falsche Rechtsfolge': separated negation 'darf … nicht'
         is a prohibition, not an obligation (the essay's most dangerous error)."""
-        from workspaces.rule_extractor import extract_rules
+        from rvnd.rule_extractor import extract_rules
         r = extract_rules("Der Anbieter darf die Daten nicht offenlegen.",
                           gated_by_fingerprint=False)
         assert r and r[0].modal == "prohibition"

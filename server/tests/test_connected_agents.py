@@ -6,7 +6,7 @@ import os
 import subprocess
 import sys
 
-from workspaces import connected_agents as ca
+from rvnd import connected_agents as ca
 
 
 def test_register_list_deregister(tmp_path):
@@ -47,7 +47,7 @@ def test_op_reads_default_dir(tmp_path, monkeypatch):
     # The server-level op returns the connected agents from the default registry dir.
     monkeypatch.setenv("WORKSPACE_AGENTS_DIR", str(tmp_path / "adir"))
     ca.register_connection(agent="claude-code", pid=os.getpid())
-    from workspaces import mcp_server
+    from rvnd import mcp_server
     r = mcp_server.workspace_workflow("connected_agents", {})
     assert r["ok"] and r["count"] >= 1
     assert any(a["agent"] == "claude-code" for a in r["agents"])

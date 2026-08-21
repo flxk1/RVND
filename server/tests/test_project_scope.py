@@ -5,9 +5,9 @@ facts → three correct, non-overlapping, provenance-tagged selections."""
 
 from __future__ import annotations
 
-from workspaces.hybrid_retrieval import Document
-from workspaces.fact_intake import FactNeed
-from workspaces.project_scope import select, ClauseNeed
+from rvnd.hybrid_retrieval import Document
+from rvnd.fact_intake import FactNeed
+from rvnd.project_scope import select, ClauseNeed
 
 
 # ONE Workspace: Acme's contracts + a decoy other party (Globex). Doc id is

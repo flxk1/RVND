@@ -21,9 +21,9 @@ os.environ["WORKSPACE_KEY_DIR"] = os.path.join(tmp, "keys")
 os.environ["WORKSPACE_L0_LOG_ROOT"] = os.path.join(tmp, "logs")
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 sys.path.insert(0, str(HERE.parent)); sys.path.insert(0, str(HERE.parent.parent / "server" / "src"))
-import serve, workspaces.mcp_server as S  # noqa: E402
-from workspaces.parties import register_party  # noqa: E402
-from workspaces.use_case import register_use_case  # noqa: E402
+import serve, rvnd.mcp_server as S  # noqa: E402
+from rvnd.parties import register_party  # noqa: E402
+from rvnd.use_case import register_use_case  # noqa: E402
 LR = os.environ["WORKSPACE_L0_LOG_ROOT"]
 A = os.path.join(tmp, "alpha")
 os.makedirs(A, exist_ok=True)

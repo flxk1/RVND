@@ -21,7 +21,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from workspaces.mirrors import (
+from rvnd.mirrors import (
     SPANS_SCHEMA,
     MirrorRedactionError,
     MirrorRecord,
@@ -29,7 +29,7 @@ from workspaces.mirrors import (
     generate_lock_mirror,
     list_mirrors,
 )
-from workspaces.mutation_log import MutationLog
+from rvnd.mutation_log import MutationLog
 
 
 # ---------------------------------------------------------------------------
@@ -117,7 +117,7 @@ def test_generate_lock_mirror_fails_closed_without_redacted_text(
         action="refuse",
         findings=[SimpleNamespace(remediation_actions=[])],
     )
-    monkeypatch.setattr("workspaces.lock.lock_text", lambda *a, **k: decision)
+    monkeypatch.setattr("rvnd.lock.lock_text", lambda *a, **k: decision)
 
     with pytest.raises(MirrorRedactionError, match="safe redacted text"):
         generate_lock_mirror(folder, src, log_root=log_root)
@@ -133,7 +133,7 @@ def test_generate_lock_mirror_fails_closed_when_lock_scan_errors(
     def fail_scan(*args, **kwargs):
         raise OSError("scanner unavailable")
 
-    monkeypatch.setattr("workspaces.lock.lock_text", fail_scan)
+    monkeypatch.setattr("rvnd.lock.lock_text", fail_scan)
 
     with pytest.raises(MirrorRedactionError, match="scan failed"):
         generate_lock_mirror(folder, src, log_root=log_root)
@@ -224,7 +224,7 @@ def test_list_mirrors_returns_both_kinds(folder, log_root):
     src1 = _write_source(folder, "a.md", "Email: a\x40example.com")
     src2 = _write_source(folder, "b.md", "Email: b\x40example.com")
     m1 = generate_lock_mirror(folder, src1, log_root=log_root)
-    m2 = generate_lock_mirror(folder, src2, log_root=log_root)
+    generate_lock_mirror(folder, src2, log_root=log_root)
     approve_lock_mirror(folder, m1.mirror_path, approver="alex",
                           log_root=log_root)
 

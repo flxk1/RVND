@@ -26,7 +26,7 @@ from pathlib import Path
 
 import pytest
 
-from workspaces.mutation_log import (
+from rvnd.mutation_log import (
     MutationLog,
     VALID_LEGAL_BASES,
 )
@@ -43,7 +43,7 @@ def isolated_keys(tmp_path, monkeypatch):
     keypairs so purge() finds the controller key it requires."""
     keydir = tmp_path / "keys"
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(keydir))
-    from workspaces import signing
+    from rvnd import signing
     signing.ensure_keypair()
     signing.ensure_controller_keypair()
     return keydir
@@ -88,7 +88,7 @@ def test_purge_writes_tombstone_with_required_fields(tmp_path, isolated_keys):
     t = tombstones[0]
     # The tombstone outlives the purged events: it names the pair through
     # the opaque folder-salted ref, never the raw id.
-    from workspaces.forgotten_subjects import purged_pair_ref
+    from rvnd.forgotten_subjects import purged_pair_ref
     assert t.pair_id == purged_pair_ref(log.folder_path, "sha256:pair-A")
     assert "sha256:pair-A" not in t.pair_id
     assert t.lifecycle_state == "purged"
@@ -124,7 +124,7 @@ def test_purge_re_links_subsequent_events(tmp_path, isolated_keys):
         reason="re-link test",
     )
 
-    after = [json.loads(l) for l in log.log_file.read_text().splitlines() if l.strip()]
+    [json.loads(l) for l in log.log_file.read_text().splitlines() if l.strip()]
     # Every surviving event must still have a valid hash chain.
     result = log.verify_chain()
     assert result.ok, (
@@ -191,7 +191,7 @@ def test_purge_single_key_without_controller(tmp_path, monkeypatch):
     controller key, and the tombstone must record erasure_mode=single-key."""
     keydir = tmp_path / "keys-no-controller"
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(keydir))
-    from workspaces import signing
+    from rvnd import signing
     # Identity (operator) key is fine; only the CONTROLLER key is missing.
     signing.ensure_keypair()
     assert signing.public_controller_key_fingerprint() is None
@@ -225,7 +225,7 @@ def test_purge_single_key_without_controller(tmp_path, monkeypatch):
 
 def _append_in_subprocess(workspace_str: str, log_root_str: str,
                           n_events: int, label: str) -> None:
-    from workspaces.mutation_log import LogEvent, MutationLog
+    from rvnd.mutation_log import LogEvent, MutationLog
     log = MutationLog(Path(workspace_str), log_root=Path(log_root_str))
     for i in range(n_events):
         log.append(LogEvent(
@@ -241,10 +241,10 @@ def _append_in_subprocess(workspace_str: str, log_root_str: str,
 def _purge_in_subprocess(workspace_str: str, log_root_str: str,
                           keydir_str: str, pair_id: str) -> None:
     os.environ["WORKSPACE_KEY_DIR"] = keydir_str
-    from workspaces import signing
+    from rvnd import signing
     signing.ensure_keypair()
     signing.ensure_controller_keypair()
-    from workspaces.mutation_log import MutationLog
+    from rvnd.mutation_log import MutationLog
     log = MutationLog(Path(workspace_str), log_root=Path(log_root_str))
     log.append_raw(event="ingest",
                     pair_id=pair_id,

@@ -12,12 +12,12 @@ import time
 
 import pytest
 
-from workspaces import drift_monitor as dm
-from workspaces.drift_monitor import DriftThresholds
-from workspaces.decisions.surface import record_choice
-from workspaces.mutation_log import LogEvent, MutationLog
-from workspaces.pinned_skills import PinnedSkill, load_pinned_skills, save_pinned_skills
-from workspaces.policy import load_policy, save_policy
+from rvnd import drift_monitor as dm
+from rvnd.drift_monitor import DriftThresholds
+from rvnd.decisions.surface import record_choice
+from rvnd.mutation_log import LogEvent, MutationLog
+from rvnd.pinned_skills import PinnedSkill, load_pinned_skills, save_pinned_skills
+from rvnd.policy import load_policy, save_policy
 
 THIN = DriftThresholds(share_shift=0.15, min_events=5)
 

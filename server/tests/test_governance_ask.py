@@ -9,9 +9,9 @@ from __future__ import annotations
 
 import os
 
-from workspaces import governance_ask as ASK
-from workspaces import governance_map as GM
-from workspaces import duty_identification as DI
+from rvnd import governance_ask as ASK
+from rvnd import governance_map as GM
+from rvnd import duty_identification as DI
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 

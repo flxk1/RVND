@@ -8,9 +8,9 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces.lock import tier_c as TC
-from workspaces.lock.backends import BackendError
-from workspaces.lock.core import lock_text, Mode
+from rvnd.lock import tier_c as TC
+from rvnd.lock.backends import BackendError
+from rvnd.lock.core import lock_text, Mode
 
 
 ENV = "AGENT_TOOL_LOCK_LLM_BACKEND"

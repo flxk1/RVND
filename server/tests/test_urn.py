@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces import urn
+from rvnd import urn
 
 
 # ── canonical minting: any namespace, none privileged ────────────────────────

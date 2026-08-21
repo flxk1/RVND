@@ -30,7 +30,7 @@ from __future__ import annotations
 import time
 
 
-from workspaces.lock.core import (
+from rvnd.lock.core import (
     tier_b_scan_text,
     tier_c_semantic_check,
     _detect_confusable_bypass,
@@ -50,7 +50,7 @@ from tests.stress._real_llm_harness import (
 )
 
 
-def test_real_local_llm_does_not_leak_pii_into_cloud(real_llm_or_skip, capsys):
+def test_real_local_llm_does_not_leak_pii_into_cloud(real_llm_or_skip, capsys):  # noqa: F811  -- pytest fixture: the parameter intentionally shadows the imported fixture
     """Drive 100 synthetic inputs through the full pipeline with the
     REAL ensemble. Assert the invariants. Print the measurements."""
 

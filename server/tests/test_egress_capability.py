@@ -7,12 +7,12 @@ import urllib.request
 
 import pytest
 
-from workspaces import signing
-from workspaces.lock.egress_proxy import EgressProxy, autonomous_callback
-from workspaces.lock.oversight import OversightLevel
-from workspaces.session_capability import CapabilityVerifier, mint
-from workspaces.session_capability import CapabilityError
-from workspaces.mutation_log import MutationLog
+from rvnd import signing
+from rvnd.lock.egress_proxy import EgressProxy, autonomous_callback
+from rvnd.lock.oversight import OversightLevel
+from rvnd.session_capability import CapabilityVerifier, mint
+from rvnd.session_capability import CapabilityError
+from rvnd.mutation_log import MutationLog
 
 pytestmark = pytest.mark.live_egress_capability
 

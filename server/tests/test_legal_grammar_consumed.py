@@ -8,7 +8,7 @@ never by importing ``loomground_legal`` directly. These exercise it end-to-end s
 the consumption is real, not a dangling pin: a well-formed norm is applied, and
 the honesty spine holds (ill-formed law is excluded → the analysis escalates).
 """
-from workspaces.adapters.legal import LegalStatement, analyse, source_classes
+from rvnd.adapters.legal import LegalStatement, analyse, source_classes
 
 from loomground_solver.cross_subsumption import FactSpace, Verdict
 

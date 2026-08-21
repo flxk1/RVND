@@ -17,9 +17,9 @@ import time
 
 import pytest
 
-from workspaces.guardian import GuardianRefused
-from workspaces.mutation_log import LogEvent, MutationLog
-from workspaces.parties import list_parties, register_party, set_party_status
+from rvnd.guardian import GuardianRefused
+from rvnd.mutation_log import LogEvent, MutationLog
+from rvnd.parties import list_parties, register_party, set_party_status
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 
@@ -62,7 +62,7 @@ def _chain_kinds(env):
 # --- the TASKS verification line: expansion attempt refused + logged --------
 
 def test_rule_with_expansion_action_refused_and_logged(env):
-    from workspaces.guardian_watch import WatchRule, watch_tick
+    from rvnd.guardian_watch import WatchRule, watch_tick
     _emit(env, "agent-x", 3)
     with pytest.raises(GuardianRefused):
         watch_tick(env["ws"], [WatchRule(kind="budget", limit=1,
@@ -73,7 +73,7 @@ def test_rule_with_expansion_action_refused_and_logged(env):
 
 
 def test_unknown_rule_kind_refused(env):
-    from workspaces.guardian_watch import WatchRule, watch_tick
+    from rvnd.guardian_watch import WatchRule, watch_tick
     with pytest.raises(GuardianRefused):
         watch_tick(env["ws"], [WatchRule(kind="vibes", limit=1)],
                    guardian_id="guardian-1", log_root=env["lr"], now=NOW + 1)
@@ -82,7 +82,7 @@ def test_unknown_rule_kind_refused(env):
 # --- budget ------------------------------------------------------------------
 
 def test_budget_violation_pauses_agent_with_evidence(env):
-    from workspaces.guardian_watch import WatchRule, watch_tick
+    from rvnd.guardian_watch import WatchRule, watch_tick
     _emit(env, "agent-x", 5)
     r = watch_tick(env["ws"], [WatchRule(kind="budget", limit=3)],
                    guardian_id="guardian-1", log_root=env["lr"], now=NOW + 1)
@@ -92,7 +92,7 @@ def test_budget_violation_pauses_agent_with_evidence(env):
 
 
 def test_budget_under_limit_no_finding(env):
-    from workspaces.guardian_watch import WatchRule, watch_tick
+    from rvnd.guardian_watch import WatchRule, watch_tick
     _emit(env, "agent-x", 2)
     r = watch_tick(env["ws"], [WatchRule(kind="budget", limit=3)],
                    guardian_id="guardian-1", log_root=env["lr"], now=NOW + 1)
@@ -103,7 +103,7 @@ def test_budget_under_limit_no_finding(env):
 # --- rate --------------------------------------------------------------------
 
 def test_rate_window_bounds_the_count(env):
-    from workspaces.guardian_watch import WatchRule, watch_tick
+    from rvnd.guardian_watch import WatchRule, watch_tick
     _emit(env, "agent-x", 5, ts=NOW)
     # wide window sees all 5 -> violation
     r1 = watch_tick(env["ws"], [WatchRule(kind="rate", limit=3,
@@ -121,7 +121,7 @@ def test_rate_window_bounds_the_count(env):
 # --- loop --------------------------------------------------------------------
 
 def test_loop_consecutive_repeats_flagged(env):
-    from workspaces.guardian_watch import WatchRule, watch_tick
+    from rvnd.guardian_watch import WatchRule, watch_tick
     _emit(env, "agent-x", 6, pair_id="same-op")
     r = watch_tick(env["ws"], [WatchRule(kind="loop", limit=4)],
                    guardian_id="guardian-1", log_root=env["lr"], now=NOW + 1)
@@ -129,7 +129,7 @@ def test_loop_consecutive_repeats_flagged(env):
 
 
 def test_alternating_ops_are_not_a_loop(env):
-    from workspaces.guardian_watch import WatchRule, watch_tick
+    from rvnd.guardian_watch import WatchRule, watch_tick
     for i in range(6):
         _emit(env, "agent-x", 1, pair_id=f"op-{i % 2}", ts=NOW + i)
     r = watch_tick(env["ws"], [WatchRule(kind="loop", limit=4)],
@@ -140,7 +140,7 @@ def test_alternating_ops_are_not_a_loop(env):
 # --- scope: agents only; the root path stays clear ---------------------------
 
 def test_human_actor_never_flagged_or_paused(env):
-    from workspaces.guardian_watch import WatchRule, watch_tick
+    from rvnd.guardian_watch import WatchRule, watch_tick
     _emit(env, "alex", 10)
     r = watch_tick(env["ws"], [WatchRule(kind="budget", limit=1)],
                    guardian_id="guardian-1", log_root=env["lr"], now=NOW + 1)
@@ -149,7 +149,7 @@ def test_human_actor_never_flagged_or_paused(env):
 
 
 def test_killed_agent_stays_killed(env):
-    from workspaces.guardian_watch import WatchRule, watch_tick
+    from rvnd.guardian_watch import WatchRule, watch_tick
     _emit(env, "agent-x", 5)
     set_party_status(env["ws"], "agent-x", "killed", actor="alex",
                      log_root=env["lr"])
@@ -161,7 +161,7 @@ def test_killed_agent_stays_killed(env):
 # --- escalate action + drift delegation --------------------------------------
 
 def test_escalate_rule_changes_no_status(env):
-    from workspaces.guardian_watch import WatchRule, watch_tick
+    from rvnd.guardian_watch import WatchRule, watch_tick
     _emit(env, "agent-x", 5)
     watch_tick(env["ws"], [WatchRule(kind="budget", limit=1,
                                      action="escalate")],
@@ -171,7 +171,7 @@ def test_escalate_rule_changes_no_status(env):
 
 
 def test_drift_without_baseline_is_not_a_finding(env):
-    from workspaces.guardian_watch import WatchRule, watch_tick
+    from rvnd.guardian_watch import WatchRule, watch_tick
     _emit(env, "agent-x", 3)
     r = watch_tick(env["ws"], [WatchRule(kind="drift")],
                    guardian_id="guardian-1", log_root=env["lr"], now=NOW + 1)
@@ -182,7 +182,7 @@ def test_drift_rule_always_escalates_never_pauses(env):
     """Drift findings route to the human 3-option surface (drift_monitor);
     the watchdog must not preempt it — a drift rule asking for pause is
     refused like any expansion of the watchdog's mandate."""
-    from workspaces.guardian_watch import WatchRule, watch_tick
+    from rvnd.guardian_watch import WatchRule, watch_tick
     with pytest.raises(GuardianRefused):
         watch_tick(env["ws"], [WatchRule(kind="drift", action="pause")],
                    guardian_id="guardian-1", log_root=env["lr"], now=NOW + 1)
@@ -191,7 +191,7 @@ def test_drift_rule_always_escalates_never_pauses(env):
 # --- determinism + snapshot discipline ----------------------------------------
 
 def test_same_chain_same_rules_same_now_same_findings(env):
-    from workspaces.guardian_watch import WatchRule, watch_tick
+    from rvnd.guardian_watch import WatchRule, watch_tick
     _emit(env, "agent-x", 5)
     rules = [WatchRule(kind="budget", limit=3, action="escalate")]
     r1 = watch_tick(env["ws"], rules, guardian_id="guardian-1",
@@ -202,14 +202,14 @@ def test_same_chain_same_rules_same_now_same_findings(env):
 
 
 def test_empty_chain_and_no_rules_is_quiet(env):
-    from workspaces.guardian_watch import watch_tick
+    from rvnd.guardian_watch import watch_tick
     r = watch_tick(env["ws"], [], guardian_id="guardian-1",
                    log_root=env["lr"], now=NOW + 1)
     assert r["ok"] is True and r["findings"] == [] and r["actions"] == []
 
 
 def test_actions_go_through_guardian_act_with_guardian_as_actor(env):
-    from workspaces.guardian_watch import WatchRule, watch_tick
+    from rvnd.guardian_watch import WatchRule, watch_tick
     _emit(env, "agent-x", 5)
     watch_tick(env["ws"], [WatchRule(kind="budget", limit=1)],
                guardian_id="guardian-1", log_root=env["lr"], now=NOW + 1)

@@ -25,8 +25,8 @@ os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 sys.path.insert(0, str(HERE.parent))
 sys.path.insert(0, str(HERE.parent.parent / "server" / "src"))
 import serve                                # noqa: E402
-import workspaces.mcp_server as S           # noqa: E402
-from workspaces import draft_store as D     # noqa: E402
+import rvnd.mcp_server as S           # noqa: E402
+from rvnd import draft_store as D     # noqa: E402
 
 LR = os.environ["WORKSPACE_L0_LOG_ROOT"]
 F = os.path.join(tmp, "org")

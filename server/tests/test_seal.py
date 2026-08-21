@@ -1,14 +1,14 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # Copyright 2026 flxk1
-"""Tests for at-rest memory encryption (workspaces.seal)."""
+"""Tests for at-rest memory encryption (rvnd.seal)."""
 
 from __future__ import annotations
 
 import pytest
 
-from workspaces import seal
-from workspaces.memory import WorkspaceMemory
-from workspaces.mutation_log import MutationLog
+from rvnd import seal
+from rvnd.memory import WorkspaceMemory
+from rvnd.mutation_log import MutationLog
 
 
 def _seed(folder, log_root, n=3):
@@ -121,7 +121,7 @@ def test_sealed_blob_is_not_plaintext(tmp_path):
     folder = tmp_path / "wks"; folder.mkdir()
     log_root = tmp_path / "log"
     _seed(folder, log_root, n=1)
-    out = seal.seal_folder(folder, passphrase="pw", log_root=log_root)
+    seal.seal_folder(folder, passphrase="pw", log_root=log_root)
     blob = (log_root).rglob("*.sealed")
     raw = next(blob).read_text()
     # The summary text must not appear in the sealed file.

@@ -30,9 +30,9 @@ from pathlib import Path
 
 import pytest
 
-import workspaces.decisions.queue as DQ
-import workspaces.mcp_server as S
-from workspaces.mcp_impl import (decision_claim, decision_open,
+import rvnd.decisions.queue as DQ
+import rvnd.mcp_server as S
+from rvnd.mcp_impl import (decision_claim, decision_open,
                                  decision_pending, decision_record)
 
 SURFACE = {
@@ -57,7 +57,7 @@ def opened(folder, panel, **kw):
 
 
 def chain_kinds(folder):
-    from workspaces.mutation_log import MutationLog
+    from rvnd.mutation_log import MutationLog
     return [(e.extra or {}) for e in
             MutationLog(Path(folder),
                         log_root=Path(os.environ["WORKSPACE_L0_LOG_ROOT"])).replay()

@@ -18,7 +18,7 @@ from __future__ import annotations
 import json
 
 
-from workspaces.capability.ir import (
+from rvnd.capability.ir import (
     CapabilitySpec,
     CapabilityStep,
     discover_capabilities,

@@ -7,19 +7,19 @@ from __future__ import annotations
 import time
 
 
-from workspaces.queue import (
+from rvnd.queue import (
     enqueue_run,
     get_run,
     list_queue,
 )
-from workspaces.worker import (
+from rvnd.worker import (
     WorkerConfig,
     _StopFlag,
     run_forever,
     run_once,
     worker_status,
 )
-from workspaces.workflows import (
+from rvnd.workflows import (
     Workflow,
     WorkflowStep,
     define_workflow,
@@ -62,10 +62,10 @@ def test_run_once_marks_failed_when_workflow_missing(tmp_path):
     fc = tmp_path / "wks"; fc.mkdir()
     log = tmp_path / "log"
     define_workflow(str(fc), _wf("intake", "p:a"), log_root=log)
-    entry = enqueue_run(str(fc), "intake", log_root=log)
+    enqueue_run(str(fc), "intake", log_root=log)
 
     # Delete the workflow definition before the worker picks it up
-    from workspaces.workflows import delete_workflow
+    from rvnd.workflows import delete_workflow
     delete_workflow(str(fc), "intake", log_root=log)
 
     cfg = WorkerConfig(worker_id="w1", log_root=log)
@@ -156,7 +156,7 @@ def test_run_forever_stop_flag_breaks_loop(tmp_path):
 def test_run_forever_does_not_count_stop_detected_before_lease(
     tmp_path, monkeypatch,
 ):
-    from workspaces import worker as worker_module
+    from rvnd import worker as worker_module
 
     log = tmp_path / "log"
     cfg = WorkerConfig(worker_id="w1", log_root=log)

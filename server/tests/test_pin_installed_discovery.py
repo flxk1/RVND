@@ -12,8 +12,8 @@ import argparse
 import io
 import json
 
-import workspaces.pinned_skills as ps
-import workspaces.cli.impl as impl
+import rvnd.pinned_skills as ps
+import rvnd.cli.impl as impl
 
 
 def _make_host(tmp_path, plugins: dict[str, list[str]]) -> str:

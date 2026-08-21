@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # Copyright 2026 flxk1
-"""Tests for the namespace back-compat shim (``workspaces._namespace``).
+"""Tests for the namespace back-compat shim (``rvnd._namespace``).
 
 These tests verify that installs predating the ``WORKSPACEVERSUM_*`` →
 ``WORKSPACE_*`` rename keep working without manual migration:
@@ -24,8 +24,8 @@ import json
 import warnings
 
 
-from workspaces import _namespace
-from workspaces.policy import (
+from rvnd import _namespace
+from rvnd.policy import (
     LEGACY_POLICY_FILENAME,
     POLICY_FILENAME,
     FolderPolicy,

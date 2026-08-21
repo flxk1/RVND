@@ -16,7 +16,7 @@ import time
 
 import pytest
 
-from workspaces.lock.mcp_server import (
+from rvnd.lock.mcp_server import (
     audit_query,
     egress_check,
     ingress_check,

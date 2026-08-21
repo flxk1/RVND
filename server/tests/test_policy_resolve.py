@@ -14,11 +14,11 @@ from __future__ import annotations
 import os
 from types import SimpleNamespace
 
-from workspaces import policy_resolve as PR
-from workspaces import problem_kg
-from workspaces import rule_extractor as RE
-from workspaces import governance_chat as GC
-from workspaces.rule_registry import RuleRegistry
+from rvnd import policy_resolve as PR
+from rvnd import problem_kg
+from rvnd import rule_extractor as RE
+from rvnd import governance_chat as GC
+from rvnd.rule_registry import RuleRegistry
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 
@@ -75,7 +75,7 @@ def test_degrade_is_honest_and_never_calls_the_walker(tmp_path, monkeypatch):
 def test_empty_facets_fall_back_to_the_regex_drafter(tmp_path):
     # bare-`right` prose the extractor misses must still reach a twin.
     prose = "Users have the right to appeal a decision."
-    from workspaces import rule_extractor
+    from rvnd import rule_extractor
     assert rule_extractor.extract_rules(prose) == []
     reg = _registry(tmp_path)
     twin = PR.resolve(prose, registry=reg, capability=_NO_MODEL)

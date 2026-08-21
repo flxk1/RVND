@@ -13,9 +13,9 @@ import os
 
 import pytest
 
-from workspaces.contracts.reviews import (
+from rvnd.contracts.reviews import (
     list_contract_approvals, record_contract_approval, request_contract_approval)
-from workspaces.parties import register_party
+from rvnd.parties import register_party
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 

@@ -31,7 +31,7 @@ def _default_chain_profile(monkeypatch):
                 "WORKSPACE_STRICT_HOST_DIVERGENCE"):
         monkeypatch.delenv(var, raising=False)
 
-from workspaces.mutation_log import (
+from rvnd.mutation_log import (
     GENESIS_HASH,
     LogEvent,
     MutationLog,
@@ -64,7 +64,7 @@ def test_keypair_generated_on_first_use(isolated_keydir, tmp_path):
     0.6.8 B4: identity keys live at ``<keydir>/<host_id>/identity.{priv,pub}``,
     not flat at the keydir root. The migration helper handles legacy installs.
     """
-    from workspaces.signing import _host_id
+    from rvnd.signing import _host_id
     assert not isolated_keydir.exists()
     log = MutationLog(tmp_path / "work", log_root=tmp_path / ".workspaces")
     log.append(_make_event(tmp_path / "work", 0))
@@ -250,7 +250,7 @@ def test_public_key_export(tmp_path):
     """Public key can be exported in PEM format for third-party verification."""
     log = MutationLog(tmp_path / "work", log_root=tmp_path / ".workspaces")
     log.append(_make_event(tmp_path / "work", 0))  # triggers key generation
-    from workspaces.signing import public_key_pem
+    from rvnd.signing import public_key_pem
     pem = public_key_pem()
     assert "-----BEGIN PUBLIC KEY-----" in pem
     assert "-----END PUBLIC KEY-----" in pem
@@ -266,7 +266,7 @@ def test_passphrase_encrypts_keys_at_rest_and_chain_still_verifies(
     log = MutationLog(tmp_path / "work", log_root=tmp_path / ".workspaces")
     log.append(_make_event(tmp_path / "work", 0))
 
-    from workspaces import signing
+    from rvnd import signing
     priv_pem = signing._private_key_path().read_bytes()
     assert b"ENCRYPTED" in priv_pem, "private key must be encrypted at rest"
 
@@ -282,7 +282,7 @@ def test_encrypted_key_without_passphrase_fails_loud(tmp_path, monkeypatch):
     """An encrypted private key with no passphrase available must raise
     naming the env var — never fall through to a fresh identity."""
     monkeypatch.setenv("WORKSPACE_KEY_PASSPHRASE", "correct horse battery")
-    from workspaces import signing
+    from rvnd import signing
     signing.ensure_keypair()
 
     monkeypatch.delenv("WORKSPACE_KEY_PASSPHRASE")
@@ -298,7 +298,7 @@ def test_key_rotation_is_a_first_class_event(tmp_path):
     """The key_rotation marker verify_chain reads to distinguish an authorised
     host move from a theft rewrite must be constructible as a first-class
     event, not only as a system-wrapped extra.kind."""
-    from workspaces.mutation_log import LogEvent, VALID_EVENTS
+    from rvnd.mutation_log import LogEvent, VALID_EVENTS
     assert "key_rotation" in VALID_EVENTS
     LogEvent(
         event="key_rotation",
@@ -314,8 +314,8 @@ def test_key_rotation_marker_suppresses_strict_host_divergence(tmp_path, monkeyp
     event is authorised and must not fail verification."""
     monkeypatch.setenv("WORKSPACE_STRICT_HOST_DIVERGENCE", "1")
     import json
-    from workspaces import signing
-    from workspaces.mutation_log import (
+    from rvnd import signing
+    from rvnd.mutation_log import (
         LogEvent, MutationLog, _canonical_event_hash, _signed_bytes,
     )
     log = MutationLog(tmp_path / "ws", log_root=tmp_path / "logs")

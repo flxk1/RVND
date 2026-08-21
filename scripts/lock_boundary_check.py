@@ -19,7 +19,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-PKG = ROOT / "server" / "src" / "workspaces"
+PKG = ROOT / "server" / "src" / "rvnd"
 BASELINE = ROOT / "docs" / "evidence" / "lock-boundary-baseline.json"
 
 def _module_parts(path: Path) -> tuple[list[str], bool]:
@@ -56,22 +56,22 @@ def _import_targets(tree: ast.AST, parts: list[str], is_init: bool
                 else:
                     for alias in node.names:
                         targets.add((".".join(base + [alias.name]), None))
-            elif node.module == "workspaces":
+            elif node.module == "rvnd":
                 for alias in node.names:
                     targets.add((alias.name, None))
-            elif node.module and node.module.startswith("workspaces."):
-                targets.add((node.module[len("workspaces."):], names))
+            elif node.module and node.module.startswith("rvnd."):
+                targets.add((node.module[len("rvnd."):], names))
         elif isinstance(node, ast.Import):
             for alias in node.names:
                 p = alias.name.split(".")
-                if p[0] == "workspaces" and len(p) > 1:
+                if p[0] == "rvnd" and len(p) > 1:
                     targets.add((".".join(p[1:]), None))
     return {(t, n) for t, n in targets if t}
 
 
 def _lock_public_api() -> set[str]:
     """Names the lock package binds at its top level — its declared inbound
-    API. A host import of the form ``from workspaces.lock import <name>``
+    API. A host import of the form ``from rvnd.lock import <name>``
     resolving to one of these is the sanctioned crossing and not an edge."""
     import ast as _ast
     names: set[str] = set()

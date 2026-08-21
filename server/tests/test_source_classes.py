@@ -13,10 +13,10 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces.source_classes import (Effect, Relation, SourceClass, max_effect,
+from rvnd.source_classes import (Effect, Relation, SourceClass, max_effect,
                                   self_executes, requires_incorporation,
                                   check_source, is_relation, catalogue)
-from workspaces import legal_systems as ls
+from rvnd import legal_systems as ls
 
 
 # ── universal: effect ceilings ────────────────────────────────────────────────
@@ -110,7 +110,7 @@ def test_DE_records_member_of_and_primacy_relations():
 
 
 def test_DE_treaty_and_standard_incorporation_rules_surface():
-    al = ls.applicable_law("DE")
+    ls.applicable_law("DE")
     de = ls.get("DE")
     assert "Art. 59(2) GG" in de.incorporation_rule(SourceClass.INTERNATIONAL_TREATY)
     assert "presumption" in de.incorporation_rule(SourceClass.TECHNICAL_STANDARD).lower()

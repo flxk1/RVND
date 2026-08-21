@@ -10,7 +10,7 @@ from decimal import Decimal
 
 import pytest
 
-from workspaces.temporal import (Date, Duration, Money, RelativeDeadline,
+from rvnd.temporal import (Date, Duration, Money, RelativeDeadline,
                             RenewalRule, TemporalError, Term)
 
 

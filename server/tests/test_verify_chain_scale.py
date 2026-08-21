@@ -30,9 +30,9 @@ from pathlib import Path
 
 import pytest
 
-from workspaces.mutation_log import (GENESIS_HASH, LogEvent, MutationLog,
+from rvnd.mutation_log import (GENESIS_HASH, LogEvent, MutationLog,
                                      _canonical_event_hash, _signed_bytes)
-from workspaces.signing import ensure_keypair, sign_bytes
+from rvnd.signing import ensure_keypair, sign_bytes
 
 pytestmark = [pytest.mark.slow, pytest.mark.timeout(300)]
 

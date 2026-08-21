@@ -4,14 +4,14 @@ import os
 
 import pytest
 
-from workspaces.governance_lane import GovernanceLane, register_lane
-from workspaces.parties import register_party, set_party_status
-from workspaces.operations import operate
-from workspaces.session_admission import governance_open, verify_operation_session
-from workspaces.session_capability import CapabilityError, CapabilityVerifier
-from workspaces import signing
-from workspaces.mcp_serving import clear_request_principal, set_request_principal
-from workspaces.use_case import register_use_case
+from rvnd.governance_lane import GovernanceLane, register_lane
+from rvnd.parties import register_party, set_party_status
+from rvnd.operations import operate
+from rvnd.session_admission import governance_open, verify_operation_session
+from rvnd.session_capability import CapabilityError, CapabilityVerifier
+from rvnd import signing
+from rvnd.mcp_serving import clear_request_principal, set_request_principal
+from rvnd.use_case import register_use_case
 
 pytestmark = [
     pytest.mark.live_session_admission,

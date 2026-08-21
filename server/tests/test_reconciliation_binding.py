@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-from workspaces.reconciliation_binding import reconcile_projection
+from rvnd.reconciliation_binding import reconcile_projection
 
 
 # ── synthetic chain events ──────────────────────────────────────────────────
@@ -100,7 +100,7 @@ def test_evidence_pack_reconciles_a_real_run(tmp_path, monkeypatch):
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(tmp_path / "keys"))
     fc = tmp_path / "wks"; fc.mkdir()
     log = tmp_path / "log"
-    from workspaces.workflows import (
+    from rvnd.workflows import (
         Workflow, WorkflowStep, define_workflow, run_workflow,
     )
     define_workflow(str(fc), Workflow(name="intake", description="t",
@@ -109,7 +109,7 @@ def test_evidence_pack_reconciles_a_real_run(tmp_path, monkeypatch):
                        dispatcher=lambda **kw: {"ok": True}, log_root=log)
     assert out["ok"], out
 
-    from workspaces import conformity
+    from rvnd import conformity
     rec = conformity.evidence_pack(fc, log_root=log)["reconciliation"]
     assert rec["status"] == "reconciled"
     assert rec["matched"] >= 1
@@ -124,11 +124,11 @@ def test_evidence_pack_flags_an_unauthorised_effect(tmp_path, monkeypatch):
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(tmp_path / "keys"))
     fc = tmp_path / "wks"; fc.mkdir()
     log = tmp_path / "log"
-    from workspaces.workflows import _log_workflow_event
+    from rvnd.workflows import _log_workflow_event
     _log_workflow_event(str(fc), run_id="ghost", workflow="wf", step_index=0,
                         state="done", skill_id="p:x", log_root=log)
 
-    from workspaces import conformity
+    from rvnd import conformity
     rec = conformity.evidence_pack(fc, log_root=log)["reconciliation"]
     assert rec["status"] == "diverged"
     assert rec["unauthorised_rate"] == 1.0
@@ -140,7 +140,7 @@ def test_a_sub_second_window_is_measurable(tmp_path):
     a second collapsed to one string and the projection reported UNRECONCILED —
     "nobody looked" — for a window somebody had asked about. Fails safe, but a
     legitimate sub-second window could not be measured at all."""
-    from workspaces.reconciliation_binding import _iso, reconcile_projection
+    from rvnd.reconciliation_binding import _iso, reconcile_projection
 
     t = 1755000000.100000
     assert _iso(t) != _iso(t + 0.000100), "bounds inside one second must stay distinct"

@@ -21,7 +21,7 @@ from pathlib import Path
 
 import pytest
 
-from workspaces import catalogue_integrity as ci
+from rvnd import catalogue_integrity as ci
 
 
 # ---------------------------------------------------------------------------
@@ -220,12 +220,12 @@ def test_resign_clears_failure(signed_catalogue, plugin_root, secret_path):
 
 def test_mutation_audit_roundtrip(signed_catalogue, tmp_path):
     cat_path, _ = signed_catalogue
-    e1 = ci.append_mutation_audit(
+    ci.append_mutation_audit(
         cat_path,
         action="add", plugin_id="fake-plugin", actor="test",
         reason="initial", before_hmac="", after_hmac="abc",
     )
-    e2 = ci.append_mutation_audit(
+    ci.append_mutation_audit(
         cat_path,
         action="update", plugin_id="fake-plugin", actor="test",
         reason="checksum refresh", before_hmac="abc", after_hmac="def",

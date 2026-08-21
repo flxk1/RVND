@@ -30,16 +30,16 @@ RVND            the terminal runtime: authorization, oversight, custody, the
 - **Language → Ingest.** Governance is the authoritative policy grammar; deontic
   classifies normative content; the design is open to any future grammar. Ingest
   chooses the grammar and emits a neutral `Subgraph`
-  (`server/src/workspaces/ingest/policy.py`, `PolicyIngester`).
+  (`server/src/rvnd/ingest/policy.py`, `PolicyIngester`).
 - **Ingest → Versum.** Ingest never persists on its own. `versum_writer()` hands
   the subgraph to the Versum-provided sink; Versum is the single knowledge-store
   door. The published policy-pack path uses the same door
-  (`server/src/workspaces/published_policy_pack.py`).
+  (`server/src/rvnd/published_policy_pack.py`).
 - **Versum → Solver.** Versum is a span-grounded claim/concept graph, not a
   triple store; it holds knowledge but does **not** parse, validate, evaluate, or
   authorize it. RVND reads Versum edges and passes them to the real Solver
   dimensions and `compose_paths()`
-  (`server/src/workspaces/adapters/versum/solver_source.py`).
+  (`server/src/rvnd/adapters/versum/solver_source.py`).
 - **Solver → Patchbay → RVND.** The Solver's reasoning becomes the Patchbay
   wiring view; RVND consumes the pinned Patchbay presentation layer (an immutable
   `loomground-patchbay` commit, verified by the patchbay-consumption gate) and

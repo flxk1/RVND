@@ -20,13 +20,13 @@ import importlib
 from pathlib import Path
 
 
-from workspaces.memory import WorkspaceMemory
+from rvnd.memory import WorkspaceMemory
 
 
 def _fresh_mcp(monkeypatch, log_root: Path):
-    import workspaces.mcp_server as srv
+    import rvnd.mcp_server as srv
     importlib.reload(srv)
-    monkeypatch.setattr("workspaces.mcp_serving._log_root", lambda: log_root)
+    monkeypatch.setattr("rvnd.mcp_serving._log_root", lambda: log_root)
     return srv
 
 
@@ -78,7 +78,7 @@ def test_no_filter_returns_all_matches(tmp_path, monkeypatch):
         query="document",
         k=10,
     )
-    src_docs = {(v.get("fingerprint") or {}).get("summary") for v in out["views"]}
+    {(v.get("fingerprint") or {}).get("summary") for v in out["views"]}
     # Both source docs should be in scope (no filter applied)
     assert out["count"] >= 2, out
     # Best-effort: at minimum we got both pairs
@@ -100,7 +100,7 @@ def test_filter_to_one_source_returns_only_that_source(tmp_path, monkeypatch):
     )
     assert out["count"] >= 1
     # Every returned view's underlying pair must come from src_a
-    for v in out["views"]:
+    for _v in out["views"]:
         # safe-view doesn't directly expose source_document (Lock scrubs it
         # into a doc_token). We check the doc_token is stable per source by
         # looking at the count: we should NOT have more views than there are

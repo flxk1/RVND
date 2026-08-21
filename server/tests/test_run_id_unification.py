@@ -17,10 +17,10 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces.mutation_log import MutationLog
-from workspaces.queue import enqueue_run
-from workspaces.worker import WorkerConfig, run_once
-from workspaces.workflows import (
+from rvnd.mutation_log import MutationLog
+from rvnd.queue import enqueue_run
+from rvnd.worker import WorkerConfig, run_once
+from rvnd.workflows import (
     Workflow,
     WorkflowStep,
     define_workflow,

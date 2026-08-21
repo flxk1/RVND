@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # Copyright 2026 flxk1
-"""Workspace Lock — 'sealed but served' read-through (workspaces.seal.read_through).
+"""Workspace Lock — 'sealed but served' read-through (rvnd.seal.read_through).
 
 A sealed workspace must still be answerable: Workspaces decrypts the memory store into
 memory to serve a read, while the on-disk store stays ciphertext and nothing
@@ -11,9 +11,9 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces import seal
-from workspaces.memory import WorkspaceMemory
-from workspaces.mutation_log import MutationLog
+from rvnd import seal
+from rvnd.memory import WorkspaceMemory
+from rvnd.mutation_log import MutationLog
 
 
 def _seed(folder, log_root, n=3):

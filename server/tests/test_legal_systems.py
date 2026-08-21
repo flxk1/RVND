@@ -13,8 +13,8 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces import legal_systems as ls
-from workspaces.hybrid_retrieval import Document, HybridIndex
+from rvnd import legal_systems as ls
+from rvnd.hybrid_retrieval import Document, HybridIndex
 
 
 def test_registry_has_the_expected_packs():
@@ -72,7 +72,7 @@ def test_switch_changes_retrieval_vocabulary():
 
 
 def test_contract_reports_the_active_family_principles():
-    from workspaces.norm_contract import check_pair, Level
+    from rvnd.norm_contract import check_pair, Level
     pair = {
         "id": "x", "problem": {"id": "x-p", "type": "rule", "facets": {
             "modal": "muss", "has_exception": False,

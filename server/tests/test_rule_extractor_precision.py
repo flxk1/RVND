@@ -5,7 +5,7 @@ doc named, now fixed and locked."""
 
 from __future__ import annotations
 
-from workspaces.rule_extractor import extract_rules
+from rvnd.rule_extractor import extract_rules
 
 
 def _one(text):

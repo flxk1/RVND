@@ -27,7 +27,7 @@ import os
 
 import pytest
 
-from workspaces.use_case import (
+from rvnd.use_case import (
     agent_permitted, contract_id_for, get_use_case, list_use_cases,
     register_use_case,
 )

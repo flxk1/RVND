@@ -17,9 +17,9 @@ import json
 
 import pytest
 
-from workspaces import pinned_skills as pinned_module
+from rvnd import pinned_skills as pinned_module
 
-from workspaces.pinned_skills import (
+from rvnd.pinned_skills import (
     PinnedSkillStore,
     list_pinned,
     pin_skill,
@@ -208,7 +208,7 @@ def test_corrupt_file_raises(tmp_path):
     # Pin one to create the file
     pin_skill(str(fc), "p:s", log_root=log_root)
     # Corrupt it
-    from workspaces.pinned_skills import _store_path
+    from rvnd.pinned_skills import _store_path
     sp = _store_path(str(fc), log_root=log_root)
     sp.write_text("this is not json")
 
@@ -219,7 +219,7 @@ def test_corrupt_file_raises(tmp_path):
 
 def test_companion_catalogue_loads(tmp_path):
     """The shipped catalogue file (under plugin/references/) loads cleanly."""
-    from workspaces.pinned_skills import load_companion_catalogue
+    from rvnd.pinned_skills import load_companion_catalogue
     cat = load_companion_catalogue()
     # Either the file is found and has families, or it isn't (dev variant).
     # In the repo layout it should be present.
@@ -251,7 +251,7 @@ def test_companion_catalogue_cache_cannot_bypass_enforce(tmp_path, monkeypatch):
 def test_companion_catalogue_verifier_exception_fails_closed_in_enforce(
     tmp_path, monkeypatch,
 ):
-    from workspaces import catalogue_integrity
+    from rvnd import catalogue_integrity
 
     catalogue = tmp_path / "skill-companions.json"
     catalogue.write_text(json.dumps({"version": 1, "families": {}}))
@@ -266,7 +266,7 @@ def test_companion_catalogue_verifier_exception_fails_closed_in_enforce(
 
 
 def test_suggest_companions_finds_siblings(tmp_path):
-    from workspaces.pinned_skills import suggest_companions
+    from rvnd.pinned_skills import suggest_companions
     # AI gov family is a high-confidence family in the shipped catalogue
     r = suggest_companions("ai-governance-watch:newsletter-research")
     if not r["family"]:
@@ -279,7 +279,7 @@ def test_suggest_companions_finds_siblings(tmp_path):
 
 
 def test_suggest_companions_excludes_already_pinned(tmp_path):
-    from workspaces.pinned_skills import suggest_companions
+    from rvnd.pinned_skills import suggest_companions
     seed = "ai-governance-watch:newsletter-research"
     sibling = "ai-governance-watch:newsletter-pattern-scan"
     r = suggest_companions(seed, exclude=[sibling])
@@ -289,7 +289,7 @@ def test_suggest_companions_excludes_already_pinned(tmp_path):
 
 
 def test_suggest_companions_unknown_family_returns_empty():
-    from workspaces.pinned_skills import suggest_companions
+    from rvnd.pinned_skills import suggest_companions
     r = suggest_companions("totally-unknown:nonsense-skill")
     assert r["family"] == ""
     assert r["companions"] == []
@@ -297,8 +297,8 @@ def test_suggest_companions_unknown_family_returns_empty():
 
 def test_record_dispatch_writes_event(tmp_path):
     """record_dispatch persists a 'skill-dispatch' event in the folder's log."""
-    from workspaces.pinned_skills import record_dispatch
-    from workspaces.mutation_log import MutationLog
+    from rvnd.pinned_skills import record_dispatch
+    from rvnd.mutation_log import MutationLog
 
     fc = tmp_path / "wks"
     fc.mkdir()
@@ -327,7 +327,7 @@ def test_record_dispatch_writes_event(tmp_path):
 
 
 def test_record_dispatch_rejects_empty_skill_id(tmp_path):
-    from workspaces.pinned_skills import record_dispatch
+    from rvnd.pinned_skills import record_dispatch
     fc = tmp_path / "wks"; fc.mkdir()
     with pytest.raises(ValueError):
         record_dispatch(str(fc), "   ", log_root=tmp_path / ".log")
@@ -345,7 +345,7 @@ def test_resolver_tolerates_corrupt_ancestor(tmp_path):
     # Pin in parent + child, then corrupt parent's file
     pin_skill(str(parent), "from-parent", log_root=log_root)
     pin_skill(str(child),  "from-child",  log_root=log_root)
-    from workspaces.pinned_skills import _store_path
+    from rvnd.pinned_skills import _store_path
     _store_path(str(parent), log_root=log_root).write_text("not json")
 
     # Resolve from child still returns child's own pin

@@ -58,7 +58,7 @@ def test_guard_exits_nonzero_on_violation(tmp_path: Path):
 
 def test_allowlisted_module_is_exempt(tmp_path: Path):
     # Same offending content, but at the sanctioned path, is not a violation.
-    proxy = tmp_path / "workspaces" / "lock" / "egress_proxy.py"
+    proxy = tmp_path / "rvnd" / "lock" / "egress_proxy.py"
     proxy.parent.mkdir(parents=True)
     proxy.write_text('HOSTS = ["api.anthropic.com"]\nimport anthropic\n')
     assert guard.scan_tree(tmp_path, guard._ALLOWLIST, "") == []

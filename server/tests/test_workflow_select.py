@@ -6,7 +6,7 @@ agent improvisation."""
 
 from __future__ import annotations
 
-from workspaces.workflow_select import run_select_context_step
+from rvnd.workflow_select import run_select_context_step
 
 
 WORKSPACE = [{"id": "acme:msa:pay", "text": "Zahlung innerhalb 30 Tagen."},

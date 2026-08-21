@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import json
 
-from workspaces import mcp_server as srv
+from rvnd import mcp_server as srv
 
 
 def _status(**params):

@@ -24,8 +24,8 @@ import os
 
 import pytest
 
-from workspaces.case_index import record_dispatch_case, retrieve, solves_edges
-from workspaces.parties import register_party, set_party_status
+from rvnd.case_index import record_dispatch_case, retrieve, solves_edges
+from rvnd.parties import register_party, set_party_status
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 

@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-from workspaces import ingested_skills as isk
+from rvnd import ingested_skills as isk
 
 
 VALID_SKILL = (
@@ -106,7 +106,7 @@ def test_ingest_rejects_bad_skill(tmp_path: Path):
 
 
 def test_find_by_skill_id_and_dispatch_body_is_populated(tmp_path: Path):
-    res = isk.ingest(tmp_path, VALID_SKILL, source_format="anthropic-skill",
+    isk.ingest(tmp_path, VALID_SKILL, source_format="anthropic-skill",
                      skill_id="user:alex/sync-deal-triage")
     obj = isk.find_by_skill_id(tmp_path, "user:alex/sync-deal-triage")
     assert obj is not None

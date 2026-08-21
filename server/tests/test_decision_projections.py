@@ -34,9 +34,9 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "app"))
 import serve  # noqa: E402
 
-import workspaces.decisions.projections as DP
-import workspaces.mcp_server as S
-from workspaces.decisions.queue import DecisionQueue
+import rvnd.decisions.projections as DP
+import rvnd.mcp_server as S
+from rvnd.decisions.queue import DecisionQueue
 
 SURFACE = {
     "query": "Erase the record while invoices sit in the retention window?",

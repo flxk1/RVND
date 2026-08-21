@@ -11,8 +11,8 @@ from __future__ import annotations
 import os
 import pytest
 
-from workspaces import mcp_server as M
-from workspaces.governance_graph import governance_graph
+from rvnd import mcp_server as M
+from rvnd.governance_graph import governance_graph
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 
@@ -51,7 +51,7 @@ def test_apply_writes_via_bijection(env, monkeypatch):
     r = M.workspace_workflow(op="patch_apply", params={
         "folder_context": env["ws"], "actor": "alex", "netlist": V05})
     assert r["ok"], r.get("errors")
-    g = governance_graph(env["ws"], log_root=None) if False else r["graph"]
+    g = r["graph"]
     agents = {n["id"] for n in g["nodes"] if n["kind"] == "agent"}
     humans = {n["id"] for n in g["nodes"] if n["kind"] == "human"}
     ucs = {n["id"] for n in g["nodes"] if n["kind"] == "use_case"}

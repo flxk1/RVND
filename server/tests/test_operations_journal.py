@@ -31,11 +31,11 @@ import os
 
 import pytest
 
-from workspaces.operations import operate, runs_for, hardening_inputs
-from workspaces.use_case import register_use_case
-from workspaces.case_index import record_case, solves_edges
-from workspaces.calibration import log_reuse, judge_sample
-from workspaces.parties import register_party
+from rvnd.operations import operate, runs_for, hardening_inputs
+from rvnd.use_case import register_use_case
+from rvnd.case_index import record_case, solves_edges
+from rvnd.calibration import log_reuse, judge_sample
+from rvnd.parties import register_party
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 

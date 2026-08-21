@@ -10,9 +10,9 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces import inbox_watcher as IW
-from workspaces.ingest_quarantine import QuarantineRefused
-from workspaces.memory import WorkspaceMemory
+from rvnd import inbox_watcher as IW
+from rvnd.ingest_quarantine import QuarantineRefused
+from rvnd.memory import WorkspaceMemory
 
 
 @pytest.fixture

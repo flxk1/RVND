@@ -21,7 +21,7 @@ import os
 import time
 
 
-from workspaces.lock.core import tier_c_semantic_check
+from rvnd.lock.core import tier_c_semantic_check
 
 from tests.stress._harness import SyntheticWorkload
 from tests.stress._real_llm_harness import (
@@ -43,7 +43,7 @@ def _resolve_workload_size(default: int = 200) -> int:
         return default
 
 
-def test_real_ensemble_agreement_on_synthetic_workload(real_llm_or_skip, capsys):
+def test_real_ensemble_agreement_on_synthetic_workload(real_llm_or_skip, capsys):  # noqa: F811  -- pytest fixture: the parameter intentionally shadows the imported fixture
     """Drive synthetic inputs through the REAL ensemble. Record per-call
     labels. Report agreement, disagreement, INSUFFICIENT rate + per-model
     latency.
@@ -90,7 +90,7 @@ def test_real_ensemble_agreement_on_synthetic_workload(real_llm_or_skip, capsys)
     elapsed = time.time() - started
 
     # ---- INVARIANT: every input produced a recorded outcome ----------
-    total_recorded = agreement.total + none_results + (size - agreement.total - none_results)
+    agreement.total + none_results + (size - agreement.total - none_results)
     # The agreement recorder only fires when both models reported; the
     # "missing" branch covers the single-model and None-result paths.
     # Sum of all per-bucket counts must equal the workload size.

@@ -12,8 +12,8 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces.governance import decide_action
-from workspaces.parties import register_party, set_party_status
+from rvnd.governance import decide_action
+from rvnd.parties import register_party, set_party_status
 
 
 @pytest.fixture
@@ -81,7 +81,7 @@ def test_unregistered_actor_is_not_breaker_capped(folder):
 def test_registry_read_failure_fails_closed_to_l0(folder, monkeypatch):
     # Fail-closed: if the party register can't be read at all, we cannot verify
     # an agent isn't quarantined → cap to L0 rather than trust the asked grade.
-    import workspaces.parties as parties
+    import rvnd.parties as parties
     def _boom(*a, **k):
         raise OSError("party register unreadable")
     monkeypatch.setattr(parties, "list_parties", _boom)

@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces.reasoning_integrity import (
+from rvnd.reasoning_integrity import (
     CONSISTENT, INCONSISTENT, OPEN, Claim, check_session, record_claim,
     session_store,
 )
@@ -88,7 +88,7 @@ def test_reachable_through_the_workspace_workflow_facade(tmp_path, monkeypatch):
     # (keyword form binds the facade to the op for the register's evidence
     # matcher). Append-then-check with claim, pure read without.
     monkeypatch.setenv("WORKSPACE_L0_LOG_ROOT", str(tmp_path))
-    from workspaces.mcp_server import workspace_workflow
+    from rvnd.mcp_server import workspace_workflow
     r1 = workspace_workflow(op="reasoning_check",
                             params={"session_id": "S-op",
                                     "claim": {"atom": "c", "polarity": "+",

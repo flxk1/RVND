@@ -6,12 +6,12 @@ from __future__ import annotations
 import json
 import uuid
 
-from workspaces.cli import main
-from workspaces.licence_usage import capacity_report
-from workspaces.mutation_log import MutationLog
-from workspaces.parties import list_parties, register_party, set_party_status
-from workspaces.use_case import register_use_case
-from workspaces.workspace_registry import add_known_workspace
+from rvnd.cli import main
+from rvnd.licence_usage import capacity_report
+from rvnd.mutation_log import MutationLog
+from rvnd.parties import list_parties, register_party, set_party_status
+from rvnd.use_case import register_use_case
+from rvnd.workspace_registry import add_known_workspace
 
 
 def _case(folder: str, use_case_id: str, agents: list[str], log_root: str) -> None:

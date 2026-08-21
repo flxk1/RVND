@@ -13,9 +13,9 @@ import os
 
 import pytest
 
-from workspaces.approvals import (
+from rvnd.approvals import (
     decide_approval, request_from_reservation, resolve_approval)
-from workspaces.parties import register_party
+from rvnd.parties import register_party
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 
@@ -106,7 +106,7 @@ def test_duration_sets_the_deadline_from_the_token(env):
 
 
 def test_inbox_lists_resolved_requests_with_meter_data(env):
-    from workspaces.approvals import list_approvals
+    from rvnd.approvals import list_approvals
     _open(env, QUORUM, rid="r1")
     _open(env, {"kind": "exports", "by": "legal", "duration": "30d", "on_elapse": "halt"}, rid="r2")
     inbox = list_approvals(env["ws"], now=T0 + 60, log_root=env["lr"])["approvals"]

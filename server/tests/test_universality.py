@@ -16,13 +16,13 @@ import os
 
 import pytest
 
-from workspaces import jurisdiction_packs as JP
+from rvnd import jurisdiction_packs as JP
 # The pack registries themselves are the consumed vertical plane's (RVND reaches
 # them through the `adapters.vertical` seam; `workspaces.jurisdiction_packs` is the
 # historical shim over it). There is ONE set of stores, so the isolation fixture
 # has to patch them where they live — patching the shim would rebind names the
 # registration functions never read, and let the test pollute the real registry.
-from workspaces.adapters.vertical import jurisdiction_packs as _JP_STORES
+from rvnd.adapters.vertical import jurisdiction_packs as _JP_STORES
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 
@@ -48,7 +48,7 @@ US_OPINION = (
 
 
 def test_us_court_pack_yields_readings(clean_packs):                   # N1
-    from workspaces import judgment_reading as JR
+    from rvnd import judgment_reading as JR
     assert JR.detect_court(US_OPINION) is None          # honest before: unknown, NOT fabricated
     JP.register_court_pack("us", [
         (r"\bSupreme Court of the United States\b|\bSCOTUS\b",
@@ -62,7 +62,7 @@ def test_us_court_pack_yields_readings(clean_packs):                   # N1
 
 
 def test_registered_genre_routes(clean_packs):                         # N2
-    from workspaces.adapters.ingest.governance import genre_router as GR
+    from rvnd.adapters.ingest.governance import genre_router as GR
     sg = "Personal Data Protection Act 2012\nSection 13. An organisation shall not collect data."
     before = GR.detect_genre(sg)
     GR.register_genre("sg-statute",
@@ -78,8 +78,8 @@ def test_registered_genre_routes(clean_packs):                         # N2
 
 
 def test_registered_trigger_reader_allocates_custom_role(clean_packs, monkeypatch):   # N3
-    from workspaces import applicability as AP
-    from workspaces import duty_identification as DI
+    from rvnd import applicability as AP
+    from rvnd import duty_identification as DI
     monkeypatch.setattr(AP, "_TRIGGER_READERS", dict(AP._TRIGGER_READERS))
     AP.register_trigger_reader("pdpa", lambda bearer, condition: (
         {"role": "organisation"} if "organisation" in f"{bearer} {condition}".lower() else {}))
@@ -92,7 +92,7 @@ def test_registered_trigger_reader_allocates_custom_role(clean_packs, monkeypatc
 
 
 def test_instrument_vocab_supplies_steps_and_rooms(clean_packs):       # N4
-    from workspaces import governance_map as GM
+    from rvnd import governance_map as GM
     JP.register_instrument_vocab("pdpa",
         role_steps={"organisation": "collect · use · disclose"},
         room_cues=[("Breach response", ("notify the commission",))])
@@ -110,7 +110,7 @@ def test_instrument_vocab_supplies_steps_and_rooms(clean_packs):       # N4
 
 
 def test_ask_matches_any_instrument_from_data(clean_packs):            # N5
-    from workspaces import governance_ask as GA
+    from rvnd import governance_ask as GA
     view = GA.parse("which PDPA rules need a human?",
                     facet_values={"instrument": ["PDPA"], "role": [], "risk": [],
                                   "room": [], "demand": [], "status": []})
@@ -121,7 +121,7 @@ def test_subject_vocabulary_covers_generic_regulated_entities():
     # the normative gate's curated subject list must cover generic regulated entities and
     # their plurals, not only the EU/contract role nouns it started with — while still
     # rejecting casual prose.
-    from workspaces import rule_extractor as RE
+    from rvnd import rule_extractor as RE
     for sent in ["An organisation shall notify the authority.",
                  "Organizations shall notify the authority.",
                  "Employers shall notify the authority.",

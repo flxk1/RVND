@@ -8,7 +8,7 @@ guess the addressee — we flag it (addressee_resolved=False) and shave
 confidence, so downstream routes the addressee question to the residual.
 Closes finding (b) of the three-doc test.
 """
-from workspaces.rule_extractor import extract_rules, _is_agentless_passive
+from rvnd.rule_extractor import extract_rules, _is_agentless_passive
 
 
 def _one(text):

@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces import connectors, parties, policy, session_io as S, use_case
+from rvnd import connectors, parties, policy, session_io as S, use_case
 
 
 def _seed_all_subsystems(folder: str, log_root: str) -> None:
@@ -91,7 +91,7 @@ def test_restored_chain_still_verifies(captured, tmp_path):
     doc, _, _ = captured
     dest_log = str(tmp_path / "logs" / "dest2")
     S.restore_workspace(doc, str(tmp_path / "dest2"), log_root=dest_log)
-    from workspaces.mutation_log import MutationLog
+    from rvnd.mutation_log import MutationLog
     assert MutationLog(str(tmp_path / "dest2"), log_root=dest_log).verify_chain().ok
 
 

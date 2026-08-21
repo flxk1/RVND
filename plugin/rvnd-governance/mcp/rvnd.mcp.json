@@ -1,9 +1,9 @@
 {
-  "$comment": "RVND governance MCP server connection descriptor. RVND is local-first: the server runs on the operator's own hardware and binds to loopback only. Install the AGPL-3.0-only RVND package in this Python environment; the descriptor launches its installed workspaces.mcp_server module. The skills resolve the live tool surface at discovery time — see references/catalogue.md.",
+  "$comment": "RVND governance MCP server connection descriptor. RVND is local-first: the server runs on the operator's own hardware and binds to loopback only. Install the AGPL-3.0-only RVND package in this Python environment; the descriptor launches its installed rvnd.mcp_server module. The skills resolve the live tool surface at discovery time — see references/catalogue.md.",
   "mcpServers": {
     "rvnd-governance": {
       "command": "python3",
-      "args": ["-m", "workspaces.mcp_server"],
+      "args": ["-m", "rvnd.mcp_server"],
       "env": {
         "RVND_GOVERNANCE_LAYER": "on"
       },

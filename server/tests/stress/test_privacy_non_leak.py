@@ -32,7 +32,7 @@ from pathlib import Path
 
 import pytest
 
-from workspaces.lock.core import (
+from rvnd.lock.core import (
     Mode,
     lock_text,
     tier_b_scan_text,
@@ -40,8 +40,8 @@ from workspaces.lock.core import (
     _detect_confusable_bypass,
 )
 
-from workspaces import forgotten_subjects, signing
-from workspaces.mutation_log import MutationLog
+from rvnd import forgotten_subjects, signing
+from rvnd.mutation_log import MutationLog
 
 from tests.stress._harness import (
     MockCloudLLM,
@@ -261,7 +261,7 @@ def test_calling_cloud_without_lock_disable_ack_is_refused(isolated_env):
 
 def test_policy_disable_lock_requires_explicit_accepted_by(isolated_env):
     """``policy.disable_lock`` raises if ``accepted_by`` is empty."""
-    from workspaces.policy import disable_lock
+    from rvnd.policy import disable_lock
     ws = isolated_env["workspace"]
     log_root = isolated_env["log_root"]
     with pytest.raises(ValueError, match="accepted_by"):
@@ -284,7 +284,7 @@ def test_lock_mirror_body_never_carries_a_listed_redacted_span(isolated_env):
     is applied). What it MUST NOT do is claim a span was redacted while
     leaving the original substring in the body.
     """
-    from workspaces.mirrors import generate_lock_mirror
+    from rvnd.mirrors import generate_lock_mirror
     ws = isolated_env["workspace"]
     src = ws / "memo.md"
     original = (
@@ -319,7 +319,7 @@ def test_lock_mirror_body_never_carries_a_listed_redacted_span(isolated_env):
 def test_forgotten_subject_reingest_raises_and_audits(isolated_env):
     """Add a subject to the forgotten ledger, then attempt to ingest a
     file mentioning it. Must raise EraseGuardHit AND write the audit."""
-    from workspaces.inbox_watcher import ingest_file
+    from rvnd.inbox_watcher import ingest_file
 
     ws = isolated_env["workspace"]
     log_root = isolated_env["log_root"]
@@ -356,8 +356,8 @@ def test_un_redact_recheck_false_emits_lock_skipped_event(isolated_env, monkeypa
     """Privileged un-redact bypassing the recheck MUST leave a
     ``mirror_edit_lock_skipped`` event on chain — the bypass is
     visible to auditors."""
-    from workspaces.mirror_editor import open_revision, un_redact
-    from workspaces.mirrors import generate_lock_mirror
+    from rvnd.mirror_editor import open_revision, un_redact
+    from rvnd.mirrors import generate_lock_mirror
 
     ws = isolated_env["workspace"]
     src = ws / "letter.md"
@@ -380,10 +380,10 @@ def test_un_redact_recheck_false_emits_lock_skipped_event(isolated_env, monkeypa
     draft_path = draft.draft_path if hasattr(draft, "draft_path") else None
     if draft_path is None:
         # RevisionDraft variants differ across patches; load via helper.
-        from workspaces.mirror_editor import _draft_path_for, _stem_for
+        from rvnd.mirror_editor import _draft_path_for, _stem_for
         draft_path = _draft_path_for(ws, _stem_for(Path(record.mirror_path)))
 
-    from workspaces.mirror_editor import _sidecar_for
+    from rvnd.mirror_editor import _sidecar_for
     draft_spans = json.loads(_sidecar_for(Path(draft_path)).read_text(encoding="utf-8"))
     assert draft_spans.get("spans"), "open_revision did not propagate spans"
     span_id = draft_spans["spans"][0]["span_id"]

@@ -10,10 +10,10 @@ from pathlib import Path
 
 import pytest
 
-from workspaces import connectors as C
-from workspaces import tool_federation as TF
-from workspaces.verdict import Verdict, from_risk_tier
-from workspaces.mutation_log import MutationLog
+from rvnd import connectors as C
+from rvnd import tool_federation as TF
+from rvnd.verdict import Verdict, from_risk_tier
+from rvnd.mutation_log import MutationLog
 
 
 @pytest.fixture
@@ -118,7 +118,7 @@ def test_corrupt_stored_verdict_fails_closed_not_crash(tmp_path):
                          use_cases=["score"], log_root=lr)
     TF.record_tool_verdict(f, connector_id="chan-A", raw_tier="pass", log_root=lr)
     # tamper: append a tool-verdict with a corrupt verdict value
-    from workspaces.mutation_log import MutationLog, LogEvent
+    from rvnd.mutation_log import MutationLog, LogEvent
     MutationLog(Path(f), log_root=Path(lr)).append(LogEvent(
         event="system", folder_path=f, pair_id="chan-A", channel="system", actor="x",
         extra={"kind": "tool-verdict", "connector_id": "chan-A", "verdict": "not_a_verdict",
@@ -133,7 +133,7 @@ def test_invalid_local_via_op_fails_closed(tmp_path, monkeypatch):
     monkeypatch.setenv("WORKSPACE_L0_LOG_ROOT", str(tmp_path / "logs"))
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(tmp_path / "keys"))
     monkeypatch.setenv("WORKSPACES_ALLOW_UNREGISTERED", "1")
-    from workspaces import mcp_server as M
+    from rvnd import mcp_server as M
     f = tmp_path / "w"; f.mkdir()
     M.workspace_workspace("add", {"folder_context": str(f)})
     d = M.workspace_workflow("federated_decision", {"folder_context": str(f),
@@ -215,7 +215,7 @@ def test_empty_group_id_is_rejected_and_ignored(tmp_path):
     with pytest.raises(ValueError):
         TF.revoke_group(f, group_id="", log_root=lr)
     # tamper: inject an empty-group-id policy directly; an ungrouped channel must ignore it
-    from workspaces.mutation_log import MutationLog, LogEvent
+    from rvnd.mutation_log import MutationLog, LogEvent
     MutationLog(Path(f), log_root=Path(lr)).append(LogEvent(
         event="system", folder_path=f, pair_id="group:", channel="system", actor="x",
         extra={"kind": "group-policy", "group_id": "", "floor": "deny"}))
@@ -404,7 +404,7 @@ def test_override_reachable_via_mcp_op(tmp_path, monkeypatch):
     monkeypatch.setenv("WORKSPACE_L0_LOG_ROOT", str(tmp_path / "logs"))
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(tmp_path / "keys"))
     monkeypatch.setenv("WORKSPACES_ALLOW_UNREGISTERED", "1")
-    from workspaces import mcp_server as M
+    from rvnd import mcp_server as M
     f = tmp_path / "w"; f.mkdir()
     M.workspace_workspace("add", {"folder_context": str(f)})
     for cid, tier in (("tool-a", "fail"), ("tool-b", "high")):
@@ -427,7 +427,7 @@ def test_reachable_via_mcp_op(tmp_path, monkeypatch):
     monkeypatch.setenv("WORKSPACE_L0_LOG_ROOT", str(tmp_path / "logs"))
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(tmp_path / "keys"))
     monkeypatch.setenv("WORKSPACES_ALLOW_UNREGISTERED", "1")
-    from workspaces import mcp_server as M
+    from rvnd import mcp_server as M
     f = tmp_path / "w"; f.mkdir()
     M.workspace_workspace("add", {"folder_context": str(f)})
     M.workspace_workflow("connector_register", {"folder_context": str(f), "connector_id": "tool-x",
@@ -552,7 +552,7 @@ def test_tool_call_plan_reachable_via_mcp_op(tmp_path, monkeypatch):
     monkeypatch.setenv("WORKSPACE_L0_LOG_ROOT", str(tmp_path / "logs"))
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(tmp_path / "keys"))
     monkeypatch.setenv("WORKSPACES_ALLOW_UNREGISTERED", "1")
-    from workspaces import mcp_server as M
+    from rvnd import mcp_server as M
     f = tmp_path / "w"; f.mkdir()
     M.workspace_workspace("add", {"folder_context": str(f)})
     M.workspace_workflow("connector_register", {

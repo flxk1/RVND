@@ -9,9 +9,9 @@ app layer. This test pins the bridge that connects them.
 """
 from __future__ import annotations
 
-from workspaces import loomground_lang as L
-from workspaces import reservation_bridge as B
-from workspaces.controlforms import G_TWO_APPROVERS, G_PRE_APPROVAL, guarantees
+from rvnd import loomground_lang as L
+from rvnd import reservation_bridge as B
+from rvnd.controlforms import G_TWO_APPROVERS, G_PRE_APPROVAL, guarantees
 
 
 def test_quorum_target_parses_to_m_of_n():

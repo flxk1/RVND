@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from workspaces import mcp_server, parties
+from rvnd import mcp_server, parties
 
 
 def test_registered_in_tool_set():

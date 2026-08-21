@@ -290,7 +290,7 @@ def test_multi_host_plugin_manifests_are_coherent():
         (package_root / "mcp" / "rvnd.mcp.json").read_text(encoding="utf-8")
     )["mcpServers"]["rvnd-governance"]
     assert descriptor["command"] == "python3"
-    assert descriptor["args"] == ["-m", "workspaces.mcp_server"]
+    assert descriptor["args"] == ["-m", "rvnd.mcp_server"]
     assert "PYTHONPATH" not in descriptor.get("env", {})
 
 

@@ -4,10 +4,10 @@
 
 import pytest
 
-import workspaces
-import workspaces.published_policy_pack as policy_pack
-from workspaces.governance_lane import GovernanceLane
-from workspaces.published_policy_pack import (
+import rvnd
+import rvnd.published_policy_pack as policy_pack
+from rvnd.governance_lane import GovernanceLane
+from rvnd.published_policy_pack import (
     PolicyPackDenied,
     REQUIRED_REVIEWS,
     import_published_policy_pack,
@@ -61,12 +61,12 @@ def _import(monkeypatch, payload=None, **changes):
 
 
 def test_import_boundary_is_published_from_package_root():
-    assert workspaces.import_published_policy_pack is import_published_policy_pack
+    assert rvnd.import_published_policy_pack is import_published_policy_pack
     assert (
-        workspaces.import_published_policy_pack_into_versum
+        rvnd.import_published_policy_pack_into_versum
         is import_published_policy_pack_into_versum
     )
-    assert workspaces.PolicyPackDenied is PolicyPackDenied
+    assert rvnd.PolicyPackDenied is PolicyPackDenied
 
 
 def test_pack_is_bound_to_declared_kind_reviews_and_child_lane(monkeypatch):
@@ -132,8 +132,8 @@ def test_child_lane_must_cover_every_pack_action_kind(monkeypatch):
 
 
 def test_approved_pack_persists_only_through_ingest_to_versum(tmp_path):
-    from workspaces.governance_lane import register_lane
-    from workspaces.adapters.versum import load_dimensioned_subgraphs
+    from rvnd.governance_lane import register_lane
+    from rvnd.adapters.versum import load_dimensioned_subgraphs
 
     folder = tmp_path / "child"
     folder.mkdir()

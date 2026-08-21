@@ -20,8 +20,8 @@ from __future__ import annotations
 
 from datetime import date
 
-import workspaces.currency as cur
-from workspaces.hybrid_retrieval import (
+import rvnd.currency as cur
+from rvnd.hybrid_retrieval import (
     Document, HybridIndex, baseline_retrieve, einschlaegigkeit_at_k,
 )
 

@@ -29,7 +29,7 @@ def _require_anyascii():
 
 def _scan_for_findings(text: str):
     """Run Tier B regex + Tier B+ confusable detection and return findings."""
-    from workspaces.lock.core import tier_b_scan_text, _detect_confusable_bypass
+    from rvnd.lock.core import tier_b_scan_text, _detect_confusable_bypass
     return list(tier_b_scan_text(text)) + list(_detect_confusable_bypass(text))
 
 
@@ -96,7 +96,7 @@ def test_a8_diff_based_detector_design_works_as_documented():
     finding is produced — Tier B already caught it via the original regex.
     This is by design; this test pins the design.
     """
-    from workspaces.lock.core import tier_b_scan_text, _detect_confusable_bypass
+    from rvnd.lock.core import tier_b_scan_text, _detect_confusable_bypass
 
     # Single Greek omicron in a long domain — Tier B catches the original
     # because the regex matches `j.d` + `@firm.de` adjacent segments;

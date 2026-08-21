@@ -21,7 +21,7 @@ os.environ["WORKSPACE_L0_LOG_ROOT"] = os.path.join(tmp, "logs")
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 sys.path.insert(0, str(HERE.parent)); sys.path.insert(0, str(HERE.parent.parent / "server" / "src"))
 import serve  # noqa: E402
-from workspaces import mirror_editor  # noqa: E402
+from rvnd import mirror_editor  # noqa: E402
 
 F = os.path.join(tmp, "org")
 LR = os.environ["WORKSPACE_L0_LOG_ROOT"]
@@ -38,7 +38,7 @@ Path(os.path.join(LOCK, "doc.spans.json")).write_text(json.dumps({
 
 
 def setup():
-    import workspaces.mcp_server as S
+    import rvnd.mcp_server as S
     S.workspace_workspace("add", {"folder_context": F})
     # open a draft + apply one edit so the draft has a real revision history
     mirror_editor.open_revision(F, MIR, actor="alice", log_root=LR)

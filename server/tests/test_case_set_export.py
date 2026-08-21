@@ -29,7 +29,7 @@ from __future__ import annotations
 import os
 
 
-from workspaces.kg_export import (
+from rvnd.kg_export import (
     case_set_to_cytoscape, case_trace_to_cytoscape, validate_graph,
 )
 
@@ -129,8 +129,8 @@ def test_problem_set_is_pure():                                   # P4
 
 
 def test_real_gate_over_two_subwalks(tmp_path):                   # P5
-    from workspaces import legal_corpus, problem_kg, reasoning_walker as rw
-    from workspaces.rule_registry import RuleRegistry
+    from rvnd import legal_corpus, problem_kg, reasoning_walker as rw
+    from rvnd.rule_registry import RuleRegistry
 
     legal_corpus.seed_registry(tmp_path)
     reg = RuleRegistry(tmp_path, user="alex")

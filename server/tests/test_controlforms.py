@@ -9,7 +9,7 @@ import itertools
 
 import pytest
 
-from workspaces.controlforms import (
+from rvnd.controlforms import (
     FORMS, comparable, compose, compose_all, from_traffic_light,
     guarantees, leq, name_of,
 )

@@ -29,8 +29,8 @@ Invariants / claims under test (written BEFORE the logic):
 from __future__ import annotations
 
 
-from workspaces.issue_token import IssueToken, Span, detect_issues
-from workspaces.variety import (
+from rvnd.issue_token import IssueToken, Span, detect_issues
+from rvnd.variety import (
     derived_regulator, fixed_flow_regulator, problem_variety,
     requisite_variety,
 )

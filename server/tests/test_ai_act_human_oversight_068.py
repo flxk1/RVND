@@ -23,10 +23,10 @@ from pathlib import Path
 
 import pytest
 
-from workspaces.operations import operate
-from workspaces.parties import register_party, set_party_status
-from workspaces.use_case import register_use_case
-from workspaces.mutation_log import MutationLog
+from rvnd.operations import operate
+from rvnd.parties import register_party, set_party_status
+from rvnd.use_case import register_use_case
+from rvnd.mutation_log import MutationLog
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 

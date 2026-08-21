@@ -15,12 +15,12 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces import policy_matrix as pm
-from workspaces.controlforms import leq
+from rvnd import policy_matrix as pm
+from rvnd.controlforms import leq
 
 
 def _load(name):
-    from workspaces.juris_packs import load_reference_pack
+    from rvnd.juris_packs import load_reference_pack
     return load_reference_pack(name)
 
 
@@ -34,7 +34,7 @@ def test_reference_packs_load():
 
 
 def test_pack_with_unknown_form_refused():
-    from workspaces.juris_packs import load_pack
+    from rvnd.juris_packs import load_pack
     with pytest.raises(ValueError):
         load_pack({"pack_id": "x", "version": "1", "jurisdiction": "XX",
                    "controls": {"personal-data": "notarized"}})
@@ -43,7 +43,7 @@ def test_pack_with_unknown_form_refused():
 @pytest.mark.parametrize("missing", ["pack_id", "version", "jurisdiction",
                                      "controls"])
 def test_pack_missing_required_field_refused(missing):
-    from workspaces.juris_packs import load_pack
+    from rvnd.juris_packs import load_pack
     raw = {"pack_id": "x", "version": "1", "jurisdiction": "XX",
            "controls": {"personal-data": "notify"}}
     raw.pop(missing)
@@ -52,7 +52,7 @@ def test_pack_missing_required_field_refused(missing):
 
 
 def test_bad_effective_from_refused():
-    from workspaces.juris_packs import load_pack
+    from rvnd.juris_packs import load_pack
     with pytest.raises(ValueError):
         load_pack({"pack_id": "x", "version": "1", "jurisdiction": "XX",
                    "effective_from": "soon", "controls": {}})
@@ -63,7 +63,7 @@ def test_bad_effective_from_refused():
 def test_two_packs_compose_monotone():
     """THE verification line: for every governed tag, the composed form is at
     least as strict as what EACH pack demands alone."""
-    from workspaces.juris_packs import compose_packs
+    from rvnd.juris_packs import compose_packs
     eu, de = _load("eu-base"), _load("de-overlay")
     composed = compose_packs([eu, de])
     for tag in set(eu["controls"]) | set(de["controls"]):
@@ -76,7 +76,7 @@ def test_two_packs_compose_monotone():
 
 def test_overlay_never_removes_a_base_guarantee():
     """Adding the DE overlay on top of EU alone only ever ADDS guarantees."""
-    from workspaces.juris_packs import compose_packs
+    from rvnd.juris_packs import compose_packs
     eu, de = _load("eu-base"), _load("de-overlay")
     alone = compose_packs([eu])
     stacked = compose_packs([eu, de])
@@ -85,14 +85,14 @@ def test_overlay_never_removes_a_base_guarantee():
 
 
 def test_composition_order_free_and_idempotent():
-    from workspaces.juris_packs import compose_packs
+    from rvnd.juris_packs import compose_packs
     eu, de = _load("eu-base"), _load("de-overlay")
     assert compose_packs([eu, de]) == compose_packs([de, eu])
     assert compose_packs([eu, eu]) == compose_packs([eu])
 
 
 def test_empty_stack_governs_nothing():
-    from workspaces.juris_packs import compose_packs, required_forms
+    from rvnd.juris_packs import compose_packs, required_forms
     assert compose_packs([]) == {}
     assert required_forms([], ["external-publish"]) == []
 
@@ -100,7 +100,7 @@ def test_empty_stack_governs_nothing():
 # --- the stack feeds the matrix wiring ----------------------------------------
 
 def test_required_forms_for_a_footprint():
-    from workspaces.juris_packs import required_forms
+    from rvnd.juris_packs import required_forms
     eu, de = _load("eu-base"), _load("de-overlay")
     forms = required_forms([eu, de], ["personal-data", "external-publish"])
     assert forms, "governed tags must yield forms"
@@ -111,7 +111,7 @@ def test_required_forms_for_a_footprint():
 def test_pack_stack_through_effective_control_form():
     """End to end: a 'go' cell + the pack stack = the packs' guarantees —
     the painted policy is never loosened, only tightened, by pack data."""
-    from workspaces.juris_packs import required_forms
+    from rvnd.juris_packs import required_forms
     eu, de = _load("eu-base"), _load("de-overlay")
     m = pm.recommended_default()
     r = pm.effective_control_form(
@@ -125,7 +125,7 @@ def test_pack_stack_through_effective_control_form():
 
 
 def test_ungoverned_footprint_stays_auto():
-    from workspaces.juris_packs import required_forms
+    from rvnd.juris_packs import required_forms
     eu = _load("eu-base")
     m = pm.recommended_default()
     r = pm.effective_control_form(

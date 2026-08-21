@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import os
 
-from workspaces import intent_router as IR
+from rvnd import intent_router as IR
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 

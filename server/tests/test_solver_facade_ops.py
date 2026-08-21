@@ -17,7 +17,7 @@ Claims under test (written BEFORE the wiring):
 from __future__ import annotations
 
 
-from workspaces import mcp_server
+from rvnd import mcp_server
 
 
 def test_completeness_op():                                       # F1

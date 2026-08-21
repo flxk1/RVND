@@ -85,14 +85,14 @@ def _transport_evidence(reg) -> dict[tuple[str, str | None], str]:
 
 
 def test_every_live_operation_is_classified():                    # C1
-    missing = sorted(k for k in _live_ops() - _register_keys(_register()) if True)
+    missing = sorted(_live_ops() - _register_keys(_register()))
     assert not missing, (
         f"declared operations absent from docs/evidence/capability-register.json: {missing}. "
         "A newly declared operation must be classified before it ships.")
 
 
 def test_no_stale_register_entries():                             # C2
-    stale = sorted(k for k in _register_keys(_register()) - _live_ops() if True)
+    stale = sorted(_register_keys(_register()) - _live_ops())
     assert not stale, (
         f"register classifies operations the runtime no longer declares: {stale}. "
         "Remove the entry when the operation is removed.")
@@ -126,7 +126,7 @@ def test_supported_status_is_non_empty():
 
 
 def _gateway_exposed() -> set[tuple[str, str | None]]:
-    from workspaces import gateway as gw
+    from rvnd import gateway as gw
     allowed = getattr(gw, "ALLOWED_OPS", None)
     if allowed is None:
         return None

@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces.workflows import (
+from rvnd.workflows import (
     Workflow,
     WorkflowStep,
     active_workflows,
@@ -19,7 +19,7 @@ from workspaces.workflows import (
     recent_dispatches,
     run_workflow,
 )
-from workspaces.mutation_log import MutationLog
+from rvnd.mutation_log import MutationLog
 
 
 def _wf(name, *step_skills):
@@ -305,14 +305,14 @@ def test_retry_records_step_retry_events(tmp_path):
 
 
 def test_template_substitution_unknown_step(tmp_path):
-    from workspaces.workflows import _substitute_step_refs
+    from rvnd.workflows import _substitute_step_refs
     # Out-of-range index is replaced with an error literal — fails loudly.
     s = _substitute_step_refs("answer: ${steps[5].output}", [])
     assert "[unresolved: step 5 out of range]" in s
 
 
 def test_template_substitution_known_step(tmp_path):
-    from workspaces.workflows import _substitute_step_refs
+    from rvnd.workflows import _substitute_step_refs
     prior = [{
         "skill_id": "p:s",
         "body":     "BODY-TEXT",
@@ -405,7 +405,7 @@ def test_recent_dispatches_scope_recursive_aggregates(tmp_path):
     run_workflow(str(child), "child-flow",
                   dispatcher=lambda **kw: {"ok": True}, log_root=log)
     # Also a dispatch on parent itself
-    from workspaces.pinned_skills import record_dispatch
+    from rvnd.pinned_skills import record_dispatch
     record_dispatch(str(parent), "p:parent-skill", log_root=log)
 
     parent_recursive = recent_dispatches(str(parent), scope="recursive",
@@ -428,7 +428,7 @@ def test_active_workflows_surfaces_unfinished(tmp_path):
     surfaces it. Simulate by ginning up workflow events directly."""
     fc = tmp_path / "wks"; fc.mkdir()
     log = tmp_path / "log"
-    from workspaces.workflows import _log_workflow_event
+    from rvnd.workflows import _log_workflow_event
     _log_workflow_event(str(fc), run_id="wfrun:abc", workflow="ghost",
                          step_index=-1, state="running",
                          log_root=log)

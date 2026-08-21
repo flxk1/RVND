@@ -8,8 +8,8 @@ HTTP rungs through one dispatching completer. Generation itself needs
 llama-cpp-python + a real GGUF, so the routing is exercised with fakes.
 """
 
-from workspaces import workspace_local_inproc as inproc
-from workspaces.workspace_cascade import (tiers_for_workspace, write_local_config,
+from rvnd import workspace_local_inproc as inproc
+from rvnd.workspace_cascade import (tiers_for_workspace, write_local_config,
                                 cascade_for_workspace, LOCAL_URL_ENV, LOCAL_MODEL_ENV,
                                 CONFIG_PATH_ENV)
 
@@ -53,7 +53,7 @@ def test_workspace_completer_routes(monkeypatch):
         return {"ok": True, "response": "out", "usage": {"total_tokens": 3}}
 
     monkeypatch.setattr(inproc, "complete_inproc", fake_inproc)
-    monkeypatch.setattr("workspaces.local_llm.complete_via", fake_http)
+    monkeypatch.setattr("rvnd.local_llm.complete_via", fake_http)
 
     r1 = inproc.workspace_completer("inproc", "phi.gguf", "x")
     assert r1["response"] == "in" and "inproc" in calls

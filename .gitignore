@@ -45,3 +45,9 @@ demos/child-protection-workspace/
 .coverage
 coverage.xml
 htmlcov/
+
+# The ctrl audit logger resolved its path relative to CWD and sprayed
+# `_ctrl/audit-log.md` into whatever directory a session stood in — including
+# server/src, i.e. inside the shipped package. The logger is fixed, but these
+# stay ignored so a recurrence cannot ride into a commit.
+work/_ctrl/

@@ -15,10 +15,10 @@ from pathlib import Path
 
 import pytest
 
-from workspaces import judgment_reading as JR
-from workspaces.adapters.ingest.governance import compiler as P
-from workspaces import format_extractors as fx
-from workspaces.source_classes import Effect
+from rvnd import judgment_reading as JR
+from rvnd.adapters.ingest.governance import compiler as P
+from rvnd import format_extractors as fx
+from rvnd.source_classes import Effect
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 

@@ -60,9 +60,9 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "app"))
 import serve  # noqa: E402
 
-import workspaces.mcp_server as S
-from workspaces.governance_lane import GovernanceLane, register_lane
-from workspaces.parties import list_parties, register_party, set_party_status
+import rvnd.mcp_server as S
+from rvnd.governance_lane import GovernanceLane, register_lane
+from rvnd.parties import list_parties, register_party, set_party_status
 
 SURFACE = {
     "query": "q",
@@ -223,7 +223,7 @@ def test_remote_request_cannot_override_server_storage_roots(
 
 
 def test_local_mode_keeps_explicit_storage_root_api():           # X14
-    from workspaces.mcp_serving import (
+    from rvnd.mcp_serving import (
         apply_principal_to_params,
         clear_request_principal,
     )
@@ -337,7 +337,7 @@ def test_proxy_claim_records_rung(env):                          # X6
          {"op": "decision_claim",
           "params": {"folder_context": env["folder"], "decision_id": did}},
          headers={"X-Auth-Request-Email": "dana\x40corp.example"})
-    from workspaces.mutation_log import MutationLog
+    from rvnd.mutation_log import MutationLog
     events = [e.extra for e in MutationLog(Path(env["folder"]),
                                            log_root=Path(env["log"])).replay()
               if (e.extra or {}).get("kind") == "decision.claimed"]
