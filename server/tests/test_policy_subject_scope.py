@@ -148,3 +148,55 @@ def test_enforcement_reads_the_deployment_posture_not_the_folders(tmp_path, monk
 
     disable_lock_for_deployment(accepted_by="alex", reason="test", log_root=log_root)
     assert MS._folder_lock_on(str(ws)) is False
+
+
+def test_decision_sites_read_the_effective_policy_not_the_folders():
+    """`load_policy` and `effective_policy` answer different questions.
+
+    load_policy      — what does this FOLDER declare?  (editing it, showing it)
+    effective_policy — what actually applies here?     (deciding anything)
+
+    A site that reads a deployment-level field off `load_policy` is asking the
+    folder to decide something the deployment owns, which is the hole the split
+    closes. This finds any that reappear.
+
+    drift_monitor is the deliberate exception and is named here rather than
+    skipped silently: it MONITORS, so it reads the folder's declaration on
+    purpose — an edit that no longer takes effect is more worth reporting, and
+    reading the effective policy there would hide exactly that edit.
+    """
+    import ast
+    from pathlib import Path
+
+    DEPLOYMENT_OWNED = {
+        "privacy_lock_enabled", "oversight_enabled", "oversight_default_level",
+        "lock_mode_explicit", "lock_confidence_threshold", "lock_mode",
+        "lock_is_active", "discipline_enabled", "policy_matrix",
+    }
+    EXEMPT = {"drift_monitor.py", "policy.py"}
+
+    src = Path(__file__).resolve().parents[1] / "src" / "rvnd"
+    offenders = []
+    for f in src.rglob("*.py"):
+        if "_quarantine" in str(f) or f.name in EXEMPT:
+            continue
+        try:
+            tree = ast.parse(f.read_text(encoding="utf-8", errors="replace"))
+        except SyntaxError:
+            continue
+        bound = {}
+        for n in ast.walk(tree):
+            if isinstance(n, ast.Assign) and isinstance(n.value, ast.Call):
+                fn = n.value.func
+                if (getattr(fn, "id", None) == "load_policy"
+                        or getattr(fn, "attr", None) == "load_policy"):
+                    for t in n.targets:
+                        if isinstance(t, ast.Name):
+                            bound[t.id] = n.lineno
+        for n in ast.walk(tree):
+            if (isinstance(n, ast.Attribute) and isinstance(n.value, ast.Name)
+                    and n.value.id in bound and n.attr in DEPLOYMENT_OWNED):
+                offenders.append(f"{f.name}:{n.lineno} reads .{n.attr} off load_policy")
+    assert not offenders, (
+        "these ask a FOLDER to decide something the deployment owns — use "
+        f"effective_policy: {offenders}")

@@ -36,6 +36,7 @@ from .principal import (  # noqa: F401  -- re-export
     set_request_principal,
     units_for_role,
 )
+from .policy import effective_policy
 
 def _doc_token(source: str | None, folder_context: str | None = None) -> str:
     """Opaque, per-workspace salted token for a source-document path.
@@ -233,7 +234,7 @@ def _resolve_mode_for_folder(folder_context: str, requested: str) -> str:
         return requested
     try:
         from .policy import load_policy
-        pol = load_policy(folder_context)
+        pol = effective_policy(folder_context)
         lock_on = bool(getattr(pol, "lock_is_active", True))
     except Exception:
         lock_on = True

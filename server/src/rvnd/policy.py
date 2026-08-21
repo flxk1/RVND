@@ -754,6 +754,29 @@ def disable_lock_for_deployment(*, accepted_by: str, reason: str = "",
     return pol
 
 
+def effective_policy(folder_path: "str | Path | None" = None,
+                     log_root: "str | Path | None" = None) -> FolderPolicy:
+    """What actually applies at ``folder_path`` — the answer enforcement wants.
+
+    ``load_policy`` returns what a FOLDER declares. That is the right answer for
+    showing a folder its own file, and the wrong one for deciding anything: the
+    enforcement posture is the deployment's, and a folder must not be able to
+    relax it by dropping a file into a directory.
+
+    Call this wherever a decision is made. Call ``load_policy`` only where the
+    folder's own declaration is itself the subject — editing it, or displaying
+    it as the folder's.
+
+    ``folder_path=None`` is a first-class answer, not a missing argument: RVND
+    governs egress with no folder at all, and then the deployment's policy is
+    the whole of it.
+    """
+    from . import subject as _subject
+    subj = (_subject.global_subject() if folder_path is None
+            else _subject.folder(str(folder_path)))
+    return resolve_policy(subj, log_root=log_root)
+
+
 def resolve_policy(subj: "Any", *, log_root: "str | Path | None" = None) -> FolderPolicy:
     """The policy in force for ``subj``.
 

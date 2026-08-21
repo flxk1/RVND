@@ -38,6 +38,7 @@ from typing import Iterable, Optional
 from . import verdict as _v
 
 from .adapters.policy_languages import grade_levels as _grade_levels
+from .policy import effective_policy
 
 GRADES = _grade_levels()   # action reach — consumed from governance's grammar
 OVERSIGHT = ("autonomous", "notify", "review", "approve", "supervised", "manual")
@@ -256,7 +257,7 @@ def save_own_matrix(folder_path: str | Path, matrix: dict, *,
     """Persist this workspace's own grid into its policy (creates the override).
     Audited: the change + acting party land on the chain."""
     from .policy import load_policy, save_policy
-    pol = load_policy(folder_path)
+    pol = effective_policy(folder_path)
     pol.policy_matrix = {g: {o: matrix[g][o] for o in OVERSIGHT} for g in GRADES}
     save_policy(folder_path, pol)
     _audit_matrix_change(folder_path, actor, log_root,
@@ -270,7 +271,7 @@ def clear_own_matrix(folder_path: str | Path, *,
     """Drop this workspace's override — it goes back to inheriting (reset).
     Audited like the set."""
     from .policy import load_policy, save_policy
-    pol = load_policy(folder_path)
+    pol = effective_policy(folder_path)
     pol.policy_matrix = None
     save_policy(folder_path, pol)
     _audit_matrix_change(folder_path, actor, log_root, {"cleared": True})
