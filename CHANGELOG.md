@@ -5,6 +5,52 @@ dates are ISO.
 
 ## [Unreleased]
 
+### Upgrading — existing installs must reinstall
+
+RVND now consumes `loomground-workspace` (the workspace concept: folder scope,
+identity, registry) rather than carrying its own copies. That adds a dependency,
+so **an existing checkout keeps working only until something imports the new
+plane** — and `workspaces doctor` will report the install as broken:
+
+```
+[x] python_binding  ... cannot import rvnd (ModuleNotFoundError:
+                        No module named 'loomground_workspace')
+```
+
+That report is correct, not a false alarm. Fix it by reinstalling:
+
+```
+./server/install.sh
+```
+
+The doctor is currently the only signal, which is why this note exists: a
+dependency added by a merge is invisible to anyone who does not re-run install.
+
+### Changed
+
+- The import package is `rvnd`. `workspaces` remains as a compatibility alias
+  that resolves to the same module objects (see `server/src/workspaces/__init__.py`
+  for its removal version). It covers imports, not `python -m`; run
+  `python -m rvnd.<module>`.
+- Modules named for the workspace concept were renamed (`workspace_registry` →
+  `registry`, `workspace_lock` → `seal_binding`, and ten others). The **MCP tool
+  names are unchanged** — `workspace_audit`, `workspace_workflow` and the rest
+  are a wire contract with every host — as are the `WORKSPACES_*` env vars, the
+  `workspaces` console command, and the `workspaces` key in saved session bundles.
+
+### Security
+
+- **The PreToolUse hold marker is signed.** A `GovernanceCertification` asserts
+  that an action was blocked-unless-permitted; that claim rested on an unsigned
+  file under `<log_root>/hook-pending/`, so anyone able to write there could
+  cause a validly signed certificate to be minted for an action never held. The
+  marker now carries an Ed25519 signature over its content *and* its
+  `tool_use_id`, verified before minting. Markers written before this change are
+  unsigned and will not certify — fail-closed by design.
+- `undici` bumped to 7.29.0 (five CVEs, dev scope, via jsdom). RVND's own
+  `overrides` pin had been holding the vulnerable version in place.
+
+
 ## [0.6.9.9] - 2026-08-14
 
 ### Added
