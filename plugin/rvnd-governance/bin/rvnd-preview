@@ -1,0 +1,141 @@
+#!/usr/bin/env python3
+"""rvnd-preview — an ADVISORY preview of how a governed action would be judged.
+
+This is the offline floor. It applies only the deterministic rules that are
+unambiguous without the governance grammar:
+
+  * grade-never-increases  — a request may ask for its lane's grade or lower,
+    never higher. Grades are ranked ONLY when the caller supplies integer ranks
+    (the ISO/IEC 0-6 level-of-automation ladder RVND consumes). The lattice
+    itself lives in the governance plane and is NOT reinvented here: if grades
+    are given as opaque tokens and the engine is absent, the verdict is HOLD,
+    never a fabricated allow.
+  * action-allowlist       — the requested action must be in the lane's actions.
+  * scope-presence         — every scope key the lane requires must be present
+    and non-empty in the request.
+
+It NEVER emits a binding decision. When real RVND is installed the mode line
+says so and directs you to the governed cycle (the rvnd-decide skill) for the
+authoritative, signed verdict. Advisory exit codes: 0 allow, 3 hold, 4 deny,
+2 malformed (fail-closed).
+
+Input (stdin, or a file path arg):
+  {
+    "lane":    {"grade_rank": 2, "actions": ["read","summarise"],
+                "scope": {"purpose": null, "dataset": null}},
+    "request": {"grade_rank": 2, "action": "summarise",
+                "scope": {"purpose": "research", "dataset": "corpus-A"}}
+  }
+The lane's "scope" keys name the REQUIRED scope fields (values are ignored).
+"""
+from __future__ import annotations
+
+import pathlib
+import sys
+from typing import Any
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent / "scripts"))
+from rvnd_floor_lib import die, emit, mode_line, probe_engine, read_json_arg  # noqa: E402
+
+_ALLOW, _HOLD, _DENY, _MALFORMED = 0, 3, 4, 2
+
+
+def _rank(value: Any) -> int | None:
+    """Integer grade rank, or None when it cannot be ranked offline."""
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value
+    return None
+
+
+def preview(doc: Any) -> tuple[dict[str, Any], int]:
+    if not isinstance(doc, dict):
+        raise ValueError("top-level value must be an object")
+    lane = doc.get("lane")
+    request = doc.get("request")
+    if not isinstance(lane, dict) or not isinstance(request, dict):
+        raise ValueError("both 'lane' and 'request' objects are required")
+
+    reasons: list[str] = []
+    checks: list[str] = []
+    verdict = "allow"
+
+    def worsen(to: str) -> None:
+        nonlocal verdict
+        order = {"allow": 0, "hold": 1, "deny": 2}
+        if order[to] > order[verdict]:
+            verdict = to
+
+    # --- grade: never increases -------------------------------------------
+    checks.append("grade-never-increases")
+    lane_rank = _rank(lane.get("grade_rank"))
+    req_rank = _rank(request.get("grade_rank"))
+    if lane_rank is None or req_rank is None:
+        # Grades not rankable offline. We do not own the lattice, so we refuse
+        # to guess: fail closed to HOLD rather than invent an allow.
+        worsen("hold")
+        reasons.append(
+            "grade not rankable offline (no integer grade_rank on lane/request); "
+            "the grade lattice lives in the governance plane — run the governed "
+            "cycle or supply integer ranks"
+        )
+    elif req_rank > lane_rank:
+        worsen("deny")
+        reasons.append(
+            f"grade increase: request rank {req_rank} exceeds lane rank {lane_rank}"
+        )
+
+    # --- action: must be in the lane's allowlist --------------------------
+    checks.append("action-allowlist")
+    lane_actions = lane.get("actions")
+    action = request.get("action")
+    if not isinstance(lane_actions, list):
+        worsen("hold")
+        reasons.append("lane has no 'actions' allowlist to check against")
+    elif action not in lane_actions:
+        worsen("deny")
+        reasons.append(f"action {action!r} is not in the lane allowlist")
+
+    # --- scope: every required key present and non-empty ------------------
+    checks.append("scope-presence")
+    lane_scope = lane.get("scope")
+    req_scope = request.get("scope")
+    if isinstance(lane_scope, dict) and lane_scope:
+        if not isinstance(req_scope, dict):
+            worsen("deny")
+            reasons.append("request has no 'scope' object; required keys missing")
+        else:
+            missing = [
+                k for k in lane_scope
+                if k not in req_scope or req_scope[k] in (None, "", [], {})
+            ]
+            if missing:
+                worsen("deny")
+                reasons.append(f"missing scope values: {', '.join(sorted(missing))}")
+
+    payload = {
+        "verdict": verdict,
+        "authoritative": False,
+        "checks_run": checks,
+        "reasons": reasons or ["no advisory objection on the checks this floor can run"],
+    }
+    code = {"allow": _ALLOW, "hold": _HOLD, "deny": _DENY}[verdict]
+    return payload, code
+
+
+def main(argv: list[str]) -> int:
+    try:
+        doc = read_json_arg(argv)
+    except Exception as exc:  # malformed input is fail-closed
+        return die(f"could not read JSON input: {exc}", _MALFORMED)
+    try:
+        payload, code = preview(doc)
+    except ValueError as exc:
+        return die(str(exc), _MALFORMED)
+    emit(payload, mode_line(probe_engine(), verb="preview"))
+    return code
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv[1:]))
