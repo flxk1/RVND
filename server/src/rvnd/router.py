@@ -9,7 +9,7 @@ embeddings, no model, no network — pure stdlib term overlap. The keyword/label
 signature IS the fallback floor; an LLM/embedding ranker can layer on later
 without changing this contract.
 
-Wall-respecting: a workspace's pairs are read through :func:`rvnd.workspace_lock.read_pairs`,
+Wall-respecting: a workspace's pairs are read through :func:`rvnd.seal_binding.read_pairs`,
 so a sealed+unlocked workspace is scored on its served (in-memory) content while the
 disk stays ciphertext, and a sealed+locked workspace degrades to a **label-only**
 signature (its name/path tokens) rather than leaking or erroring. The result
