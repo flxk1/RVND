@@ -53,18 +53,20 @@ does not happen.
 ## Cascade & the shared graph
 
 Every skill in this plugin operates the **same dimensioned `Subgraph`** and cascades **local-first**.
-See `../../references/ingest-cascade.md` for the plane list, the ingester entry points, and the
+See `../../references/ingest-cascade.md` for the plane list, the plane-skill delegation, and the
 honesty rules; this skill does not restate them.
 
 - **Engine first, never the reverse.** When RVND is present and the folder is governed, the engine
   decides the verdict, signs the receipt, and enforces it — precise and live. The assistant does not
   answer first and check later.
-- **LLM fallback, in-grammar.** When the engine is absent or cannot, the `loomground_ingest`
-  ingesters lower the action into the shared Subgraph and the cloud LLM **enriches it in-grammar**
-  (the bearer, the condition, the deadline) — never a new shape. A standalone build is **degraded /
-  advisory**: no server verdict, no signing, no enforcement, and the skill says so until the engine
-  ratifies.
-- **Fail-closed.** If neither the engine nor the ingest plane can produce a well-formed Subgraph and
+- **Fallback delegates to the plane skills.** When the engine is absent or cannot, the skill does not
+  re-author a lowering — it delegates to the free `loomground`-marketplace plane skills: `loomground`
+  (loomground-governance) for the governance `.lg` patch and the express/policy/host litmus,
+  `loomground-ingest` to drive the lowering, and `deontic` (loomground-deontic) when the action carries
+  a norm. It assembles their output and **enriches it in-grammar** (bearer, condition, deadline) — never
+  a new shape. A delegated-only build is **degraded / advisory**: no server verdict, no signing, no
+  enforcement, and the skill says so until the engine ratifies.
+- **Fail-closed.** If neither the engine nor the plane skills can produce a well-formed Subgraph and
   verdict, the skill stops and reports a residual — it never fabricates a verdict.
 
 ## Two rules
