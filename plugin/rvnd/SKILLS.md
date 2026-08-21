@@ -47,10 +47,42 @@ Or, after the two `marketplace add` lines, run `/plugin` and click-install from 
 
 Swap `loomground-deontic` for any of the five free plugins.
 
-### C · Admins (whole team, once)
+### C · Admins (whole team, one settings file)
 
-Add both marketplaces and enable the plugins in a shared/managed `.claude/settings.json` so every
-teammate gets them with no per-user setup. (Ask and this can be wired for you.)
+Pre-register both marketplaces and pre-enable the plugins in `settings.json` — teammates get all 25
+with no per-user `/plugin` commands. Copy-paste:
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "loomground": { "source": { "source": "github", "repo": "flxk1/loomground-plugins" } },
+    "rvnd":       { "source": { "source": "github", "repo": "flxk1/RVND" } }
+  },
+  "enabledPlugins": {
+    "loomground-governance@loomground": true,
+    "loomground-deontic@loomground":    true,
+    "loomground-ingest@loomground":     true,
+    "loomground-solver@loomground":     true,
+    "loomground-versum@loomground":     true,
+    "rvnd@rvnd":                        true
+  }
+}
+```
+
+`extraKnownMarketplaces` registers a marketplace from a GitHub repo; `enabledPlugins` turns plugins
+on at startup (the `@marketplace` suffix is required). Where to put it:
+
+- **Per project (committed, shared via git):** the project's `.claude/settings.json` — applies when a
+  teammate opens *that* project and trusts it.
+- **Per machine (one user):** `~/.claude/settings.json`.
+- **Admin push to every machine:** `managed-settings.json` —
+  macOS `/Library/Application Support/ClaudeCode/managed-settings.json`,
+  Linux/WSL `/etc/claude-code/managed-settings.json`,
+  Windows `C:\Program Files\ClaudeCode\managed-settings.json` (or the Claude admin console).
+
+Trim `enabledPlugins` to only the skills you want — e.g. for a Loomground-only, RVND-free setup, drop
+`rvnd@rvnd` and the `rvnd` marketplace entirely (a single plane skill needs neither RVND nor its
+siblings).
 
 ---
 
