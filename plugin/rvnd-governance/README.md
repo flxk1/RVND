@@ -61,9 +61,13 @@ observation). Each skill carries a `manifest.yaml` declaring the constructs it m
   plugin names it, it does not ship it.
 - `apps/` — the five MCP App card specs: context, proposal, patch, decision, receipt.
 - `schemas/` — the surface-card and composition schemas the linter enforces.
-- `references/` — the shared protocol and catalogue.
+- `references/` — the shared protocol and catalogue, and the `offline-floor.md` guide.
 - `skills/` — nine composable skills, each with a lean `SKILL.md`, interface metadata, an operation
   manifest, and focused references.
+- `bin/` — the zero-install **offline floor**: stdlib-only tools (`rvnd-probe`, `rvnd-lint`,
+  `rvnd-preview`, `rvnd-verify`) that work before the engine is installed and route to the governed
+  surface once it is. Advisory only — never grant, sign, or enforce. See `references/offline-floor.md`.
+- `scripts/` — shared helper (`rvnd_floor_lib.py`) for the `bin/` tools.
 
 ## Relationship to the kernel
 
