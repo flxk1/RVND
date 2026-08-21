@@ -20,7 +20,7 @@ from __future__ import annotations
 import json
 
 
-from rvnd.mcp_server import workspace_lock, lock_egress_check
+from rvnd.mcp_server import seal_binding, lock_egress_check
 
 
 PII_TEXT = "Contact Maria Schneider, maria.schneider\x40example.de, +49 170 1234567."
@@ -36,7 +36,7 @@ def _assert_json_safe(result: dict) -> None:
 
 
 def test_facade_egress_check_does_not_crash_and_returns_contract():
-    result = workspace_lock("egress_check", {
+    result = seal_binding("egress_check", {
         "tool": "slack.post",
         "arguments": {"channel": "#legal", "text": PII_TEXT},
         "task_scope": ["channel", "text"],
@@ -49,7 +49,7 @@ def test_facade_egress_check_does_not_crash_and_returns_contract():
 
 def test_facade_egress_check_accepts_capability_token():
     """The exact kwarg that crashed: capability_token through the facade."""
-    result = workspace_lock("egress_check", {
+    result = seal_binding("egress_check", {
         "tool": "slack.post",
         "arguments": {"channel": "#legal", "text": "hello"},
         "task_scope": ["channel", "text"],
@@ -65,7 +65,7 @@ def test_facade_egress_check_accepts_capability_token():
 
 
 def test_facade_egress_check_malformed_token_degrades_not_crashes():
-    result = workspace_lock("egress_check", {
+    result = seal_binding("egress_check", {
         "tool": "slack.post",
         "arguments": {"channel": "#legal", "text": "hello"},
         "task_scope": ["channel", "text"],
@@ -76,7 +76,7 @@ def test_facade_egress_check_malformed_token_degrades_not_crashes():
 
 
 def test_facade_egress_check_detects_pii_in_arguments():
-    result = workspace_lock("egress_check", {
+    result = seal_binding("egress_check", {
         "tool": "slack.post",
         "arguments": {"channel": "#legal", "text": PII_TEXT},
         "task_scope": ["channel", "text"],
@@ -86,7 +86,7 @@ def test_facade_egress_check_detects_pii_in_arguments():
 
 
 def test_facade_egress_check_strips_over_collection():
-    result = workspace_lock("egress_check", {
+    result = seal_binding("egress_check", {
         "tool": "hr.notify",
         "arguments": {"name": "M. Schneider", "salary": "45k", "shoe_size": "39"},
         "task_scope": ["name"],
@@ -117,7 +117,7 @@ def test_direct_wrapper_matches_reference_implementation():
 
 
 def test_facade_ingress_check_contract_and_json_safe():
-    result = workspace_lock("ingress_check", {
+    result = seal_binding("ingress_check", {
         "payload": {"summary": PII_TEXT, "ticket": "ABC-1"},
         "task_scope": ["summary", "ticket"],
     })
@@ -128,7 +128,7 @@ def test_facade_ingress_check_contract_and_json_safe():
 
 
 def test_facade_ingress_check_accepts_task_id():
-    result = workspace_lock("ingress_check", {
+    result = seal_binding("ingress_check", {
         "payload": {"summary": "clean text"},
         "task_scope": ["summary"],
         "task_id": "t-42",
@@ -143,12 +143,12 @@ def test_facade_ingress_check_accepts_task_id():
 
 
 def test_facade_unknown_op_returns_error_dict():
-    result = workspace_lock("egress_chekc")
+    result = seal_binding("egress_chekc")
     assert "error" in result
 
 
 def test_facade_missing_param_returns_error_dict():
-    result = workspace_lock("egress_check", {"tool": "slack.post"})
+    result = seal_binding("egress_check", {"tool": "slack.post"})
     assert "error" in result
 
 

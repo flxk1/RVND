@@ -17,7 +17,7 @@ import pytest
 
 from rvnd import mcp_server
 import rvnd.mcp_serving as serving
-from rvnd.workspace_registry import add_known_workspace
+from rvnd.registry import add_known_workspace
 
 
 @pytest.fixture

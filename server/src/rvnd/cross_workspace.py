@@ -27,7 +27,7 @@ from pathlib import Path
 from typing import Iterable
 
 from .action_gate import ActionRequest, StandingApproval, Verdict, gate
-from .workspace_lock import read_pairs
+from .seal_binding import read_pairs
 from .mutation_log import LogEvent, MutationLog
 from .principal import get_request_principal, principal_workspace_member
 

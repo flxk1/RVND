@@ -176,7 +176,7 @@ def test_quoted_secret_assignment_redacted(payload, leak):
 # ── R4: cascade audit pair_id is a hash, not the raw prompt ─────────────────
 def test_cascade_pair_id_does_not_embed_prompt(tmp_path, monkeypatch):
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(tmp_path / "keys"))
-    from rvnd.workspace_cascade import cascade_for_workspace
+    from rvnd.cascade_binding import cascade_for_workspace
     ws = tmp_path / "org"; ws.mkdir()
     secret_prompt = f"please use {SECRET} to authenticate"
     # no cloud/local tier configured → served locally/refused, but the audit

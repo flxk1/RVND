@@ -329,14 +329,18 @@ def test_workspace_seam_defaults_the_principal_scope() -> None:
 def test_workspace_concept_modules_are_shims_over_the_seam() -> None:
     """The three retired workspace-concept modules carry no definitions.
 
-    ``folder_context.py``, ``workspace_registry.py`` and ``_storage_paths.py``
-    stay as module paths (~60 import sites address them) but must hold zero
+    ``folder_context.py``, ``registry.py`` and ``_storage_paths.py`` stay as
+    module paths (~60 import sites address them) but must hold zero
     ``def``/``class`` of their own, so the retired copies cannot grow back and
     drift from the package.
+
+    ``registry.py`` was ``workspace_registry.py`` until the engine stopped being
+    named after the folders it governs — a forwarding shim carrying the name of
+    a concept it no longer owns was the clearest case for renaming.
     """
     seam = re.compile(r"from\s+\.adapters\.workspace\s+import")
     offenders: list[str] = []
-    for name in ("folder_context.py", "workspace_registry.py", "_storage_paths.py"):
+    for name in ("folder_context.py", "registry.py", "_storage_paths.py"):
         text = (PACKAGE_ROOT / name).read_text(encoding="utf-8")
         if not seam.search(text):
             offenders.append(f"{name}: does not consume adapters.workspace")

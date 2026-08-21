@@ -17,7 +17,7 @@ from pathlib import Path
 import pytest
 
 from rvnd import queue as _queue
-from rvnd import workspace_registry as _registry
+from rvnd import registry as _registry
 from rvnd.governance_live import governance_live
 from rvnd.mutation_log import LogEvent, MutationLog
 from rvnd.op_mutation import is_read, mutates

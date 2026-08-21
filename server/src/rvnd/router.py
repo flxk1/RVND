@@ -23,7 +23,7 @@ from collections import Counter
 from pathlib import Path
 from typing import Any, Iterable
 
-from . import workspace_lock
+from . import seal_binding
 
 # A small, fixed stopword set — deterministic, no NLTK/sklearn dependency.
 _STOP = frozenset((
@@ -69,7 +69,7 @@ def signature_for_workspace(
     sig.update(_tokens(label or Path(folder).name))
     label_only = False
     try:
-        pairs = workspace_lock.read_pairs(folder, log_root=log_root)
+        pairs = seal_binding.read_pairs(folder, log_root=log_root)
         for p in pairs.values():
             sig.update(_pair_tokens(p))
     except Exception:

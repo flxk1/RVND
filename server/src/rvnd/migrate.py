@@ -216,7 +216,7 @@ def migrate_workspace(
 
     # Update workspace registry, if present.
     try:
-        from .workspace_registry import (
+        from .registry import (
             add_known_workspace,
             list_known_workspaces,
             remove_known_workspace,
