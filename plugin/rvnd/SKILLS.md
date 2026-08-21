@@ -16,14 +16,14 @@ Two tiers, two marketplaces. **25 skills** total.
 
 **The dependency rule:**
 
-- **Install RVND → you need both.** The RVND skills *delegate* to the free Loomground plane skills
-  (RVND is the server layer that consumes the planes). So add both marketplaces. The delegation
-  targets are `loomground-governance`, `loomground-deontic`, and `loomground-ingest`; installing the
-  full free tier gives you the complete plane set.
-- **Install a single Loomground skill → standalone.** Each plane skill is independent — of RVND, and
-  of the other Loomground skills. Install just the one you want; nothing else is required.
+- **Install RVND → you need both.** RVND's skills *delegate* to the free Loomground plane skills they
+  depend on: `loomground-governance`, `loomground-deontic`, `loomground-ingest`. So you install RVND
+  **and** those three (both marketplaces). `loomground-solver` and `loomground-versum` are independent
+  tools RVND does **not** require — add them only if you want them.
+- **Install a single Loomground skill → standalone.** It needs **neither RVND nor any other Loomground
+  skill.** Install just the one; nothing else.
 
-### A · RVND (needs both tiers)
+### A · RVND (needs both) — the minimal working stack
 
 ```
 /plugin marketplace add flxk1/loomground-plugins
@@ -32,10 +32,10 @@ Two tiers, two marketplaces. **25 skills** total.
 /plugin install loomground-governance@loomground
 /plugin install loomground-deontic@loomground
 /plugin install loomground-ingest@loomground
-/plugin install loomground-solver@loomground
-/plugin install loomground-versum@loomground
 ```
 
+That's everything RVND requires. (Add `loomground-solver@loomground` and/or
+`loomground-versum@loomground` only if you also want those standalone tools — RVND doesn't need them.)
 Or, after the two `marketplace add` lines, run `/plugin` and click-install from the browser.
 
 ### B · A single Loomground skill (standalone — no RVND, no siblings)
@@ -47,12 +47,11 @@ Or, after the two `marketplace add` lines, run `/plugin` and click-install from 
 
 Swap `loomground-deontic` for any of the five free plugins.
 
-### C · The shared installer (one `settings.json` — both tiers, all 25 skills)
+### C · The shared installer (one `settings.json` — the RVND stack)
 
-The whole stack in one paste. Registers **both** marketplaces and enables **every** plugin, so a user
-(or a whole team) gets all 25 skills with no per-user `/plugin` commands. This is the installer for the
-RVND audience — RVND needs both tiers, so the shared installer lives here. (A skill-only user doesn't
-want this; they use path B — one line, one plugin.)
+The RVND stack in one paste: registers both marketplaces and enables `rvnd` **plus the three plane
+skills it depends on** — no per-user `/plugin` commands. This is the installer for the RVND audience.
+(A skill-only user doesn't want this; they use path B — one line, one plugin.)
 
 ```json
 {
@@ -61,15 +60,16 @@ want this; they use path B — one line, one plugin.)
     "rvnd":       { "source": { "source": "github", "repo": "flxk1/RVND" } }
   },
   "enabledPlugins": {
+    "rvnd@rvnd":                        true,
     "loomground-governance@loomground": true,
     "loomground-deontic@loomground":    true,
-    "loomground-ingest@loomground":     true,
-    "loomground-solver@loomground":     true,
-    "loomground-versum@loomground":     true,
-    "rvnd@rvnd":                        true
+    "loomground-ingest@loomground":     true
   }
 }
 ```
+
+Optional extras (independent tools RVND does not require): add
+`"loomground-solver@loomground": true` and/or `"loomground-versum@loomground": true`.
 
 `extraKnownMarketplaces` registers a marketplace from a GitHub repo; `enabledPlugins` turns plugins
 on at startup (the `@marketplace` suffix is required). Where to put it:
