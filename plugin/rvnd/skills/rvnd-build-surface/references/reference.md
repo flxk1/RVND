@@ -41,7 +41,7 @@ The checks encode the doctrine so a surface cannot be shipped that shows a reque
 - **Honest status words.** The proposal card's `status_vocabulary` must exclude *granted*,
   *enabled*, *active*, and *in-effect*.
 - **Fail-closed and correct server.** Every composition is `fail_closed` and drives the
-  `rvnd-governance` server.
+  `rvnd` server.
 
 Any violation exits non-zero with the reason. A surface that does not lint does not ship.
 

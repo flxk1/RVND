@@ -42,7 +42,7 @@ Deterministic and offline; exits non-zero on any violation.
 - Cards render discrete lamps and carry attribution: `forbids_scores` and `attributed` must be
   true. No dials, no scores.
 - The proposal card's status vocabulary must exclude *granted / enabled / active / in-effect*.
-- Every composition is `fail_closed` and drives the `rvnd-governance` server.
+- Every composition is `fail_closed` and drives the `rvnd` server.
 
 ## More
 
