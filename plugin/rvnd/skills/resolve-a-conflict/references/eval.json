@@ -5,7 +5,13 @@
   "scripted": false,
   "fail_closed": true,
   "cascade": "local-first",
-  "real_ops": ["workspace_workflow:help", "workspace_workflow:governance_graph", "workspace_workflow:governance_lane_list", "workspace_workflow:governance_netlist", "workspace_workflow:patch_validate"],
+  "real_ops": [
+    "workspace_workflow:help",
+    "workspace_workflow:governance_graph",
+    "workspace_workflow:governance_lane_list",
+    "workspace_workflow:governance_netlist",
+    "workspace_workflow:patch_validate"
+  ],
   "invariants": [
     "the host never chooses a winning rule",
     "no standalone conflict-resolution operation is claimed",
@@ -13,5 +19,13 @@
     "cascade is local-first — engine adjudicates first, LLM fallback is degraded/advisory",
     "consumes loomground_legal source hierarchy / precedence to rank clashing norms",
     "ratification routes through sign-off; application through govern-an-action"
+  ],
+  "delegates_to": [
+    "loomground-ingest",
+    "deontic",
+    "loomground"
+  ],
+  "consumes_packages": [
+    "loomground_legal"
   ]
 }

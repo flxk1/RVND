@@ -1,16 +1,30 @@
 {
   "skill": "govern-an-action",
   "provides": "rvnd.govern-an-action",
-  "merges": ["reason-governance-rules"],
+  "merges": [
+    "reason-governance-rules"
+  ],
   "drives": "RVND governance MCP server (action gate, operate, governance_lane_list/register, governance_graph, officer preview) via the host's MCP client",
   "wraps_kernel": false,
   "scripted": false,
   "fail_closed": true,
-  "cascade": "local-first",
+  "cascade": "local-first | fallback DELEGATES to the free plane skills (loomground/loomground-ingest/deontic), never re-authoring a lowering",
   "loomground_governance": "0.8.2",
   "manifest": "manifest.yaml",
-  "modes": ["dry-run (read-only operate verdict)", "full-cycle (propose-validate-preview-confirm-apply)"],
-  "cycle_steps": ["discover", "query", "propose", "validate", "preview", "confirm", "apply", "display"],
+  "modes": [
+    "dry-run (read-only operate verdict)",
+    "full-cycle (propose-validate-preview-confirm-apply)"
+  ],
+  "cycle_steps": [
+    "discover",
+    "query",
+    "propose",
+    "validate",
+    "preview",
+    "confirm",
+    "apply",
+    "display"
+  ],
   "invariants": [
     "operates the shared dimensioned Subgraph via loomground_ingest and cascades local-first - the engine decides, signs, and enforces when present; the LLM only builds/enriches the same Subgraph in-grammar (degraded, advisory) when it is absent",
     "server decides, host renders - no host-side verdict",
@@ -27,5 +41,10 @@
   "corpus": "../../references/corpus.md (14 classes + equivalence via canonical observation)",
   "provenance": "Authored for loomground; drives the AGPL-3.0-only RVND governance server. No third-party skill source.",
   "notes": "Progressive-disclosure: lean SKILL.md + references/ pair + shared plugin references. Merges the former reason-governance-rules skill as the read-only dry-run mode.",
-  "review": "Validated against the declared compatible RVND release range."
+  "review": "Validated against the declared compatible RVND release range.",
+  "delegates_to": [
+    "loomground-ingest",
+    "deontic",
+    "loomground"
+  ]
 }
