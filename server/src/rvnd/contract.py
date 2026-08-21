@@ -90,7 +90,7 @@ def describe_workspace(folder: str | Path,
     # context: policy posture (defaults assume full protection). Read through
     # the resolver seam so an overlay (tenant ceiling) can cap it; core default
     # returns the folder's own policy unchanged.
-    from .workspace_hooks import resolve_policy
+    from .hooks import resolve_policy
     pol = _safe(lambda: resolve_policy(resolved), None)
     context: dict[str, Any] = {
         "oversight": getattr(pol, "oversight_default_level", "approve") if pol else "approve",
@@ -99,7 +99,7 @@ def describe_workspace(folder: str | Path,
     }
 
     # knowledge: pair count
-    from .workspace_lock import read_pairs, replay
+    from .seal_binding import read_pairs, replay
     pairs = _safe(lambda: read_pairs(resolved, log_root=log_root), {})
     knowledge = {"pair_count": len(pairs)}
 

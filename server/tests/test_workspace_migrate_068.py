@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 from rvnd.mutation_log import LogEvent, MutationLog, folder_hash
-from rvnd.workspace_migrate import (
+from rvnd.migrate import (
     WorkspaceMigrateError,
     migrate_workspace,
 )
@@ -104,7 +104,7 @@ def test_migrate_archive_existing_moves_target_out_of_way(tmp_path):
 
 
 def test_migrate_updates_workspace_registry(tmp_path):
-    from rvnd.workspace_registry import (
+    from rvnd.registry import (
         add_known_workspace,
         list_known_workspaces,
     )

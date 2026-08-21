@@ -181,7 +181,7 @@ def _rewrite_registry(folders: dict[str, str], names: dict[str, str], mode: str,
     the new set — their folders stay on disk (recoverable). Returns the
     retired paths."""
     from . import mcp_serving
-    from . import workspace_registry as WR
+    from . import registry as WR
     rlr = registry_log_root if registry_log_root is not None else mcp_serving._log_root()
     pre = list(WR.load_registry(log_root=rlr).get("workspaces") or [])
     for wid, path in folders.items():

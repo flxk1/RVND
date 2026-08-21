@@ -24,7 +24,7 @@ from pathlib import Path
 import pytest
 
 from rvnd.mutation_log import LogEvent, MutationLog, folder_hash
-from rvnd.workspace_migrate import (
+from rvnd.migrate import (
     _MIGRATION_MARKER,
     WorkspaceMigrateError,
     gc_orphans,

@@ -10,7 +10,7 @@ import os
 from pathlib import Path
 
 
-from rvnd.workspace_cascade import (config_path, write_local_config, _local_config,
+from rvnd.cascade_binding import (config_path, write_local_config, _local_config,
                                 tiers_for_workspace, CONFIG_PATH_ENV, LOCAL_URL_ENV,
                                 LOCAL_MODEL_ENV)
 

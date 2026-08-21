@@ -63,7 +63,7 @@ def _card_saved(ws: WS) -> dict:
 
 def _ingestable_folder(ws: WS) -> dict:
     with_parties(ws)
-    from rvnd.workspace_registry import add_known_workspace
+    from rvnd.registry import add_known_workspace
     add_known_workspace(ws.folder)
     fp = Path(ws.folder) / "note.md"
     fp.write_text("GDPR Article 28 applies to this processing.", encoding="utf-8")
@@ -121,7 +121,7 @@ def _second_folder(ws: WS) -> Path:
     p = Path(ws.root) / "ws2"
     p.mkdir(exist_ok=True)
     try:
-        from rvnd.workspace_registry import add_known_workspace
+        from rvnd.registry import add_known_workspace
         add_known_workspace(p, log_root=Path(ws.log_root))
     except Exception:
         pass
@@ -230,14 +230,14 @@ def _registered(ws: WS) -> dict:
     """Register the disposable folder in the (tmp) default registry so the
     allowlist gate admits it — without relaxing the principal gate."""
     with_parties(ws)
-    from rvnd.workspace_registry import add_known_workspace
+    from rvnd.registry import add_known_workspace
     add_known_workspace(ws.folder)
     return {}
 
 
 def _tmp_file(ws: WS) -> dict:
     with_parties(ws)
-    from rvnd.workspace_registry import add_known_workspace
+    from rvnd.registry import add_known_workspace
     add_known_workspace(ws.folder)
     p = Path(ws.folder) / "cov_doc.txt"
     p.write_text("Party A shall deliver the report by 2026-08-01.\n", encoding="utf-8")

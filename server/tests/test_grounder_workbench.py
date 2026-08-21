@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import json
 
-from rvnd.workspace_grounder import CITATION_STYLES
+from rvnd.grounder import CITATION_STYLES
 from rvnd.grounder_workbench import build_demo, export_state, write_state
 
 

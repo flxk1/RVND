@@ -10,7 +10,7 @@ server's tools share. No FastMCP tools here — pure helpers.
 from __future__ import annotations
 from pathlib import Path
 from typing import Any
-from .workspace_identity import opaque_doc_token
+from .identity import opaque_doc_token
 
 
 # Defined in `principal` (its membership check needs it); re-exported here

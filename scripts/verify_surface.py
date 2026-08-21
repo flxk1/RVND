@@ -65,7 +65,7 @@ APPROVED_NONVISUAL_CONTRACTS: dict[str, str] = {
     "licence_usage": "read-only commercial-capacity evidence exposed by the packaged 'workspaces licence usage' CLI; intentionally non-visual",
     "published_policy_pack": "public Python package import boundary exported from 'workspaces'; policy-pack validation is host/adapter-facing, not a console interaction",
     "worker": "'workspaces run-worker' background queue drainer; a long-running process, not a console interaction",
-    "workspace_migrate": "'workspaces migrate' and gc maintenance verbs for relocated workspace logs; operator CLI, non-visual by design",
+    "migrate": "'workspaces migrate' and gc maintenance verbs for relocated workspace logs; operator CLI, non-visual by design",
     "backup": "'workspaces backup' / 'restore' for the ~/.workspace record (keys + audit chains + registry); operator CLI, non-visual by design",
 }
 
