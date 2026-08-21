@@ -335,7 +335,8 @@ def main() -> int:
 
     if "--write-baseline" in sys.argv:
         BASELINE.write_text(json.dumps(
-            {"unsurfaced_ops": unsurfaced_ops,
+            {"schema": "surface-baseline-1",
+             "unsurfaced_ops": unsurfaced_ops,
              "unreferenced_modules": unreferenced_modules}, indent=1) + "\n",
             encoding="utf-8")
         print(f"  baseline -> {BASELINE}")
