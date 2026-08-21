@@ -39,6 +39,7 @@ RESTRICTED_PACKAGES = (
     "loomground_deontic",
     "loomground_norm",
     "loomground_vertical",
+    "loomground_workspace",
     "versum",
 )
 
