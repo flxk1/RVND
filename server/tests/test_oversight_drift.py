@@ -6,8 +6,8 @@ DriftSignal (Breaker metrics / recommended floor). Grounding: Conant & Ashby
 
 from __future__ import annotations
 
-from workspaces.drift_monitor import DriftReport
-from workspaces.oversight_drift import evaluate, raise_floor, drift_tripwire
+from rvnd.drift_monitor import DriftReport
+from rvnd.oversight_drift import evaluate, raise_floor, drift_tripwire
 
 
 def _report(**kw) -> DriftReport:

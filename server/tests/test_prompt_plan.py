@@ -28,8 +28,8 @@ Invariants (written BEFORE the logic):
 from __future__ import annotations
 
 
-from workspaces.issue_token import IssueToken, Span, detect_issues
-from workspaces.prompt_plan import plan_prompts
+from rvnd.issue_token import IssueToken, Span, detect_issues
+from rvnd.prompt_plan import plan_prompts
 
 
 def _tok(itype="liability_cap", rooms=("§ 309 Nr. 7 BGB",)):

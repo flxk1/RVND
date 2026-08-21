@@ -10,7 +10,7 @@ import os
 from pathlib import Path
 
 
-from workspaces.workspace_cascade import (config_path, write_local_config, _local_config,
+from rvnd.workspace_cascade import (config_path, write_local_config, _local_config,
                                 tiers_for_workspace, CONFIG_PATH_ENV, LOCAL_URL_ENV,
                                 LOCAL_MODEL_ENV)
 
@@ -70,7 +70,7 @@ def test_chmod_failure_does_not_break_write(tmp_path, monkeypatch):
 def test_folder_hash_normalizes_path(tmp_path):
     """folder_hash must be stable regardless of trailing slash / case quirks
     so logs resolve to one workspace across OSes."""
-    from workspaces.mutation_log import folder_hash
+    from rvnd.mutation_log import folder_hash
     a = folder_hash(str(tmp_path))
     b = folder_hash(str(tmp_path) + os.sep)
     assert a == b

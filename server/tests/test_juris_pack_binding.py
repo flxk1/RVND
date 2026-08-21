@@ -16,8 +16,8 @@ import os
 
 import pytest
 
-from workspaces.controlforms import leq
-from workspaces.mutation_log import MutationLog
+from rvnd.controlforms import leq
+from rvnd.mutation_log import MutationLog
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 
@@ -37,7 +37,7 @@ def env(tmp_path, monkeypatch):
 # --- declaration + audit ------------------------------------------------------
 
 def test_set_and_resolve_round_trip(env):
-    from workspaces.juris_packs import resolve_folder_packs, set_folder_packs
+    from rvnd.juris_packs import resolve_folder_packs, set_folder_packs
     r = set_folder_packs(env["parent"], ["eu-base", "de-overlay"],
                          log_root=env["lr"])
     assert r["ok"] is True
@@ -46,7 +46,7 @@ def test_set_and_resolve_round_trip(env):
 
 
 def test_unknown_pack_refused_nothing_persisted(env):
-    from workspaces.juris_packs import resolve_folder_packs, set_folder_packs
+    from rvnd.juris_packs import resolve_folder_packs, set_folder_packs
     with pytest.raises(ValueError):
         set_folder_packs(env["parent"], ["eu-base", "atlantis"],
                          log_root=env["lr"])
@@ -54,7 +54,7 @@ def test_unknown_pack_refused_nothing_persisted(env):
 
 
 def test_setter_is_audited(env):
-    from workspaces.juris_packs import set_folder_packs
+    from rvnd.juris_packs import set_folder_packs
     set_folder_packs(env["parent"], ["eu-base"], actor="alex",
                      log_root=env["lr"])
     log = MutationLog(env["parent"], log_root=env["lr"])
@@ -67,7 +67,7 @@ def test_setter_is_audited(env):
 # --- cascade: ancestors bind, descendants only add ----------------------------
 
 def test_child_inherits_and_extends_parent_stack(env):
-    from workspaces.juris_packs import resolve_folder_packs, set_folder_packs
+    from rvnd.juris_packs import resolve_folder_packs, set_folder_packs
     set_folder_packs(env["parent"], ["eu-base"], log_root=env["lr"])
     set_folder_packs(env["child"], ["de-overlay"], log_root=env["lr"])
     ids = [p["pack_id"] for p in resolve_folder_packs(env["child"])]
@@ -75,7 +75,7 @@ def test_child_inherits_and_extends_parent_stack(env):
 
 
 def test_child_cannot_remove_ancestor_pack(env):
-    from workspaces.juris_packs import resolve_folder_packs, set_folder_packs
+    from rvnd.juris_packs import resolve_folder_packs, set_folder_packs
     set_folder_packs(env["parent"], ["eu-base"], log_root=env["lr"])
     set_folder_packs(env["child"], [], log_root=env["lr"])
     assert [p["pack_id"] for p in resolve_folder_packs(env["child"])] == \
@@ -83,13 +83,13 @@ def test_child_cannot_remove_ancestor_pack(env):
 
 
 def test_siblings_independent(env):
-    from workspaces.juris_packs import resolve_folder_packs, set_folder_packs
+    from rvnd.juris_packs import resolve_folder_packs, set_folder_packs
     set_folder_packs(env["child"], ["de-overlay"], log_root=env["lr"])
     assert resolve_folder_packs(env["sibling"]) == []
 
 
 def test_duplicate_declaration_is_idempotent(env):
-    from workspaces.juris_packs import resolve_folder_packs, set_folder_packs
+    from rvnd.juris_packs import resolve_folder_packs, set_folder_packs
     set_folder_packs(env["parent"], ["eu-base"], log_root=env["lr"])
     set_folder_packs(env["child"], ["eu-base", "de-overlay"],
                      log_root=env["lr"])
@@ -100,7 +100,7 @@ def test_duplicate_declaration_is_idempotent(env):
 # --- effective dating ----------------------------------------------------------
 
 def test_dated_pack_inactive_before_its_date(env, tmp_path):
-    from workspaces.juris_packs import folder_required_forms, set_folder_packs
+    from rvnd.juris_packs import folder_required_forms, set_folder_packs
     dated = tmp_path / "future-pack.json"
     dated.write_text(json.dumps({
         "pack_id": "future", "version": "1", "jurisdiction": "XX",
@@ -119,7 +119,7 @@ def test_dated_pack_inactive_before_its_date(env, tmp_path):
 # --- the verification line: stack resolves on an action's footprint ------------
 
 def test_folder_stack_resolves_composed_forms(env):
-    from workspaces.juris_packs import (
+    from rvnd.juris_packs import (
         folder_required_forms, load_reference_pack, set_folder_packs)
     set_folder_packs(env["parent"], ["eu-base", "de-overlay"],
                      log_root=env["lr"])
@@ -132,8 +132,8 @@ def test_folder_stack_resolves_composed_forms(env):
 
 
 def test_workspace_matrix_explain_resolves_folder_footprint(env):
-    from workspaces import mcp_server
-    from workspaces.juris_packs import set_folder_packs
+    from rvnd import mcp_server
+    from rvnd.juris_packs import set_folder_packs
     set_folder_packs(env["parent"], ["eu-base", "de-overlay"],
                      log_root=env["lr"])
     ex = mcp_server.workspace_matrix("explain", {
@@ -146,7 +146,7 @@ def test_workspace_matrix_explain_resolves_folder_footprint(env):
 
 
 def test_workspace_policy_juris_packs_op_round_trip(env):
-    from workspaces import mcp_server
+    from rvnd import mcp_server
     r = mcp_server.workspace_policy("juris_packs", {
         "folder_context": env["parent"], "packs": ["eu-base"]})
     assert r["ok"] is True and r["juris_packs"] == ["eu-base"]

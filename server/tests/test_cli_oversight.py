@@ -3,8 +3,8 @@
 """Top-level oversight dial verbs: oversight (show/set), mute, unmute."""
 import os
 
-from workspaces import cli
-from workspaces.policy import load_policy, set_oversight_level, OVERSIGHT_LEVELS
+from rvnd import cli
+from rvnd.policy import load_policy, set_oversight_level, OVERSIGHT_LEVELS
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 

@@ -4,8 +4,8 @@
 
 import pytest
 
-from workspaces import disclosure as dz
-from workspaces.action_gate import ActionRequest, Verdict, gate
+from rvnd import disclosure as dz
+from rvnd.action_gate import ActionRequest, Verdict, gate
 
 
 # ── the gate: external-publish must name affected parties ────────────────────

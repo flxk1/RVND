@@ -15,7 +15,7 @@ from __future__ import annotations
 
 
 
-from workspaces.lock.core import (
+from rvnd.lock.core import (
     Mode,
     ToolCall,
     _detect_confusable_bypass,
@@ -47,7 +47,7 @@ def test_homoglyph_email_bypasses_tier_b_but_b_plus_catches():
 
     # Tier B should MISS this (the bypass we're trying to close)
     tier_b_findings = tier_b_scan_text(bypass_email)
-    email_caught_by_b = any(f.type == "email" for f in tier_b_findings)
+    any(f.type == "email" for f in tier_b_findings)
     # If Tier B accidentally matches it (because regex allows the char or
     # the engine normalised somewhere), the test still passes downstream;
     # the point is Tier B+ catches it independently.
@@ -108,7 +108,7 @@ def test_strict_token_sig_on_refuses_token_without_verified_sig(monkeypatch):
     """With LOCK_BETA_STRICT_TOKEN_SIG=1, a token without a verified
     signature is treated as invalid (high severity).
     """
-    from workspaces.lock.core import CapabilityToken
+    from rvnd.lock.core import CapabilityToken
     monkeypatch.setenv("LOCK_BETA_STRICT_TOKEN_SIG", "1")
     # A semantically-valid token but with no signature verification marker.
     import time as _t

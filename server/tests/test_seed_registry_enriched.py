@@ -7,8 +7,8 @@ bare seed remains available and unchanged."""
 
 import pytest
 
-from workspaces.legal_corpus import seed_registry
-from workspaces.world_corpus_loader import _default_refdir
+from rvnd.legal_corpus import seed_registry
+from rvnd.world_corpus_loader import _default_refdir
 
 if not _default_refdir().is_dir():
     pytest.skip(
@@ -47,7 +47,7 @@ class TestEnrichedSeed:
 
     def test_bulk_audit_event_logged(self, tmp_path):
         seed_registry(tmp_path, log_root=tmp_path / "log")
-        from workspaces.mutation_log import MutationLog
+        from rvnd.mutation_log import MutationLog
         ops = [e.extra.get("op") for e in MutationLog(tmp_path, log_root=tmp_path / "log").replay()
                if e.extra.get("kind") == "legal-corpus"]
         assert "corpus.bulk" in ops

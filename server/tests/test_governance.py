@@ -5,8 +5,8 @@ decision, on the signed chain."""
 
 from __future__ import annotations
 
-from workspaces import governance as gov
-from workspaces import policy_matrix as pm
+from rvnd import governance as gov
+from rvnd import policy_matrix as pm
 
 
 def test_routine_low_reach_permits_and_audits(tmp_path):
@@ -72,7 +72,7 @@ def test_ungrounded_keeps_running_flagged_in_hotl_hic(tmp_path):
 
 
 def test_ground_routes_through_oversight(tmp_path):
-    from workspaces.workspace_grounder import ground
+    from rvnd.workspace_grounder import ground
     folder = str(tmp_path / "workspace")
     # no citation → ungrounded → default oversight (approve) stops the agent
     r0 = ground(folder, "the sky is green", [], log_root=tmp_path / "log")
@@ -97,8 +97,8 @@ def test_footprint_gives_the_chokepoint_teeth(tmp_path):
 
 
 def test_lock_decision_lands_on_signed_chain(tmp_path):
-    from workspaces.lock.gate_and_capture import record_lock_decision_to_chain
-    from workspaces.mutation_log import MutationLog
+    from rvnd.lock.gate_and_capture import record_lock_decision_to_chain
+    from rvnd.mutation_log import MutationLog
 
     class D:                       # a lock GateDecision-shaped stub
         action = "refuse"; reason = "PII found"

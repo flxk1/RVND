@@ -15,8 +15,8 @@ import json
 
 import pytest
 
-from workspaces import gateway as gw
-from workspaces.gateway import (
+from rvnd import gateway as gw
+from rvnd.gateway import (
     ALLOWED_OPS,
     FORBIDDEN_TOOLS,
     BearerAuthMiddleware,
@@ -75,7 +75,7 @@ def test_no_raw_pair_content_reachable_over_gateway(tmp_path, monkeypatch):
     # confirm NO gateway-reachable op echoes that raw string. reason (the one
     # tool that surfaced raw pairs) is gone; the rest are taxonomy/verdict only.
     import json as _json
-    from workspaces import mcp_server
+    from rvnd import mcp_server
     monkeypatch.setenv("WORKSPACE_L0_LOG_ROOT", str(tmp_path / "logroot"))  # hermetic
     folder = tmp_path / "vault"
     folder.mkdir()
@@ -156,7 +156,7 @@ def test_grounder_erasure_and_ingest_stay_local():
 
 
 def test_profile_ops_are_explicit_and_exist_upstream():
-    from workspaces import mcp_server
+    from rvnd import mcp_server
     for tool, allowed in ALLOWED_OPS.items():
         assert allowed, f"{tool}: the profile must name its ops explicitly"
         catalogue = {o.get("op") for o in getattr(mcp_server, tool)("help")["ops"]}

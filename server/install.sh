@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Workspace — one-command install for users.
+# RVND — one-command install for users.
 #
 #   ./server/install.sh          (runnable from anywhere; it cd's to the repo root)
 #
-# Creates an isolated virtual environment, installs Workspace + all dependencies
+# Creates an isolated virtual environment, installs RVND + all dependencies
 # into it, and verifies the install by running the oversight demo. Safe to
 # re-run (idempotent). No global Python pollution, no PYTHONPATH, no manual
 # dependency hunting.
@@ -14,7 +14,8 @@
 #
 # After it finishes, activate the environment with:
 #   source .venv/bin/activate
-# …then `workspaces`, `pytest`, and `import workspaces` just work.
+# …then `workspaces`, `pytest`, and `import rvnd` just work.
+# (the COMMAND keeps its name — hosts and docs invoke it — the package is rvnd.)
 
 set -euo pipefail
 
@@ -49,11 +50,11 @@ fi
 # shellcheck disable=SC1091
 source .venv/bin/activate
 
-# 3. Install Workspace + deps into the venv (editable so source edits stay live).
+# 3. Install RVND + deps into the venv (editable so source edits stay live).
 #    `mcp` needs no extra — it is a required runtime dependency in pyproject.toml.
 #    This also pulls the pinned Loomground upstreams over git+https, so the first
 #    run needs network and a working `git`.
-echo "› installing workspace + dependencies (this pulls mcp, cryptography, anyascii…)"
+echo "› installing rvnd + dependencies (this pulls mcp, cryptography, anyascii…)"
 python -m pip install --upgrade pip >/dev/null
 # pip caches built wheels by (name, VERSION), not by git commit. RVND pins each
 # Loomground plane to an exact commit, but if this machine holds a stale cached
@@ -104,7 +105,7 @@ if missing:
 print("  consumed-plane surfaces OK "
       "(solver ESCALATE/RelationAlgebra, ingest, deontic, versum, legal, vertical)")
 PYCHECK
-python -c "import workspaces; assert hasattr(workspaces,'assess'); print('  workspaces importable:', len(workspaces.__all__), 'exports')"
+python -c "import rvnd; assert hasattr(rvnd,'assess'); print('  rvnd importable:', len(rvnd.__all__), 'exports')"
 if [ -f server/examples/oversight_demo.py ]; then
   echo "› running the oversight demo (proof the engine works end-to-end):"
   echo "  ----------------------------------------------------------------"
@@ -114,7 +115,7 @@ fi
 
 cat <<'DONE'
 
-✓ Workspace installed into the repo-root .venv/.
+✓ RVND installed into the repo-root .venv/.
 
   To use it in this shell now:        source .venv/bin/activate
   Then, from the repo root:           workspaces --help
@@ -125,6 +126,6 @@ cat <<'DONE'
   To drive RVND from an AI agent
   (Claude Code / Codex):              ./scripts/connect-agent-hub.sh
 
-  The virtual environment keeps Workspace's dependencies isolated from the rest of
+  The virtual environment keeps RVND's dependencies isolated from the rest of
   your system. Re-run ./server/install.sh any time to update.
 DONE

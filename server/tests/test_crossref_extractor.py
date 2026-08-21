@@ -4,12 +4,12 @@
 
 from __future__ import annotations
 
-from workspaces.crossref_extractor import (
+from rvnd.crossref_extractor import (
     CrossReferenceExtractor,
     extract_cross_references,
     infer_host_instrument,
 )
-from workspaces.nd_routing import Classification
+from rvnd.nd_routing import Classification
 
 
 def _cls(facets=None):

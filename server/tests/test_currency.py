@@ -8,7 +8,7 @@ edges.
 """
 
 from datetime import date
-import workspaces.currency as cur
+import rvnd.currency as cur
 
 
 def _pair(pid, *, cited):

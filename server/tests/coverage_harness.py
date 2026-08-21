@@ -33,13 +33,13 @@ sys.path.insert(0, str(REPO / "app"))
 # --------------------------------------------------------------------------
 
 def _invoke_mcp(facade: str, op, params: dict) -> Any:
-    import workspaces.mcp_server as M
+    import rvnd.mcp_server as M
     fn = getattr(M, facade)
     return fn(op, params) if op is not None else fn(**params)
 
 
 def _invoke_gateway(facade: str, op, params: dict) -> Any:
-    from workspaces import gateway as GW
+    from rvnd import gateway as GW
     if op is None:                       # standalone tool exposed on the gateway
         return getattr(GW, facade)(**params)
     return GW._dispatch(facade, op, params)
@@ -115,7 +115,7 @@ def new_workspace(register: bool = True) -> WS:
     log_root = str(tmp / "log")
     if register:
         try:
-            from workspaces.workspace_registry import add_known_workspace
+            from rvnd.workspace_registry import add_known_workspace
             add_known_workspace(folder, log_root=Path(log_root))
         except Exception:
             pass
@@ -123,7 +123,7 @@ def new_workspace(register: bool = True) -> WS:
 
 
 def with_parties(ws: WS, agents=("svc-bot",), humans=("operator",)) -> WS:
-    from workspaces.parties import register_party
+    from rvnd.parties import register_party
     for a in agents:
         register_party(ws.folder, a, "agent", log_root=ws.log_root)
     for h in humans:
@@ -166,7 +166,7 @@ def as_unmapped_principal():
     """Context manager: run under an unresolved request principal (a name that is
     not a registered party), so folder-scoped reads must return nothing."""
     from contextlib import contextmanager
-    from workspaces.mcp_serving import set_request_principal, clear_request_principal
+    from rvnd.mcp_serving import set_request_principal, clear_request_principal
 
     @contextmanager
     def _ctx():

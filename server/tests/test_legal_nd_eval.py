@@ -9,8 +9,8 @@ extractions route through the oversight policy instead of being silently emitted
 """
 from __future__ import annotations
 
-from workspaces.deontic_facets import extract_formulae, obligation_is_grounded
-from workspaces import governance as gov
+from rvnd.deontic_facets import extract_formulae, obligation_is_grounded
+from rvnd import governance as gov
 
 # (sentence, expected operator | None).  O=obligation P=permission F=prohibition.
 # There is no "R": a right is CONSTRUCTED as P (a privilege/liberty) or the

@@ -54,7 +54,7 @@ def _writer_process(workspace_str: str, log_root_str: str,
     happens after the fork (each worker gets its own module state).
     """
     # Late imports — avoid the cost in the parent.
-    from workspaces.mutation_log import LogEvent, MutationLog
+    from rvnd.mutation_log import LogEvent, MutationLog
 
     workspace = Path(workspace_str)
     log_root = Path(log_root_str)
@@ -94,7 +94,7 @@ def test_two_processes_no_chain_corruption(tmp_path: Path) -> None:
     assert p_b.exitcode == 0, f"writer B failed (exit {p_b.exitcode})"
 
     # Now verify the chain.
-    from workspaces.mutation_log import MutationLog
+    from rvnd.mutation_log import MutationLog
     log = MutationLog(workspace, log_root=log_root)
     result = log.verify_chain()
 
@@ -146,7 +146,7 @@ def test_single_process_baseline(tmp_path: Path) -> None:
     log_root.mkdir(parents=True)
     _writer_process(str(workspace), str(log_root), 200, "single")
 
-    from workspaces.mutation_log import MutationLog
+    from rvnd.mutation_log import MutationLog
     log = MutationLog(workspace, log_root=log_root)
     result = log.verify_chain()
     assert result.ok, (

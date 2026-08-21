@@ -20,7 +20,7 @@ import textwrap
 from pathlib import Path
 
 
-from workspaces import cli as _cli
+from rvnd import cli as _cli
 
 
 # ---------------------------------------------------------------------------
@@ -62,7 +62,7 @@ def test_doctor_detects_python_binding_match(tmp_path, monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# 2. RED: shebang points at a Python that CANNOT import workspaces.
+# 2. RED: shebang points at a Python that CANNOT import rvnd.
 # ---------------------------------------------------------------------------
 
 
@@ -70,7 +70,7 @@ def test_doctor_detects_python_binding_mismatch_module_missing(
     tmp_path, monkeypatch
 ):
     """Build a fake Python wrapper whose sys.path excludes the workspaces install."""
-    # Make a shim Python that always fails ``import workspaces``.
+    # Make a shim Python that always fails ``import rvnd``.
     fake_py = tmp_path / "fake-python"
     fake_py.write_text(
         textwrap.dedent(
@@ -98,7 +98,7 @@ def test_doctor_detects_python_binding_mismatch_module_missing(
 
     assert result["name"] == "python_binding"
     assert result["level"] == _cli.DOCTOR_LEVEL_ERROR, result
-    assert "cannot import workspaces" in result["detail"]
+    assert "cannot import rvnd" in result["detail"]
     # Remediation must mention pip install.
     assert "pip install" in result["detail"]
     # And the offending script + python should both be named.
@@ -112,7 +112,7 @@ def test_doctor_detects_python_binding_mismatch_module_missing(
 
 
 def test_doctor_detects_version_drift(tmp_path, monkeypatch):
-    """Wrap the real Python so that ``import workspaces`` reports a different
+    """Wrap the real Python so that ``import rvnd`` reports a different
     ``__version__``, simulating two parallel installs."""
     drift_py = tmp_path / "drift-python"
     # The wrapper imports the real workspaces, mutates __version__, then forwards
@@ -123,8 +123,8 @@ def test_doctor_detects_version_drift(tmp_path, monkeypatch):
         textwrap.dedent(
             """\
             try:
-                import workspaces
-                workspaces.__version__ = "9.9.9-DRIFT"
+                import rvnd
+                rvnd.__version__ = "9.9.9-DRIFT"
             except Exception:
                 pass
             """
@@ -190,7 +190,7 @@ def test_standalone_doctor_works_without_workspaces_package_importable(
     assert bootstrap.exists(), f"bootstrap missing at {bootstrap}"
 
     # Build a PATH that has one 'workspaces' script whose shebang points at a
-    # Python that DEFINITELY can't import workspaces (a 'python -S' invocation
+    # Python that DEFINITELY can't import rvnd (a 'python -S' invocation
     # with PYTHONPATH=/dev/null).
     fake_py = tmp_path / "broken-python"
     fake_py.write_text(
@@ -213,7 +213,7 @@ def test_standalone_doctor_works_without_workspaces_package_importable(
     # Invoke the bootstrap as if it were `workspaces-doctor`. Crucially, we run
     # it via a Python that has NO PYTHONPATH pointing at the workspaces install
     # for the import inside the bootstrap itself — and it must still produce
-    # a useful answer because it doesn't import workspaces at all.
+    # a useful answer because it doesn't import rvnd at all.
     env = dict(os.environ)
     env["PATH"] = str(bindir)
     proc = subprocess.run(
@@ -224,12 +224,12 @@ def test_standalone_doctor_works_without_workspaces_package_importable(
         timeout=30,
     )
     out = proc.stdout
-    # Exit code 20 = ERROR (the fake script can't import workspaces).
+    # Exit code 20 = ERROR (the fake script can't import rvnd).
     assert proc.returncode == 20, (
         f"unexpected exit {proc.returncode}; out={out!r} err={proc.stderr!r}"
     )
     assert "workspaces-doctor" in out
-    assert "cannot import workspaces" in out or "probe failed" in out
+    assert "cannot import rvnd" in out or "probe failed" in out
     assert str(bindir / "workspaces") in out
     # Remediation must surface.
     assert "pip install" in out or "venv" in out

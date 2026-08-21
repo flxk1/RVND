@@ -24,8 +24,8 @@ import time
 
 import pytest
 
-from workspaces.mutation_log import MutationLog
-from workspaces.substitution_binding import substitution_projection
+from rvnd.mutation_log import MutationLog
+from rvnd.substitution_binding import substitution_projection
 
 
 @pytest.fixture(scope="module")
@@ -37,7 +37,7 @@ def chain(tmp_path_factory):
     os.environ["WORKSPACE_KEY_DIR"] = str(tmp / "keys")
 
     fc = tmp / "ws"; fc.mkdir(); log = tmp / "log"
-    from workspaces.workflows import (
+    from rvnd.workflows import (
         Workflow, WorkflowStep, _log_workflow_event, define_workflow, run_workflow,
     )
     define_workflow(str(fc), Workflow(name="intake", description="t",

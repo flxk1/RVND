@@ -17,7 +17,7 @@ from pathlib import Path
 
 import pytest
 
-from workspaces import mcp_server as M
+from rvnd import mcp_server as M
 
 
 @pytest.fixture
@@ -83,7 +83,7 @@ def test_authored_reserve_says_it_cites_nothing(ws):
     M.workspace_workflow("patch_apply", {"folder_context": ws, "actor": "x", "netlist":
         "actor bot\nhuman boss role approver\ngate ship risk high grant bot\n"
         "cord bot -> ship\ncord ship -> master\nreserve ship by boss\n"})
-    from workspaces.use_case import get_use_case
+    from rvnd.use_case import get_use_case
     import os
     uc = get_use_case(ws, "ship", log_root=os.environ["WORKSPACE_L0_LOG_ROOT"])
     src = (uc.get("reserved_acts") or [{}])[0].get("source", "")

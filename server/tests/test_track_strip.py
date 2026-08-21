@@ -16,9 +16,9 @@ import json
 
 import pytest
 
-from workspaces import approvals, connectors, parties, use_case
-from workspaces.mutation_log import LogEvent, MutationLog
-from workspaces.track_strip import track_strip
+from rvnd import approvals, connectors, parties, use_case
+from rvnd.mutation_log import LogEvent, MutationLog
+from rvnd.track_strip import track_strip
 
 NOW = 1_700_000_000.0
 
@@ -196,7 +196,7 @@ def test_strip_never_carries_the_secret(ws):
 def test_facade_op_track_strip(ws, monkeypatch):
     """workspace_workflow: track_strip is reachable as an op (the inspector's
     data path) and keeps the exactly-one-address fail-closed contract."""
-    import workspaces.mcp_server as M
+    import rvnd.mcp_server as M
     f, lr = ws
     monkeypatch.setenv("WORKSPACE_L0_LOG_ROOT", lr)
     monkeypatch.setenv("WORKSPACES_ALLOW_UNREGISTERED", "1")

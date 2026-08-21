@@ -1,13 +1,13 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # Copyright 2026 flxk1
-"""Tests for the 5D reasoning engine (workspaces.reasoning)."""
+"""Tests for the 5D reasoning engine (rvnd.reasoning)."""
 
 from __future__ import annotations
 
 import pytest
 
-from workspaces.dimensions import Dimension
-from workspaces.reasoning import compose_paths, extract_edges
+from rvnd.dimensions import Dimension
+from rvnd.reasoning import compose_paths, extract_edges
 
 
 def _pair(pid, edges, confidence=1.0):

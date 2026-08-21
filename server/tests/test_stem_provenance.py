@@ -8,7 +8,7 @@ import os
 
 import pytest
 
-from workspaces.stem_provenance import assemble_work, authorship_evidence, ingest_stem
+from rvnd.stem_provenance import assemble_work, authorship_evidence, ingest_stem
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 
@@ -70,7 +70,7 @@ def test_missing_work_reports_not_found(env):
 
 
 def test_facade_ops_route(env):
-    from workspaces.mcp_server import workspace_conformity, workspace_ingest
+    from rvnd.mcp_server import workspace_conformity, workspace_ingest
 
     f = _stem(env, "bass.wav", b"\x00bass")
     r = workspace_ingest("stem", {"folder_context": env["ws"], "file_path": f,

@@ -12,8 +12,8 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces.governance_live import governance_live
-from workspaces.mutation_log import MutationLog
+from rvnd.governance_live import governance_live
+from rvnd.mutation_log import MutationLog
 
 
 @pytest.fixture(autouse=True)
@@ -25,7 +25,7 @@ def _env(tmp_path, monkeypatch):
 def test_board_reconciles_a_real_run(tmp_path):
     fc = tmp_path / "ws"; fc.mkdir()
     log = tmp_path / "log"
-    from workspaces.workflows import (
+    from rvnd.workflows import (
         Workflow, WorkflowStep, define_workflow, run_workflow,
     )
     define_workflow(str(fc), Workflow(name="intake", description="t",
@@ -45,7 +45,7 @@ def test_board_summary_flags_an_unauthorised_effect(tmp_path):
     fc = tmp_path / "ws"; fc.mkdir()
     log = tmp_path / "log"
     # A step outcome on the chain with no gate-verdict behind it.
-    from workspaces.workflows import _log_workflow_event
+    from rvnd.workflows import _log_workflow_event
     _log_workflow_event(str(fc), run_id="ghost", workflow="wf", step_index=0,
                         state="done", skill_id="p:x", log_root=log)
 
@@ -60,7 +60,7 @@ def test_reconciliation_panel_mutates_nothing(tmp_path):
     # panel must honour it too.
     fc = tmp_path / "ws"; fc.mkdir()
     log = tmp_path / "log"
-    from workspaces.workflows import _log_workflow_event
+    from rvnd.workflows import _log_workflow_event
     _log_workflow_event(str(fc), run_id="r", workflow="wf", step_index=0,
                         state="done", skill_id="p:a", log_root=log)
     before = MutationLog(str(fc), log_root=log).count()

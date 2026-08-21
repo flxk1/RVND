@@ -88,7 +88,7 @@ def ingest_loop(workspace: Path, log_root: Path, period_s: float = 10.0) -> None
     the same path the watcher follows in production.
     """
     global _INGEST_ERRORS
-    from workspaces.mutation_log import LogEvent, MutationLog
+    from rvnd.mutation_log import LogEvent, MutationLog
 
     log = MutationLog(workspace, log_root=log_root)
     inbox = workspace / "Inbox"
@@ -128,7 +128,7 @@ def dispatch_loop(workspace: Path, log_root: Path, period_s: float = 5.0) -> Non
     which writes the audit event without calling out to any LLM. That's still
     a real append to the mutation log, which is what soak is measuring.
     """
-    from workspaces.mutation_log import LogEvent, MutationLog
+    from rvnd.mutation_log import LogEvent, MutationLog
 
     log = MutationLog(workspace, log_root=log_root)
 
@@ -165,7 +165,7 @@ def erase_loop(workspace: Path, log_root: Path, period_s: float = 60.0) -> None:
     This is the load generator that verifies the tombstone/re-link contract
     repeatedly; any broken link fails the soak thresholds.
     """
-    from workspaces.mutation_log import MutationLog
+    from rvnd.mutation_log import MutationLog
 
     log = MutationLog(workspace, log_root=log_root)
 
@@ -225,7 +225,7 @@ def _open_fds() -> int:
 
 
 def _log_size_mb(workspace: Path, log_root: Path) -> float:
-    from workspaces.mutation_log import folder_hash
+    from rvnd.mutation_log import folder_hash
     fh = folder_hash(workspace)
     lf = log_root / fh / "events.jsonl"
     if not lf.exists():
@@ -234,7 +234,7 @@ def _log_size_mb(workspace: Path, log_root: Path) -> float:
 
 
 def _verify_chain_metrics(workspace: Path, log_root: Path) -> tuple[float, bool]:
-    from workspaces.mutation_log import MutationLog
+    from rvnd.mutation_log import MutationLog
     log = MutationLog(workspace, log_root=log_root)
     t0 = time.perf_counter()
     result = log.verify_chain()
@@ -254,7 +254,7 @@ def _dispatch_p95_ms() -> float:
 
 def _queue_depth_stub() -> int:
     """Stub for queue depth — real implementation reads from
-    ``workspaces.queue.list_queue()``. Returns 0 in the scaffold; soak run on
+    ``rvnd.queue.list_queue()``. Returns 0 in the scaffold; soak run on
     real load will pick up the live queue once dispatch_loop is wired through
     the workflow runner."""
     return 0

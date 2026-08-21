@@ -25,9 +25,9 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-import workspaces.decisions.queue as DQ
-import workspaces.mcp_server as S
-from workspaces.mcp_impl import decision_open, decision_pending
+import rvnd.decisions.queue as DQ
+import rvnd.mcp_server as S
+from rvnd.mcp_impl import decision_open, decision_pending
 
 SURFACE = {
     "query": "q",
@@ -64,7 +64,7 @@ def test_idempotency_key_dedupes(folder):                        # H1
 
 def test_dedup_never_renotifies(folder, monkeypatch):            # H2
     calls = []
-    import workspaces.decisions.outbox as OB
+    import rvnd.decisions.outbox as OB
     monkeypatch.setattr(OB, "notify",
                         lambda *a, **k: calls.append(1) or
                         {"ok": True, "holders": 0, "sent": []})
@@ -85,7 +85,7 @@ def test_flood_guard_caps_per_raiser(folder, monkeypatch):       # H3
                      if e["state"] == "open" and e["raised_by"] == "crm-bot")
     q.close(some_open["decision_id"], "dana")
     assert opened(folder)["ok"] is True, "a decided entry frees the cap"
-    from workspaces.mutation_log import MutationLog
+    from rvnd.mutation_log import MutationLog
     from pathlib import Path as P
     import os
     kinds = [(e.extra or {}).get("kind") for e in

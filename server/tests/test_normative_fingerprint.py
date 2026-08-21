@@ -29,8 +29,8 @@ from __future__ import annotations
 from typing import Iterable
 
 
-from workspaces import RuleFacet, extract_rules
-from workspaces.nd_routing import (
+from rvnd import RuleFacet, extract_rules
+from rvnd.nd_routing import (
     DefaultClassifier,
     NORMATIVE_THRESHOLD,
     score_normative,

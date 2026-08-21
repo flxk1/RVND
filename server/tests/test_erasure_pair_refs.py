@@ -16,9 +16,9 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces import card_store, erasure, forgotten_subjects
-from workspaces.mutation_log import LogEvent, MutationLog
-from workspaces.subject_card import SubjectCard
+from rvnd import card_store, erasure, forgotten_subjects
+from rvnd.mutation_log import LogEvent, MutationLog
+from rvnd.subject_card import SubjectCard
 
 
 @pytest.fixture
@@ -27,7 +27,7 @@ def isolated_env(tmp_path, monkeypatch):
     log_root.mkdir(parents=True, exist_ok=True)
     keydir = tmp_path / "keys"
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(keydir))
-    from workspaces import signing
+    from rvnd import signing
     signing.ensure_keypair()
     signing.ensure_controller_keypair()
     workspace = tmp_path / "ws"

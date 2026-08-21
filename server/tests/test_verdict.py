@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces import verdict as v
-from workspaces.verdict import Verdict
+from rvnd import verdict as v
+from rvnd.verdict import Verdict
 
 
 def test_three_vocabularies_collapse_to_one_tristate():
@@ -60,7 +60,7 @@ def test_admission_unknown_defaults_to_hold():
 def test_policy_matrix_uses_the_shared_rule():
     # the matrix's public words are unchanged, but its ordering/compose now
     # derive from the shared module (one source of truth)
-    from workspaces import policy_matrix as pm
+    from rvnd import policy_matrix as pm
     assert pm.LIGHTS == ("go", "ask", "block")
     assert pm.stricter("go", "block") == "block"
     assert pm.stricter("ask", "go") == "ask"

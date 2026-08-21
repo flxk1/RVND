@@ -5,12 +5,12 @@
 import tempfile
 from pathlib import Path
 
-from workspaces.drift_monitor import DriftReport
-from workspaces.oversight_drift import (
+from rvnd.drift_monitor import DriftReport
+from rvnd.oversight_drift import (
     drift_tripwire, raise_floor, evaluate as evaluate_drift)
-from workspaces.breaker import Breaker, Lease, BreakerState
-from workspaces.oversight_dispatch import dispatch, record_decision_return
-from workspaces.mutation_log import MutationLog
+from rvnd.breaker import Breaker, Lease, BreakerState
+from rvnd.oversight_dispatch import dispatch, record_decision_return
+from rvnd.mutation_log import MutationLog
 
 
 # ── drift → signal ───────────────────────────────────────────────────────────

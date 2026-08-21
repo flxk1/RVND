@@ -22,11 +22,11 @@ os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 sys.path.insert(0, str(HERE.parent))
 sys.path.insert(0, str(HERE.parent.parent / "server" / "src"))
 import serve                          # noqa: E402
-from workspaces.contracts.instance import ContractInstance, ContractRegistry, PartyRef  # noqa: E402
-from workspaces.obligation_runtime import ObligationRegistry  # noqa: E402
-from workspaces.obligation_scheduler import ObligationScheduler  # noqa: E402
-from workspaces.predicate import parse_condition  # noqa: E402
-from workspaces.temporal import Date  # noqa: E402
+from rvnd.contracts.instance import ContractInstance, ContractRegistry, PartyRef  # noqa: E402
+from rvnd.obligation_runtime import ObligationRegistry  # noqa: E402
+from rvnd.obligation_scheduler import ObligationScheduler  # noqa: E402
+from rvnd.predicate import parse_condition  # noqa: E402
+from rvnd.temporal import Date  # noqa: E402
 
 F = os.path.join(tmp, "org")
 os.makedirs(F, exist_ok=True)

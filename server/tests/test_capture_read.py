@@ -6,7 +6,7 @@ from __future__ import annotations
 import os
 import pytest
 
-from workspaces import mcp_server as M
+from rvnd import mcp_server as M
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 

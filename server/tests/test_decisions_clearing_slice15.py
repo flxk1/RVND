@@ -10,8 +10,8 @@ from __future__ import annotations
 
 
 
-from workspaces.lock.decisions import DecisionsStore
-from workspaces.lock.egress_proxy import _persist_scope_decision
+from rvnd.lock.decisions import DecisionsStore
+from rvnd.lock.egress_proxy import _persist_scope_decision
 
 
 def _store(tmp_path, **kw):

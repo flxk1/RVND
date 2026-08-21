@@ -22,7 +22,7 @@ from pathlib import Path
 
 import pytest
 
-from workspaces.parties import register_party
+from rvnd.parties import register_party
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 
@@ -41,8 +41,8 @@ def env(tmp_path, monkeypatch):
 
 
 def _setup(env, *, packs):
-    from workspaces.juris_packs import set_folder_packs
-    from workspaces.workflows import Workflow, WorkflowStep, define_workflow
+    from rvnd.juris_packs import set_folder_packs
+    from rvnd.workflows import Workflow, WorkflowStep, define_workflow
     if packs:
         set_folder_packs(env["ws"], packs, log_root=env["lr"])
     wf = Workflow(name="wf", steps=[
@@ -52,14 +52,14 @@ def _setup(env, *, packs):
 
 
 def _run(env, approvals=None):
-    from workspaces.workflows import run_workflow
+    from rvnd.workflows import run_workflow
     return run_workflow(env["ws"], "wf", actor="agent-x",
                         log_root=Path(env["lr"]),
                         step_approvals=approvals)
 
 
 def _events(env, kind):
-    from workspaces.mutation_log import MutationLog
+    from rvnd.mutation_log import MutationLog
     log = MutationLog(env["ws"], log_root=env["lr"])
     return [e.extra for e in log.replay()
             if (e.extra or {}).get("kind") == kind]
@@ -78,7 +78,7 @@ def test_governed_step_opens_request_and_holds(env):
 
 
 def test_competent_grant_releases_the_step(env):
-    from workspaces.approvals import decide_approval
+    from rvnd.approvals import decide_approval
     _setup(env, packs=["eu-base", "de-overlay"])
     _run(env)
     decide_approval(env["ws"], "wf:step0", "approve", actor="anna",
@@ -91,7 +91,7 @@ def test_competent_grant_releases_the_step(env):
 
 
 def test_denied_request_blocks_the_step(env):
-    from workspaces.approvals import decide_approval
+    from rvnd.approvals import decide_approval
     _setup(env, packs=["eu-base", "de-overlay"])
     _run(env)
     decide_approval(env["ws"], "wf:step0", "deny", actor="ben",
@@ -110,8 +110,8 @@ def test_rerun_reuses_the_same_request(env):
 
 
 def test_noncompetent_hand_does_not_release(env):
-    from workspaces.approvals import decide_approval
-    from workspaces.parties import register_party as _reg
+    from rvnd.approvals import decide_approval
+    from rvnd.parties import register_party as _reg
     _reg(env["ws"], "carl", "human", competences=["finance"],
          log_root=env["lr"])
     _setup(env, packs=["eu-base", "de-overlay"])

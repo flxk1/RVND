@@ -7,13 +7,13 @@ extractor breaks the build, not the claim)."""
 import json
 
 
-from workspaces.contracts.eval import FLOORS, run_eval
-from workspaces.contracts.extractor import (classify_contract_type,
+from rvnd.contracts.eval import FLOORS, run_eval
+from rvnd.contracts.extractor import (classify_contract_type,
                                       extract_effective_date,
                                       extract_governing_law, extract_parties,
                                       ingest_contract, intake_contract)
-from workspaces.rule_extractor_llm import extract_rules_llm
-from workspaces.temporal import Date
+from rvnd.rule_extractor_llm import extract_rules_llm
+from rvnd.temporal import Date
 
 DPA = """DATA PROCESSING AGREEMENT
 
@@ -108,7 +108,7 @@ class TestIntake:
         assert again["obligations"]["created"] == []
 
     def test_ingested_obligation_carries_deadline(self, tmp_path):
-        from workspaces.obligation_runtime import ObligationRegistry
+        from rvnd.obligation_runtime import ObligationRegistry
         ingest_contract(tmp_path, DPA, contract_id="dpa-x", log_root=tmp_path / "log")
         obs = ObligationRegistry(tmp_path).for_contract("dpa-x@1")
         assert any(o.deadline_rel and o.deadline_rel.offset.iso == "PT72H"

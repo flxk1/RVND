@@ -15,7 +15,7 @@ from datetime import date
 
 import pytest
 
-from workspaces.action_gate import (
+from rvnd.action_gate import (
     ActionRequest, ApprovalUsage, StandingApproval, Verdict, gate,
     usage_from_history)
 

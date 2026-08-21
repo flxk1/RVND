@@ -23,8 +23,8 @@ import os
 
 import pytest
 
-from workspaces.issue_token import IssueToken, Span, detect_issues
-from workspaces.case_index import record_token_case, recall_for_token
+from rvnd.issue_token import IssueToken, Span, detect_issues
+from rvnd.case_index import record_token_case, recall_for_token
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 
@@ -97,7 +97,7 @@ def test_excerpt_is_minimised_before_persistence(env):             # R5
     record_token_case(env["ws"], tok, outcome="ratified", actor="alex",
                       rationale="r", solver="skill:liability-nd",
                       log_root=env["lr"])
-    from workspaces.case_index import solves_edges
+    from rvnd.case_index import solves_edges
     edge = solves_edges(env["ws"], log_root=env["lr"])[0]
     stored = edge.get("question", "")
     # the raw e-mail must not survive into local memory verbatim

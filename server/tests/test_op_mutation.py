@@ -8,7 +8,7 @@ help registry flags every op.
 """
 from __future__ import annotations
 
-from workspaces.op_mutation import is_read, mutates, stamp
+from rvnd.op_mutation import is_read, mutates, stamp
 
 
 def test_pure_reads_are_reads():

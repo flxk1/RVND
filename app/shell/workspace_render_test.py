@@ -16,7 +16,7 @@ os.environ["WORKSPACE_KEY_DIR"] = os.path.join(tmp, "keys")
 os.environ["WORKSPACE_L0_LOG_ROOT"] = os.path.join(tmp, "logs")
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 sys.path.insert(0, str(HERE.parent)); sys.path.insert(0, str(HERE.parent.parent / "server" / "src"))
-import serve, workspaces.mcp_server as S  # noqa: E402
+import serve, rvnd.mcp_server as S  # noqa: E402
 SEED = os.path.join(tmp, "seed-workspace"); os.makedirs(SEED, exist_ok=True)
 NEW = os.path.join(tmp, "fresh-workspace")
 

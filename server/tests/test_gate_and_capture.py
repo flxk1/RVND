@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # Copyright 2026 flxk1
 """Integration tests for the ``gate_and_capture_llm`` / ``gate_and_capture_web``
-wrappers in :mod:`workspaces.lock.gate_and_capture`.
+wrappers in :mod:`rvnd.lock.gate_and_capture`.
 
 The wrappers compose:
 
@@ -26,8 +26,8 @@ import shutil
 
 import pytest
 
-from workspaces.lock import l0_bridge
-from workspaces.lock.gate_and_capture import (
+from rvnd.lock import l0_bridge
+from rvnd.lock.gate_and_capture import (
     GateAndCaptureResult,
     gate_and_capture_llm,
     gate_and_capture_web,
@@ -98,7 +98,7 @@ def test_llm_folder_lock_disabled_allows_benign(folder, monkeypatch):
     outcome is a plain allow. (A would-be refuse under lock-off is covered in
     test_lock_off_human_cl2.py.) Capture still lands — lock is about egress, not memory.
     """
-    from workspaces import disable_lock
+    from rvnd import disable_lock
     log_root = monkeypatch.delenv("WORKSPACE_L0_LOG_ROOT", raising=False) or str(folder.parent / "logs")
     monkeypatch.setenv("WORKSPACE_L0_LOG_ROOT", log_root)
     disable_lock(folder, accepted_by="alex", log_root=log_root)

@@ -21,9 +21,9 @@ alongside this module:
     ``prompt_context`` field on the chain.
 
 Mocks are import-boundary patches: we override
-``workspaces.local_llm.classify`` and ``workspaces.local_llm.complete`` (the
-workspaces.lock Tier C ensemble + the MCP route both reach through those),
-and ``workspaces.llm_capture.capture_llm_exchange`` for the cloud-dispatch
+``rvnd.local_llm.classify`` and ``rvnd.local_llm.complete`` (the
+rvnd.lock Tier C ensemble + the MCP route both reach through those),
+and ``rvnd.llm_capture.capture_llm_exchange`` for the cloud-dispatch
 boundary. Tests never reach a real local LLM or a real cloud model.
 """
 
@@ -234,7 +234,7 @@ class MockCloudLLM:
     so tests can assert on (a) what reached the cloud, (b) the order
     relative to lock events, (c) the total token spend.
 
-    Patches ``workspaces.llm_capture.capture_llm_exchange`` since that is
+    Patches ``rvnd.llm_capture.capture_llm_exchange`` since that is
     THE single entry the cloud-LLM-calling code goes through (see the
     docstring on ``capture_llm_exchange``).
 
@@ -261,7 +261,7 @@ class MockCloudLLM:
         # path see the synthetic exchange recorded; we also patch the
         # MCP-exposed convenience name on the module.
         self._stack.enter_context(patch(
-            "workspaces.llm_capture.capture_llm_exchange",
+            "rvnd.llm_capture.capture_llm_exchange",
             side_effect=self._capture_side_effect,
         ))
         return self
@@ -287,7 +287,7 @@ class MockCloudLLM:
         response = getattr(exchange, "response", "") or ""
         self.dispatch(prompt, response, model=getattr(exchange, "model", "cloud"))
         # Return the same dict shape the real callers see.
-        from workspaces.llm_capture import CaptureResult, VerbosityLevel, IngestMode
+        from rvnd.llm_capture import CaptureResult, VerbosityLevel, IngestMode
         return CaptureResult(
             captured=True, pair_id="mock-pair",
             verbosity=VerbosityLevel.FULL,
@@ -328,8 +328,8 @@ class LocalCall:
 
 
 class MockLocalLLM:
-    """Context manager — patches ``workspaces.local_llm.classify`` (and
-    ``workspaces.local_llm.complete`` for completeness) at the import boundary.
+    """Context manager — patches ``rvnd.local_llm.classify`` (and
+    ``rvnd.local_llm.complete`` for completeness) at the import boundary.
 
     Configurable failure modes:
 
@@ -370,22 +370,22 @@ class MockLocalLLM:
 
     def __enter__(self) -> "MockLocalLLM":
         self._stack = ExitStack()
-        # Tier C ensemble reaches through workspaces.mcp_server.local_llm_classify;
+        # Tier C ensemble reaches through rvnd.mcp_server.local_llm_classify;
         # we patch that function-level name (the ensemble does a lazy import).
         self._stack.enter_context(patch(
-            "workspaces.mcp_server.local_llm_classify",
+            "rvnd.mcp_server.local_llm_classify",
             side_effect=self._classify_side_effect,
         ))
         self._stack.enter_context(patch(
-            "workspaces.local_llm.classify",
+            "rvnd.local_llm.classify",
             side_effect=self._classify_low_side_effect,
         ))
         self._stack.enter_context(patch(
-            "workspaces.local_llm.complete",
+            "rvnd.local_llm.complete",
             side_effect=self._complete_side_effect,
         ))
         self._stack.enter_context(patch(
-            "workspaces.local_llm.list_available",
+            "rvnd.local_llm.list_available",
             side_effect=self._list_available_side_effect,
         ))
         return self
@@ -465,7 +465,7 @@ class MockLocalLLM:
         }
 
     def _classify_low_side_effect(self, text, categories, model=None, **_):
-        # Lower-level workspaces.local_llm.classify shim — delegate.
+        # Lower-level rvnd.local_llm.classify shim — delegate.
         return self._classify_side_effect(
             text=text, categories=categories, model=model or "",
         )

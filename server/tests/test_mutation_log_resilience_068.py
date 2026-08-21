@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pytest
 
-from workspaces.mutation_log import (
+from rvnd.mutation_log import (
     DiskFullError,
     LogEvent,
     MutationLog,

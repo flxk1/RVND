@@ -22,8 +22,8 @@ import time
 from pathlib import Path
 
 
-from workspaces.mutation_log import LogEvent, MutationLog
-from workspaces.workflows import (
+from rvnd.mutation_log import LogEvent, MutationLog
+from rvnd.workflows import (
     _event_ts_iso,
     _events_for_folder,
     active_workflows,
@@ -128,7 +128,7 @@ def test_events_for_folder_skill_dispatch_carries_timestamp(tmp_path):
 
 def test_workflow_event_timestamps_are_populated(tmp_path):
     """workflow-event rows (not just skill-dispatch) carry the timestamp."""
-    from workspaces.workflows import Workflow, WorkflowStep
+    from rvnd.workflows import Workflow, WorkflowStep
     folder = tmp_path / "wks"
     folder.mkdir()
     log_root = tmp_path / "log"
@@ -173,12 +173,12 @@ def test_active_workflows_timestamp_populated(tmp_path):
 
 
 def _fresh_mcp(monkeypatch, log_root: Path):
-    """Import workspaces.mcp_server fresh and point _log_root at tmp_path."""
+    """Import rvnd.mcp_server fresh and point _log_root at tmp_path."""
     import importlib
 
-    import workspaces.mcp_server as srv
+    import rvnd.mcp_server as srv
     importlib.reload(srv)
-    monkeypatch.setattr("workspaces.mcp_serving._log_root", lambda: log_root)
+    monkeypatch.setattr("rvnd.mcp_serving._log_root", lambda: log_root)
     return srv
 
 
@@ -228,7 +228,7 @@ def test_dispatch_skill_workspace_skill_when_pinned_keeps_own_provenance(
     folder.mkdir()
     log_root = tmp_path / "log"
     srv = _fresh_mcp(monkeypatch, log_root)
-    from workspaces.pinned_skills import pin_skill
+    from rvnd.pinned_skills import pin_skill
     pin_skill(str(folder), "workspace:workspace-policy", log_root=log_root)
 
     out = srv.dispatch_skill(

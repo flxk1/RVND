@@ -6,14 +6,14 @@ from __future__ import annotations
 import json
 import pytest
 
-from workspaces.mutation_log import LogEvent, MutationLog
-from workspaces.loomground_lang import _has_cycle
+from rvnd.mutation_log import LogEvent, MutationLog
+from rvnd.loomground_lang import _has_cycle
 
 
 @pytest.fixture
 def isolated_keys(tmp_path, monkeypatch):
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(tmp_path / "keys"))
-    from workspaces import signing
+    from rvnd import signing
     signing.ensure_keypair()
 
 
@@ -65,7 +65,7 @@ def test_purge_aborts_if_resign_fails_and_log_is_intact(tmp_path, isolated_keys,
     unsigned survivor — which D5 would otherwise flag as tamper). Log unchanged."""
     log = _chain(tmp_path, n=5)
     assert log.verify_chain().ok
-    import workspaces.signing as signing
+    import rvnd.signing as signing
     def _boom(*a, **k):
         raise RuntimeError("signing unavailable")
     monkeypatch.setattr(signing, "sign_bytes", _boom)

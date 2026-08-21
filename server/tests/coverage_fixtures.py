@@ -55,7 +55,7 @@ def _p(ws: WS) -> dict:            # parties only
 
 def _use_case(ws: WS) -> dict:
     with_parties(ws)
-    import workspaces.mcp_server as M
+    import rvnd.mcp_server as M
     M.workspace_workflow("use_case_register", {
         "folder_context": ws.folder, "use_case_id": "uc1", "name": "uc1",
         "fingerprint": FP, "risk": "low", "allowed_agents": [AGENT], "actor": ACTOR})
@@ -64,8 +64,8 @@ def _use_case(ws: WS) -> dict:
 
 def _governance_lane(ws: WS) -> dict:
     with_parties(ws)
-    from workspaces.governance_lane import GovernanceLane, register_lane
-    from workspaces.mcp_serving import set_request_principal
+    from rvnd.governance_lane import GovernanceLane, register_lane
+    from rvnd.mcp_serving import set_request_principal
 
     register_lane(
         ws.folder,
@@ -87,7 +87,7 @@ def _governance_lane(ws: WS) -> dict:
 
 def _connector(ws: WS) -> dict:
     with_parties(ws)
-    import workspaces.mcp_server as M
+    import rvnd.mcp_server as M
     M.workspace_workflow("connector_register", {
         "folder_context": ws.folder, "connector_id": "c1",
         "role": "egress", "channel": "email", "actor": ACTOR})
@@ -96,7 +96,7 @@ def _connector(ws: WS) -> dict:
 
 def _run(ws: WS) -> dict:
     with_parties(ws)
-    import workspaces.mcp_server as M
+    import rvnd.mcp_server as M
     M.workspace_workflow("define", {
         "folder_context": ws.folder, "name": "wf1",
         "steps": [{"skill_id": "x:y", "query": "q"}]})
@@ -107,14 +107,14 @@ def _run(ws: WS) -> dict:
 
 def _approval_wf(ws: WS) -> dict:
     with_parties(ws)
-    import workspaces.mcp_server as M
+    import rvnd.mcp_server as M
     M.workspace_workflow("approval_request", {
         "folder_context": ws.folder, "request_id": "r1", "now": 1000.0, "actor": ACTOR})
     return {"request_id": "r1"}
 
 
 def _two_humans(ws: WS) -> dict:
-    from workspaces.parties import register_party
+    from rvnd.parties import register_party
     register_party(ws.folder, "operator", "human", log_root=ws.log_root)
     register_party(ws.folder, "approver", "human", log_root=ws.log_root)
     return {}
@@ -122,7 +122,7 @@ def _two_humans(ws: WS) -> dict:
 
 def _an_event(ws: WS) -> dict:
     with_parties(ws)
-    from workspaces.mutation_log import MutationLog
+    from rvnd.mutation_log import MutationLog
     log = MutationLog(ws.folder, log_root=ws.log_root)
     for e in log.replay():
         if getattr(e, "audit_id", ""):
@@ -132,7 +132,7 @@ def _an_event(ws: WS) -> dict:
 
 def _bundle(ws: WS) -> dict:
     with_parties(ws)
-    import workspaces.mcp_server as M
+    import rvnd.mcp_server as M
     r = M.workspace_session("build", {
         "workspaces": [{"folder_context": ws.folder, "id": "ws1", "name": "ws1"}],
         "rail": {}, "name": "sess"})
@@ -141,14 +141,14 @@ def _bundle(ws: WS) -> dict:
 
 def _work(ws: WS) -> dict:
     with_parties(ws)
-    import workspaces.mcp_server as M
+    import rvnd.mcp_server as M
     r = M.workspace_grounder("work.register", {"folder_context": ws.folder, "title": "Traced work"})
     return {"work_id": r.get("id")}
 
 
 def _two_works(ws: WS) -> dict:
     with_parties(ws)
-    import workspaces.mcp_server as M
+    import rvnd.mcp_server as M
     a = M.workspace_grounder("work.register", {"folder_context": ws.folder, "title": "Citing"})
     b = M.workspace_grounder("work.register", {"folder_context": ws.folder, "title": "Cited"})
     return {"from_work": a.get("id"), "to_work": b.get("id")}
@@ -156,7 +156,7 @@ def _two_works(ws: WS) -> dict:
 
 def _claim(ws: WS) -> dict:
     with_parties(ws)
-    import workspaces.mcp_server as M
+    import rvnd.mcp_server as M
     r = M.workspace_grounder("ground", {
         "folder_context": ws.folder, "claim": "The sky is blue.",
         "works": [{"title": "Colour of the sky"}]})
@@ -165,7 +165,7 @@ def _claim(ws: WS) -> dict:
 
 def _contract(ws: WS) -> dict:
     with_parties(ws)
-    import workspaces.mcp_server as M
+    import rvnd.mcp_server as M
     cid = "C-COV-1"
     M.workspace_contract("ingest", {
         "folder_context": ws.folder,
@@ -175,7 +175,7 @@ def _contract(ws: WS) -> dict:
 
 
 def _approval_contract(ws: WS) -> dict:
-    import workspaces.mcp_server as M
+    import rvnd.mcp_server as M
     ctx = _contract(ws)
     r = M.workspace_contract("request_approval", {
         "folder_context": ws.folder, "contract_id": ctx["contract_id"],
@@ -196,7 +196,7 @@ _DEC_SURFACE = {
 
 def _open_decision(ws: WS) -> str:
     with_parties(ws)
-    from workspaces.mcp_impl import decision_open
+    from rvnd.mcp_impl import decision_open
     return decision_open(ws.folder, _DEC_SURFACE, "crm-bot",
                          competence="data-protection", auto_notify=False)["decision_id"]
 
@@ -206,7 +206,7 @@ def _open(ws: WS) -> dict:
 
 
 def _open_claimed(ws: WS) -> dict:
-    from workspaces.mcp_impl import decision_claim
+    from rvnd.mcp_impl import decision_claim
     did = _open_decision(ws)
     decision_claim(ws.folder, did, "dana")
     return {"decision_id": did}
@@ -214,7 +214,7 @@ def _open_claimed(ws: WS) -> dict:
 
 def _precedent(ws: WS) -> dict:
     with_parties(ws)
-    import workspaces.mcp_server as M
+    import rvnd.mcp_server as M
     M.workspace_lens("precedent_declare", {"folder_context": ws.folder, "id": "prec-1",
                      "actor": ACTOR, "chosen_option": "opt-a", "rationale": "human origination"})
     return {"id": "prec-1"}
@@ -233,7 +233,7 @@ def _mirror_draft(ws: WS) -> dict:
         "spans": [{"start": 6, "end": 17, "kind": "tier_b.pii_in_argument",
                    "original_hash": "sha256:zzz", "replacement": "[REDACTED:email]",
                    "span_id": "span:e1"}]}), encoding="utf-8")
-    from workspaces import mirror_editor
+    from rvnd import mirror_editor
     mirror_editor.open_revision(ws.folder, mirror, actor="system:editor", log_root=Path(ws.log_root))
     return {"mirror_path": str(mirror)}
 

@@ -7,11 +7,11 @@ import time
 
 import pytest
 
-from workspaces import drift_monitor as dm
-from workspaces import incidents as inc
-from workspaces.action_gate import ActionRequest, gate
-from workspaces.decisions.surface import record_choice
-from workspaces.mutation_log import DiskFullError, LogEvent, MutationLog
+from rvnd import drift_monitor as dm
+from rvnd import incidents as inc
+from rvnd.action_gate import ActionRequest, gate
+from rvnd.decisions.surface import record_choice
+from rvnd.mutation_log import DiskFullError, LogEvent, MutationLog
 
 
 @pytest.fixture()

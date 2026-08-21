@@ -11,8 +11,8 @@ is measurement, not re-gating.
 """
 from __future__ import annotations
 
-from workspaces import action_gate as AG
-from workspaces.action_gate import ActionRequest
+from rvnd import action_gate as AG
+from rvnd.action_gate import ActionRequest
 
 _gate = getattr(AG, "gate", None) or AG.decide_action
 

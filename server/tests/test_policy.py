@@ -8,7 +8,7 @@ import json
 
 import pytest
 
-from workspaces import (
+from rvnd import (
     FolderPolicy,
     MutationLog,
     POLICY_FILENAME,
@@ -270,7 +270,7 @@ def test_lock_disclaimer_mentions_consequences():
 
 
 def test_cli_policy_show_default(folder, log_root, capsys):
-    from workspaces.cli import main
+    from rvnd.cli import main
     rc = main(["--log-root", str(log_root), "policy", "show",
                "--folder", str(folder)])
     assert rc == 0
@@ -281,7 +281,7 @@ def test_cli_policy_show_default(folder, log_root, capsys):
 
 def test_cli_policy_disable_lock_requires_flag(folder, log_root, capsys):
     """Without --i-accept-the-risk, the CLI prints the disclaimer + refuses."""
-    from workspaces.cli import main
+    from rvnd.cli import main
     rc = main(["--log-root", str(log_root), "policy", "disable-lock",
                "--folder", str(folder)])
     assert rc == 2
@@ -292,7 +292,7 @@ def test_cli_policy_disable_lock_requires_flag(folder, log_root, capsys):
 
 
 def test_cli_policy_disable_lock_with_flag(folder, log_root, capsys):
-    from workspaces.cli import main
+    from rvnd.cli import main
     rc = main(["--log-root", str(log_root), "policy", "disable-lock",
                "--folder", str(folder), "--i-accept-the-risk",
                "--accepted-by", "alex",
@@ -306,7 +306,7 @@ def test_cli_policy_disable_lock_with_flag(folder, log_root, capsys):
 
 
 def test_cli_policy_enable_lock(folder, log_root, capsys):
-    from workspaces.cli import main
+    from rvnd.cli import main
     # First disable.
     disable_lock(folder, accepted_by="alex", log_root=log_root)
     # Then enable (no disclaimer required — protection direction).
@@ -317,7 +317,7 @@ def test_cli_policy_enable_lock(folder, log_root, capsys):
 
 
 def test_cli_policy_disable_oversight_requires_flag(folder, log_root, capsys):
-    from workspaces.cli import main
+    from rvnd.cli import main
     rc = main(["--log-root", str(log_root), "policy", "disable-oversight",
                "--folder", str(folder)])
     assert rc == 2
@@ -326,7 +326,7 @@ def test_cli_policy_disable_oversight_requires_flag(folder, log_root, capsys):
 
 
 def test_cli_policy_disable_oversight_with_flag(folder, log_root, capsys):
-    from workspaces.cli import main
+    from rvnd.cli import main
     rc = main(["--log-root", str(log_root), "policy", "disable-oversight",
                "--folder", str(folder), "--i-accept-the-risk",
                "--accepted-by", "alex"])

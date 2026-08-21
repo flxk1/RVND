@@ -19,8 +19,8 @@ from collections import Counter
 from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
-from workspaces import format_extractors as fx
-from workspaces import genre_router as gr
+from rvnd import format_extractors as fx
+from rvnd import genre_router as gr
 
 # A battery of structural-marker fingerprints (more than the router handles, on purpose).
 # name -> (regex, genre the router maps it to, or None = NOT yet covered → a candidate).

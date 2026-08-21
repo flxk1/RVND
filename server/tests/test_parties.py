@@ -8,7 +8,7 @@ import os
 
 import pytest
 
-from workspaces.parties import (
+from rvnd.parties import (
     list_parties, register_party, route_approvers, set_party_status,
 )
 

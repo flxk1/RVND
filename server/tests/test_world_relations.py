@@ -8,9 +8,9 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces import world_relations as wr
-from workspaces.legal_world import EntityKind
-from workspaces.world_corpus_loader import _default_refdir
+from rvnd import world_relations as wr
+from rvnd.legal_world import EntityKind
+from rvnd.world_corpus_loader import _default_refdir
 
 if not _default_refdir().is_dir():
     pytest.skip(

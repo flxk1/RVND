@@ -11,12 +11,12 @@ from __future__ import annotations
 
 import json
 
-from workspaces.lock import (
+from rvnd.lock import (
     AuditLog,
     Mode,
     lock_text,
 )
-from workspaces.lock.tier_c import reset_backend_cache
+from rvnd.lock.tier_c import reset_backend_cache
 
 
 # ---------------------------------------------------------------------------
@@ -182,7 +182,7 @@ def test_lock_text_audit_includes_task_id(monkeypatch, tmp_path):
 
 def test_lock_text_redaction_helper_strips_emails():
     """Direct test of the redaction helper: regex matches become typed placeholders."""
-    from workspaces.lock.core import _redact_text_with_regex
+    from rvnd.lock.core import _redact_text_with_regex
     out = _redact_text_with_regex("write to alice\x40example.com or bob\x40example.org")
     assert "alice\x40example.com" not in out
     assert "bob\x40example.org" not in out
@@ -192,7 +192,7 @@ def test_lock_text_redaction_helper_strips_emails():
 def test_lock_text_redaction_helper_strips_iban():
     """A structurally valid IBAN hits the strict per-country pattern, which
     outranks the permissive AA00... one in _TIER_B_PATTERNS."""
-    from workspaces.lock.core import _redact_text_with_regex
+    from rvnd.lock.core import _redact_text_with_regex
     out = _redact_text_with_regex("IBAN DE89370400440532013000 needs processing")
     assert "DE89370400440532013000" not in out
     assert "[REDACTED-IBAN-FULL]" in out
@@ -200,7 +200,7 @@ def test_lock_text_redaction_helper_strips_iban():
 
 def test_lock_text_redaction_helper_covers_full_tier_b_set():
     """Minimise-path redaction applies the full Tier B label set, not a subset."""
-    from workspaces.lock.core import _redact_text_with_regex
+    from rvnd.lock.core import _redact_text_with_regex
     out = _redact_text_with_regex(
         "SSN 078-05-1120, key sk-abc123DEF456ghi789, card 4111 1111 1111 1111")
     assert "078-05-1120" not in out
@@ -213,7 +213,7 @@ def test_lock_text_redaction_helper_covers_full_tier_b_set():
 
 def test_lock_text_redaction_helper_credit_card_stays_luhn_gated():
     """A 16-digit string that fails the Luhn checksum is not labelled a card."""
-    from workspaces.lock.core import _redact_text_with_regex
+    from rvnd.lock.core import _redact_text_with_regex
     out = _redact_text_with_regex("order ref 1234 5678 9012 3456")
     assert "[REDACTED-CREDIT-CARD]" not in out
 

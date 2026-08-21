@@ -11,12 +11,12 @@ import json
 
 import pytest
 
-from workspaces.policy import (
+from rvnd.policy import (
     FolderPolicy, LocalLlmPolicy, is_air_gapped, save_policy,
     POLICY_FILENAME, LEGACY_POLICY_FILENAME,
     LOCAL_LLM_MODE_LOCAL_ONLY, LOCAL_LLM_MODE_CLOUD_FALLBACK,
 )
-from workspaces import workspace_cascade as CC
+from rvnd import workspace_cascade as CC
 
 
 # ── is_air_gapped: verified read, fail-closed on unverifiable ────────────────

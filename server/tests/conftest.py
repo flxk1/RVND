@@ -79,7 +79,7 @@ def _hardened_lawful_workspace(request, tmp_path):
     if os.environ.get("RVND_TEST_HARDENED") == "1":
         test_dir = Path(str(request.node.fspath)).parent
         if test_dir.name != "security":
-            from workspaces.workspace_registry import add_known_workspace
+            from rvnd.workspace_registry import add_known_workspace
             add_known_workspace(tmp_path, label="hardened-test-scratch")
     yield
 
@@ -88,13 +88,13 @@ def _hardened_lawful_workspace(request, tmp_path):
 def _hermetic_lock_backend(monkeypatch):
     monkeypatch.setenv("AGENT_TOOL_LOCK_LLM_BACKEND", "mock")
     try:
-        from workspaces.lock.tier_c import reset_backend_cache
+        from rvnd.lock.tier_c import reset_backend_cache
         reset_backend_cache()
     except Exception:
         pass
     yield
     try:
-        from workspaces.lock.tier_c import reset_backend_cache
+        from rvnd.lock.tier_c import reset_backend_cache
         reset_backend_cache()
     except Exception:
         pass
@@ -108,7 +108,7 @@ def _isolate_session_admission(request, monkeypatch):
     tests marked ``live_session_admission`` exercise the signed gate intact.
     """
     if request.node.get_closest_marker("live_session_admission") is None:
-        from workspaces import session_admission
+        from rvnd import session_admission
         monkeypatch.setattr(
             session_admission,
             "verify_operation_session",
@@ -122,7 +122,7 @@ def _isolate_egress_capability(request, monkeypatch):
     """Existing proxy tests isolate prompt/credential behavior from admission."""
     if request.node.get_closest_marker("live_egress_capability") is None:
         from types import SimpleNamespace
-        from workspaces.lock import host_deps
+        from rvnd.lock import host_deps
 
         # Wire the real factories FIRST, then override. EgressProxy.__init__
         # calls host_deps.ensure_wired(), which on its first-ever call imports

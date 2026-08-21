@@ -5,10 +5,10 @@ typed, basis-carrying edges, plus span-norm dots anchored into the map."""
 
 import pytest
 
-from workspaces.contracts.extractor import ingest_contract
-from workspaces.graph_export import export_graph
-from workspaces.legal_corpus import seed_registry
-from workspaces.world_corpus_loader import _default_refdir
+from rvnd.contracts.extractor import ingest_contract
+from rvnd.graph_export import export_graph
+from rvnd.legal_corpus import seed_registry
+from rvnd.world_corpus_loader import _default_refdir
 
 if not _default_refdir().is_dir():
     pytest.skip(
@@ -57,7 +57,7 @@ class TestGraphExport:
         import sys
         sys.path.insert(0, str((__import__("pathlib").Path(__file__).parent)))
         from test_legal_norm_splitter import GDPR
-        from workspaces.rule_registry import RuleRegistry
+        from rvnd.rule_registry import RuleRegistry
         seed_registry(tmp_path)
         RuleRegistry(tmp_path, log_root=tmp_path / "log").place_legal_text(
             GDPR, "gdpr", source_document="gdpr.txt")
@@ -78,7 +78,7 @@ class TestGraphExport:
         import sys
         sys.path.insert(0, str(__import__("pathlib").Path(__file__).parent))
         from test_legal_norm_splitter import GDPR
-        from workspaces.rule_registry import RuleRegistry
+        from rvnd.rule_registry import RuleRegistry
         citing = ("TEST ACT (synthetic cross-reference fixture)\n\n"
                   "Article 26\nObligations of deployers\n"
                   "1. Deployers shall inform natural persons exposed to the "

@@ -8,7 +8,7 @@ through the facade exactly as they do in the registries."""
 
 import pytest
 
-mcp_server = pytest.importorskip("workspaces.mcp_server")
+mcp_server = pytest.importorskip("rvnd.mcp_server")
 
 DPA = """DATA PROCESSING AGREEMENT
 

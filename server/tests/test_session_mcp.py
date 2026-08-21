@@ -13,7 +13,7 @@ import json
 from pathlib import Path
 
 
-from workspaces import draft_store, parties, session_mcp as M
+from rvnd import draft_store, parties, session_mcp as M
 
 
 def _live_ws(tmp_path, wid: str) -> dict:
@@ -44,7 +44,7 @@ def test_save_verify_restore_roundtrip(tmp_path):
                                           "beta": str(tmp_path / "dl/b")})
     assert res["ok"] and set(res["folders"]) == {"alpha", "beta"}
     assert res["rail"] == rail
-    from workspaces.mutation_log import MutationLog
+    from rvnd.mutation_log import MutationLog
     assert MutationLog(res["folders"]["alpha"],
                        log_root=str(tmp_path / "dl/a")).verify_chain().ok
 
@@ -132,7 +132,7 @@ def test_restore_bytes_reconstructs(tmp_path):
     out = M.session_restore_bytes(built["bundle"], str(tmp_path / "dest"),
                                   log_root_for={"alpha": str(tmp_path / "dl")})
     assert out["ok"] and "alpha" in out["folders"]
-    from workspaces.mutation_log import MutationLog
+    from rvnd.mutation_log import MutationLog
     assert MutationLog(out["folders"]["alpha"],
                        log_root=str(tmp_path / "dl")).verify_chain().ok
 

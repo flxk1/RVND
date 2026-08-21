@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces import connectors, parties, use_case, session_io as S
+from rvnd import connectors, parties, use_case, session_io as S
 
 
 def _ws(tmp_path, wid: str, *, wire=True) -> dict:

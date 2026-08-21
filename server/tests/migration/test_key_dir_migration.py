@@ -30,7 +30,7 @@ import json
 
 import pytest
 
-from workspaces.mutation_log import MutationLog
+from rvnd.mutation_log import MutationLog
 
 
 def _read_log_events(log: MutationLog) -> list[dict]:
@@ -87,7 +87,7 @@ def target_log(tmp_path):
 def test_legacy_keypair_moves_into_host_subdir(legacy_keydir, target_log):
     """Calling the migration function relocates identity.{priv,pub} from
     the flat keydir into a host-scoped subdirectory."""
-    from workspaces.signing import migrate_legacy_keypair_to_host_subdir  # type: ignore
+    from rvnd.signing import migrate_legacy_keypair_to_host_subdir  # type: ignore
 
     legacy_priv = legacy_keydir / "identity.priv"
     legacy_pub = legacy_keydir / "identity.pub"
@@ -123,7 +123,7 @@ def test_migration_writes_key_migration_audit_event(legacy_keydir, target_log):
     """Migration must leave an audit-chain breadcrumb. The chain stays
     'honest about the change' — operators can later answer 'when did my
     key dir change shape?' from the log alone."""
-    from workspaces.signing import migrate_legacy_keypair_to_host_subdir  # type: ignore
+    from rvnd.signing import migrate_legacy_keypair_to_host_subdir  # type: ignore
 
     pre_count = len(_read_log_events(target_log))
     migrate_legacy_keypair_to_host_subdir(audit_log=target_log)
@@ -150,7 +150,7 @@ def test_migration_writes_key_migration_audit_event(legacy_keydir, target_log):
 def test_migration_is_idempotent(legacy_keydir, target_log):
     """Running the migration twice must not double-move, double-audit, or
     raise. Operators may re-run safely."""
-    from workspaces.signing import migrate_legacy_keypair_to_host_subdir  # type: ignore
+    from rvnd.signing import migrate_legacy_keypair_to_host_subdir  # type: ignore
 
     host_id_a = migrate_legacy_keypair_to_host_subdir(audit_log=target_log)
     events_after_first = len(_read_log_events(target_log))
@@ -169,7 +169,7 @@ def test_migration_noop_on_fresh_install(tmp_path, target_log, monkeypatch):
     """If there is no legacy keypair to move, the migration function must
     return the active host_id without raising and without writing an audit
     event. Fresh installs see no historical layout to fix."""
-    from workspaces.signing import migrate_legacy_keypair_to_host_subdir  # type: ignore
+    from rvnd.signing import migrate_legacy_keypair_to_host_subdir  # type: ignore
 
     fresh_keydir = tmp_path / "fresh-keys"
     fresh_keydir.mkdir(parents=True, exist_ok=True)

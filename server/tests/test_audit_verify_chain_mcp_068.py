@@ -23,8 +23,8 @@ import json
 
 import pytest
 
-from workspaces import mcp_server
-from workspaces.mutation_log import MutationLog
+from rvnd import mcp_server
+from rvnd.mutation_log import MutationLog
 
 
 # ---------------------------------------------------------------------------
@@ -44,7 +44,7 @@ def isolated_env(tmp_path, monkeypatch):
 
     keydir = tmp_path / "keys"
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(keydir))
-    from workspaces import signing
+    from rvnd import signing
     signing.ensure_keypair()
     signing.ensure_controller_keypair()
 

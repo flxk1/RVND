@@ -11,8 +11,8 @@ from __future__ import annotations
 import json
 import os
 
-from workspaces import duty_identification as DI
-from workspaces import governance_map as GM
+from rvnd import duty_identification as DI
+from rvnd import governance_map as GM
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 
@@ -203,7 +203,7 @@ def test_demand_and_cta_per_state():
     # a may_apply rule → confirm applicability (needs org context)
     assert row["Art. 24"].cta["verb"] == "confirm" and row["Art. 24"].cta["handler"] == "use_case_intake"
     # every classified demand is in the vocabulary; demand is a group-by facet
-    from workspaces import demand_cta as DC
+    from rvnd import demand_cta as DC
     assert all(r.demand_type in DC.DEMAND_TYPES for r in gm.rules if r.demand_type)
     assert "demand" in GM.FACETS and gm.group_by("demand")
 

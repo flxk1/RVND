@@ -11,15 +11,15 @@ from __future__ import annotations
 
 import json
 
-from workspaces.llm_extract import (
+from rvnd.llm_extract import (
     DomainProfile,
     extract,
     extract_obligations_hybrid,
     _parse_json,
 )
-from workspaces.applicability import enrich_pairs
-from workspaces.matcher import assess
-from workspaces.subject_card import make_card
+from rvnd.applicability import enrich_pairs
+from rvnd.matcher import assess
+from rvnd.subject_card import make_card
 
 
 PROFILE = DomainProfile(

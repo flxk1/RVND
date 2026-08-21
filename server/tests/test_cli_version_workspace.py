@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces.cli import main
+from rvnd.cli import main
 
 
 def test_version_flag_prints_and_exits_zero(capsys):
@@ -52,7 +52,7 @@ def test_workspace_remove_unregistered_returns_one(tmp_path, capsys):
 def test_mcp_help_answers_without_serving(monkeypatch, capsys):
     """workspaces-mcp --help must return immediately (doctor probes it with a
     10 s timeout); before this fix mcp.run() served stdio and hung."""
-    from workspaces import mcp_server
+    from rvnd import mcp_server
 
     monkeypatch.setattr("sys.argv", ["workspaces-mcp", "--help"])
     mcp_server.main()  # must return, not block

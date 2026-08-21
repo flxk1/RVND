@@ -18,7 +18,7 @@ from pathlib import Path
 
 import pytest
 
-from workspaces.mutation_log import (
+from rvnd.mutation_log import (
     folder_hash,
     legacy_folder_hash,
     _filesystem_is_case_insensitive,

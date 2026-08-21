@@ -7,15 +7,15 @@ from __future__ import annotations
 import io
 
 
-from workspaces.lock.onboarding import (
+from rvnd.lock.onboarding import (
     Config,
     default_config_path,
     load_config,
     run_wizard,
     save_config,
 )
-from workspaces.lock.onboarding.config import apply_config_to_env
-from workspaces.lock.onboarding.wizard import (
+from rvnd.lock.onboarding.config import apply_config_to_env
+from rvnd.lock.onboarding.wizard import (
     _detect_environment,
     _find_bundled_models,
     _find_existing_user_models,
@@ -239,26 +239,26 @@ def test_wizard_persists_setup_timestamp(tmp_path):
 
 
 def test_main_help_returns_zero():
-    from workspaces.lock.__main__ import main
+    from rvnd.lock.__main__ import main
     rc = main(["--help"])
     assert rc == 0
 
 
 def test_main_unknown_subcommand_returns_one():
-    from workspaces.lock.__main__ import main
+    from rvnd.lock.__main__ import main
     rc = main(["nonexistent-subcommand"])
     assert rc == 1
 
 
 def test_main_no_argv_returns_one():
-    from workspaces.lock.__main__ import main
+    from rvnd.lock.__main__ import main
     rc = main([])
     assert rc == 1
 
 
 def test_main_doctor_runs_and_exits_zero(capsys, monkeypatch, tmp_path):
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path))
-    from workspaces.lock.__main__ import main
+    from rvnd.lock.__main__ import main
     rc = main(["doctor"])
     captured = capsys.readouterr()
     assert rc == 0

@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from workspaces import policy_matrix as pm
+from rvnd import policy_matrix as pm
 
 
 def test_default_shape():
@@ -94,7 +94,7 @@ def test_load_missing_returns_default(tmp_path):
 # --- per-step workflow binding round-trips ---
 
 def test_workflow_step_carries_grade_and_oversight():
-    from workspaces.workflows import WorkflowStep
+    from rvnd.workflows import WorkflowStep
     s = WorkflowStep(skill_id="x", autonomy_grade="L3", oversight="notify")
     d = s.to_dict()
     assert d["autonomy_grade"] == "L3" and d["oversight"] == "notify"
@@ -109,7 +109,7 @@ def test_workflow_step_carries_grade_and_oversight():
 # --- the workspace_matrix MCP facade (the policy surface the dashboard reads) ---
 
 def test_workspace_matrix_facade(tmp_path):
-    from workspaces import mcp_server
+    from rvnd import mcp_server
     f = str(tmp_path / "workspace")
     assert "workspace_matrix" in mcp_server._DECLARED_TOOLS
     h = mcp_server.workspace_matrix("help")
@@ -143,7 +143,7 @@ def test_workspace_matrix_facade(tmp_path):
 # --- hierarchy: in every workspace, global top-down, override cascade (like the lock) ---
 
 def test_matrix_hierarchy_global_topdown_override(tmp_path, monkeypatch):
-    from workspaces import memory as _mem
+    from rvnd import memory as _mem
     root = str(tmp_path / "root")
     child = str(tmp_path / "root" / "sub")
     monkeypatch.setattr(_mem, "discover_ancestors",
@@ -177,7 +177,7 @@ def test_matrix_hierarchy_global_topdown_override(tmp_path, monkeypatch):
 def test_runner_matrix_tightens_a_passing_step(tmp_path):
     """A step the gate would pass is BLOCKED when the folder's matrix paints its
     cell red — the doing layer reads the plan layer, strictest-wins."""
-    from workspaces.workflows import Workflow, WorkflowStep, define_workflow, run_workflow
+    from rvnd.workflows import Workflow, WorkflowStep, define_workflow, run_workflow
     folder = tmp_path / "workspace"; folder.mkdir()
     log_root = tmp_path / "log"
     define_workflow(str(folder),
@@ -200,7 +200,7 @@ def test_runner_matrix_tightens_a_passing_step(tmp_path):
 
 def test_runner_no_matrix_file_is_unchanged(tmp_path):
     """No painted matrix → the step runs exactly as before (opt-in safety)."""
-    from workspaces.workflows import Workflow, WorkflowStep, define_workflow, run_workflow
+    from rvnd.workflows import Workflow, WorkflowStep, define_workflow, run_workflow
     folder = tmp_path / "workspace"; folder.mkdir()
     log_root = tmp_path / "log"
     define_workflow(str(folder),

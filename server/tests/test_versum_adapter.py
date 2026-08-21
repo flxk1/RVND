@@ -3,7 +3,7 @@
 from versum.store.graph import Claim, Concept, Edge, save_claims, save_concepts, save_edges
 from versum.composition import Composition, Participant, save_compositions
 
-from workspaces.adapters.versum import VersumKnowledgeStore, VersumSolverSource
+from rvnd.adapters.versum import VersumKnowledgeStore, VersumSolverSource
 
 
 def _store(tmp_path):
@@ -72,7 +72,7 @@ def test_missing_index_fails_loudly(tmp_path):
 
 def test_workspace_query_uses_versum_when_index_exists(tmp_path, monkeypatch):
     _store(tmp_path)
-    from workspaces import mcp_impl
+    from rvnd import mcp_impl
 
     monkeypatch.setattr(mcp_impl, "_log_root", lambda: tmp_path / "log")
     result = mcp_impl.workspace_query(str(tmp_path), subject="concept-a")
@@ -82,7 +82,7 @@ def test_workspace_query_uses_versum_when_index_exists(tmp_path, monkeypatch):
 
 def test_reason_uses_versum_without_recording_local_graph(tmp_path, monkeypatch):
     _store(tmp_path)
-    from workspaces import mcp_server
+    from rvnd import mcp_server
 
     monkeypatch.setattr(mcp_server, "_log_root", lambda: tmp_path / "log")
     result = mcp_server.reason(str(tmp_path), start="concept-a", record=False)

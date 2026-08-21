@@ -6,9 +6,9 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces import problem_kg, legal_corpus
-from workspaces.decisions import surface as ds
-from workspaces.rule_registry import RuleRegistry
+from rvnd import problem_kg, legal_corpus
+from rvnd.decisions import surface as ds
+from rvnd.rule_registry import RuleRegistry
 
 GDPR = """REGULATION (EU) 2016/679 (General Data Protection Regulation)
 Article 17
@@ -96,7 +96,7 @@ def test_projection_emits_dimensioned_pairs(registry):
     edges = [e for p in pairs for e in p["edges"]]
     preds = {e["predicate"] for e in edges}
     assert {"grounded_in", "required_room_missing", "resolved_by"} <= preds
-    from workspaces import reasoning
+    from rvnd import reasoning
     assert reasoning.extract_edges(pairs)          # composes with the 5D machinery
 
 
@@ -149,7 +149,7 @@ def test_norm_pairs_carry_tatbestand_to_rechtsfolge_not_label_twice(registry):
 
 def test_conditional_norm_problem_slot_is_the_tatbestand(tmp_path):
     legal_corpus.seed_registry(tmp_path)
-    from workspaces.rule_registry import RuleRegistry
+    from rvnd.rule_registry import RuleRegistry
     reg = RuleRegistry(tmp_path, user="reviewer")
     reg.place_legal_text(
         """REGULATION (EU) 2016/679 (General Data Protection Regulation)

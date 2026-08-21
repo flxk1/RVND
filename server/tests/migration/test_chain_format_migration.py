@@ -31,7 +31,7 @@ import pytest
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
-from workspaces.mutation_log import (
+from rvnd.mutation_log import (
     GENESIS_HASH,
     LogEvent,
     MutationLog,
@@ -106,7 +106,7 @@ def _load_fixture_into_log(
         pytest.skip(f"fixture missing: {fixture_name}")
     shutil.copy(fixture, log_dir / "events.jsonl")
     if fixture_private is not None:
-        from workspaces.signing import sign_bytes
+        from rvnd.signing import sign_bytes
 
         events = [
             json.loads(line)
@@ -336,7 +336,7 @@ def test_purge_writes_tombstone_and_chain_still_verifies(tmp_path, monkeypatch):
         "v0_6_7_chain.jsonl", tmp_path, monkeypatch, keypair_version="7",
     )
     # B1 requires the controller key — initialise it in the test keydir.
-    from workspaces import signing
+    from rvnd import signing
     signing.ensure_controller_keypair()
     # Purge the first pair — events 0, 2, 4 reference pair-067-001.
     log.purge(
@@ -364,7 +364,7 @@ def test_verify_chain_exposed_as_mcp_tool():
     """
     # 2026-06-12 surface fold: the standalone tool became the workspace_audit
     # facade op "verify_chain" - the parity contract is the op, not the name.
-    from workspaces import mcp_server  # type: ignore
+    from rvnd import mcp_server  # type: ignore
     assert "workspace_audit" in mcp_server._DECLARED_TOOLS
     ops = {o["op"] for o in mcp_server.workspace_audit("help")["ops"]}
     assert "verify_chain" in ops, "workspace_audit lost the verify_chain op"

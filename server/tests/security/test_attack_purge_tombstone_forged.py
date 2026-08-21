@@ -21,7 +21,7 @@ from pathlib import Path
 
 import pytest
 
-from workspaces.mutation_log import (
+from rvnd.mutation_log import (
     LogEvent,
     MutationLog,
     _canonical_event_hash,
@@ -37,7 +37,7 @@ def operator_only_keys(tmp_path, monkeypatch):
     """Operator (identity) key present, controller key absent."""
     keydir = tmp_path / "keys"
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(keydir))
-    from workspaces import signing
+    from rvnd import signing
     signing.ensure_keypair()
     # Deliberately NOT calling ensure_controller_keypair() — that's the
     # attacker capability we're modelling.
@@ -64,7 +64,7 @@ def _forge_tombstone(
     operator_keyid: str,
 ) -> dict:
     """Build a tombstone-shaped event with operator-only signing."""
-    from workspaces import signing
+    from rvnd import signing
 
     log_file = log.log_file
     lines = [json.loads(l) for l in log_file.read_text().splitlines() if l.strip()]
@@ -132,7 +132,7 @@ def test_a7_forged_tombstone_does_not_silently_disappear_data(
          registered controller pubkey.
     """
     log = _populated_chain(tmp_path, n=3)
-    from workspaces import signing
+    from rvnd import signing
 
     operator_keyid = signing.public_key_fingerprint() or ""
 
@@ -196,7 +196,7 @@ def test_a7_legit_two_key_tombstone_validates(tmp_path, monkeypatch):
     the chain re-verifies as ok=True."""
     keydir = tmp_path / "keys"
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(keydir))
-    from workspaces import signing
+    from rvnd import signing
     signing.ensure_keypair()
     signing.ensure_controller_keypair()
 

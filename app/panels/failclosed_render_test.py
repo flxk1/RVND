@@ -35,7 +35,7 @@ os.environ["WORKSPACE_L0_LOG_ROOT"] = os.path.join(tmp, "logs")
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 sys.path.insert(0, str(HERE.parent)); sys.path.insert(0, str(HERE.parent.parent / "server" / "src"))
 import serve  # noqa: E402
-import workspaces.mcp_server as MS  # noqa: E402
+import rvnd.mcp_server as MS  # noqa: E402
 
 F = os.path.join(tmp, "fanclub-crm"); os.makedirs(F, exist_ok=True)
 MS.workspace_workspace("add", {"folder_context": F})   # a real workspace the console should read

@@ -16,13 +16,13 @@ from pathlib import Path
 
 from versum.store.graph import Claim, Concept, Edge, save_claims, save_concepts, save_edges
 
-from workspaces.mutation_log import MutationLog
+from rvnd.mutation_log import MutationLog
 
 
 def _fresh_mcp(monkeypatch, log_root: Path):
-    import workspaces.mcp_server as srv
+    import rvnd.mcp_server as srv
     importlib.reload(srv)
-    monkeypatch.setattr("workspaces.mcp_serving._log_root", lambda: log_root)
+    monkeypatch.setattr("rvnd.mcp_serving._log_root", lambda: log_root)
     return srv
 
 

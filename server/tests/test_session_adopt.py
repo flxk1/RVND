@@ -11,8 +11,8 @@ from __future__ import annotations
 
 
 
-from workspaces import parties, session_io as S, session_mcp as M
-from workspaces import workspace_registry as WR
+from rvnd import parties, session_io as S, session_mcp as M
+from rvnd import workspace_registry as WR
 
 
 def _bundle(tmp_path, ids, name="env"):

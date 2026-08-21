@@ -16,11 +16,11 @@ from pathlib import Path
 
 import pytest
 
-from workspaces import queue as _queue
-from workspaces import workspace_registry as _registry
-from workspaces.governance_live import governance_live
-from workspaces.mutation_log import LogEvent, MutationLog
-from workspaces.op_mutation import is_read, mutates
+from rvnd import queue as _queue
+from rvnd import workspace_registry as _registry
+from rvnd.governance_live import governance_live
+from rvnd.mutation_log import LogEvent, MutationLog
+from rvnd.op_mutation import is_read, mutates
 
 _NOW = 1_000_000.0
 
@@ -135,7 +135,7 @@ def test_reachable_through_the_workspace_workflow_facade(seeded, monkeypatch):
     (its public op route), not only as a direct function call. The facade reads
     the log root from WORKSPACE_L0_LOG_ROOT, so bind it to the seeded root."""
     monkeypatch.setenv("WORKSPACE_L0_LOG_ROOT", str(seeded["lr"]))
-    from workspaces.mcp_server import workspace_workflow
+    from rvnd.mcp_server import workspace_workflow
     b = workspace_workflow(op="governance_live",
                            params={"folder_context": seeded["folder"]})
     assert b["ok"] is True

@@ -7,8 +7,8 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces import workspace_lock, seal
-from workspaces.memory import WorkspaceMemory
+from rvnd import workspace_lock, seal
+from rvnd.memory import WorkspaceMemory
 
 
 def _seed(folder, log_root, n=3):
@@ -80,7 +80,7 @@ def test_unlock_wrong_passphrase_does_not_cache(tmp_path):
 
 
 def test_read_pairs_serves_sealed_unlocked_matches_disk(tmp_path):
-    from workspaces.memory import WorkspaceMemory
+    from rvnd.memory import WorkspaceMemory
     folder = tmp_path / "w"; folder.mkdir(); log_root = tmp_path / "log"
     _seed(folder, log_root, 3)
     before = {p["id"] for p in WorkspaceMemory(folder, log_root=log_root, actor="t").all_pairs()}
@@ -102,7 +102,7 @@ def test_read_pairs_serves_sealed_unlocked_matches_disk(tmp_path):
 def test_recent_tool_serves_sealed_unlocked_refuses_locked(tmp_path, monkeypatch):
     monkeypatch.setenv("WORKSPACE_L0_LOG_ROOT", str(tmp_path / "log"))
     monkeypatch.setenv("WORKSPACES_ALLOW_UNREGISTERED", "1")
-    from workspaces import mcp_server as M
+    from rvnd import mcp_server as M
     recent = getattr(M.recent, "fn", M.recent)
     unlock = getattr(M.workspace_lock_unlock, "fn", M.workspace_lock_unlock)
     lock_t = getattr(M.workspace_lock_lock, "fn", M.workspace_lock_lock)
@@ -130,7 +130,7 @@ def test_recent_tool_serves_sealed_unlocked_refuses_locked(tmp_path, monkeypatch
 def test_search_and_by_id_serve_or_refuse_when_sealed(tmp_path, monkeypatch):
     monkeypatch.setenv("WORKSPACE_L0_LOG_ROOT", str(tmp_path / "log"))
     monkeypatch.setenv("WORKSPACES_ALLOW_UNREGISTERED", "1")
-    from workspaces import mcp_server as M
+    from rvnd import mcp_server as M
     search = getattr(M.search, "fn", M.search)
     by_id = getattr(M.by_id, "fn", M.by_id)
     unlock = getattr(M.workspace_lock_unlock, "fn", M.workspace_lock_unlock)
@@ -157,7 +157,7 @@ def test_search_and_by_id_serve_or_refuse_when_sealed(tmp_path, monkeypatch):
 def test_safe_context_serves_sealed_unlocked_refuses_locked(tmp_path, monkeypatch):
     monkeypatch.setenv("WORKSPACE_L0_LOG_ROOT", str(tmp_path / "log"))
     monkeypatch.setenv("WORKSPACES_ALLOW_UNREGISTERED", "1")
-    from workspaces import mcp_server as M
+    from rvnd import mcp_server as M
     psc = getattr(M.pairs_safe_context_for_query, "fn", M.pairs_safe_context_for_query)
     unlock = getattr(M.workspace_lock_unlock, "fn", M.workspace_lock_unlock)
     logr = tmp_path / "log"; folder = tmp_path / "w"; folder.mkdir()
@@ -182,7 +182,7 @@ def test_guard_fails_closed_when_seal_state_errors(tmp_path, monkeypatch):
     fall through to a direct disk read of a possibly-sealed workspace."""
     monkeypatch.setenv("WORKSPACE_L0_LOG_ROOT", str(tmp_path / "log"))
     monkeypatch.setenv("WORKSPACES_ALLOW_UNREGISTERED", "1")
-    from workspaces import mcp_server as M
+    from rvnd import mcp_server as M
     recent = getattr(M.recent, "fn", M.recent)
     logr = tmp_path / "log"; folder = tmp_path / "w"; folder.mkdir()
     _seed(folder, logr, 3)

@@ -27,7 +27,7 @@ from __future__ import annotations
 import ast
 import pathlib
 
-WORKSPACES = pathlib.Path(__file__).resolve().parents[1] / "src" / "workspaces"
+WORKSPACES = pathlib.Path(__file__).resolve().parents[1] / "src" / "rvnd"
 
 #: A module consults a cap if it reaches any of these. ``cap_grade`` and
 #: ``Breaker`` are the Breaker path; ``_actor_grade_cap`` is the party-register
@@ -129,12 +129,12 @@ def test_the_register_names_real_modules():
 # --- the cap does what the register assumes ------------------------------------------
 
 def test_a_quarantined_agent_is_capped_to_interactive():
-    from workspaces.breaker import cap_grade
+    from rvnd.breaker import cap_grade
     assert cap_grade("L4", "L0") == "L0"
 
 
 def test_capping_only_lowers():
-    from workspaces.breaker import cap_grade
+    from rvnd.breaker import cap_grade
     for asked in ("L0", "L1", "L2", "L3", "L4"):
         for cap in ("L0", "L1", "L2", "L3", "L4"):
             assert cap_grade(asked, cap) <= max(asked, cap)
@@ -146,8 +146,8 @@ def test_an_absent_breaker_does_not_lower_anything():
     # defaults `breaker=None`, so a caller that forgets one gets RUNNING. That is
     # the same hole as an uncapped call site, one level up, and it is why the
     # register above is a baseline rather than a clean bill.
-    from workspaces.action_gate import ActionRequest
-    from workspaces.oversight import assess
+    from rvnd.action_gate import ActionRequest
+    from rvnd.oversight import assess
     out = assess(ActionRequest(agent="a", action_class="read",
                                autonomy_grade="L4", footprint=()))
     assert out.breaker_state == "RUNNING"

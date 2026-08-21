@@ -3,7 +3,7 @@
 # Copyright 2026 flxk1
 """Verify the identity-bound OS egress lock is in force.
 
-The egress proxy (server/src/workspaces/lock/egress_proxy.py) scans and audits
+The egress proxy (server/src/rvnd/lock/egress_proxy.py) scans and audits
 every prompt, but it only *enforces* privacy when the OS also blocks direct
 outbound to the provider hosts from everything except the proxy. The templates
 in deploy/firewall/ set that up; this script checks it took.

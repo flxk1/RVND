@@ -24,7 +24,7 @@ def server_module(monkeypatch, tmp_path):
     log_root = tmp_path / "logs"
     monkeypatch.setenv("WORKSPACE_L0_LOG_ROOT", str(log_root))
     # Re-import so the env var is picked up by _log_root() on each call.
-    mod = importlib.import_module("workspaces.mcp_server")
+    mod = importlib.import_module("rvnd.mcp_server")
     importlib.reload(mod)
     return mod
 
@@ -43,7 +43,7 @@ def folder(tmp_path):
 
 def test_module_imports_and_registers_tools():
     """The MCP server module imports cleanly and the FastMCP instance exists."""
-    mod = importlib.import_module("workspaces.mcp_server")
+    mod = importlib.import_module("rvnd.mcp_server")
     assert mod.mcp is not None
     # The tools are bound on the module as callable functions.
     for name in ("capture_llm", "capture_web", "policy_snapshot",
@@ -152,7 +152,7 @@ def test_policy_snapshot_defaults(server_module, folder):
 
 
 def test_policy_snapshot_after_lock_disable(server_module, folder):
-    from workspaces import disable_lock
+    from rvnd import disable_lock
     # disable_lock writes to the same log_root the server reads.
     import os
     log_root = os.environ["WORKSPACE_L0_LOG_ROOT"]

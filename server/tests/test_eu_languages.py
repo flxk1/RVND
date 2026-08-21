@@ -8,7 +8,7 @@ ensure compliance" duty). Each must (a) be detected as its own language and
 per-language profile registry against regressions.
 """
 
-import workspaces.rule_extractor as r
+import rvnd.rule_extractor as r
 
 # language -> (sentence, expected detected language)
 _OBLIGATIONS = {

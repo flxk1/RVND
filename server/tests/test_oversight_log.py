@@ -5,9 +5,9 @@
 import tempfile
 from pathlib import Path
 
-from workspaces.lens import AdmissionVerdict, Admission
-from workspaces.mutation_log import LogEvent, MutationLog
-from workspaces.oversight_log import (
+from rvnd.lens import AdmissionVerdict, Admission
+from rvnd.mutation_log import LogEvent, MutationLog
+from rvnd.oversight_log import (
     TaintFinding, record_admission, taint_walk, mark_tainted)
 
 

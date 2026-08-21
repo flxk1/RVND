@@ -13,7 +13,7 @@ import json
 
 import pytest
 
-from workspaces import audit_drop
+from rvnd import audit_drop
 
 
 @pytest.fixture(autouse=True)
@@ -57,7 +57,7 @@ def test_durable_drops_reports_corrupt_records_rather_than_skipping(tmp_path):
 
 
 def test_egress_proxy_audit_log_failure_is_reported(tmp_path, monkeypatch):
-    from workspaces.lock import egress_proxy as ep
+    from rvnd.lock import egress_proxy as ep
     monkeypatch.setenv("WORKSPACE_L0_LOG_ROOT", str(tmp_path))
 
     class _P:
@@ -72,7 +72,7 @@ def test_egress_proxy_audit_log_failure_is_reported(tmp_path, monkeypatch):
 
 
 def test_doctor_reports_dropped_writes_as_an_error(tmp_path):
-    from workspaces.cli.impl import _doctor_check_audit_drops
+    from rvnd.cli.impl import _doctor_check_audit_drops
     assert _doctor_check_audit_drops(tmp_path)["level"] == "ok"
 
     audit_drop.record("egress_proxy.audit_log", OSError("x"), log_root=tmp_path)
@@ -84,7 +84,7 @@ def test_doctor_reports_dropped_writes_as_an_error(tmp_path):
 def test_lock_reports_through_the_injected_hook_not_an_import(monkeypatch, capsys):
     """The lock must not import audit_drop -- lock_boundary_check enforces that.
     It reports through host_deps.record_audit_drop instead."""
-    from workspaces.lock import egress_proxy as ep, host_deps
+    from rvnd.lock import egress_proxy as ep, host_deps
     host_deps._wired = False
     ep._report_audit_drop("unit.wired", OSError("boom"), detail="d")
     assert [d["where"] for d in audit_drop.drops()] == ["unit.wired"]
@@ -99,7 +99,7 @@ def test_lock_falls_back_to_stderr_without_its_host(monkeypatch, capsys):
     `sys`, and ruff's F82 (undefined name) -- which this repo selects -- did not
     flag it. Only executing the branch did.
     """
-    from workspaces.lock import egress_proxy as ep, host_deps
+    from rvnd.lock import egress_proxy as ep, host_deps
     monkeypatch.setattr(host_deps, "record_audit_drop", None)
     monkeypatch.setattr(host_deps, "_wired", True)
     ep._report_audit_drop("unit.fallback", OSError("boom"))
@@ -115,7 +115,7 @@ def test_ask_and_orchestrate_name_the_drop_in_their_response():
     nothing while the drop was recorded. CodeQL caught it as an unused local.
     """
     import inspect
-    from workspaces import workspace_cascade as wc, workspace_orchestrate as wo
+    from rvnd import workspace_cascade as wc, workspace_orchestrate as wo
     checked = 0
     for fn in (wo.orchestrate, wo.ask_workspace, wc.cascade_for_workspace):
         src = inspect.getsource(fn)

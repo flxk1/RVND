@@ -7,10 +7,10 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces import problem_kg, legal_corpus
-from workspaces.decisions import surface as ds
-from workspaces import reasoning_contract as rc
-from workspaces.rule_registry import RuleRegistry
+from rvnd import problem_kg, legal_corpus
+from rvnd.decisions import surface as ds
+from rvnd import reasoning_contract as rc
+from rvnd.rule_registry import RuleRegistry
 
 GDPR = """REGULATION (EU) 2016/679 (General Data Protection Regulation)
 Article 17
@@ -167,7 +167,7 @@ def test_build_case_stake_blocks_auto_answer_below_floor(registry):
 # ── Oversight alignment against the real folder policy ───────────────────────
 
 def test_check_folder_case_reads_the_policy(tmp_path):
-    from workspaces import policy
+    from rvnd import policy
     open_case = _case(resolution={"type": "open", "note": ""})
     # default policy: oversight on, level approve → floor satisfied
     assert not [f for f in rc.check_folder_case(open_case, tmp_path, stake=True).violations

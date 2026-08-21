@@ -7,9 +7,9 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces.corpus import coverage as cc
-from workspaces import negative_search as ns
-from workspaces import subsumption_path as sp
+from rvnd.corpus import coverage as cc
+from rvnd import negative_search as ns
+from rvnd import subsumption_path as sp
 
 
 # ── Vollständigkeit at the ingestion layer: 30 declared, 23 read ─────────────

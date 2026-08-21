@@ -15,9 +15,9 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces import mcp_server
-import workspaces.mcp_serving as serving
-from workspaces.workspace_registry import add_known_workspace
+from rvnd import mcp_server
+import rvnd.mcp_serving as serving
+from rvnd.workspace_registry import add_known_workspace
 
 
 @pytest.fixture

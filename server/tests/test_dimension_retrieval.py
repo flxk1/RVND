@@ -9,8 +9,8 @@ from pathlib import Path
 
 import pytest
 
-from workspaces.dimensions import Dimension, classify_query_dimension
-from workspaces.memory import WorkspaceMemory
+from rvnd.dimensions import Dimension, classify_query_dimension
+from rvnd.memory import WorkspaceMemory
 
 
 # ── Query-intent classifier ──────────────────────────────────────
@@ -38,7 +38,7 @@ def _pair(pid, *dims):
 
 
 def test_rerank_promotes_matching_dimension_stably():
-    import workspaces.mcp_server as srv
+    import rvnd.mcp_server as srv
     a = _pair("a", Dimension.STRUCTURAL)          # no causal edge
     b = _pair("b", Dimension.CAUSAL)              # causal edge
     c = _pair("c", Dimension.RELATIONAL)          # no causal edge
@@ -48,7 +48,7 @@ def test_rerank_promotes_matching_dimension_stably():
 
 
 def test_rerank_noop_without_hint():
-    import workspaces.mcp_server as srv
+    import rvnd.mcp_server as srv
     pairs = [_pair("a"), _pair("b")]
     assert srv._rerank_by_dimension(pairs, None) is pairs
 
@@ -56,9 +56,9 @@ def test_rerank_noop_without_hint():
 # ── Integration: the hint surfaces and ordering changes ──────────
 
 def _fresh_mcp(monkeypatch, log_root: Path):
-    import workspaces.mcp_server as srv
+    import rvnd.mcp_server as srv
     importlib.reload(srv)
-    monkeypatch.setattr("workspaces.mcp_serving._log_root", lambda: log_root)
+    monkeypatch.setattr("rvnd.mcp_serving._log_root", lambda: log_root)
     return srv
 
 

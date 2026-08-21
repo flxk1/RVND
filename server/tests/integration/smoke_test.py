@@ -31,7 +31,7 @@ async def _run() -> int:
     # during CI / sandboxed test runs.
     server_params = StdioServerParameters(
         command=sys.executable,
-        args=["-m", "workspaces.lock.mcp_server"],
+        args=["-m", "rvnd.lock.mcp_server"],
         env=None,
     )
 

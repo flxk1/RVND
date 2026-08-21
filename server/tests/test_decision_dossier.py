@@ -26,13 +26,13 @@ import os
 
 import pytest
 
-from workspaces.decisions.dossier import decision_dossier
-from workspaces.decisions.queue import DecisionQueue
-from workspaces.mutation_log import MutationLog
-from workspaces.operations import operate
-from workspaces.parties import register_party
-from workspaces.review_card import record_override
-from workspaces.use_case import register_use_case
+from rvnd.decisions.dossier import decision_dossier
+from rvnd.decisions.queue import DecisionQueue
+from rvnd.mutation_log import MutationLog
+from rvnd.operations import operate
+from rvnd.parties import register_party
+from rvnd.review_card import record_override
+from rvnd.use_case import register_use_case
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 
@@ -217,7 +217,7 @@ def test_panel_seats_stay_sealed(env):                           # D6
 def test_facade_op_decision_dossier(env, monkeypatch):           # D7
     """workspace_dispatch: decision_dossier is reachable as an op and keeps
     the fail-closed contract for unknown ids."""
-    M = pytest.importorskip("workspaces.mcp_server")
+    M = pytest.importorskip("rvnd.mcp_server")
     did = _open(env)
     monkeypatch.setenv("WORKSPACE_L0_LOG_ROOT", env["lr"])
     out = M.workspace_dispatch("decision_dossier",

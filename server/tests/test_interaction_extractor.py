@@ -7,7 +7,7 @@ temporal-conflict case (surfaced, never auto-resolved), the precedent/edge
 firewall, and the confidence trap (recurrence ≠ authority promotion).
 """
 
-import workspaces.interaction_extractor as ix
+import rvnd.interaction_extractor as ix
 
 
 def _pair(pid, domain, summary, body, *, authority_tier=1, cited=None):

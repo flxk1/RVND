@@ -7,15 +7,15 @@ from __future__ import annotations
 
 import pytest
 
-from workspaces import draft_store as D
-from workspaces import erasure
-from workspaces.mutation_log import MutationLog
+from rvnd import draft_store as D
+from rvnd import erasure
+from rvnd.mutation_log import MutationLog
 
 
 @pytest.fixture
 def env(tmp_path, monkeypatch):
     monkeypatch.setenv("WORKSPACE_KEY_DIR", str(tmp_path / "keys"))
-    from workspaces import signing
+    from rvnd import signing
     signing.ensure_keypair()
     signing.ensure_controller_keypair()
     folder = tmp_path / "ws"
@@ -62,7 +62,7 @@ def test_sweep_reports_unreadable_draft(env):
 def test_sweep_names_sealed_folder_instead_of_claiming_clean(env):
     """A sealed folder's drafts cannot be inspected; the preview reports the
     blind spot rather than zero hits, so it never disagrees with execute."""
-    from workspaces import seal
+    from rvnd import seal
     _seed_drafts(env)
     seal.seal_folder(env["folder"], passphrase="pw", log_root=env["log_root"])
     report = erasure.sweep(env["folder"], "Ada Lovelace",

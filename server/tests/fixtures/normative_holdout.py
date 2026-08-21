@@ -3,7 +3,7 @@
 """Held-out validation corpus for the normative fingerprint.
 
 These fragments were NOT used while tuning the patterns in
-``workspaces.nd_routing``. F1 on this set is the real signal of
+``rvnd.nd_routing``. F1 on this set is the real signal of
 whether the fingerprint generalises.
 
 Same label conventions as :mod:`normative_corpus`.

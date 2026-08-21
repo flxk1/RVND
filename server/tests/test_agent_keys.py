@@ -11,7 +11,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.asymmetric.rsa import generate_private_key
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
-from workspaces import agent_keys as AK
+from rvnd import agent_keys as AK
 
 
 def _ed25519_pem() -> str:

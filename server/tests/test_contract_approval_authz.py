@@ -15,10 +15,10 @@ from pathlib import Path
 
 import pytest
 
-from workspaces.contracts import reviews as cr
-from workspaces import parties as pt
-from workspaces import approvals as ap
-from workspaces.policy import set_access_control
+from rvnd.contracts import reviews as cr
+from rvnd import parties as pt
+from rvnd import approvals as ap
+from rvnd.policy import set_access_control
 
 
 @pytest.fixture
@@ -128,8 +128,8 @@ def test_on_delegate_granted(workspace):
 def test_corrupt_policy_fails_closed(workspace):
     """A PRESENT-but-corrupt policy file must fail CLOSED (access control ON), so a
     corrupt policy can't silently drop the gate. (Wave-3 loop finding.)"""
-    from workspaces.authorization import access_control_on
-    from workspaces.policy import POLICY_FILENAME
+    from rvnd.authorization import access_control_on
+    from rvnd.policy import POLICY_FILENAME
     wsp, lr = workspace
     (wsp / POLICY_FILENAME).write_text("{ this is not valid json ", encoding="utf-8")
     assert access_control_on(str(wsp)) is True
@@ -143,7 +143,7 @@ def test_corrupt_policy_fails_closed(workspace):
 
 def test_absent_policy_is_off(workspace):
     """An ABSENT policy is the legitimate local-first default — access control OFF."""
-    from workspaces.authorization import access_control_on
+    from rvnd.authorization import access_control_on
     wsp, lr = workspace
     assert access_control_on(str(wsp)) is False
 

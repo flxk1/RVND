@@ -21,8 +21,8 @@ import re
 from pathlib import Path
 
 
-from workspaces.mutation_log import MutationLog
-from workspaces.pinned_skills import pin_skill
+from rvnd.mutation_log import MutationLog
+from rvnd.pinned_skills import pin_skill
 
 
 UUID_RE  = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
@@ -30,9 +30,9 @@ BATCH_RE = re.compile(r"^batch:[0-9a-f]{16}$")
 
 
 def _fresh_mcp(monkeypatch, log_root: Path):
-    import workspaces.mcp_server as srv
+    import rvnd.mcp_server as srv
     importlib.reload(srv)
-    monkeypatch.setattr("workspaces.mcp_serving._log_root", lambda: log_root)
+    monkeypatch.setattr("rvnd.mcp_serving._log_root", lambda: log_root)
     return srv
 
 

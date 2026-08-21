@@ -7,9 +7,9 @@ from __future__ import annotations
 
 from datetime import date
 
-from workspaces import law_sources as lsrc
-from workspaces import legal_pipeline as lp
-import workspaces.currency as cur
+from rvnd import law_sources as lsrc
+from rvnd import legal_pipeline as lp
+import rvnd.currency as cur
 
 
 # ── Live-connector binding ───────────────────────────────────────────────────
