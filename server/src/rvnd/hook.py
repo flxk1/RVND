@@ -355,6 +355,16 @@ def _marker_path(tool_use_id: str) -> Path:
     return _pending_dir() / f"{safe}.json"
 
 
+def _marker_signed_bytes(marker: dict[str, Any], tool_use_id: str) -> bytes:
+    """Canonical bytes covering the marker AND the action it belongs to.
+
+    Binding the tool_use_id means a genuine marker cannot be replayed against a
+    different action: move the file, and the signature stops matching.
+    """
+    return json.dumps({"tool_use_id": tool_use_id, "marker": marker},
+                      sort_keys=True, separators=(",", ":")).encode("utf-8")
+
+
 def _mark_held(evt: dict[str, Any], decision: Decision) -> None:
     """Record a HELD action keyed by ``tool_use_id`` so the PostToolUse companion
     can mint a certification IF the human approves (i.e. the tool then runs).
@@ -387,8 +397,17 @@ def _mark_held(evt: dict[str, Any], decision: Decision) -> None:
             "grounded": bool(detail.get("grounded")),
             "traffic_light": detail.get("traffic_light") or "amber",
         }
-        _marker_path(tuid).write_text(json.dumps(marker), encoding="utf-8")
+        from .signing import sign_bytes
+        envelope = {
+            "tool_use_id": tuid,
+            "marker": marker,
+            "signature": sign_bytes(_marker_signed_bytes(marker, tuid)),
+        }
+        _marker_path(tuid).write_text(json.dumps(envelope), encoding="utf-8")
     except Exception:
+        # Still best-effort: a witness must never break the decision it records.
+        # Failing here means NO marker, which means no certificate — fail-closed,
+        # the only direction an unrecorded hold may fail.
         pass
 
 
@@ -401,11 +420,31 @@ def _run_posttooluse(evt: dict[str, Any]) -> None:
         path = _marker_path(tuid) if tuid else None
         if not path or not path.exists():
             return
-        marker = json.loads(path.read_text(encoding="utf-8"))
+        envelope = json.loads(path.read_text(encoding="utf-8"))
         try:
             path.unlink()          # consume once
         except Exception:
             pass
+
+        # Verify BEFORE minting. An unsigned or altered marker means the hold it
+        # claims cannot be shown to have happened, and a certificate asserting
+        # `blocked_unless_permitted` on that basis would be signed and false —
+        # worse than no certificate, because it verifies.
+        from .signing import verify_signature
+        marker = envelope.get("marker") if isinstance(envelope, dict) else None
+        signature = envelope.get("signature") if isinstance(envelope, dict) else None
+        if (not isinstance(marker, dict) or not signature
+                or envelope.get("tool_use_id") != tuid
+                or not verify_signature(_marker_signed_bytes(marker, tuid), signature)):
+            from .audit_drop import record as _record_drop
+            _record_drop("hook.unverified_hold_marker",
+                         ValueError("marker signature missing or invalid"),
+                         tool_use_id=tuid, log_root=_log_root())
+            print("[rvnd] refusing to certify: the hold marker is not signed by "
+                  "this installation — no GovernanceCertification minted",
+                  file=sys.stderr)
+            return
+
         from .governance_cert import emit_governance_certification
         folder = marker.get("folder") or str(evt.get("cwd") or os.getcwd())
         env = emit_governance_certification(folder, marker=marker, log_root=_log_root())

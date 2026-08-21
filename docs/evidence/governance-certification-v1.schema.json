@@ -28,7 +28,7 @@
       "type": "object",
       "required": ["mechanism", "blocked_unless_permitted", "decision_ref"],
       "additionalProperties": false,
-      "description": "The load-bearing pillar. NOTE what backs it: blocked_unless_permitted is emitted as a constant true, so the field carries no information on its own. What makes it true is the CALL PATH — hook.py mints only when a PreToolUse marker file exists, and consumes it. That marker is unsigned JSON at a predictable path, so anyone who can write to <log_root>/hook-pending/ can cause a validly signed certificate to be minted for an action that was never held. See test_governance_certification.py::test_the_enforced_pillar_is_backed_by_the_marker_not_by_itself.",
+      "description": "The load-bearing pillar. NOTE what backs it: blocked_unless_permitted is emitted as a constant true, so the field carries no information on its own. What makes it true is the CALL PATH: hook.py mints only when a PreToolUse marker exists, verifies that marker's Ed25519 signature against this installation's key, and consumes it once. The signature covers the tool_use_id, so a genuine marker cannot be replayed against another action; an unsigned or altered one mints nothing and is reported through audit_drop. See test_hold_marker_signature.py.",
       "properties": {
         "mechanism": {"type": "string"},
         "blocked_unless_permitted": {"type": "boolean"},
