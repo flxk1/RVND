@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 from rvnd import knowledge_import
-from rvnd.workspace_grounder import GroundingLedger
+from rvnd.grounder import GroundingLedger
 
 
 _CSV = (

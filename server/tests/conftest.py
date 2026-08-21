@@ -79,7 +79,7 @@ def _hardened_lawful_workspace(request, tmp_path):
     if os.environ.get("RVND_TEST_HARDENED") == "1":
         test_dir = Path(str(request.node.fspath)).parent
         if test_dir.name != "security":
-            from rvnd.workspace_registry import add_known_workspace
+            from rvnd.registry import add_known_workspace
             add_known_workspace(tmp_path, label="hardened-test-scratch")
     yield
 

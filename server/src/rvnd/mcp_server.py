@@ -298,15 +298,15 @@ def route_to_workspace(query: str, limit: int = 5) -> dict[str, Any]:
     against each workspace's concept signature (its label + served pairs). No model,
     no network. Sealed+locked workspaces are scored on their label only and flagged
     ``label_only``. Returns candidates ranked best-first."""
-    from . import workspace_router, workspace_registry
+    from . import router, registry
     lr = _log_root()
     try:
-        ws = workspace_registry.list_known_workspaces(log_root=lr)
+        ws = registry.list_known_workspaces(log_root=lr)
     except Exception as e:
         return {"ok": False, "error": str(e), "query": query, "candidates": []}
     folders = [w.get("path") for w in ws if w.get("path")]
     labels = {w["path"]: w.get("label", "") for w in ws if w.get("path")}
-    ranked = workspace_router.route(query, folders, log_root=lr, labels=labels, limit=limit)
+    ranked = router.route(query, folders, log_root=lr, labels=labels, limit=limit)
     return {"ok": True, "query": query, "count": len(ranked), "candidates": ranked}
 
 
@@ -880,7 +880,7 @@ def list_known_workspaces() -> dict[str, Any]:
     """
     try:
         from .mcp_serving import get_request_principal
-        from .workspace_registry import load_registry, list_known_workspaces as _list
+        from .registry import load_registry, list_known_workspaces as _list
         data = load_registry(log_root=_log_root())
         rows = _list(log_root=_log_root())
         for w in rows:
@@ -1174,7 +1174,7 @@ def workspace_cascade(folder_context: str,
     never a silent no-op. Lets any MCP client (Claude in Cowork, Cline, the app)
     use the workspace's cascade for tasks the workspace is set up for.
     """
-    from .workspace_cascade import cascade_for_workspace
+    from .cascade_binding import cascade_for_workspace
     return cascade_for_workspace(folder_context, prompt,
                             max_tokens=max_tokens, temperature=temperature,
                             capability_token=capability_token,
@@ -1191,7 +1191,7 @@ def workspace_orchestrate(folder_context: str,
     sidebar and the /Workspaces chat. Returns the gated dispatch plan; running the
     chosen skills is a separate, gated step.
     """
-    from .workspace_orchestrate import orchestrate
+    from .orchestrate import orchestrate
     return orchestrate(query, folder_context, autonomy_grade=autonomy_grade)
 
 
@@ -1205,7 +1205,7 @@ def workspace_ask(folder_context: str,
     turn. The identical loop the app sidebar and /Workspaces run. The chat orchestrates
     which governance tools the turn needs; not every turn is grounded.
     """
-    from .workspace_orchestrate import ask_workspace
+    from .orchestrate import ask_workspace
     return ask_workspace(query, folder_context, max_tokens=max_tokens)
 
 
@@ -1400,7 +1400,7 @@ def workspace_legal(op: str, params: dict[str, Any] | None = None) -> dict[str, 
         The operation's result dict, or ``{"error": ...}`` for an unknown op or a
         missing required param (never raises across the MCP boundary).
     """
-    from .workspace_legal_facade import workspace_legal_op, ops_catalogue
+    from .legal_facade import workspace_legal_op, ops_catalogue
     if op in ("help", "catalogue", "ops"):
         return {"ops": ops_catalogue()}
     return workspace_legal_op(op, params or {})

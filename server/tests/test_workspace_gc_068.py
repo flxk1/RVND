@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 from rvnd.mutation_log import LogEvent, MutationLog, folder_hash
-from rvnd.workspace_migrate import gc_orphans
+from rvnd.migrate import gc_orphans
 
 
 def _seed(folder: Path, log_root: Path, n: int = 2) -> str:

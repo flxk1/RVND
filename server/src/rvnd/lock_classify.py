@@ -76,7 +76,7 @@ _SAFE_FACET_KEYS = {
 def _doc_token_fn(folder_path: str) -> Callable[[Optional[str]], str]:
     """Bind a per-workspace salted doc-token function for this folder."""
     try:
-        from .workspace_identity import opaque_doc_token
+        from .identity import opaque_doc_token
     except ImportError:
         def fallback(s: Optional[str]) -> str:
             return "<DOC_NONE>" if not s else "<DOC_unknown>"

@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import pytest
 
-from rvnd import workspace_lock, seal
+from rvnd import seal_binding, seal
 from rvnd.memory import WorkspaceMemory
 
 
@@ -25,8 +25,8 @@ def _seed(folder, log_root, n=3):
 def test_unsealed_workspace_serves_from_disk(tmp_path):
     folder = tmp_path / "w"; folder.mkdir(); log_root = tmp_path / "log"
     _seed(folder, log_root, 2)
-    assert not workspace_lock.is_sealed(folder, log_root=log_root)
-    store = workspace_lock.serve(folder, log_root=log_root)
+    assert not seal_binding.is_sealed(folder, log_root=log_root)
+    store = seal_binding.serve(folder, log_root=log_root)
     assert "events.jsonl" in store
 
 
@@ -34,11 +34,11 @@ def test_sealed_locked_workspace_refuses(tmp_path):
     folder = tmp_path / "w"; folder.mkdir(); log_root = tmp_path / "log"
     _seed(folder, log_root, 2)
     seal.seal_folder(folder, passphrase="pw", log_root=log_root)
-    workspace_lock.lock(folder, log_root=log_root)  # ensure no stale key
-    assert workspace_lock.is_sealed(folder, log_root=log_root)
-    assert not workspace_lock.is_unlocked(folder, log_root=log_root)
+    seal_binding.lock(folder, log_root=log_root)  # ensure no stale key
+    assert seal_binding.is_sealed(folder, log_root=log_root)
+    assert not seal_binding.is_unlocked(folder, log_root=log_root)
     with pytest.raises(seal.SealError):
-        workspace_lock.serve(folder, log_root=log_root)
+        seal_binding.serve(folder, log_root=log_root)
 
 
 def test_unlock_then_serve_uses_cached_key(tmp_path):
@@ -46,24 +46,24 @@ def test_unlock_then_serve_uses_cached_key(tmp_path):
     _seed(folder, log_root, 3)
     seal.seal_folder(folder, passphrase="pw", log_root=log_root)
 
-    out = workspace_lock.unlock(folder, passphrase="pw", log_root=log_root)
-    assert out["unlocked"] and workspace_lock.is_unlocked(folder, log_root=log_root)
+    out = seal_binding.unlock(folder, passphrase="pw", log_root=log_root)
+    assert out["unlocked"] and seal_binding.is_unlocked(folder, log_root=log_root)
 
     # serve() now works WITHOUT re-supplying the passphrase (cached key).
-    store = workspace_lock.serve(folder, log_root=log_root)
+    store = seal_binding.serve(folder, log_root=log_root)
     assert "events.jsonl" in store
     # still sealed on disk — serving did not unseal.
-    assert workspace_lock.is_sealed(folder, log_root=log_root)
+    assert seal_binding.is_sealed(folder, log_root=log_root)
 
     # state for the UI
-    st = workspace_lock.state(folder, log_root=log_root)
+    st = seal_binding.state(folder, log_root=log_root)
     assert st == {"sealed": True, "unlocked": True, "wall": "up"}
 
     # lock drops the key; serve refuses again.
-    workspace_lock.lock(folder, log_root=log_root)
-    assert not workspace_lock.is_unlocked(folder, log_root=log_root)
+    seal_binding.lock(folder, log_root=log_root)
+    assert not seal_binding.is_unlocked(folder, log_root=log_root)
     with pytest.raises(seal.SealError):
-        workspace_lock.serve(folder, log_root=log_root)
+        seal_binding.serve(folder, log_root=log_root)
 
 
 def test_unlock_wrong_passphrase_does_not_cache(tmp_path):
@@ -71,12 +71,12 @@ def test_unlock_wrong_passphrase_does_not_cache(tmp_path):
     _seed(folder, log_root, 1)
     seal.seal_folder(folder, passphrase="right", log_root=log_root)
     with pytest.raises(seal.SealError):
-        workspace_lock.unlock(folder, passphrase="nope", log_root=log_root)
-    assert not workspace_lock.is_unlocked(folder, log_root=log_root)
+        seal_binding.unlock(folder, passphrase="nope", log_root=log_root)
+    assert not seal_binding.is_unlocked(folder, log_root=log_root)
     # right passphrase still works
-    workspace_lock.unlock(folder, passphrase="right", log_root=log_root)
-    assert workspace_lock.serve_file(folder, "events.jsonl", log_root=log_root)
-    workspace_lock.lock(folder, log_root=log_root)
+    seal_binding.unlock(folder, passphrase="right", log_root=log_root)
+    assert seal_binding.serve_file(folder, "events.jsonl", log_root=log_root)
+    seal_binding.lock(folder, log_root=log_root)
 
 
 def test_read_pairs_serves_sealed_unlocked_matches_disk(tmp_path):
@@ -86,17 +86,17 @@ def test_read_pairs_serves_sealed_unlocked_matches_disk(tmp_path):
     before = {p["id"] for p in WorkspaceMemory(folder, log_root=log_root, actor="t").all_pairs()}
     assert len(before) == 3
     # unsealed: read_pairs reads from disk
-    assert set(workspace_lock.read_pairs(folder, log_root=log_root)) == before
+    assert set(seal_binding.read_pairs(folder, log_root=log_root)) == before
 
     seal.seal_folder(folder, passphrase="pw", log_root=log_root)
-    workspace_lock.unlock(folder, passphrase="pw", log_root=log_root)
+    seal_binding.unlock(folder, passphrase="pw", log_root=log_root)
     # sealed + unlocked: served from memory, same pairs, still sealed on disk
-    assert set(workspace_lock.read_pairs(folder, log_root=log_root)) == before
-    assert workspace_lock.is_sealed(folder, log_root=log_root)
+    assert set(seal_binding.read_pairs(folder, log_root=log_root)) == before
+    assert seal_binding.is_sealed(folder, log_root=log_root)
 
-    workspace_lock.lock(folder, log_root=log_root)
+    seal_binding.lock(folder, log_root=log_root)
     with pytest.raises(seal.SealError):
-        workspace_lock.read_pairs(folder, log_root=log_root)
+        seal_binding.read_pairs(folder, log_root=log_root)
 
 
 def test_recent_tool_serves_sealed_unlocked_refuses_locked(tmp_path, monkeypatch):
@@ -113,7 +113,7 @@ def test_recent_tool_serves_sealed_unlocked_refuses_locked(tmp_path, monkeypatch
     assert r["count"] == 3 and not r.get("locked")
 
     seal.seal_folder(folder, passphrase="pw", log_root=logr)
-    workspace_lock.lock(folder, log_root=logr)
+    seal_binding.lock(folder, log_root=logr)
     r = recent(str(folder))
     assert r.get("locked") is True and r["count"] == 0
 
@@ -142,7 +142,7 @@ def test_search_and_by_id_serve_or_refuse_when_sealed(tmp_path, monkeypatch):
     assert by_id(str(folder), "sha256:x0")["found"] is True
 
     seal.seal_folder(folder, passphrase="pw", log_root=logr)
-    workspace_lock.lock(folder, log_root=logr)
+    seal_binding.lock(folder, log_root=logr)
     assert search(str(folder), "i1").get("locked") is True
     assert by_id(str(folder), "sha256:x0").get("found") is False
 
@@ -151,7 +151,7 @@ def test_search_and_by_id_serve_or_refuse_when_sealed(tmp_path, monkeypatch):
     assert rs.get("served_sealed") and len(rs["results"]) >= 1
     b = by_id(str(folder), "sha256:x0")
     assert b["found"] is True and b.get("served_sealed") and b["pair"]
-    workspace_lock.lock(folder, log_root=logr)
+    seal_binding.lock(folder, log_root=logr)
 
 
 def test_safe_context_serves_sealed_unlocked_refuses_locked(tmp_path, monkeypatch):
@@ -167,14 +167,14 @@ def test_safe_context_serves_sealed_unlocked_refuses_locked(tmp_path, monkeypatc
     assert "views" in r and not r.get("locked")
 
     seal.seal_folder(folder, passphrase="pw", log_root=logr)
-    workspace_lock.lock(folder, log_root=logr)
+    seal_binding.lock(folder, log_root=logr)
     r = psc(str(folder), "i1")
     assert r.get("locked") is True and r["count"] == 0
 
     unlock(str(folder), "pw")
     r = psc(str(folder), "i1")
     assert r.get("served_sealed") and r["count"] >= 1 and r["views"]
-    workspace_lock.lock(folder, log_root=logr)
+    seal_binding.lock(folder, log_root=logr)
 
 
 def test_guard_fails_closed_when_seal_state_errors(tmp_path, monkeypatch):
@@ -190,7 +190,7 @@ def test_guard_fails_closed_when_seal_state_errors(tmp_path, monkeypatch):
 
     def _boom(*a, **k):
         raise RuntimeError("seal state unavailable")
-    monkeypatch.setattr(workspace_lock, "is_sealed", _boom)
+    monkeypatch.setattr(seal_binding, "is_sealed", _boom)
 
     r = recent(str(folder))
     assert r.get("locked") is True, "guard must refuse, not fall through to disk"

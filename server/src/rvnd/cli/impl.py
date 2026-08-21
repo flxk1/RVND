@@ -1431,7 +1431,7 @@ def cmd_workspace(args: argparse.Namespace) -> int:
 
 def _cmd_workspace_add(args: argparse.Namespace) -> int:
     """Register a folder in the known-workspaces allowlist (doctor's hint)."""
-    from ..workspace_registry import add_known_workspace
+    from ..registry import add_known_workspace
     res = add_known_workspace(args.folder_path, label=args.label,
                               log_root=_log_root(args))
     print(f"registered workspace: {res['path']}  (total: {res['total']})")
@@ -1439,7 +1439,7 @@ def _cmd_workspace_add(args: argparse.Namespace) -> int:
 
 
 def _cmd_workspace_remove(args: argparse.Namespace) -> int:
-    from ..workspace_registry import remove_known_workspace
+    from ..registry import remove_known_workspace
     if remove_known_workspace(args.folder_path, log_root=_log_root(args)):
         print(f"removed workspace: {args.folder_path}")
         return 0
@@ -1448,7 +1448,7 @@ def _cmd_workspace_remove(args: argparse.Namespace) -> int:
 
 
 def _cmd_workspace_list(args: argparse.Namespace) -> int:
-    from ..workspace_registry import list_known_workspaces
+    from ..registry import list_known_workspaces
     ws = list_known_workspaces(log_root=_log_root(args))
     if not ws:
         print("no workspaces registered.")
@@ -1459,7 +1459,7 @@ def _cmd_workspace_list(args: argparse.Namespace) -> int:
     return 0
 
 def _cmd_workspace_migrate(args: argparse.Namespace) -> int:
-    from ..workspace_migrate import migrate_workspace, WorkspaceMigrateError
+    from ..migrate import migrate_workspace, WorkspaceMigrateError
     strategy = args.on_collision.replace("-", "_")
     try:
         result = migrate_workspace(
@@ -1491,7 +1491,7 @@ def _cmd_workspace_gc(args: argparse.Namespace) -> int:
         print("ERROR: --delete and --archive are mutually exclusive",
               file=sys.stderr)
         return 2
-    from ..workspace_migrate import gc_orphans
+    from ..migrate import gc_orphans
     results = gc_orphans(
         log_root=_log_root(args),
         archive=args.archive,
@@ -1556,7 +1556,7 @@ def _workspace_standard_gguf() -> str:
     return found[0][1] if found else ""
 
 def _cmd_models_config(args: argparse.Namespace) -> int:
-    from ..workspace_cascade import write_local_config
+    from ..cascade_binding import write_local_config
     local_url = getattr(args, "local_url", "")
     local_model = getattr(args, "local_model", "")
     cloud_url = getattr(args, "cloud_url", "")
@@ -1601,7 +1601,7 @@ def _cmd_models_config(args: argparse.Namespace) -> int:
     return 0
 
 def _cmd_models_config_show(args: argparse.Namespace) -> int:
-    from ..workspace_cascade import config_path, _local_config, tiers_for_workspace
+    from ..cascade_binding import config_path, _local_config, tiers_for_workspace
     cfg = _local_config()
     print(f"config: {config_path()}")
     print(json.dumps(cfg, indent=2) if cfg else "  (empty — run `workspaces models config`)")
@@ -1886,8 +1886,8 @@ def _doctor_check_workspace_registry(log_root: Path) -> dict:
     from ..folder_context import ALLOW_UNREGISTERED_ENV
     allow = os.environ.get(ALLOW_UNREGISTERED_ENV) == "1"
     try:
-        from .. import workspace_registry
-        n = len(workspace_registry.list_known_workspaces(log_root=log_root))
+        from .. import registry
+        n = len(registry.list_known_workspaces(log_root=log_root))
     except Exception as e:
         return {"name": "workspace_registry", "level": DOCTOR_LEVEL_WARN,
                 "detail": f"could not read registry: {e}"}
@@ -1916,10 +1916,10 @@ def _doctor_check_air_gap(log_root: Path) -> dict:
     remedy = ("apply an OS-level egress lock — deploy/firewall/ "
               "(see docs/concepts/air-gap-enforcement.md)")
     try:
-        from .. import workspace_registry
+        from .. import registry
         from ..policy import is_air_gapped
         paths = [w.get("path") for w in
-                 workspace_registry.list_known_workspaces(log_root=log_root)]
+                 registry.list_known_workspaces(log_root=log_root)]
         gapped = [p for p in paths if p and is_air_gapped(p)]
     except Exception as e:
         return {"name": "air_gap_enforcement",
@@ -2463,7 +2463,7 @@ def cmd_ask(args: argparse.Namespace) -> int:
     except Exception as e:
         print(f"ERROR: {e}", file=sys.stderr)
         return 2
-    from ..workspace_orchestrate import ask_workspace
+    from ..orchestrate import ask_workspace
     res = ask_workspace(args.query, folder, max_tokens=args.max_tokens,
                    log_root=_log_root(args))
     if getattr(args, "json", False):
@@ -2646,7 +2646,7 @@ def cmd_grounding(args: argparse.Namespace) -> int:
         return 0
     if sub == "coverage":
         import json as _json
-        from rvnd.workspace_grounder import GroundingLedger
+        from rvnd.grounder import GroundingLedger
         res = GroundingLedger(folder, log_root=_log_root(args)).coverage()
         print(_json.dumps(res, indent=2, ensure_ascii=False))
         return 0
@@ -2875,7 +2875,7 @@ def cmd_init(args: argparse.Namespace) -> int:
     else:
         ws_home = _wask(inp, out, "Default workspaces folder", default_ws)
         try:
-            from ..workspace_registry import bootstrap_default_workspace
+            from ..registry import bootstrap_default_workspace
             bootstrap_default_workspace(target=ws_home)
             _wsay(out, f"  ✓ default workspaces folder: {ws_home}")
         except Exception as e:  # noqa: BLE001 — report, don't abort the whole wizard

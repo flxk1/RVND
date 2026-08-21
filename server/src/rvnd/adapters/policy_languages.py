@@ -7,8 +7,9 @@ this module solely confines dependency imports to the adapter layer.
 """
 from __future__ import annotations
 
-import deontic
 import loomground_governance
+
+from .deontic import module as deontic
 
 
 def installed_policy_language_packages() -> tuple[tuple[str, object, str], ...]:

@@ -1,0 +1,68 @@
+{
+  "schema": "evidence-producers-1",
+  "note": "Every artifact in docs/evidence/ must appear here, naming what produces or consumes it and how to regenerate it. Evidence nobody can regenerate cannot be checked for staleness, and evidence nobody reads is not evidence — the transport appendix documented a CLI invocation no test exercised, stayed wrong through a full package rename, and nothing noticed. test_evidence_freshness.py enforces this file.",
+  "artifacts": {
+    "surface-baseline.json": {
+      "kind": "generated",
+      "regenerate": "PYTHONPATH=server/src python scripts/verify_surface.py --write-baseline",
+      "gated_by": ["server/tests/test_verify_surface.py"]
+    },
+    "surface-ledger.md": {
+      "kind": "generated",
+      "regenerate": "PYTHONPATH=server/src python scripts/verify_surface.py --ledger",
+      "gated_by": ["server/tests/test_verify_surface.py"]
+    },
+    "lock-boundary-baseline.json": {
+      "kind": "generated",
+      "regenerate": "python scripts/lock_boundary_check.py --write-baseline",
+      "gated_by": ["scripts/lock_boundary_check.py"]
+    },
+    "ui-walk-matrix.json": {
+      "kind": "generated",
+      "regenerate": "python app/tests/ui_walk_reconcile_test.py",
+      "gated_by": ["app/tests/ui_walk_reconcile_test.py"]
+    },
+    "capability-register.json": {
+      "kind": "curated",
+      "regenerate": null,
+      "gated_by": ["server/tests/test_capability_register.py",
+                   "server/tests/test_capability_coverage.py"]
+    },
+    "capability-coverage-matrix.json": {
+      "kind": "generated",
+      "regenerate": "PYTHONPATH=server/src python server/tests/coverage_run.py",
+      "gated_by": ["server/tests/test_capability_coverage.py"]
+    },
+    "cli-channel-matrix.json": {
+      "kind": "curated",
+      "regenerate": null,
+      "gated_by": ["server/tests/test_cli_channel.py"]
+    },
+    "lock-recall-baseline.json": {
+      "kind": "curated",
+      "regenerate": null,
+      "gated_by": ["server/tests/test_lock_recall_gate.py"]
+    },
+    "mcp-surface-baseline.json": {
+      "kind": "curated",
+      "regenerate": null,
+      "gated_by": ["server/tests/test_mcp_input_robustness.py"]
+    },
+    "governance-certification-v1.schema.json": {
+      "kind": "curated",
+      "regenerate": null,
+      "gated_by": ["server/tests/test_governance_certification.py"]
+    },
+    "transport-evidence-appendix.md": {
+      "kind": "prose",
+      "regenerate": null,
+      "gated_by": ["server/tests/test_capability_coverage.py",
+                   "server/tests/test_cli_channel.py"]
+    },
+    "PRODUCERS.json": {
+      "kind": "curated",
+      "regenerate": null,
+      "gated_by": ["server/tests/test_evidence_freshness.py"]
+    }
+  }
+}

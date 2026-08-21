@@ -28,6 +28,12 @@ import warnings
 
 import rvnd
 
+#: The release at which this alias goes away. It exists so consumers OUTSIDE this
+#: repo survive the rename; inside the repo nothing should import `workspaces`.
+#: `test_compat_alias_identity.py` fails once the version reaches this, so the
+#: removal is a decision someone makes rather than a comment that ages out.
+REMOVE_AT_VERSION = "0.8.0"
+
 warnings.warn(
     "`workspaces` is deprecated; import `rvnd` instead. The engine no longer "
     "carries the name of the folders it governs.",

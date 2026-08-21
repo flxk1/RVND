@@ -1546,7 +1546,7 @@ def events_from_bytes(data: bytes) -> "Iterator[LogEvent]":
     lines — the same tolerance rule as ``MutationLog.replay()``. Pure: no IO.
 
     Lets a sealed workspace be read from served (in-memory) bytes without touching
-    the on-disk read path. See ``rvnd.workspace_lock``.
+    the on-disk read path. See ``rvnd.seal_binding``.
     """
     for raw in data.splitlines():
         try:

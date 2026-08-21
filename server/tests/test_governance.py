@@ -72,7 +72,7 @@ def test_ungrounded_keeps_running_flagged_in_hotl_hic(tmp_path):
 
 
 def test_ground_routes_through_oversight(tmp_path):
-    from rvnd.workspace_grounder import ground
+    from rvnd.grounder import ground
     folder = str(tmp_path / "workspace")
     # no citation → ungrounded → default oversight (approve) stops the agent
     r0 = ground(folder, "the sky is green", [], log_root=tmp_path / "log")
