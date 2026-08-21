@@ -1,9 +1,15 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # Copyright 2026 flxk1
-"""Shared storage defaults with no runtime-module dependencies."""
+"""Consumer shim — storage defaults now live in ``loomground-workspace``.
 
-from pathlib import Path
+Where a workspace keeps what it accumulates is part of what a workspace is, so
+``LOG_ROOT_DEFAULT`` moved to ``loomground_workspace.paths``. Kept as a shim
+because ``mutation_log``, ``reasoning_integrity`` and ``hook`` address this
+module path. Zero definitions of its own.
+"""
 
+from __future__ import annotations
 
-LOG_ROOT_DEFAULT = Path.home() / ".workspace" / "log"
-"""Default global log root; each workspace receives its own subdirectory."""
+from .adapters.workspace import LOG_ROOT_DEFAULT  # noqa: F401
+
+__all__ = ["LOG_ROOT_DEFAULT"]
