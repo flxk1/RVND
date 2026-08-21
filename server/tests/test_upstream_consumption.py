@@ -47,13 +47,15 @@ def test_loomground_toolchain_is_release_pinned():
     with `loomground-proxy` (consumed by
     `substitution_binding.substitution_projection`), and 11 -> 12 with
     `loomground-vertical` (the vertical-registration surface, consumed by
-    `subject_card` / `jurisdiction_packs` / `requirements_house`), each through
-    its adapter.
+    `subject_card` / `jurisdiction_packs` / `requirements_house`), and 12 -> 13
+    with `loomground-workspace` (the workspace concept itself — scope, identity,
+    registry — retiring RVND's copies), each through its adapter.
+    `loomground-brief` (consumed by `evidence_coverage.coverage_brief`),
     """
     text = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     direct_urls = [line for line in text.splitlines()
                    if "git+https://github.com/flxk1/loomground-" in line]
-    assert len(direct_urls) == 12
+    assert len(direct_urls) == 13
     for line in direct_urls:
         revision = line.rsplit("@", 1)[-1].split('"', 1)[0]
         assert len(revision) == 40
@@ -77,6 +79,7 @@ def test_documented_release_commits_match_install_manifest():
         "loomground-factual",
         "loomground-epistemic",
         "loomground-vertical",
+        "loomground-workspace",
     ):
         installed = re.search(
             rf'"{re.escape(package)} @ git\+https://github\.com/flxk1/'

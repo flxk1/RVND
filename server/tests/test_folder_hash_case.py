@@ -97,3 +97,98 @@ def test_folder_hash_idempotent():
     """Calling folder_hash twice with the same input yields the same hash."""
     p = str(Path.home())
     assert folder_hash(p) == folder_hash(p)
+
+
+# ---------------------------------------------------------------------------
+# The retirement onto loomground-workspace (#…): identity is CONSUMED, and the
+# legacy fallback still resolves an old log.
+# ---------------------------------------------------------------------------
+# ``legacy_folder_hash`` has only three live references, none of them loud, so
+# it is the easiest thing in this change to drop by accident. Dropping it does
+# not fail: ``seal._resolve_log_dir`` silently stops finding a pre-#162 log
+# directory, and ``MutationLog._is_sealed`` silently returns False for a
+# workspace sealed under the legacy hash — after which ``__init__`` recreates a
+# plaintext log dir beside the ciphertext and ``unseal`` refuses. These pin the
+# fallback end-to-end rather than pinning the function in isolation.
+
+
+def test_identity_functions_are_the_consumed_plane_not_a_local_copy():
+    """The three identity functions ARE loomground-workspace's, by object
+    identity — not a re-implementation that happens to agree today."""
+    import loomground_workspace as lw
+    from workspaces import seal
+    from workspaces.adapters import workspace as seam
+
+    assert folder_hash is lw.folder_hash
+    assert legacy_folder_hash is lw.legacy_folder_hash
+    assert _filesystem_is_case_insensitive is lw.identity._filesystem_is_case_insensitive
+    # the two live consumers of the legacy hash reach the same object
+    assert seal.legacy_folder_hash is lw.legacy_folder_hash
+    assert seam.legacy_folder_hash is lw.legacy_folder_hash
+
+
+def _legacy_differs(folder) -> bool:
+    """True when the two hashes actually differ for this path — i.e. the
+    fallback is exercisable here. They coincide on case-sensitive filesystems
+    (Linux ext4/xfs), where a pre-#162 log lives under the same name and the
+    fallback is a no-op by construction."""
+    return folder_hash(folder) != legacy_folder_hash(folder)
+
+
+def test_legacy_hashed_log_dir_still_resolves(tmp_path):
+    """A log written under the PRE-#162 hash is still found.
+
+    This is the data-availability property: the fresh-hash directory does not
+    exist, only the legacy one does, and ``seal._resolve_log_dir`` must return
+    the legacy directory — otherwise a seal/unseal operates on an empty path
+    while the real history sits under the other name.
+    """
+    from workspaces.seal import _resolve_log_dir
+
+    folder = tmp_path / "Acme"          # mixed case: the whole point of #162
+    folder.mkdir()
+    if not _legacy_differs(folder):
+        pytest.skip("case-sensitive filesystem: the two hashes coincide, so "
+                    "there is no legacy directory to fall back to")
+
+    root = tmp_path / "logroot"
+    legacy_dir = root / legacy_folder_hash(folder)
+    legacy_dir.mkdir(parents=True)
+    (legacy_dir / "events.jsonl").write_text('{"event":"pre-162"}\n',
+                                             encoding="utf-8")
+
+    assert not (root / folder_hash(folder)).exists()
+    resolved = _resolve_log_dir(folder, root)
+    assert resolved == legacy_dir, (
+        "the legacy fallback stopped resolving a pre-#162 log directory — "
+        "history is now invisible, silently")
+    assert (resolved / "events.jsonl").read_text(encoding="utf-8").strip() == \
+        '{"event":"pre-162"}'
+
+
+def test_workspace_sealed_under_the_legacy_hash_is_still_detected(tmp_path,
+                                                                  monkeypatch):
+    """``_is_sealed`` must see a ``<legacy_folder_hash>.sealed`` blob.
+
+    If it does not, ``MutationLog.__init__`` recreates a plaintext log
+    directory beside the ciphertext, which by its own comment makes ``unseal``
+    refuse — a data-availability failure on encrypted operator data.
+    """
+    from workspaces.mutation_log import MutationLog
+
+    folder = tmp_path / "Acme"
+    folder.mkdir()
+    if not _legacy_differs(folder):
+        pytest.skip("case-sensitive filesystem: the two hashes coincide")
+
+    root = tmp_path / "logroot"
+    root.mkdir()
+    monkeypatch.setenv("WORKSPACES_ALLOW_UNREGISTERED", "1")
+    (root / (legacy_folder_hash(folder) + ".sealed")).write_bytes(b"ciphertext")
+
+    log = MutationLog(folder, log_root=root)
+    assert log._is_sealed() is True, (
+        "a workspace sealed under the legacy hash is no longer detected as "
+        "sealed; __init__ will recreate plaintext beside the ciphertext")
+    # and the guard did its job: no plaintext store dir beside the blob
+    assert not (root / folder_hash(folder)).exists()

@@ -83,6 +83,8 @@ REQUIRED = {
     "versum": ("DimensionedSubgraphSink", "load_dimensioned_subgraphs"),
     "loomground_legal": ("connection",),
     "loomground_vertical": ("SubjectCard", "build_house", "register_court_pack"),
+    "loomground_workspace": ("folder_hash", "legacy_folder_hash",
+                             "resolve_folder_context", "list_known_workspaces"),
 }
 missing = []
 for mod, syms in REQUIRED.items():

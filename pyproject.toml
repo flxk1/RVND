@@ -41,6 +41,15 @@ dependencies = [
     # `build_house_from_text` deliberately did NOT move: turning instrument TEXT into
     # atoms runs RVND's extraction pipeline, which is engine work and stays in RVND.
     "loomground-vertical @ git+https://github.com/flxk1/loomground-vertical@3b1f0c2aeadf9c320e76986b65ed5f8cdee5ec22",
+    # loomground-workspace — what a workspace IS: how a folder is scoped
+    # (folder_context + symlink policy), identified (folder_hash) and registered
+    # (known-workspaces.json). The concept exists before any engine governs one,
+    # so RVND consumes it rather than owning it; RVND's copies were retired onto
+    # this pin. Apache-2.0, stdlib-only, requires-python >=3.10 — no resolver
+    # pressure. Consumed through adapters/workspace.py, which is the ONLY
+    # sanctioned importer (test_consumed_modules) because the seam is where the
+    # per-principal read scope is defaulted.
+    "loomground-workspace @ git+https://github.com/flxk1/loomground-workspace@9bd99a2b0b40f2585127dfbbe895c1ea245bed27",
     # enforcement-posture (P0a): verdict-neutral evidence layer — attests the effective
     # enforcement posture onto the signed chain. MIT, stdlib-only core; the caller injects
     # the signer (RVND Ed25519) and the RFC 8785 canonicaliser (rfc8785), so it pulls in
