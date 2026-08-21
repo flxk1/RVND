@@ -48,6 +48,11 @@ htmlcov/
 
 # The ctrl audit logger resolved its path relative to CWD and sprayed
 # `_ctrl/audit-log.md` into whatever directory a session stood in — including
-# server/src, i.e. inside the shipped package. The logger is fixed, but these
-# stay ignored so a recurrence cannot ride into a commit.
-work/_ctrl/
+# server/src, i.e. inside the shipped package. These are not RVND's files.
+#
+# The rule used to read `work/_ctrl/`, which could not do the job it describes:
+# a pattern containing a slash is anchored to THIS directory, so it matched only
+# <repo>/work/_ctrl/ and never server/src/rvnd/work/_ctrl/. Two of them reached
+# public main through a `git add -A` while this rule sat here looking correct.
+# Unanchored, so it matches at any depth.
+**/_ctrl/
