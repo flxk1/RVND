@@ -38,10 +38,25 @@ policy / action text
   │     → precise, signed Subgraph, verdicts computed server-side, enforced.        (live)
   │
   └─ 2. FALL BACK (engine absent or can't)
-        → loomground_ingest ingesters lower the text            (coarse — deterministic)
-        → the cloud LLM ENRICHES the Subgraph IN-GRAMMAR         (fix bearer/condition/edges)
+        → DELEGATE to the free plane skills (loomground-ingest, deontic, loomground)  (coarse)
+        → the cloud LLM ENRICHES the assembled Subgraph IN-GRAMMAR   (fix bearer/condition/edges)
         → hand the same Subgraph to sign-off / to RVND when it returns.             (degraded)
 ```
+
+## Delegate to the plane skills — don't reimplement them
+
+The fallback does **not** re-author a lowering. It delegates to the plane's own skill from the free
+`loomground` marketplace (Apache-2.0), and assembles the facets:
+
+| facet | delegated skill | it owns |
+|---|---|---|
+| lowering / ingest | `loomground-ingest` | drive the network-free ingest plane → a dimensioned Subgraph |
+| deontic | `deontic` (loomground-deontic) | each norm → a verified `DeonticFormula` (`O/P/F`, incidents) |
+| governance | `loomground` (loomground-governance) | the governance `.lg` patch + the express/policy/host litmus |
+
+A commercial `rvnd`-tier skill consuming these free plane skills is the layering working as intended —
+never the reverse, and never a reimplementation. The plane skills are the standalone floor; the RVND
+skill only cascades (engine-first) and assembles.
 
 Rules that make the cascade honest:
 - **Engine first, never the reverse.** The assistant does not answer and check later. If the engine
