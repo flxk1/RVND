@@ -18,8 +18,11 @@ happened, not a claim that it did.
                                     ``[oversight-cert]`` extra is present; disposition-only otherwise)
   * the sidecar persistence      ← ``oversight_cert._persist_certificate`` (the board already reads it)
 
-This module owns ONLY the 5-pillar predicate shape (see
-``scratchpad/governance-certification-v1.schema.json``). It needs no optional
+This module owns ONLY the 5-pillar predicate shape, which is specified in
+``docs/evidence/governance-certification-v1.schema.json`` and pinned by
+``server/tests/test_governance_certification.py``. That path used to read
+``scratchpad/...`` and pointed at a file that existed nowhere — the shape of the
+one owned artifact was whatever the code happened to emit. It needs no optional
 extra to mint the certificate — only ``cryptography`` (a base dependency).
 """
 from __future__ import annotations

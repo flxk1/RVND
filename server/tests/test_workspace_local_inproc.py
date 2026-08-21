@@ -8,8 +8,8 @@ HTTP rungs through one dispatching completer. Generation itself needs
 llama-cpp-python + a real GGUF, so the routing is exercised with fakes.
 """
 
-from rvnd import workspace_local_inproc as inproc
-from rvnd.workspace_cascade import (tiers_for_workspace, write_local_config,
+from rvnd import local_inproc as inproc
+from rvnd.cascade_binding import (tiers_for_workspace, write_local_config,
                                 cascade_for_workspace, LOCAL_URL_ENV, LOCAL_MODEL_ENV,
                                 CONFIG_PATH_ENV)
 

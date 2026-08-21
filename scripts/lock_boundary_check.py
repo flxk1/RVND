@@ -112,7 +112,9 @@ def edges() -> list[str]:
 def main() -> int:
     current = edges()
     if "--write-baseline" in sys.argv:
-        BASELINE.write_text(json.dumps({"edges": current}, indent=2) + "\n",
+        BASELINE.write_text(json.dumps(
+            {"schema": "lock-boundary-baseline-1", "edges": current},
+            indent=2) + "\n",
                             encoding="utf-8")
         print(f"lock-boundary: baseline written ({len(current)} edges)")
         return 0

@@ -203,7 +203,7 @@ def ingest_source(folder: str, content: str, *, url: str = "",
     (metadata from tags/model, fixity hash from the content in hand),
     register every reference found in it, and record ``cites`` provenance
     edges. Returns the work id, reference ids, and extraction notes."""
-    from .workspace_grounder import GroundingLedger
+    from .grounder import GroundingLedger
     ledger = GroundingLedger(folder, log_root=log_root)
     meta = extract_metadata(content, model_fn=model_fn)
     dropped = meta.pop("_dropped", [])

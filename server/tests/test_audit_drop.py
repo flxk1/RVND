@@ -115,7 +115,7 @@ def test_ask_and_orchestrate_name_the_drop_in_their_response():
     nothing while the drop was recorded. CodeQL caught it as an unused local.
     """
     import inspect
-    from rvnd import workspace_cascade as wc, workspace_orchestrate as wo
+    from rvnd import cascade_binding as wc, orchestrate as wo
     checked = 0
     for fn in (wo.orchestrate, wo.ask_workspace, wc.cascade_for_workspace):
         src = inspect.getsource(fn)

@@ -190,7 +190,7 @@ def _local_tiers(cfg: dict[str, Any]) -> list[Tier]:
       entry with an http(s) ``url`` uses the OpenAI-compatible transport. This is
       how the 2-3 pulled local models become a real local cascade.
     """
-    from .workspace_local_inproc import INPROC_SENTINEL
+    from .local_inproc import INPROC_SENTINEL
     env_url = os.environ.get(LOCAL_URL_ENV, "").strip()
     env_model = canonical_local_model()
     if env_url and env_model:
@@ -236,7 +236,7 @@ def _registry_local_tiers() -> list[Tier]:
     ``workspace``-role model if set, else the single smallest registered GGUF. Extra
     local rungs are opt-in — a user who wants a multi-model local cascade lists
     them in the config ``local`` array (handled before we reach here)."""
-    from .workspace_local_inproc import INPROC_SENTINEL
+    from .local_inproc import INPROC_SENTINEL
     try:
         from . import models_registry
 
@@ -388,7 +388,7 @@ def cascade_for_workspace(folder: str | Path,
         kw["completer"] = completer
     else:
         # dispatching completer: in-process for inproc rungs, HTTP otherwise
-        from .workspace_local_inproc import workspace_completer
+        from .local_inproc import workspace_completer
         kw["completer"] = workspace_completer
     res = run_cascade(prompt, tiers, **kw)
 
