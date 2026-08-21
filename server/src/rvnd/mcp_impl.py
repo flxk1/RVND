@@ -277,8 +277,8 @@ def policy_snapshot(folder_context: str) -> dict[str, Any]:
 def _at_rest_state(folder_context: str) -> dict[str, Any]:
     """At-rest Workspace Lock state (sealed/unlocked/wall) for snapshots + UI."""
     try:
-        from . import workspace_lock
-        return workspace_lock.state(folder_context, log_root=_log_root())
+        from . import seal_binding
+        return seal_binding.state(folder_context, log_root=_log_root())
     except Exception as e:
         return {"sealed": False, "unlocked": False, "wall": "down", "error": str(e)}
 
@@ -292,16 +292,16 @@ def _workspace_lock_guard(folder_context: str):
     downgrade a possibly-sealed workspace to a direct disk read.
     """
     try:
-        from . import workspace_lock
+        from . import seal_binding
         lr = _log_root()
-        if not workspace_lock.is_sealed(folder_context, log_root=lr):
+        if not seal_binding.is_sealed(folder_context, log_root=lr):
             return ("open", None)
         resolved = str(Path(folder_context).expanduser().resolve())
-        if not workspace_lock.is_unlocked(folder_context, log_root=lr):
+        if not seal_binding.is_unlocked(folder_context, log_root=lr):
             return ("locked", {"folder_context": resolved, "locked": True,
                                "detail": "workspace is locked — workspace_lock_unlock to read it, "
                                          "or unseal for direct access"})
-        return ("served", workspace_lock.read_pairs(folder_context, log_root=lr))
+        return ("served", seal_binding.read_pairs(folder_context, log_root=lr))
     except Exception as e:
         try:
             resolved = str(Path(folder_context).expanduser().resolve())
@@ -330,21 +330,21 @@ def workspace_lock_unlock(folder_context: str, passphrase: str) -> dict[str, Any
     """Unlock a sealed workspace for this session: verify the passphrase and hold the
     derived key in memory so the workspace can be served (read-through) without
     unsealing it to disk. Wrong passphrase fails cleanly; never writes plaintext."""
-    from . import workspace_lock
+    from . import seal_binding
     lr = _log_root()
     try:
-        out = workspace_lock.unlock(folder_context, passphrase=passphrase, log_root=lr)
-        return {"ok": True, **out, **workspace_lock.state(folder_context, log_root=lr)}
+        out = seal_binding.unlock(folder_context, passphrase=passphrase, log_root=lr)
+        return {"ok": True, **out, **seal_binding.state(folder_context, log_root=lr)}
     except Exception as e:
         return {"ok": False, "error": str(e)}
 
 def workspace_lock_lock(folder_context: str) -> dict[str, Any]:
     """Re-lock a workspace for reading: drop the in-memory session key. The on-disk
     store stays sealed. (Full direct access is the separate `unseal` escape.)"""
-    from . import workspace_lock
+    from . import seal_binding
     lr = _log_root()
-    out = workspace_lock.lock(folder_context, log_root=lr)
-    return {"ok": True, **out, **workspace_lock.state(folder_context, log_root=lr)}
+    out = seal_binding.lock(folder_context, log_root=lr)
+    return {"ok": True, **out, **seal_binding.state(folder_context, log_root=lr)}
 
 def lock_setup_status(config_path: str = "") -> dict[str, Any]:
     """The persisted lock onboarding config, read-only. ``configured`` is the
@@ -2474,7 +2474,7 @@ def add_known_workspace(folder_context: str,
     Returns ``{ok, path, total}``.
     """
     try:
-        from .workspace_registry import add_known_workspace as _add
+        from .registry import add_known_workspace as _add
         out = _add(folder_context, label=label, log_root=_log_root())
         out["ok"] = True
         return out
@@ -2484,7 +2484,7 @@ def add_known_workspace(folder_context: str,
 def remove_known_workspace(folder_context: str) -> dict[str, Any]:
     """Unregister a known workspace. Returns ``{ok, removed}``."""
     try:
-        from .workspace_registry import remove_known_workspace as _remove
+        from .registry import remove_known_workspace as _remove
         removed = _remove(folder_context, log_root=_log_root())
         return {"ok": True, "removed": removed, "path": folder_context}
     except Exception as e:
@@ -2497,7 +2497,7 @@ def bootstrap_default_workspace(target: str = "") -> dict[str, Any]:
     Returns ``{ok, path, created, was_default}``.
     """
     try:
-        from .workspace_registry import bootstrap_default_workspace as _boot
+        from .registry import bootstrap_default_workspace as _boot
         out = _boot(target=(target.strip() or None), log_root=_log_root())
         return out
     except Exception as e:
@@ -2763,7 +2763,7 @@ def get_audit_event(event_id: str,
                     "folder_context": resolved}
 
         # Discovery scan: walk every known workspace
-        from .workspace_registry import list_known_workspaces
+        from .registry import list_known_workspaces
         for ws in (list_known_workspaces(log_root=_log_root()) or []):
             wp = ws.get("path") if isinstance(ws, dict) else None
             if not wp:
@@ -4389,7 +4389,7 @@ def grounder_ground(folder_context: str, claim: str, works: list,
     Refuses (and audits) when no work is supplied: no citation, no claim.
     """
     try:
-        from .workspace_grounder import ground as _ground
+        from .grounder import ground as _ground
         res = _ground(folder_context, claim, works, style=style, method=method,
                       agent=agent, confidence=confidence, locator=locator,
                       log_root=str(_log_root()) if _log_root() else None)
@@ -4407,7 +4407,7 @@ def grounder_register_work(folder_context: str, title: str, type: str = "web",
                            retrieved_by: str = "researcher") -> dict[str, Any]:
     """Register one cited work in the folder's grounding ledger (idempotent)."""
     try:
-        from .workspace_grounder import GroundingLedger
+        from .grounder import GroundingLedger
         ledger = GroundingLedger(folder_context, log_root=_log_root())
         res = ledger.register_work(
             title=title, type=type, creators=creators, container=container,
@@ -4428,7 +4428,7 @@ def grounder_claim_status(folder_context: str, claim_id: str, status: str,
     """Set a claim's status (verified | disputed | retracted). Disputed claims
     are residuals — surface them to the human, never resolve them."""
     try:
-        from .workspace_grounder import GroundingLedger
+        from .grounder import GroundingLedger
         ledger = GroundingLedger(folder_context, log_root=_log_root())
         res = ledger.set_claim_status(claim_id, status, by=by, note=note)
         res["ok"] = True
@@ -4443,7 +4443,7 @@ def grounder_add_provenance(folder_context: str, from_work: str,
     (relations: cites | quotes | derives_from | republishes | translates |
     summarizes | responds_to). The swarm calls this for every link it walks."""
     try:
-        from .workspace_grounder import GroundingLedger
+        from .grounder import GroundingLedger
         ledger = GroundingLedger(folder_context, log_root=_log_root())
         res = ledger.add_provenance(from_work, relation, to_work,
                                     evidence=evidence, basis=basis)
@@ -4457,7 +4457,7 @@ def grounder_trace(folder_context: str, work_id: str,
     """Trace a work's provenance upstream to root works and the entities
     behind them (creators, publishers, corpus refs). Cycle-safe."""
     try:
-        from .workspace_grounder import GroundingLedger
+        from .grounder import GroundingLedger
         ledger = GroundingLedger(folder_context, log_root=_log_root())
         res = ledger.trace(work_id, max_depth=max_depth)
         res["ok"] = True
@@ -4469,7 +4469,7 @@ def grounder_frontier(folder_context: str) -> dict[str, Any]:
     """Works whose citations are not yet traced — the research swarm's next
     targets."""
     try:
-        from .workspace_grounder import GroundingLedger
+        from .grounder import GroundingLedger
         ledger = GroundingLedger(folder_context, log_root=_log_root())
         res = ledger.frontier()
         res["ok"] = True
@@ -4482,7 +4482,7 @@ def grounder_bibliography(folder_context: str, style: str = "apa",
     """Formatted bibliography in the chosen style (apa | mla | chicago |
     harvard | ieee | vancouver) for the ledger or a subset of works."""
     try:
-        from .workspace_grounder import GroundingLedger
+        from .grounder import GroundingLedger
         ledger = GroundingLedger(folder_context, log_root=_log_root())
         res = ledger.bibliography(style=style, work_ids=work_ids)
         res["ok"] = True
@@ -4506,7 +4506,7 @@ def grounder_coverage(folder_context: str) -> dict[str, Any]:
     """The honor-creators report: attribution completeness, claims by status,
     works missing creators/links/dates, disputed residuals."""
     try:
-        from .workspace_grounder import GroundingLedger
+        from .grounder import GroundingLedger
         ledger = GroundingLedger(folder_context, log_root=_log_root())
         res = ledger.coverage()
         res["ok"] = True
@@ -4521,7 +4521,7 @@ def grounder_forget_subject(folder_context: str, name: str) -> dict[str, Any]:
     returned for human review, never auto-edited.
     """
     try:
-        from .workspace_grounder import GroundingLedger
+        from .grounder import GroundingLedger
         ledger = GroundingLedger(folder_context, log_root=_log_root())
         res = ledger.forget_subject(name)
         res["ok"] = res.get("status") == "ok"
@@ -4535,7 +4535,7 @@ def grounder_check_claim(folder_context: str, claim_id: str,
     production-gated on the gold-set). Verdict supports | does_not_support |
     insufficient; anything but supports escalates, never auto-retracts."""
     try:
-        from .workspace_grounder import GroundingLedger
+        from .grounder import GroundingLedger
         ledger = GroundingLedger(folder_context, log_root=_log_root())
         res = ledger.check_claim_support(claim_id, model=model)
         res["ok"] = res.get("status") == "ok"
@@ -4578,7 +4578,7 @@ def grounder_classify_creators(folder_context: str,
     (drives citation formatting; org names are never split). Proposed +
     recorded, never overwrites an existing role."""
     try:
-        from .workspace_grounder import GroundingLedger
+        from .grounder import GroundingLedger
         ledger = GroundingLedger(folder_context, log_root=_log_root())
         res = ledger.classify_creator_roles(model=model)
         res["ok"] = res.get("status") == "ok"
@@ -4590,7 +4590,7 @@ def grounder_link_entities(folder_context: str) -> dict[str, Any]:
     """Ingest every creator into the folder's entity corpus so provenance of
     ideas joins the workspace's entity map."""
     try:
-        from .workspace_grounder import GroundingLedger
+        from .grounder import GroundingLedger
         ledger = GroundingLedger(folder_context, log_root=_log_root())
         res = ledger.link_creators_to_corpus()
         res["ok"] = res.get("status") == "ok"

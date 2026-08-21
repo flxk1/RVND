@@ -9,7 +9,7 @@ credentials supplied by the active track's egress connector.
 import json
 
 from rvnd import cli
-from rvnd.workspace_cascade import tiers_for_workspace
+from rvnd.cascade_binding import tiers_for_workspace
 
 
 def _cfg(monkeypatch, tmp_path):

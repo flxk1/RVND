@@ -7,7 +7,7 @@ from pathlib import Path
 from rvnd import cli
 from rvnd.cross_workspace import cross_workspace_read, ROLE_SOURCE, ROLE_COMPANION
 from rvnd.action_gate import StandingApproval, Verdict
-from rvnd.workspace_lock import replay
+from rvnd.seal_binding import replay
 from rvnd.mcp_serving import clear_request_principal, set_request_principal
 from rvnd.parties import register_party
 

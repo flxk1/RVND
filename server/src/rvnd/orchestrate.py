@@ -21,7 +21,7 @@ from pathlib import Path
 from typing import Any, Iterator
 
 from .action_gate import ActionRequest, gate
-from .workspace_contract import WorkspaceContract, describe_workspace
+from .contract import WorkspaceContract, describe_workspace
 from .mutation_log import LogEvent, MutationLog
 
 
@@ -81,7 +81,7 @@ def orchestrate(query: str,
     ``folder``. Returns ``{query, root, scope_workspaces, companions: [...],
     audit_id, governed}``; each companion entry carries its gate ``verdict``.
     """
-    from .workspace_hooks import check_access
+    from .hooks import check_access
     root = describe_workspace(folder, depth=max_depth, log_root=log_root)
     nodes = list(_flatten(root))
     companions = [c for c in nodes
@@ -142,7 +142,7 @@ def _gather_sources(folder: str, log_root, max_depth: int) -> dict[str, str]:
     sub-workspaces beneath it; siblings and parents are out of scope by the
     asymmetric rule. Returns ``{pair_id: source_folder}``.
     """
-    from .workspace_lock import read_pairs
+    from .seal_binding import read_pairs
     from .memory import discover_descendants
     try:
         folders = discover_descendants(folder, log_root=log_root) or [folder]
@@ -191,8 +191,8 @@ def ask_workspace(query: str,
     hands off rather than fabricating a result). ``completer`` is the model call
     (injectable for tests).
     """
-    from .workspace_cascade import cascade_for_workspace
-    from .workspace_hooks import check_access
+    from .cascade_binding import cascade_for_workspace
+    from .hooks import check_access
     resolved = str(Path(folder).expanduser().resolve())
 
     # access = workspace: refuse if the actor was not granted this workspace (overlay

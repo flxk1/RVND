@@ -27,7 +27,7 @@ from pathlib import Path
 from typing import Optional
 
 from .urn import mint_canonical
-from .workspace_grounder import GroundingLedger
+from .grounder import GroundingLedger
 
 
 # source ``document_type`` -> grounding work type (WORK_TYPES); "other" when unmapped

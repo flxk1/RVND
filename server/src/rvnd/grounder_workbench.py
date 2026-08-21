@@ -19,7 +19,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
-from .workspace_grounder import (
+from .grounder import (
     CITATION_STYLES,
     GroundingLedger,
     format_citation,

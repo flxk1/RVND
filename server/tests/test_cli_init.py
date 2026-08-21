@@ -11,7 +11,7 @@ import argparse
 import io
 
 import rvnd.cli.impl as impl
-import rvnd.workspace_registry as registry
+import rvnd.registry as registry
 
 
 def _run(monkeypatch, tmp_path, *, stdin: str = "", yes=False, dry=False):

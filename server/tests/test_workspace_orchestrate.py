@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 
 from rvnd import cli
-from rvnd.workspace_orchestrate import orchestrate, turn_governance
+from rvnd.orchestrate import orchestrate, turn_governance
 
 
 def test_turn_governance_grounding_is_conditional():
@@ -65,7 +65,7 @@ def _fake_ok(url, model, prompt, *, api_key="", temperature=0.0,
 
 
 def test_ask_workspace_governs_a_turn(tmp_path, monkeypatch):
-    from rvnd.workspace_orchestrate import ask_workspace
+    from rvnd.orchestrate import ask_workspace
     lr = tmp_path / "log"
     c = tmp_path / "c"
     _ingest(c, "a.txt", "a creator's work", lr)        # sources present → grounding applies
@@ -83,7 +83,7 @@ def test_ask_workspace_governs_a_turn(tmp_path, monkeypatch):
 
 
 def test_ask_workspace_fuses_orchestrate_dispatch_and_fold(tmp_path, monkeypatch):
-    from rvnd.workspace_orchestrate import ask_workspace
+    from rvnd.orchestrate import ask_workspace
     lr = tmp_path / "log"
     root = tmp_path / "work"
     comp = tmp_path / "work" / "coder"            # a companion workspace under root

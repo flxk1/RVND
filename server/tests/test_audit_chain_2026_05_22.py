@@ -175,7 +175,7 @@ def test_get_audit_event_discovery_scan(tmp_path, monkeypatch):
     log_root = tmp_path / "log"
     srv = _fresh_mcp(monkeypatch, log_root)
     # Register the folder so the discovery scan can see it
-    from rvnd.workspace_registry import add_known_workspace
+    from rvnd.registry import add_known_workspace
     add_known_workspace(str(folder), log_root=log_root)
 
     disp = srv.dispatch_skill(

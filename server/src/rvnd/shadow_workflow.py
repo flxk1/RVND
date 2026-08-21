@@ -34,7 +34,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
-from .workspace_lock import replay
+from .seal_binding import replay
 from .workflows import list_workflows_for_folder
 
 BLOCKED = "blocked"

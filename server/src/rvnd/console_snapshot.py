@@ -55,7 +55,7 @@ def console_snapshot(*, now: float, log_root: Optional[Path] = None,
     ``now`` resolves approval deadlines. ``attention_limit`` caps the attention
     list; anything dropped is counted in ``attention_overflow`` so a truncation
     never reads as "all clear"."""
-    from .workspace_registry import list_known_workspaces
+    from .registry import list_known_workspaces
     from .governance_graph import governance_graph
     from .approvals import list_approvals
 

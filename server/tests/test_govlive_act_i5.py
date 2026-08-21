@@ -39,7 +39,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent / "app"))
 import serve  # noqa: E402
 
 from rvnd import signing  # noqa: E402
-from rvnd import workspace_registry as _registry  # noqa: E402
+from rvnd import registry as _registry  # noqa: E402
 from rvnd.approvals import (  # noqa: E402
     request_from_reservation, resolve_approval)
 from rvnd.governance_live import governance_live  # noqa: E402

@@ -321,6 +321,6 @@ Snapshot 2026-07-10. The claim of record is `verify_surface.py`; regenerate with
 | solver_topology | internal-declared |
 | transport | unreferenced |
 | worker | unreferenced |
-| workspace_migrate | unreferenced |
+| migrate | unreferenced |
 
 <!-- end generated block -->

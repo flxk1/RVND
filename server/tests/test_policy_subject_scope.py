@@ -123,7 +123,7 @@ def test_enforcement_reads_the_deployment_posture_not_the_folders(tmp_path, monk
     and still readable, it just no longer decides this.
     """
     import rvnd.mcp_serving as MS
-    from rvnd.workspace_registry import add_known_workspace
+    from rvnd.registry import add_known_workspace
 
     log_root = tmp_path / "lr"; log_root.mkdir()
     ws = tmp_path / "ws"; ws.mkdir()

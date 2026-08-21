@@ -357,7 +357,7 @@ def make_handler(session_token: str):
                 self._send(400, {"error": "folder must not contain '..'"})
                 return None
             from rvnd.mcp_serving import _log_root
-            from rvnd.workspace_registry import list_known_workspaces
+            from rvnd.registry import list_known_workspaces
             _lr = _log_root()
             _known = list_known_workspaces(log_root=str(_lr) if _lr else None)
             _want = _os.path.realpath(folder)
