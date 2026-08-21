@@ -130,8 +130,17 @@ def test_enforcement_reads_the_deployment_posture_not_the_folders(tmp_path, monk
     monkeypatch.setenv("WORKSPACE_L0_LOG_ROOT", str(log_root))
     add_known_workspace(str(ws), log_root=log_root)
 
-    disable_lock(ws, accepted_by="alex", reason="test", log_root=log_root)
-    assert load_policy(ws).lock_is_active is False, "fixture must really disable it"
+    # The folder declares its own Lock off, acknowledgement and all -- exactly
+    # what an attacker (or a careless user) would drop into a directory. Written
+    # directly because the folder-level mutator now refuses to write it.
+    from rvnd.policy import Acknowledgement, CURRENT_DISCLAIMER_VERSION
+    save_policy(ws, FolderPolicy(
+        privacy_lock_enabled=False,
+        acknowledgements={"lock_disable": Acknowledgement(
+            accepted_at="2026-01-01T00:00:00Z", accepted_by="attacker",
+            disclaimer_version=CURRENT_DISCLAIMER_VERSION, reason="")}))
+    assert load_policy(ws).lock_is_active is False, (
+        "fixture must really declare it off, or the assertion below proves nothing")
 
     assert MS._folder_lock_on(str(ws)) is True, (
         "a folder switched off enforcement for itself — the Lock posture is the "

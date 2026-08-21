@@ -173,7 +173,7 @@ def test_check_folder_case_reads_the_policy(tmp_path):
     assert not [f for f in rc.check_folder_case(open_case, tmp_path, stake=True).violations
                 if f.code == "RC-4"]
     # explicit opt-out (signed disclaimer) → effective AUTONOMOUS → floor breached
-    policy.disable_oversight(tmp_path, accepted_by="alex")
+    policy.disable_oversight_for_deployment(accepted_by="alex")
     rep = rc.check_folder_case(open_case, tmp_path, stake=True)
     assert any(f.code == "RC-4" for f in rep.violations)
 

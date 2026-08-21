@@ -41,6 +41,7 @@ from .mcp_serving import (
 # Dynamic seam: resolve _log_root through mcp_serving so tests that patch
 # rvnd.mcp_serving._log_root take effect in every module (split-safe).
 from . import mcp_serving as _mcp_serving
+from .policy import effective_policy
 def _log_root():
     return _mcp_serving._log_root()
 
@@ -246,7 +247,7 @@ def policy_snapshot(folder_context: str) -> dict[str, Any]:
           / ``reason``
         - ``folder_context``: the folder this snapshot describes
     """
-    policy = load_policy(folder_context)
+    policy = effective_policy(folder_context, log_root=_log_root())
     return {
         "folder_context": str(Path(folder_context).expanduser().resolve()),
         "privacy_lock_enabled": policy.privacy_lock_enabled,
@@ -1022,10 +1023,15 @@ def policy_set_lock_mode(
     try:
         from .policy import set_lock_mode
         actor = accepted_by or _default_actor()
-        pol = set_lock_mode(
+        set_lock_mode(
             folder_context, mode,
             accepted_by=actor, reason=reason, log_root=_log_root(),
         )
+        # Report the EFFECTIVE state, not the object the setter handed back:
+        # that one is the folder's declaration, and the deployment's posture
+        # sits above it. Reporting the folder's would tell the caller the Lock
+        # is on at the moment it is not.
+        pol = effective_policy(folder_context, log_root=_log_root())
         return {
             "ok": True,
             "mode_requested":          mode,
@@ -1045,11 +1051,12 @@ def policy_enable_lock(folder_context: str) -> dict[str, Any]:
     Returns ``{ok, lock_is_active, oversight_is_active, oversight_default_level}``.
     """
     try:
-        from .policy import enable_lock
-        pol = enable_lock(folder_context, actor=_default_actor(),
+        from .policy import enable_lock_for_deployment
+        pol = enable_lock_for_deployment(actor=_default_actor(),
                             log_root=_log_root())
         return {
             "ok": True,
+            "scope": "deployment",   # NOT the folder — see the docstring
             "lock_is_active":         bool(pol.lock_is_active),
             "oversight_is_active":      bool(pol.oversight_is_active),
             "oversight_default_level":  pol.oversight_default_level,
@@ -1062,7 +1069,12 @@ def policy_disable_lock(
     accepted_by: str = "",
     reason: str = "",
 ) -> dict[str, Any]:
-    """Turn Privacy Lock OFF for the folder.
+    """Turn Privacy Lock OFF — for the DEPLOYMENT.
+
+    The enforcement posture is the deployment's, not a folder's: a folder that
+    could switch it off would be a directory deciding whether it is governed.
+    ``folder_context`` is kept for attribution and for where the audit event
+    lands; it does not scope the change, and the response says so.
 
     Disabling a protection is a governed step: it REQUIRES an explicit
     ``accepted_by`` AND a non-empty ``reason``, both recorded in the
@@ -1073,11 +1085,12 @@ def policy_disable_lock(
     if not (accepted_by or "").strip() or not (reason or "").strip():
         return {"ok": False, "error": "accepted_by and reason are required to disable a protection (no silent disable)"}
     try:
-        from .policy import disable_lock
-        pol = disable_lock(folder_context, accepted_by=accepted_by,
-                             reason=reason, log_root=_log_root())
+        from .policy import disable_lock_for_deployment
+        pol = disable_lock_for_deployment(accepted_by=accepted_by,
+                                          reason=reason, log_root=_log_root())
         return {
             "ok": True,
+            "scope": "deployment",   # NOT the folder — see the docstring
             "lock_is_active":         bool(pol.lock_is_active),
             "oversight_is_active":      bool(pol.oversight_is_active),
             "oversight_default_level":  pol.oversight_default_level,
@@ -1089,8 +1102,8 @@ def policy_disable_lock(
 def policy_enable_oversight(folder_context: str) -> dict[str, Any]:
     """Turn Oversight prompts ON for the folder."""
     try:
-        from .policy import enable_oversight
-        pol = enable_oversight(folder_context, actor=_default_actor(),
+        from .policy import enable_oversight_for_deployment
+        pol = enable_oversight_for_deployment(actor=_default_actor(),
                                log_root=_log_root())
         return {
             "ok": True,
@@ -1106,17 +1119,23 @@ def policy_disable_oversight(
     accepted_by: str = "",
     reason: str = "",
 ) -> dict[str, Any]:
-    """Turn Oversight prompts OFF for the folder. Same governed rule as
+    """Turn Oversight prompts OFF — for the DEPLOYMENT.
+
+    The enforcement posture is the deployment's, not a folder's: a folder that
+    could switch it off would be a directory deciding whether it is governed.
+    ``folder_context`` is kept for attribution and for where the audit event
+    lands; it does not scope the change, and the response says so. Same governed rule as
     ``policy_disable_lock``: explicit ``accepted_by`` + non-empty ``reason``
     required, no silent default."""
     if not (accepted_by or "").strip() or not (reason or "").strip():
         return {"ok": False, "error": "accepted_by and reason are required to disable a protection (no silent disable)"}
     try:
-        from .policy import disable_oversight
-        pol = disable_oversight(folder_context, accepted_by=accepted_by,
-                                reason=reason, log_root=_log_root())
+        from .policy import disable_oversight_for_deployment
+        pol = disable_oversight_for_deployment(accepted_by=accepted_by,
+                                               reason=reason, log_root=_log_root())
         return {
             "ok": True,
+            "scope": "deployment",   # NOT the folder — see the docstring
             "lock_is_active":         bool(pol.lock_is_active),
             "oversight_is_active":      bool(pol.oversight_is_active),
             "oversight_default_level":  pol.oversight_default_level,
@@ -1443,7 +1462,7 @@ def lock_classify_text(text: str,
             try:
                 from .policy import load_policy
                 resolved_folder = str(Path(folder_context).expanduser().resolve())
-                pol = load_policy(resolved_folder)
+                pol = effective_policy(resolved_folder, log_root=_log_root())
                 threshold = float(pol.lock_confidence_threshold or 0.0)
             except Exception:
                 # Folder lookup failures don't fail the scan — just no filter
@@ -1484,7 +1503,7 @@ def lock_threshold_get(folder_context: str) -> dict[str, Any]:
     try:
         from .policy import load_policy
         resolved = str(Path(folder_context).expanduser().resolve())
-        pol = load_policy(resolved)
+        pol = effective_policy(resolved, log_root=_log_root())
         return {
             "ok":             True,
             "folder_context": resolved,

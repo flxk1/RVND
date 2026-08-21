@@ -38,6 +38,7 @@ from typing import Iterable, Optional
 from . import verdict as _v
 
 from .adapters.policy_languages import grade_levels as _grade_levels
+from .policy import effective_policy
 
 GRADES = _grade_levels()   # action reach — consumed from governance's grammar
 OVERSIGHT = ("autonomous", "notify", "review", "approve", "supervised", "manual")

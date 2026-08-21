@@ -229,6 +229,7 @@ markers = [
     "slow: multi-second or longer; excluded from the bounded fast subset",
     "model: needs an optional local-model backend (ONNX/llama.cpp) installed",
     "live_session_admission: exercises the real signed session gate",
+    "live_deployment_root: exercises the real deployment-root resolver",
     "live_egress_capability: exercises real signed admission at the proxy",
 ]
 # Safety net so one hung test cannot block the whole run forever. `signal` raises

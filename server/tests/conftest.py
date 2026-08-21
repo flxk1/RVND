@@ -85,6 +85,54 @@ def _hardened_lawful_workspace(request, tmp_path):
 
 
 @pytest.fixture(autouse=True)
+def _isolate_deployment_policy_root(request, tmp_path, monkeypatch):
+    """Never let a test write the enforcement posture into the real home.
+
+    Deployment-scoped state (the posture, its acknowledgements, its audit
+    chain) falls back to ``~/.workspace/log``. A single test calling
+    ``disable_lock_for_deployment()`` without an explicit log_root would turn
+    the Lock off on the machine running the suite -- and leave it off.
+
+    This patches the deployment root alone rather than setting
+    WORKSPACE_L0_LOG_ROOT, which would move the ambient log root for
+    everything and make MCP writes and direct-API reads disagree.
+
+    An explicit log_root still wins, so tests that pass one are unaffected.
+    Tests marked ``live_deployment_root`` exercise the real resolver -- one has
+    to, or nothing checks that the operator's root is honoured, and the guard
+    would be guarding a function no test ever runs.
+    """
+    if request.node.get_closest_marker("live_deployment_root") is not None:
+        yield
+        return
+    from rvnd import policy as _policy
+    real = _policy._deployment_root
+    root = tmp_path / "_deployment-root"
+
+    inherited = os.environ.get("WORKSPACE_L0_LOG_ROOT")
+
+    def _isolated(log_root=None):
+        # An explicit root always wins. An operator root wins too -- but only
+        # if THIS test set it: tests that disable the posture under their own
+        # WORKSPACE_L0_LOG_ROOT and read it back through a site that cannot
+        # pass one (the injected Lock hook) need both ends to agree.
+        #
+        # A root merely inherited from an earlier test does not win. Several
+        # tests set that variable with bare os.environ, so its value outlives
+        # them, and honouring it here made one test's disabled posture visible
+        # to everything that ran afterwards.
+        if log_root:
+            return real(log_root)
+        current = os.environ.get("WORKSPACE_L0_LOG_ROOT")
+        if current and current != inherited:
+            return real(None)
+        return root
+
+    monkeypatch.setattr(_policy, "_deployment_root", _isolated)
+    yield
+
+
+@pytest.fixture(autouse=True)
 def _hermetic_lock_backend(monkeypatch):
     monkeypatch.setenv("AGENT_TOOL_LOCK_LLM_BACKEND", "mock")
     try:

@@ -4,7 +4,7 @@
 import os
 
 from rvnd import cli
-from rvnd.policy import load_policy, set_oversight_level, OVERSIGHT_LEVELS
+from rvnd.policy import effective_policy, load_policy, set_oversight_level, OVERSIGHT_LEVELS
 
 os.environ.setdefault("WORKSPACES_ALLOW_UNREGISTERED", "1")
 
@@ -45,12 +45,12 @@ def test_cli_mute_requires_ack_then_mutes(tmp_path, capsys):
     lr = str(tmp_path / "log")
     # without ack -> refused, prompts still active
     assert cli.main(["--log-root", lr, "mute", "--folder", str(c)]) == 2
-    assert load_policy(c).oversight_is_active is True
+    assert effective_policy(c, log_root=tmp_path / 'log').oversight_is_active is True
     capsys.readouterr()
     # with ack -> muted
     assert cli.main(["--log-root", lr, "mute", "--folder", str(c),
                      "--i-accept-the-risk"]) == 0
-    assert load_policy(c).oversight_is_active is False
+    assert effective_policy(c, log_root=tmp_path / 'log').oversight_is_active is False
     # unmute restores
     assert cli.main(["--log-root", lr, "unmute", "--folder", str(c)]) == 0
-    assert load_policy(c).oversight_is_active is True
+    assert effective_policy(c, log_root=tmp_path / 'log').oversight_is_active is True

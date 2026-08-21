@@ -71,6 +71,10 @@ class DiskFullError(OSError):
 
 
 GENESIS_HASH = "GENESIS"
+
+# Reserved chain id for deployment-scoped events. Not a folder hash (those are
+# hex), so it cannot collide with one.
+DEPLOYMENT_LOG_ID = "_deployment"
 """Sentinel prev_hash for the first event in a new log (post-0.6.5)."""
 
 
@@ -436,6 +440,31 @@ class MutationLog:
         # (append/purge) while sealed.
         if not self._is_sealed():
             self._log_dir.mkdir(parents=True, exist_ok=True)
+
+    @classmethod
+    def for_deployment(cls, log_root: "str | Path | None" = None) -> "MutationLog":
+        """A chain for events belonging to the DEPLOYMENT rather than a folder.
+
+        Posture (Lock, Oversight) is the deployment's, so changing it produces
+        an event no folder owns. This keys such events under a reserved id and
+        gives them the same hash-chained, append-only treatment every other
+        audited event gets -- an untracked posture change is the one that most
+        needs the trail.
+
+        Folder resolution is skipped deliberately: there is no folder to
+        allowlist. The reserved id cannot collide with a folder hash, which is
+        hex.
+        """
+        self = cls.__new__(cls)
+        from .policy import _deployment_root
+        root = _deployment_root(log_root)
+        self.folder_path = str(root)
+        self._folder_id = DEPLOYMENT_LOG_ID
+        self._log_dir = root / DEPLOYMENT_LOG_ID
+        self._log_file = self._log_dir / "events.jsonl"
+        self._root = root
+        self._log_dir.mkdir(parents=True, exist_ok=True)
+        return self
 
     # ----------------------------------------------------------------------
     # Properties for inspection / tests

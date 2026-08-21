@@ -13,11 +13,12 @@ from rvnd import (
     MutationLog,
     POLICY_FILENAME,
     LOCK_DISCLAIMER,
-    disable_oversight,
-    disable_lock,
-    enable_oversight,
-    enable_lock,
+    disable_oversight_for_deployment,
+    disable_lock_for_deployment,
+    enable_oversight_for_deployment,
+    enable_lock_for_deployment,
     load_policy,
+    effective_policy,
     save_policy,
 )
 
@@ -142,16 +143,16 @@ def test_disabled_boolean_with_acknowledgement_is_inactive(folder):
 
 
 def test_disable_lock_writes_policy_and_audit(folder, log_root):
-    disable_lock(folder, accepted_by="alex", reason="public-data scratch",
+    disable_lock_for_deployment(accepted_by="alex", reason="public-data scratch",
                    log_root=log_root)
-    pol = load_policy(folder)
+    pol = effective_policy(folder, log_root=log_root)
     assert pol.privacy_lock_enabled is False
     assert pol.lock_is_active is False
     assert "lock_disable" in pol.acknowledgements
     assert pol.acknowledgements["lock_disable"].accepted_by == "alex"
     assert pol.acknowledgements["lock_disable"].reason == "public-data scratch"
 
-    log = MutationLog(folder, log_root=log_root)
+    log = MutationLog.for_deployment(log_root)
     events = [e for e in log.replay()
               if e.extra.get("policy_change") == "lock_disabled"]
     assert len(events) == 1
@@ -159,22 +160,22 @@ def test_disable_lock_writes_policy_and_audit(folder, log_root):
 
 def test_disable_lock_requires_accepted_by(folder, log_root):
     with pytest.raises(ValueError):
-        disable_lock(folder, accepted_by="", log_root=log_root)
+        disable_lock_for_deployment(accepted_by="", log_root=log_root)
 
 
 def test_enable_lock_clears_acknowledgement(folder, log_root):
-    disable_lock(folder, accepted_by="alex", log_root=log_root)
-    assert load_policy(folder).lock_is_active is False
+    disable_lock_for_deployment(accepted_by="alex", log_root=log_root)
+    assert effective_policy(folder, log_root=log_root).lock_is_active is False
 
-    enable_lock(folder, actor="alex", log_root=log_root)
-    pol = load_policy(folder)
+    enable_lock_for_deployment(actor="alex", log_root=log_root)
+    pol = effective_policy(folder, log_root=log_root)
     assert pol.lock_is_active is True
     assert "lock_disable" not in pol.acknowledgements
 
 
 def test_enable_lock_writes_audit_entry(folder, log_root):
-    enable_lock(folder, actor="alex", log_root=log_root)
-    log = MutationLog(folder, log_root=log_root)
+    enable_lock_for_deployment(actor="alex", log_root=log_root)
+    log = MutationLog.for_deployment(log_root)
     events = [e for e in log.replay()
               if e.extra.get("policy_change") == "lock_enabled"]
     assert len(events) >= 1
@@ -186,32 +187,32 @@ def test_enable_lock_writes_audit_entry(folder, log_root):
 
 
 def test_disable_oversight_works(folder, log_root):
-    disable_oversight(folder, accepted_by="alex",
+    disable_oversight_for_deployment(accepted_by="alex",
                       reason="unattended pipeline", log_root=log_root)
-    pol = load_policy(folder)
+    pol = effective_policy(folder, log_root=log_root)
     assert pol.oversight_is_active is False
     assert "oversight_disable" in pol.acknowledgements
 
 
 def test_enable_oversight_clears_acknowledgement(folder, log_root):
-    disable_oversight(folder, accepted_by="alex", log_root=log_root)
-    enable_oversight(folder, actor="alex", log_root=log_root)
-    pol = load_policy(folder)
+    disable_oversight_for_deployment(accepted_by="alex", log_root=log_root)
+    enable_oversight_for_deployment(actor="alex", log_root=log_root)
+    pol = effective_policy(folder, log_root=log_root)
     assert pol.oversight_is_active is True
     assert "oversight_disable" not in pol.acknowledgements
 
 
 def test_disable_lock_does_not_affect_oversight(folder, log_root):
     """Disabling Lock leaves Oversight in its current state."""
-    disable_lock(folder, accepted_by="alex", log_root=log_root)
-    pol = load_policy(folder)
+    disable_lock_for_deployment(accepted_by="alex", log_root=log_root)
+    pol = effective_policy(folder, log_root=log_root)
     assert pol.lock_is_active is False
     assert pol.oversight_is_active is True
 
 
 def test_disable_oversight_does_not_affect_lock(folder, log_root):
-    disable_oversight(folder, accepted_by="alex", log_root=log_root)
-    pol = load_policy(folder)
+    disable_oversight_for_deployment(accepted_by="alex", log_root=log_root)
+    pol = effective_policy(folder, log_root=log_root)
     assert pol.oversight_is_active is False
     assert pol.lock_is_active is True
 
@@ -221,35 +222,50 @@ def test_disable_oversight_does_not_affect_lock(folder, log_root):
 # ===========================================================================
 
 
-def test_policy_in_one_folder_does_not_affect_sibling(tmp_path, log_root):
+def test_the_posture_is_uniform_but_folder_fields_stay_isolated(tmp_path, log_root):
+    """Isolation survives for what a folder owns; the posture is not that.
+
+    This test used to assert the opposite -- that disabling the Lock in HR left
+    Engineering protected -- back when a folder could set the posture. It no
+    longer can, and asserting per-folder posture now would be asserting a
+    protection RVND does not provide: the proxy enforces with no folder at all,
+    so "the Lock is off for HR only" was never enforceable.
+    """
     hr = tmp_path / "HR"
     eng = tmp_path / "Engineering"
     hr.mkdir()
     eng.mkdir()
+    save_policy(hr, FolderPolicy(ai_training_optout=True))
 
-    disable_lock(hr, accepted_by="hr-lead", log_root=log_root)
+    disable_lock_for_deployment(accepted_by="hr-lead", log_root=log_root)
 
-    hr_pol = load_policy(hr)
-    eng_pol = load_policy(eng)
+    hr_pol = effective_policy(hr, log_root=log_root)
+    eng_pol = effective_policy(eng, log_root=log_root)
 
+    # The posture is the deployment's: one answer, both folders.
     assert hr_pol.lock_is_active is False
-    # Engineering still has full protection.
-    assert eng_pol.lock_is_active is True
+    assert eng_pol.lock_is_active is False
+
+    # What the folder genuinely owns is still its own.
+    assert hr_pol.ai_training_optout is True
+    assert eng_pol.ai_training_optout is False
 
 
 def test_policy_at_parent_does_not_affect_child(tmp_path, log_root):
-    """The asymmetric rule holds for policy too: a policy at /acme/ does
-    NOT silently disable lock in /acme/HR/. Each folder has its own
-    explicit policy file."""
+    """The asymmetric rule holds for what a folder owns: a policy at /acme/
+    does NOT silently apply in /acme/HR/. Each folder has its own explicit
+    policy file. (The enforcement posture is no longer a folder field at all --
+    see the uniform-posture test above.)"""
     acme = tmp_path / "acme"
     hr = tmp_path / "acme" / "HR"
     acme.mkdir(parents=True)
     hr.mkdir()
 
-    disable_lock(acme, accepted_by="ceo", log_root=log_root)
+    save_policy(acme, FolderPolicy(ai_training_optout=True))
 
-    hr_pol = load_policy(hr)
-    assert hr_pol.lock_is_active is True  # HR is unaffected; its own policy is default.
+    # A folder-owned field does not inherit downward: HR has its own file, or
+    # none, and a parent's declaration is not silently applied to it.
+    assert effective_policy(hr, log_root=log_root).ai_training_optout is False
 
 
 # ===========================================================================
@@ -300,7 +316,7 @@ def test_cli_policy_disable_lock_with_flag(folder, log_root, capsys):
     assert rc == 0
     out = capsys.readouterr().out
     assert "DISABLED" in out
-    pol = load_policy(folder)
+    pol = effective_policy(folder, log_root=log_root)
     assert pol.lock_is_active is False
     assert pol.acknowledgements["lock_disable"].reason == "public scratch"
 
@@ -308,12 +324,12 @@ def test_cli_policy_disable_lock_with_flag(folder, log_root, capsys):
 def test_cli_policy_enable_lock(folder, log_root, capsys):
     from rvnd.cli import main
     # First disable.
-    disable_lock(folder, accepted_by="alex", log_root=log_root)
+    disable_lock_for_deployment(accepted_by="alex", log_root=log_root)
     # Then enable (no disclaimer required — protection direction).
     rc = main(["--log-root", str(log_root), "policy", "enable-lock",
                "--folder", str(folder)])
     assert rc == 0
-    assert load_policy(folder).lock_is_active is True
+    assert effective_policy(folder, log_root=log_root).lock_is_active is True
 
 
 def test_cli_policy_disable_oversight_requires_flag(folder, log_root, capsys):
@@ -331,4 +347,4 @@ def test_cli_policy_disable_oversight_with_flag(folder, log_root, capsys):
                "--folder", str(folder), "--i-accept-the-risk",
                "--accepted-by", "alex"])
     assert rc == 0
-    assert load_policy(folder).oversight_is_active is False
+    assert effective_policy(folder, log_root=log_root).oversight_is_active is False
