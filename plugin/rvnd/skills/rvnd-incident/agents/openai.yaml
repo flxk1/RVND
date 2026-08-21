@@ -1,4 +1,0 @@
-interface:
-  display_name: "RVND Incident"
-  short_description: "Freeze, revoke, seal, or transfer under RVND"
-  default_prompt: "Use $rvnd-incident to revoke authority or record erasure through the exact live RVND operations and signed chain."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Resolve a Conflict"
+  short_description: "Two rules clash — validate a fix or tell me it needs a person"
+  default_prompt: "Use $resolve-a-conflict to surface these clashing governance rules and either validate a resolving delta or hand back a residual decision for a person."
