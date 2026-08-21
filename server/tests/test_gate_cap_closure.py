@@ -42,7 +42,7 @@ UNCAPPED = {
     "cross_workspace.py":
         "lateral read across workspaces; names an agent but gates on the "
         "caller-supplied grade (MCP tool `cross_workspace_read`, default L2)",
-    "workspace_orchestrate.py":
+    "orchestrate.py":
         "companion dispatch planning; same shape — named agent, caller-supplied "
         "grade (MCP tool `workspace_orchestrate`, default L2)",
     "workflows.py":
