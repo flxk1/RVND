@@ -18,7 +18,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-PLUGIN = Path(__file__).resolve().parents[1] / "rvnd-governance"
+PLUGIN = Path(__file__).resolve().parents[1] / "rvnd"
 BIN = PLUGIN / "bin"
 LIB = PLUGIN / "scripts" / "rvnd_floor_lib.py"
 

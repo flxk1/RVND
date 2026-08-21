@@ -34,7 +34,7 @@
     "server": {
       "description": "The RVND MCP server this surface drives.",
       "type": "string",
-      "const": "rvnd-governance"
+      "const": "rvnd"
     },
     "fail_closed": {
       "description": "Must be true. If the server is unreachable or a principal is unresolved, the surface stops.",
