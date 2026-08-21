@@ -10,7 +10,7 @@ path.
 import hashlib, json, os, subprocess, sys
 from pathlib import Path
 
-LINT = (Path(__file__).resolve().parents[1] / "rvnd-governance" / "skills"
+LINT = (Path(__file__).resolve().parents[1] / "rvnd" / "skills"
         / "rvnd-build-surface" / "scripts" / "lint_surface.py")
 
 
@@ -32,7 +32,7 @@ def _both(payload):
 
 def test_valid_composition_passes():
     rc, out, err = _run({
-        "name": "govern-flow", "server": "rvnd-governance",
+        "name": "govern-flow", "server": "rvnd",
         "skills": ["rvnd-govern"],
         "cards": ["context", "proposal", "patch", "decision", "receipt"],
         "fail_closed": True, "human_confirmation": True})
@@ -42,13 +42,13 @@ def test_valid_composition_passes():
 
 def test_proposal_without_receipt_fails_closed():
     for rc, _, err in _both({
-            "name": "bad", "server": "rvnd-governance", "skills": ["rvnd-govern"],
+            "name": "bad", "server": "rvnd", "skills": ["rvnd-govern"],
             "cards": ["context", "proposal", "patch"], "fail_closed": True}):
         assert rc == 1 and "receipt" in err
 
 
 def test_non_fail_closed_composition_rejected():
-    for rc, _, err in _both({"name": "leaky", "server": "rvnd-governance",
+    for rc, _, err in _both({"name": "leaky", "server": "rvnd",
                              "skills": ["rvnd-audit"], "cards": ["context"],
                              "fail_closed": False}):
         assert rc == 1 and "fail_closed" in err
@@ -198,7 +198,7 @@ def test_unknown_shape_fails_closed():
 
 
 def test_policy_workflow_skills_ship_as_mcp_drivers():
-    package_root = Path(__file__).resolve().parents[1] / "rvnd-governance"
+    package_root = Path(__file__).resolve().parents[1] / "rvnd"
     package = json.loads((package_root / "package.json").read_text(encoding="utf-8"))
     expected = {
         "extract-policy-norms",
@@ -221,7 +221,7 @@ def test_policy_workflow_skills_ship_as_mcp_drivers():
 
 def test_package_metadata_matches_release_contract():
     plugin_root = Path(__file__).resolve().parents[1]
-    package_root = plugin_root / "rvnd-governance"
+    package_root = plugin_root / "rvnd"
     package = json.loads((package_root / "package.json").read_text(encoding="utf-8"))
     schema = json.loads(
         (plugin_root / "schemas" / "loomground-package.schema.json").read_text(
@@ -241,7 +241,7 @@ def test_package_metadata_matches_release_contract():
 
 
 def test_multi_host_plugin_manifests_are_coherent():
-    package_root = Path(__file__).resolve().parents[1] / "rvnd-governance"
+    package_root = Path(__file__).resolve().parents[1] / "rvnd"
     package = json.loads((package_root / "package.json").read_text(encoding="utf-8"))
     codex = json.loads(
         (package_root / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8")
@@ -261,8 +261,8 @@ def test_multi_host_plugin_manifests_are_coherent():
     assert codex["skills"] == "./skills/"
     assert codex["mcpServers"] == "./.mcp.json"
 
-    root_server = root_mcp["mcpServers"]["rvnd-governance"]
-    generic_server = generic_mcp["mcpServers"]["rvnd-governance"]
+    root_server = root_mcp["mcpServers"]["rvnd"]
+    generic_server = generic_mcp["mcpServers"]["rvnd"]
     for field in ("command", "args", "env", "transport"):
         assert root_server[field] == generic_server[field]
 
@@ -280,15 +280,15 @@ def test_multi_host_plugin_manifests_are_coherent():
     assert marketplace["name"] == "rvnd"
     assert entry["name"] == package["name"]
     assert entry["version"] == package["version"]
-    assert entry["source"] == "./plugin/rvnd-governance"
+    assert entry["source"] == "./plugin/rvnd"
     assert repository_plugin["name"] == package["name"]
     assert repository_plugin["version"] == package["version"]
-    assert repository_plugin["skills"] == "./plugin/rvnd-governance/skills/"
-    assert repository_plugin["mcpServers"] == "./plugin/rvnd-governance/.mcp.json"
+    assert repository_plugin["skills"] == "./plugin/rvnd/skills/"
+    assert repository_plugin["mcpServers"] == "./plugin/rvnd/.mcp.json"
 
     descriptor = json.loads(
         (package_root / "mcp" / "rvnd.mcp.json").read_text(encoding="utf-8")
-    )["mcpServers"]["rvnd-governance"]
+    )["mcpServers"]["rvnd"]
     assert descriptor["command"] == "python3"
     assert descriptor["args"] == ["-m", "rvnd.mcp_server"]
     assert "PYTHONPATH" not in descriptor.get("env", {})
@@ -297,7 +297,7 @@ def test_multi_host_plugin_manifests_are_coherent():
 def test_vendored_governance_schemas_match_0_8_2_hashes():
     schema_root = (
         Path(__file__).resolve().parents[1]
-        / "rvnd-governance"
+        / "rvnd"
         / "schemas"
         / "loomground"
     )

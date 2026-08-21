@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "rvnd-governance": {
+    "rvnd": {
       "command": "python3",
       "args": [
         "-m",

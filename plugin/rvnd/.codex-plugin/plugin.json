@@ -1,5 +1,5 @@
 {
-  "name": "rvnd-governance",
+  "name": "rvnd",
   "version": "0.6.0",
   "description": "Drive RVND's typed governance cycle, grounded policy workflow, oversight, audit verification, and incident response.",
   "author": {

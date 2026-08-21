@@ -249,8 +249,8 @@ def _check_composition(doc, errors) -> None:
                 errors.append(f"a composition that renders 'proposal' must also render '{needed}'")
     if doc.get("fail_closed") is not True:
         errors.append("fail_closed must be true")
-    if doc.get("server", "rvnd-governance") != "rvnd-governance":
-        errors.append("server must be 'rvnd-governance'")
+    if doc.get("server", "rvnd") != "rvnd":
+        errors.append("server must be 'rvnd'")
     _jsonschema_check(doc, "https://loomground.local/schemas/rvnd-composition.schema.json", errors)
 
 

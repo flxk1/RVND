@@ -3,7 +3,7 @@
 """Op-drift gate: every op a skill declares must exist on the live MCP server.
 
 The skills speak the real ``workspace_*`` surface (see
-``plugin/rvnd-governance/references/catalogue.md``), and that catalogue warns it
+``plugin/rvnd/references/catalogue.md``), and that catalogue warns it
 "can drift with the server". Nothing else in CI catches a skill's manifest
 declaring a ``workspace_workflow(op=...)`` the server no longer exposes — a
 silent break of the plugin -> backend connection for every orchestrator
@@ -25,7 +25,7 @@ from pathlib import Path
 
 import pytest
 
-PLUGIN = Path(__file__).resolve().parents[1] / "rvnd-governance"
+PLUGIN = Path(__file__).resolve().parents[1] / "rvnd"
 SKILLS = PLUGIN / "skills"
 
 def _live_ops() -> dict[str, set[str]]:

@@ -1,4 +1,4 @@
-# rvnd-governance
+# rvnd
 
 The RVND governance layer as skills: how an AI host drives the **RVND governance MCP server**
 safely. RVND (reeve + nD) is a local-first governance system that sits between an agent and what it
