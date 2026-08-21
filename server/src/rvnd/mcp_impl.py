@@ -41,6 +41,7 @@ from .mcp_serving import (
 # Dynamic seam: resolve _log_root through mcp_serving so tests that patch
 # rvnd.mcp_serving._log_root take effect in every module (split-safe).
 from . import mcp_serving as _mcp_serving
+from .policy import effective_policy
 def _log_root():
     return _mcp_serving._log_root()
 
@@ -246,7 +247,7 @@ def policy_snapshot(folder_context: str) -> dict[str, Any]:
           / ``reason``
         - ``folder_context``: the folder this snapshot describes
     """
-    policy = load_policy(folder_context)
+    policy = effective_policy(folder_context)
     return {
         "folder_context": str(Path(folder_context).expanduser().resolve()),
         "privacy_lock_enabled": policy.privacy_lock_enabled,
@@ -1443,7 +1444,7 @@ def lock_classify_text(text: str,
             try:
                 from .policy import load_policy
                 resolved_folder = str(Path(folder_context).expanduser().resolve())
-                pol = load_policy(resolved_folder)
+                pol = effective_policy(resolved_folder)
                 threshold = float(pol.lock_confidence_threshold or 0.0)
             except Exception:
                 # Folder lookup failures don't fail the scan — just no filter
@@ -1484,7 +1485,7 @@ def lock_threshold_get(folder_context: str) -> dict[str, Any]:
     try:
         from .policy import load_policy
         resolved = str(Path(folder_context).expanduser().resolve())
-        pol = load_policy(resolved)
+        pol = effective_policy(resolved)
         return {
             "ok":             True,
             "folder_context": resolved,
@@ -1505,7 +1506,7 @@ def lock_threshold_set(folder_context: str,
     try:
         from .policy import load_policy, save_policy
         resolved = str(Path(folder_context).expanduser().resolve())
-        pol = load_policy(resolved)
+        pol = effective_policy(resolved)
         try:
             new = float(threshold)
         except (TypeError, ValueError):

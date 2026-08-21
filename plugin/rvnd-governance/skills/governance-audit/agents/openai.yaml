@@ -1,0 +1,4 @@
+interface:
+  display_name: "Governance Audit"
+  short_description: "Mirror the whole RVND console in chat — in two versions"
+  default_prompt: "Use $governance-audit to report everything the RVND console reports for this folder: render the full board twice on one skeleton — WITHOUT RVND (host-declarable only; engine rows left empty) and WITH RVND (the signed board) — leading with the reconciliation gap. Pure-read; blank is never clean; state the scope line."

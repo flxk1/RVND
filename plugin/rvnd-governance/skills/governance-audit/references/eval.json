@@ -1,0 +1,29 @@
+{
+  "skill": "governance-audit",
+  "provides": "rvnd.governance_audit",
+  "drives": "The RVND console's read surface (app/src/panels/pack.json — 22 declared panels — plus the read-rendering shell surfaces) via the host's MCP client; ~26 facades, projection ops only",
+  "wraps_kernel": false,
+  "scripted": false,
+  "fail_closed": true,
+  "read_only": true,
+  "loomground_governance": "0.8.2",
+  "manifest": "manifest.yaml",
+  "grounding": "references/console-surface.md — every panel/field grounded in the console bundles and server code; governance_live shape verified by running it; CLAIM_COLUMNS/CONCEPT_COLUMNS and ContractReport verified by running versum and loomground_solver",
+  "cycle_steps": ["read", "render"],
+  "coverage_contract": "app/src/panels/pack.json (22 panels); assert one row per declared id; fail loud on a gap, mirroring patchbayVerifyBoot()",
+  "invariants": [
+    "manifest-complete — one row per declared console panel; a declared panel with no row is a failure, not a silent omission",
+    "two versions on one skeleton — without RVND (host-declarable only) and with RVND (signed board); the shared skeleton is the controlled comparison",
+    "pure-read — projection ops only; appends nothing (substitutes threshold_get/setup_status for the self-recording lock audit_query)",
+    "blank is never clean — an empty engine row renders blind/idle with a reason, never 0 or a bare dash; absence of a signed record is blindness, not safety",
+    "reconciliation is the spine — observed_not_authorised is uncomputable without both an authorised-set and a signed observed-set; say so rather than reporting a clean 0",
+    "the blind/idle/live/host gradient is reported per row; idle (engine present, not engaged) is never collapsed into blind",
+    "orphan panels (federation, lens, bringin) get their own first-class row — never folded into a nearest dimension",
+    "attributed, not asserted — a filled row carries its receipt (chain seq/hash, versum snapshot digest, or audit_id)",
+    "the scope line is always stated: RVND governs only what is routed through its MCP / operate() path",
+    "the chain's limits are always reported: key-directory adversary needs encrypted keys + genesis pinning + off-host log; erasure is a tombstone that cannot recall copies past the boundary"
+  ],
+  "provenance": "Authored for loomground; drives the AGPL-3.0-only RVND governance server. Grounded in a read-only survey of the RVND console and server. No third-party skill source.",
+  "notes": "Progressive-disclosure: lean SKILL.md + references/reference.md (rendering + discipline) + references/console-surface.md (the grounded completeness spine) + shared plugin references. Distinct from rvnd-audit, which verifies one row (the chain) deeply and appends an audit-of-audit event; this skill reports the whole board and appends nothing.",
+  "review": "Grounded and structurally complete against RVND 0.6.9.x; console-surface.md verified panel-by-panel. Validate the op-return field lists against the declared compatible RVND release range before shipping."
+}

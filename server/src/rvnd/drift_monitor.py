@@ -67,6 +67,11 @@ _FINDING_KIND = "drift-finding"
 # ── operational state projection ─────────────────────────────────────────────
 
 def _policy_bindings(folder: str | Path) -> dict[str, Any]:
+    # DELIBERATELY the folder's own declaration, not the effective policy. This
+    # is a monitor: its job is to notice that something changed. A folder edit
+    # that no longer takes effect — because the posture is the deployment's — is
+    # MORE worth reporting, not less, and reading the effective policy here would
+    # make exactly that edit invisible.
     p = load_policy(folder)
     return {
         "privacy_lock_enabled": p.privacy_lock_enabled,

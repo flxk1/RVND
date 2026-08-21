@@ -1,0 +1,71 @@
+# Loomground manifest for governance-audit.
+# Mirrors the whole RVND console in chat: one row per declared panel, rendered in two
+# versions on one skeleton (without-engine transparency vs with-engine governance).
+# Pure-read — it reads projections only and appends nothing to the signed chain. It
+# proposes nothing and never applies. The coverage contract is app/src/panels/pack.json
+# (22 declared panels) plus the read-rendering shell surfaces.
+name: governance-audit
+loomground_governance: 0.8.2
+loomground:
+  reads:
+    - actor
+    - human
+    - gate
+    - master
+    - authority
+    - pipe
+    - egress
+    - reservation
+    - quorum
+    - prohibition
+    - egress-obligation
+    - redress
+    - party
+    - delegation
+    - autonomy-grade
+  proposes: []
+  never_applies_directly: true
+  read_only: true
+# Real MCP surface (verified against app/src/panels/pack.json + the panel and shell
+# bundles). Discovery lists the full facade catalogue; the audit calls only the
+# pure-read ops below. See ../../references/catalogue.md and references/console-surface.md.
+rvnd:
+  discovery: 'help panel: <facade>(op="help") across the 22-facade surface'
+  coverage_contract: app/src/panels/pack.json   # 22 declared panels; fail-closed on a gap
+  tools:
+    - tool: workspace_workflow
+      ops: [governance_live, governance_register, egress_board, coverage_matrix, governance_graph, governance_map, governance_kg, connector_list, lane_capabilities, list, active, queue, inspect_stuck, transport_audit, approval_list]
+    - tool: workspace_audit
+      ops: [tail, verify_chain, discipline, shadow_scan, overrides, override_recurrence, calibration]
+    - tool: workspace_policy
+      ops: [snapshot, party_list, juris_packs]
+    - tool: workspace_matrix
+      ops: [show]
+    - tool: workspace_lock
+      ops: [threshold_get, setup_status]     # NOT audit_query — it self-records
+    - tool: workspace_conformity
+      ops: [evidence_pack, oversight_attestation, trigger_map, drift_report, risk_register, threat_model]
+    - tool: workspace_grounder
+      ops: [coverage, bibliography, swarm.frontier, oversight.feed]
+    - tool: workspace_lens
+      ops: [log, precedent_list]
+    - tool: workspace_contract
+      ops: [list_reviews, state, obligations, list_approvals]
+    - tool: workspace_model
+      ops: [list, status, attest_status]
+    - tool: workspace_capture
+      ops: [read]
+    - tool: workspace_memory
+      ops: [recent]
+    - tool: workspace_mirror
+      ops: [list]
+    - tool: workspace_dispatch
+      ops: [decision_pending, list_pinned, recent]
+    - tool: workspace_legal
+      ops: [card.list]
+    - tool: workspace_erase
+      ops: [status]
+    - tool: workspace_session
+      ops: [verify_bytes]
+confirmation:
+  mutations: none                 # pure-read: the audit appends nothing

@@ -58,6 +58,7 @@ OPS = ("evidence_pack", "oversight_attestation", "trigger_map",
 # guarantees; it only adds labels.
 import json as _json
 from pathlib import Path as _Path
+from .policy import effective_policy
 
 REGIME_PACKS_DIR = _Path(__file__).resolve().parent / "data" / "packs"
 REFERENCE_REGIME = REGIME_PACKS_DIR / "eu-ai-act-conformity.json"
@@ -480,7 +481,7 @@ def risk_register(folder: str | Path, *, log_root: Optional[Path] = None,
     class: the static automation boundary (which grade a footprint requires
     under the folder's posture) plus the observed verdict history per action
     class — the boundary as designed AND as exercised."""
-    p = load_policy(folder)
+    p = effective_policy(folder)
     shift = _POSTURE_SHIFT.get(posture, 0)
     boundary = []
     for tag in sorted(_RISK_MIN_GRADE):
