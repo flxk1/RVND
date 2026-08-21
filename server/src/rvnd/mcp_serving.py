@@ -247,8 +247,13 @@ def _folder_lock_on(folder_context: str) -> bool:
     a document body if the folder has explicitly disabled the lock.
     """
     try:
-        from .policy import load_policy
-        pol = load_policy(folder_context)
+        from . import subject as _subject
+        from .policy import resolve_policy
+        # log_root matters: the deployment policy lives under the OPERATIVE log
+        # root, so an operator running with --log-root must have their posture
+        # read, not the default one. This is the same trap the A6 allowlist fell
+        # into when it read the default registry regardless of --log-root.
+        pol = resolve_policy(_subject.folder(folder_context), log_root=_log_root())
         return bool(getattr(pol, "lock_is_active", True))
     except Exception:
         return True
@@ -289,8 +294,13 @@ def _folder_lock_mode(folder_context: str) -> str:
       "off"                  — no guard, body crosses (state 1)
     """
     try:
-        from .policy import load_policy
-        pol = load_policy(folder_context)
+        from . import subject as _subject
+        from .policy import resolve_policy
+        # log_root matters: the deployment policy lives under the OPERATIVE log
+        # root, so an operator running with --log-root must have their posture
+        # read, not the default one. This is the same trap the A6 allowlist fell
+        # into when it read the default registry regardless of --log-root.
+        pol = resolve_policy(_subject.folder(folder_context), log_root=_log_root())
         return pol.lock_mode
     except Exception:
         return "clean_room_with_algo"   # fail-safe default
