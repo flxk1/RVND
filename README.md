@@ -224,6 +224,13 @@ startup) and opens your browser. Close the window it opens to stop Rvnd. The MCP
 server and the authenticated HTTP gateway are separate processes; their setup is
 documented under `docs/`.
 
+### Where the audit log lives
+
+Every folder RVND governs gets its own signed, hash-chained mutation log under
+one audit-log root, `~/.workspace/log` by default. Point it elsewhere with the
+`RVND_LOG_ROOT` environment variable or the `--log-root` CLI flag (the flag
+wins when both are set); `workspaces doctor` prints the resolved location.
+
 ## Connect it to your AI agent
 
 To let an agent (Claude Code, Codex) drive RVND — registering the governance MCP

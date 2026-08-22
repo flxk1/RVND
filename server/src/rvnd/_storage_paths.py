@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # Copyright 2026 flxk1
-"""Consumer shim — storage defaults now live in ``loomground-workspace``.
+"""Consumer shim — storage defaults now live in ``loomground_workspace``.
 
 Where a workspace keeps what it accumulates is part of what a workspace is, so
 ``LOG_ROOT_DEFAULT`` moved to ``loomground_workspace.paths``. Kept as a shim
