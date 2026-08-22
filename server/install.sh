@@ -115,7 +115,11 @@ if [ -f server/examples/oversight_demo.py ]; then
   echo "  ----------------------------------------------------------------"
 fi
 
-cat <<'DONE'
+# 5. Surface where the signed audit log lives. Non-fatal: an import hiccup
+#    here must never fail an otherwise-successful install.
+AUDIT_LOG_ROOT="$(python -c 'import rvnd; print(rvnd.resolve_log_root())' 2>/dev/null || true)"
+
+cat <<DONE
 
 ✓ RVND installed into the repo-root .venv/.
 
@@ -127,6 +131,9 @@ cat <<'DONE'
 
   To drive RVND from an AI agent
   (Claude Code / Codex):              ./scripts/connect-agent-hub.sh
+
+  Audit log root:                     ${AUDIT_LOG_ROOT:-unknown (see 'workspaces doctor')}
+                                      Override with RVND_LOG_ROOT or --log-root.
 
   The virtual environment keeps RVND's dependencies isolated from the rest of
   your system. Re-run ./server/install.sh any time to update.
