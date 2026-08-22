@@ -24,6 +24,10 @@ if [ ! -x "$PY" ]; then
   echo "RVND isn't installed yet. Run ./server/install.sh first (or double-click 'app/Open Rvnd.command'), then re-run this."
   exit 1
 fi
+if ! "$PY" -c "import rvnd" >/dev/null 2>&1; then
+  echo "RVND's virtualenv exists but 'import rvnd' fails — the install is incomplete. Re-run ./server/install.sh, then re-run this."
+  exit 1
+fi
 
 # The MCP server descriptor every hub needs (a stdio server run by RVND's own venv
 # python, so 'workspaces' always imports regardless of the system Python).
@@ -53,25 +57,26 @@ if command -v claude >/dev/null 2>&1; then
     run claude mcp add -e "$MCP_ENV" -e "RVND_AGENT=claude-code" rvnd-governance -- "$MCP_CMD" $MCP_ARGS
   fi
   # 2. Marketplace + skills (idempotent: check the installed list first)
-  if claude plugin list 2>/dev/null | grep -q "rvnd-governance"; then
-    echo "  ✓ plugin 'rvnd-governance' already installed."
+  if claude plugin list 2>/dev/null | grep -q "rvnd"; then
+    echo "  ✓ plugin 'rvnd' already installed."
   else
     echo "  • adding the marketplace and installing the governance skills…"
     run claude plugin marketplace add "$REPO"
-    run claude plugin install "rvnd-governance@rvnd"
+    run claude plugin install "rvnd@rvnd"
   fi
   # What the skills ARE (and aren't): the cooperative governance cycle. Each is
   # a way to run work THROUGH the server; they take effect only when the agent
   # invokes them — step 3's hook is what binds an agent that doesn't.
   cat <<'EOF'
-  • Skills installed — the governance cycle, cooperative (effect only when used):
-      /rvnd-govern    put a consequential action through the gate (propose → server verdict → apply)
-      /rvnd-decide    the human decision — ratify / hold / escalate a verdict
-      /reason-governance-rules   ask the server for an action's governed outcome (read-only)
-      /extract-policy-norms + /compile-loomground-policy   turn source rules into a typed policy patch
-      /resolve-rule-conflicts    server-validated resolution of clashing rules
-      /rvnd-audit     verify the tamper-evident chain (receipts vs the Ed25519 log)
-      /rvnd-incident  revoke authority / record erasure after an incident
+  • Skills installed — 8 user-action skills, cooperative (effect only when invoked):
+      govern-an-action    "about to do X — is it allowed?" put a consequential action through the gate
+      sign-off            the human oversight decision — what's waiting for approval? approve / hold / deny
+      onboard-a-policy    bring a written policy, regulation, or contract into governance
+      resolve-a-conflict  two governance rules clash — surface it and validate a resolution
+      verify-a-receipt    prove one decision happened unaltered — a receipt against the signed chain
+      revoke-or-erase     pull a granted authority, or erase a person from the governed record
+      audit-the-ai        report the whole governance board in chat, with and without RVND
+      build-a-surface     assemble and lint a governed app screen (the MCP App surface)
     They author and operate governance; they do NOT enforce it. The hook does.
 EOF
   # 3. PreToolUse enforcement hook — the TEETH. Steps 1–2 give the agent RVND's
@@ -111,8 +116,8 @@ if [ -d "$HOME/.codex" ]; then
         "args": ["-m", "workspaces.mcp_server"],
         "env": { "RVND_GOVERNANCE_LAYER": "on", "RVND_AGENT": "codex" }
       }
-  • Enable the plugin manifest at:
-      $REPO/.codex-plugin/plugin.json
+  This gives Codex RVND's MCP tools (cooperative governance). The skills and the
+  PreToolUse enforcement hook are Claude Code only for now.
 EOF
 fi
 
@@ -149,6 +154,6 @@ Point any MCP-capable host at this local stdio server:
     args:    -m workspaces.mcp_server
     env:     RVND_GOVERNANCE_LAYER=on RVND_AGENT=<your-agent-name>
 A ready-made descriptor lives at:
-    $REPO/plugin/rvnd-governance/mcp/rvnd.mcp.json
+    $REPO/plugin/rvnd/mcp/rvnd.mcp.json
 EOF
 fi
