@@ -9,8 +9,11 @@
 #
 # What it does, in order: checks git + curl are present, clones (or updates)
 # RVND, runs the full pre-flight (scripts/preflight.sh), installs into an
-# isolated .venv (server/install.sh), then runs a health check. It is
-# non-interactive and idempotent — safe to re-run; re-running updates in place.
+# isolated .venv (server/install.sh), runs a health check, then — when a
+# Claude Code CLI is on PATH — wires the agent (MCP server + plugin + a
+# monitor-mode PreToolUse hook) via scripts/connect-agent-hub.sh. It is
+# non-interactive and idempotent — safe to re-run; re-running updates the
+# engine and re-applies the agent wiring in place.
 #
 # Where it installs (first match wins):
 #   $RVND_DIR   →   first argument   →   ASK (default $HOME/rvnd)   →   $HOME/rvnd
@@ -143,6 +146,24 @@ main() {
   say ""
   say "${c_accent}✓ RVND installed at $TARGET${c_reset}"
 
+  # Agent wiring — MCP server + plugin + a monitor-mode PreToolUse hook, at
+  # user scope so it's available to every project this hub opens. Monitor
+  # mode logs would-be verdicts and never blocks, so it's the safe default
+  # for an unattended `curl | sh` run. Runs only when a Claude Code CLI is on
+  # PATH. Guarded so a wiring failure cannot fail the whole bootstrap — the
+  # engine install above already succeeded and stands on its own regardless.
+  AGENT_HUB=0
+  if command -v claude >/dev/null 2>&1 && [ -x scripts/connect-agent-hub.sh ]; then
+    say ""
+    say "› wiring the agent (MCP server + plugin + monitor-mode hook, user scope)…"
+    if ./scripts/connect-agent-hub.sh --yes --scope user --hook monitor; then
+      AGENT_HUB=1
+    else
+      say "  ! agent wiring did not complete — RVND itself is installed and fine."
+      say "    Retry any time:  ./scripts/connect-agent-hub.sh --yes --scope user --hook monitor"
+    fi
+  fi
+
   # One flow: when a terminal is attached (works under `curl | sh` via /dev/tty),
   # go straight into the guided multi-step setup (folder, local model, skills,
   # oversight), then show the command overview and offer the console. A
@@ -155,6 +176,16 @@ main() {
     say ""
     say "› your commands"
     .venv/bin/python -m workspaces guide </dev/tty 2>/dev/null || true
+    say ""
+    say "› agent"
+    if [ "$AGENT_HUB" = 1 ]; then
+      say "  Claude Code is wired: MCP server + plugin + hook, MONITOR mode (logs, never blocks)."
+      say "  Give it teeth (ENFORCE): edit ~/.claude/settings.json, drop RVND_HOOK_MODE=monitor from the hook command."
+      say "  Turn off:                set RVND_HOOK_MODE=off in that same command."
+      say "  Remove entirely:         .venv/bin/rvnd-hook --uninstall --scope user"
+    else
+      say "  Wire Claude Code / Codex to drive RVND:  ./scripts/connect-agent-hub.sh"
+    fi
     say ""
     { printf 'Open the RVND console in your browser now? [y/N]: ' >/dev/tty; } 2>/dev/null || true
     { IFS= read -r _open </dev/tty; } 2>/dev/null || _open=""
@@ -179,7 +210,14 @@ main() {
       Darwin) say "  open 'app/Open Rvnd.command'    # launch the console" ;;
       *)      say "  python app/serve.py             # launch the console → http://127.0.0.1:8799" ;;
     esac
-    say "  ./scripts/connect-agent-hub.sh  # let Claude Code / Codex drive RVND"
+    if [ "$AGENT_HUB" = 1 ]; then
+      say "  Agent already wired: MCP server + plugin + hook, MONITOR mode (logs, never blocks)."
+      say "    Give it teeth (ENFORCE): edit ~/.claude/settings.json, drop RVND_HOOK_MODE=monitor from the hook command."
+      say "    Turn off:                set RVND_HOOK_MODE=off in that same command."
+      say "    Remove entirely:         .venv/bin/rvnd-hook --uninstall --scope user"
+    else
+      say "  ./scripts/connect-agent-hub.sh  # wire Claude Code / Codex to drive RVND"
+    fi
   fi
 }
 
