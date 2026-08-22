@@ -23,6 +23,19 @@ Two tiers, two marketplaces. **25 skills** total.
 - **Install a single Loomground skill → standalone.** It needs **neither RVND nor any other Loomground
   skill.** Install just the one; nothing else.
 
+**Skills vs the engine — transparency vs governed.** The plugins above install the *skills*; the RVND
+*engine* (`server/install.sh`) is separate. The RVND skills follow a local-first cascade, so they run
+either way — you do **not** install a different skill for each:
+
+- **Skills only (no engine):** each RVND skill falls back to what the host can declare alone.
+  `audit-the-ai`, for instance, renders its board in *transparency* mode (what the AI is and could
+  reach), every engine-backed row left empty — no signed board, no enforcement.
+- **Skills + engine (`server/install.sh` → `scripts/connect-agent-hub.sh`):** the same skills fill
+  from the live signed engine — *governed* mode (what policy permitted, where an effect overstepped,
+  and proof). The engine adds the MCP tools; the hook adds enforcement.
+
+Same skills, two runtime outcomes — the cascade picks the mode.
+
 ### A · RVND (needs both) — the minimal working stack
 
 ```
