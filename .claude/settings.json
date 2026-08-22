@@ -1,0 +1,31 @@
+{
+  "extraKnownMarketplaces": {
+    "rvnd": {
+      "source": {
+        "source": "github",
+        "repo": "flxk1/RVND"
+      }
+    },
+    "loomground": {
+      "source": {
+        "source": "github",
+        "repo": "flxk1/loomground-plugins"
+      }
+    },
+    "ctrl-engineering": {
+      "source": {
+        "source": "git",
+        "url": "https://github.com/flxk1/ctrl-engineering.git"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "rvnd@rvnd": true,
+    "loomground-governance@loomground": true,
+    "loomground-deontic@loomground": true,
+    "loomground-versum@loomground": true,
+    "loomground-solver@loomground": true,
+    "loomground-ingest@loomground": true,
+    "ctrl-engineering@ctrl-engineering": true
+  }
+}
