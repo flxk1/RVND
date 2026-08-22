@@ -1,3 +1,0 @@
-# De-emphasise generated / release artifacts in GitHub language stats & diffs
-sbom/**     linguist-generated=true
-release/**  linguist-generated=true
