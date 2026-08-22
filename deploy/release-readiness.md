@@ -40,4 +40,4 @@ corresponding evidence from the exact candidate commit.
 - [Rollback and key lifecycle](rollback-and-key-lifecycle.md)
 - [Retention and subject rights](../docs/concepts/data-retention-and-subject-rights.md)
 - [AI Act self-classification](../docs/concepts/ai-act-self-classification.md)
-- [Security policy](../SECURITY.md)
+- [Security policy](../.github/SECURITY.md)
