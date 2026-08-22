@@ -211,6 +211,9 @@ EOF
     esac
   fi
   echo "  Done — restart Claude Code (or run /reload) if the tools/skills aren't visible yet."
+  echo "  Note: installed alone, the skills run in transparency mode (they cascade to a host-only"
+  echo "  view without the engine). This connection added the governed mode — the signed board,"
+  echo "  enforcement, and reconciliation."
 fi
 
 # ---- Codex (manual: no install CLI) --------------------------------------
