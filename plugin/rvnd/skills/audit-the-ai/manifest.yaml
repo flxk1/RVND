@@ -36,7 +36,7 @@ rvnd:
     - tool: workspace_workflow
       ops: [governance_live, governance_register, egress_board, coverage_matrix, governance_graph, governance_map, governance_kg, connector_list, lane_capabilities, list, active, queue, inspect_stuck, transport_audit, approval_list]
     - tool: workspace_audit
-      ops: [tail, verify_chain, discipline, shadow_scan, overrides, override_recurrence, calibration]
+      ops: [tail, shadow_scan, overrides, override_recurrence, calibration]   # NOT verify_chain / discipline — each self-records a system event on every call, so a pure-read audit excludes them
     - tool: workspace_policy
       ops: [snapshot, party_list, juris_packs]
     - tool: workspace_matrix

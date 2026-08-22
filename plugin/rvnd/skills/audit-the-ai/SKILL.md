@@ -14,6 +14,13 @@ nothing to the signed chain (unlike `verify-a-receipt`, which records an audit-o
 never proposes, applies, grants, or signs. Its whole job is to tell the truth about what is — and is
 not — governed here. To prove one specific receipt, use verify-a-receipt.
 
+Two ops the console's audit panel exposes — `verify_chain` and `discipline` — each self-record a
+`system` event on every call, so this skill deliberately excludes them to keep the "appends nothing"
+guarantee true; `scripts/render_board.py` refuses both at its allow-set. Their absence costs the
+audit and govlive rows one evidence line each (`overrides` / `override_recurrence` / `calibration` /
+`shadow_scan` and `tail` / `governance_live` / `approval_list` still fill those rows), never the
+chain's integrity.
+
 ## The frame (say it in the output)
 
 - **Without RVND = transparency.** What the AI *is* and could *reach*. Self-reported, unverifiable,
@@ -87,6 +94,10 @@ reconciliation; lead the "without" side with the fact that you *cannot even ask*
 
 ## More
 
+- `scripts/render_board.py` — the read-only runner: collects the 22-row board by calling only the
+  pure-read ops `references/console-surface.md` lists, so the skeleton this skill narrates is
+  manifest-complete without twenty ops called by hand. Run
+  `WORKSPACES_ALLOW_UNREGISTERED=1 python3 scripts/render_board.py <folder> --json`.
 - `references/console-surface.md` — the grounded completeness spine: 22-panel manifest + the
   read-rendering shell surfaces, each with its facade, op, and exact fields.
 - `references/reference.md` — the two-version rendering in depth, the state model, the two
