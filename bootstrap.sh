@@ -136,6 +136,8 @@ main() {
     say ""
     say "› health check (workspaces doctor):"
     .venv/bin/workspaces doctor || true
+    say "  (the log_root line above is where the signed audit log lives —"
+    say "   override with RVND_LOG_ROOT or --log-root)"
   fi
 
   say ""

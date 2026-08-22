@@ -55,6 +55,29 @@ from typing import Any, Callable, Iterator
 
 from ._storage_paths import LOG_ROOT_DEFAULT
 
+#: Environment variable a consumer or the CLI can set to redirect every
+#: audit-log root without a code change. Precedence, one rule everywhere it
+#: applies: an explicit ``log_root=`` / ``--log-root`` value wins over this
+#: variable, which wins over ``LOG_ROOT_DEFAULT``.
+RVND_LOG_ROOT_ENV = "RVND_LOG_ROOT"
+
+
+def resolve_log_root(explicit: "str | Path | None" = None) -> Path:
+    """Resolve the audit-log root: explicit argument > ``RVND_LOG_ROOT`` env > default.
+
+    ``explicit`` is whatever the caller already has in hand — a ``log_root=``
+    keyword, a parsed ``--log-root`` flag — and wins when truthy. Otherwise
+    ``RVND_LOG_ROOT`` is read from the environment and expanded (``~`` and
+    env vars in the path). With neither set, the result is ``LOG_ROOT_DEFAULT``,
+    unchanged.
+    """
+    if explicit:
+        return Path(explicit)
+    env_value = os.environ.get(RVND_LOG_ROOT_ENV)
+    if env_value:
+        return Path(env_value).expanduser()
+    return LOG_ROOT_DEFAULT
+
 
 _log = logging.getLogger(__name__)
 
@@ -323,6 +346,7 @@ __all__ = [
     "LogEvent",
     "SealedWriteError",
     "MutationLog",
+    "seal",
     "events_from_bytes",
 ]
 
@@ -421,12 +445,15 @@ class MutationLog:
         # WORKSPACES_ALLOW_UNREGISTERED escape hatch.
         from .folder_context import resolve_folder_context
 
-        # Enforce the A6 allowlist against the SAME log root this log writes to,
-        # so a folder registered under a custom --log-root is honoured (the
-        # registry lives at <log_root>/known-workspaces.json).
-        self.folder_path = resolve_folder_context(folder_path, log_root=log_root)
+        # Resolve once: an explicit log_root wins, else RVND_LOG_ROOT, else
+        # LOG_ROOT_DEFAULT. Both the allowlist check below and this log's own
+        # directory read the SAME resolved root, so a folder registered under
+        # a custom root (env or --log-root) is honoured (the registry lives
+        # at <log_root>/known-workspaces.json) and the log dir agrees with it.
+        eff_log_root = resolve_log_root(log_root)
+        self.folder_path = resolve_folder_context(folder_path, log_root=eff_log_root)
         self._folder_id = folder_hash(self.folder_path)
-        root = Path(log_root) if log_root else LOG_ROOT_DEFAULT
+        root = eff_log_root
         self._log_dir = root / self._folder_id
         self._log_file = self._log_dir / "events.jsonl"
         self._root = root
@@ -1539,6 +1566,60 @@ class MutationLog:
         # signed anchor to the new head (else verify would read it as truncation).
         self._write_anchor()
         return purged_count
+
+
+def seal(
+    folder: "str | Path",
+    *,
+    pair_id: str,
+    payload: Any,
+    event: str = "system",
+    actor: str = "",
+    extra: "dict[str, Any] | None" = None,
+    log_root: "str | Path | None" = None,
+) -> dict:
+    """Seal ``payload`` onto the folder's real signed, hash-chained mutation log.
+
+    This is the one-call consumer entry point. It appends to the SAME chain
+    ``MutationLog``/``LogEvent`` write to, and the SAME chain ``verify_chain``
+    walks — it is not an ad-hoc hash placed beside that log.
+
+    Steps: register ``folder`` (idempotent), fingerprint ``payload`` (a JSON-
+    serialisable value; canonicalised via ``json.dumps(..., sort_keys=True)``
+    so the same content always fingerprints the same way) through
+    ``attestation.core.signature`` and bind that fingerprint into the appended
+    event's ``source_hash``, append the event, then report the chain's
+    integrity. The full ``payload`` is bound but NOT stored in the log — only
+    the caller-supplied ``extra`` descriptor is written to disk. ``event``
+    must be one of ``VALID_EVENTS``; a caller with no lifecycle meaning to
+    RVND uses the default, ``"system"``.
+
+    Returns ``{"backend": "rvnd", "audit_id": str, "head_hash": str,
+    "verified": bool}`` — ``verified`` is the chain's ``verify_chain().ok``
+    immediately after the append.
+    """
+    from .attestation.core import signature as _content_signature
+    from .registry import add_known_workspace as _add_known_workspace
+
+    _add_known_workspace(folder, log_root=log_root)
+    src_hash = _content_signature(
+        json.dumps(payload, sort_keys=True, default=str, ensure_ascii=False)
+    )
+    log = MutationLog(folder, log_root=log_root)
+    audit_id = log.append(LogEvent(
+        event=event,
+        folder_path=str(folder),
+        pair_id=pair_id,
+        source_hash=src_hash,
+        actor=actor or "system",
+        extra=extra or {},
+    ))
+    return {
+        "backend": "rvnd",
+        "audit_id": audit_id,
+        "head_hash": log.head_hash(),
+        "verified": bool(log.verify_chain().ok),
+    }
 
 
 def events_from_bytes(data: bytes) -> "Iterator[LogEvent]":

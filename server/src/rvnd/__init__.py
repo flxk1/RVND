@@ -15,7 +15,15 @@ from .mutation_log import (
     LogEvent,
     MutationLog,
     LOG_ROOT_DEFAULT,
+    RVND_LOG_ROOT_ENV,
+    resolve_log_root,
     folder_hash,
+    # Aliased on import, not bound as bare ``seal``: ``rvnd.seal`` is already a
+    # submodule (at-rest encryption — ``seal_folder``/``unseal_folder``/
+    # ``is_sealed``) that ``memory``, ``draft_store`` and ``backup`` address via
+    # ``from . import seal``. Binding the audit-chain seal to that bare name at
+    # the package level would shadow the submodule in ``rvnd``'s own namespace.
+    seal as seal_audit,
 )
 from .memory import (
     WorkspaceMemory,
@@ -291,7 +299,10 @@ __all__ = [
     "LogEvent",
     "MutationLog",
     "LOG_ROOT_DEFAULT",
+    "RVND_LOG_ROOT_ENV",
+    "resolve_log_root",
     "folder_hash",
+    "seal_audit",
     "WorkspaceMemory",
     "WebResult",
     "discover_folders",

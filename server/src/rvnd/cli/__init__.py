@@ -31,9 +31,10 @@ Exit codes:
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 
-from ..mutation_log import LOG_ROOT_DEFAULT
+from ..mutation_log import LOG_ROOT_DEFAULT, resolve_log_root
 from ..policy import OVERSIGHT_LEVELS
 
 
@@ -1243,11 +1244,37 @@ from .impl import (
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+    # Resolve the audit-log root ONCE, at the single precedence rule
+    # (--log-root flag > RVND_LOG_ROOT env > default), and feed the result
+    # back into ``args.log_root``. Every subcommand reads the root through
+    # ``args.log_root`` (see ``_log_root()`` in ``impl``), so pre-resolving it
+    # here — a local mutation of this call's own ``Namespace``, not global
+    # state — makes RVND_LOG_ROOT effective everywhere a bare ``--log-root``
+    # already was, without a per-command change.
+    flag_value = args.log_root
+    args.log_root = str(resolve_log_root(flag_value))
     handler = _DISPATCH.get(args.command)
     if handler is None:
         parser.error(f"unknown command: {args.command}")
         return 3
-    return handler(args)
+    # An explicitly-passed flag is echoed into the environment for the
+    # duration of THIS call only (e.g. so a subprocess the handler spawns
+    # inherits it), then restored — never left as process-global state.
+    # ``RVND_LOG_ROOT`` is process-wide; two ``main()`` calls sharing one
+    # process (an in-process test session driving the CLI repeatedly, or a
+    # long-lived embedder) must not see one invocation's flag leak into the
+    # next's default resolution.
+    if not flag_value:
+        return handler(args)
+    prev_env = os.environ.get("RVND_LOG_ROOT")
+    os.environ["RVND_LOG_ROOT"] = args.log_root
+    try:
+        return handler(args)
+    finally:
+        if prev_env is None:
+            os.environ.pop("RVND_LOG_ROOT", None)
+        else:
+            os.environ["RVND_LOG_ROOT"] = prev_env
 
 
 if __name__ == "__main__":  # pragma: no cover
