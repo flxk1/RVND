@@ -56,3 +56,7 @@ htmlcov/
 # public main through a `git add -A` while this rule sat here looking correct.
 # Unanchored, so it matches at any depth.
 **/_ctrl/
+
+# Internal working surface (untracked, not shipped)
+SESSION-HANDOFF.md
+work/
