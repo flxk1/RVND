@@ -48,7 +48,7 @@ unfired`. Only `auto` releases on its own.
 | 11 | **erasure** · Erasure | `workspace_erase`(status) *(sweep/request mutate — read status only)* | `manifest.executed`; (sweep preview: `drafts_sealed`, `total_hits`) | #5 erasure / GDPR tombstones · blind |
 | 12 | **protections** · Policy | `workspace_policy`(snapshot, juris_packs, party_list) | `{lock_is_active, lock_mode, oversight_is_active, oversight_default_level, ai_training_optout}`; jurisdiction stack; parties | #9 oversight dial + posture · idle |
 | 13 | **conformity** · Conformity | `workspace_conformity`(evidence_pack, oversight_attestation, trigger_map, drift_report, risk_register, threat_model; `regime` ∈ ""/"eu-ai-act") | evidence `{chain.ok, records, counts_by_kind, basis}`; attestation `{attested, determinations, conditional_releases, bypassed_events, statement}`; drift `{baselines, open_findings}`; risk `{posture, oversight, observed_actions}`; threat `{categories}` | #12 compliance/conformity · blind |
-| 14 | **audit** · Audit trail | `workspace_audit`(verify_chain, discipline, shadow_scan, overrides, override_recurrence, calibration), `workspace_model`(attest_status) | verify_chain `{ok, total_events, broken_links, signature_failures, unsigned_events, malformed_lines}`; discipline `{clean, failures, warnings, scanned}`; attest `models[model_id, baselines, latest_run{verdict(PASS/EXPLAINED_DRIFT/UNLOGGED_LEARNING), diverged, unobserved, probe_count, hash_state}]` | #14 proof / signed record · blind |
+| 14 | **audit** · Audit trail | `workspace_audit`(shadow_scan, overrides, override_recurrence, calibration), `workspace_model`(attest_status) — **NOT `verify_chain` / `discipline`: each self-records a `system` event on every call (verified live — chain grows by one per call), so a pure-read audit excludes them** | attest `models[model_id, baselines, latest_run{verdict(PASS/EXPLAINED_DRIFT/UNLOGGED_LEARNING), diverged, unobserved, probe_count, hash_state}]`; (for reference, the excluded reads would return verify_chain `{ok, total_events, broken_links, signature_failures, unsigned_events, malformed_lines}`, discipline `{clean, failures, warnings, scanned}`) | #14 proof / signed record · blind |
 | 15 | **approvals** · Sign-offs | `workspace_contract`(list_approvals), `workspace_workflow`(approval_list) | contract `{signer_decisions, overall_state, signers, action_summary, contract_id, approval_id, deadline}`; reservation `{needed/quorum, approvers, competences, deadline, on_elapse, state}` | #9 human oversight · blind |
 | 16 | **roles** · Roles & competence | `workspace_policy`(party_list) | parties `[party_id, party_kind(human/agent), status(active/suspended/killed), role, competences[], channels[]]` | #16 parties · blind |
 | 17 | **workflow** · Run board | `workspace_workflow`(list, active, queue, inspect_stuck, transport_audit) | defs `[name, step_count, description]`; queue `[run_id, workflow_name, state]`; `inspect_stuck.stuck`; transport_audit `{holds, actor_present, total, missing_actor}` | #2/#3 runs & fleet · idle |
@@ -81,6 +81,30 @@ Chrome, not manifest panels, but they render governance **state** the audit must
 **Two matrices, not one** (an easy conflation): `coverage_matrix` (panel
 `coverage` / `matrix_view`) is agent×task / kind×risk / task×role; `workspace_matrix` (shell
 `matrix_modal`) is **grade × oversight**. Give each its own row.
+
+**#17 has a third surface, and it is the per-agent one.** `coverage_matrix` is a *matrix* — a
+kind×risk grid, strictest across use-cases, never one agent's own view. `lane_capabilities`
+(`workspace_workflow`, already listed on the `govlive` row above) is the true PER-AGENT capability
+surface: one agent's own governance-lane boundaries, not a cell in someone else's grid. VERIFIED
+against installed rvnd 0.6.9.9 and `server/src/rvnd/lane_capabilities.py`:
+
+```
+{ ok, kind, folder_context, actor, advisory, readable,
+  provenance: {policy_fingerprint, lane_id, lane_version, language_version, max_grade,
+               derived_at, source},
+  risk_axis, capabilities: [...], notes }
+```
+
+Each `capabilities[]` entry is `{kind, in_lane, wired, ...}` then either the cell fields inlined
+(when identical across risk tiers) or `by_risk: {risk: cell}`. **cell** = `{verdict, grade_required,
+escalation, guard}` — `verdict` ∈ `auto|human|reserved|refused|prohibited`; `grade_required` is set
+only for `auto`/`human`; `escalation` ∈ `severed|human-in-the-loop|<reserved_to>|null`; `guard` is a
+short reason string. On an unwired folder it fails closed: `{ok:false, reason:"no active governance
+lane", capabilities:[]}` — never "all allowed".
+
+So #17 carries two related but distinct lenses: `coverage_matrix` is the kind×risk **coverage**
+view (panel `coverage`), `lane_capabilities` is the **per-agent** view (rendered off `govlive`).
+Report a gap against the one you actually read.
 
 ## Deep-verified surface #4 — Data & knowledge (Versum)
 
