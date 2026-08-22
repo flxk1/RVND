@@ -175,7 +175,9 @@ inspection.
 ## Quick start
 
 **One line, from a bare machine** (macOS or Linux) — checks prerequisites,
-clones into `~/rvnd`, and installs:
+clones into `~/rvnd`, installs, and — when a Claude Code CLI is on your
+PATH — wires the agent (MCP server, plugin, and a monitor-mode PreToolUse
+hook, at user scope so every project you open gets it):
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/flxk1/RVND/main/bootstrap.sh | sh
@@ -192,6 +194,15 @@ Set a different location with `RVND_DIR=/path sh bootstrap.sh` (or pass it as an
 argument). The bootstrap is non-interactive and idempotent — re-running updates
 in place — and it refuses to touch a non-empty directory that isn't already an
 RVND clone. When it finishes, run `workspaces init` for the guided setup.
+
+**Over time:** re-run `bootstrap.sh` any time to update the engine and
+re-apply the agent wiring — both steps are idempotent, so this is the normal
+way to keep an install current. The marketplace plugin itself auto-updates
+independently of bootstrap. The monitor-mode hook only logs would-be verdicts
+and never blocks; to give it teeth, edit the hook's `--command` in
+`~/.claude/settings.json` and drop the `RVND_HOOK_MODE=monitor` prefix (or set
+it to `RVND_HOOK_MODE=off` to disable without removing). Remove it entirely
+with `.venv/bin/rvnd-hook --uninstall --scope user`.
 
 **Or step by step.** The following commands clone Rvnd, create an isolated
 virtual environment, install it and start the local Patchbay web application on
@@ -236,7 +247,11 @@ server and installing the governance skills — run:
 It detects your hub, wires in the MCP server (via RVND's own `.venv`), installs
 the skills where scriptable, and prints the manual steps where a hub has no
 install CLI. It's safe to re-run (`--dry-run` previews; `--yes` skips the
-prompt). The plugin and its skills live under `plugin/rvnd-governance/`.
+prompt; `--scope project|user` and `--hook skip|monitor|enforce` control where
+and how the enforcement hook is installed). `bootstrap.sh` already runs this at
+user scope with a monitor-mode hook, so reach for it directly only to change the
+scope or hook mode, or to re-wire. The plugin and its skills live under
+`plugin/rvnd/`.
 
 ## Local models
 
