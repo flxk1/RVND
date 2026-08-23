@@ -1,0 +1,5 @@
+# Attribution map. Claude is an assistant, never an author or copyright holder.
+# Commits recorded under the assistant's git identity are mapped to the human
+# author of record. Non-destructive: this changes how git and GitHub DISPLAY
+# authorship (contributors graph, git log/shortlog/blame) without rewriting history.
+Flxk1 <213685884+flxk1@users.noreply.github.com> <noreply@anthropic.com>
