@@ -58,6 +58,8 @@ from pathlib import Path
 from typing import Any, Callable, Optional
 
 from ._storage_paths import LOG_ROOT_DEFAULT
+from .context_resolve import resolve_contexts
+from .verdict import from_light, strictest
 
 
 # ── verdict vocabulary the classifier emits ────────────────────────────────
@@ -207,6 +209,40 @@ def _unblock_hint(footprint: tuple[str, ...]) -> str:
             "standing approval for this action class, or run it yourself")
 
 
+def _meet_decisions(govs: list[dict[str, Any]]) -> dict[str, Any]:
+    """Join governance results across contexts, strictest-wins.
+
+    Each element of ``govs`` is one context's full result from
+    :func:`rvnd.governance.decide_action` (a ``light``/``reason``/``detail``-
+    bearing dict). This picks the governing one: the dict belonging to
+    whichever context resolved strictest, using the SAME ordering every other
+    RVND caller composes with — each dict's ``light`` mapped through
+    :func:`rvnd.verdict.from_light` and compared by
+    :func:`rvnd.verdict.strictest`/severity (deny > hold > permit). The WHOLE
+    dict of that context is returned, unmodified, so its ``reason``,
+    ``audit_id``, ``light`` and every other field ride through as that
+    context recorded them — this never invents a merged or synthetic result.
+
+    Ties resolve to the FIRST context at the strictest level, which is what
+    makes the result deterministic and is also why a singleton list — the
+    only shape resolution produces before target-workspace resolution grows
+    beyond the acting folder — passes its sole dict through verbatim: with
+    one candidate, that candidate is trivially both strictest and first.
+
+    An empty list has nothing to join; it returns ``{}`` rather than raising,
+    so a caller that (for now, only defensively) receives no contexts still
+    gets a value it can read fields from.
+    """
+    if not govs:
+        return {}
+    verdicts = [from_light(str(g.get("light") or "")) for g in govs]
+    target = strictest(*verdicts)
+    for gov, v in zip(govs, verdicts):
+        if v == target:
+            return gov
+    return govs[0]  # unreachable in practice — strictest() only returns a value present above
+
+
 def evaluate(evt: dict[str, Any],
              *, decide: Optional[Callable[..., dict[str, Any]]] = None) -> Decision:
     """Classify the call and resolve it to a :class:`Decision`.
@@ -221,21 +257,38 @@ def evaluate(evt: dict[str, Any],
         cwd = str(evt.get("cwd") or os.getcwd())
         action_class, footprint, affected, evidence = classify(tool_name, tool_input, cwd)
 
-        # Fast benign path: no risk footprint AND not asked to be strict → allow
-        # without the heavy chokepoint (and without a chain write per Read/Grep).
-        # A flagged action NEVER takes this path — it is always fully evaluated
-        # and recorded. In a painted workspace that wants even benign actions
+        # Axis-B seam: resolve every folder-context this call reaches — the
+        # acting folder, plus any DISTINCT foreign registered workspace a
+        # structured file-write targets (see resolve_contexts). Computed once
+        # here and reused by both the fast path below and the full chokepoint
+        # loop, so resolution is never asked the same question twice.
+        ctxs = resolve_contexts(cwd, tool_name, tool_input)
+
+        # Fast benign path: no risk footprint, not asked to be strict, AND the
+        # call resolves to a single context (the acting folder alone) → allow
+        # without the heavy chokepoint (and without a chain write per
+        # Read/Grep). A flagged action, a strict workspace, or a call whose
+        # target reaches a SECOND (foreign) governed workspace NEVER takes
+        # this path — each of those is always fully evaluated and recorded,
+        # so a target workspace's own policy gets to weigh in on its own
+        # chain. In a painted workspace that wants even benign actions
         # matrixed, set RVND_HOOK_STRICT=1.
         strict = os.environ.get("RVND_HOOK_STRICT", "").strip() in ("1", "true", "yes")
-        if not footprint and not strict:
+        if not footprint and not strict and len(ctxs) <= 1:
             return Decision("allow", f"benign ({action_class}); no risk footprint", {})
 
         if decide is None:
             from .governance import decide_action as decide  # type: ignore
 
-        gov = decide(cwd, action_class=action_class, grade=_grade(),
-                     footprint=footprint, affected_parties=affected,
-                     actor=_agent(evt), log_root=_log_root())
+        # Decide against each resolved context, then join strictest-wins. For
+        # the singleton case this is exactly one decide() call and
+        # _meet_decisions passes its result through unchanged, so behaviour
+        # for every non-foreign-target action is preserved byte-for-byte.
+        govs = [decide(ctx, action_class=action_class, grade=_grade(),
+                       footprint=footprint, affected_parties=affected,
+                       actor=_agent(evt), log_root=_log_root())
+                for ctx in ctxs]
+        gov = _meet_decisions(govs)
         light = str(gov.get("light") or "")
         reason = str(gov.get("reason") or "")
         # The STRUCTURAL reason (grade/footprint) is the actionable one — "grade L2
