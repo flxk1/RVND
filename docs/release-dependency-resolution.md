@@ -23,7 +23,7 @@ Current tag-to-commit mapping:
 |---|---|---|
 | `loomground-solver` | `solver-v0.5.0` | `1a3637f0d6ae42e6de7382120ff4fb27ca79d0b6` |
 | `loomground-versum` | `loomground-versum-v0.13.0` | `1147d7fecd7b991ed87809fae263839ed92372ee` |
-| `loomground-governance` | `loomground-governance-v0.8.3` | `6b291e7f31d7d22884a993b708d5295d8b93097b` |
+| `loomground-governance` | `loomground-governance-v0.11.0` | `cf09ad8336c0ef47e700952896314472129fa4c7` |
 | `loomground-deontic` |  `deontic-v0.1.4` | `c93f4de657f04546f687966d4978d40e25693c2d` |
 | `loomground-ingest` | `fix/widen-solver-range` | `5921833728bc42bdfd465ac1a8cc413bfc576a8a` |
 | `loomground-legal` | `main` | `c955033c4c75a5f8fa31c5989b850967da089636` |
