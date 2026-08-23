@@ -30,7 +30,6 @@ Design notes that keep it safe:
 from __future__ import annotations
 
 import base64
-import contextlib
 import hashlib
 import json
 import os
@@ -156,17 +155,23 @@ def seal_folder(
     # audit_id — accepted evidence, gone. Holding the lock from snapshot to
     # rmtree means every append either completes before the snapshot (and is
     # sealed into the blob) or blocks until sealing is done and then refuses
-    # via the in-lock sealed re-check in append(). If no events file exists
-    # yet there is nothing to serialise against.
+    # via the in-lock sealed re-check in append().
+    #
+    # The lock is ALWAYS taken — even when events.jsonl does not exist yet.
+    # A writer's very first append creates events.jsonl and locks it; the log
+    # dir, however, is created up front at MutationLog construction, so there
+    # is a window where the dir exists but the file does not. A prior "lock
+    # only if the file exists" guard skipped the lock in exactly that window,
+    # letting a seal run unsynchronised against that first append: it could
+    # snapshot the empty dir, write the blob, then rmtree the events the
+    # writer was concurrently writing — losing accepted evidence and leaving
+    # no events.jsonl in the sealed blob at all. ``open(..., "a+")`` creates
+    # the file if absent, so the lock object always exists; an empty log
+    # simply seals as an empty events.jsonl and unseals back to one.
     from .mutation_log import _file_lock
     events_file = log_dir / "events.jsonl"
-    lock_ctx = (
-        open(events_file, "a+", encoding="utf-8")
-        if events_file.exists() else contextlib.nullcontext()
-    )
-    with lock_ctx as lock_fh:
-        with (_file_lock(lock_fh, exclusive=True)
-              if lock_fh is not None else contextlib.nullcontext()):
+    with open(events_file, "a+", encoding="utf-8") as lock_fh:
+        with _file_lock(lock_fh, exclusive=True):
             # Pack every file under the log dir into one manifest.
             files: dict[str, str] = {}
             for path in sorted(log_dir.rglob("*")):
