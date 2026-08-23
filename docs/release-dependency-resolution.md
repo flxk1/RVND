@@ -21,11 +21,11 @@ Current tag-to-commit mapping:
 
 | Package | Release tag | Pinned commit |
 |---|---|---|
-| `loomground-solver` | `solver-v0.5.0` | `1a3637f0d6ae42e6de7382120ff4fb27ca79d0b6` |
-| `loomground-versum` | `loomground-versum-v0.13.0` | `1147d7fecd7b991ed87809fae263839ed92372ee` |
-| `loomground-governance` | `loomground-governance-v0.8.3` | `6b291e7f31d7d22884a993b708d5295d8b93097b` |
+| `loomground-solver` | `main` | `2b331d79871a3bac5a7ace4ebf1b7d03fd1bfd4e` |
+| `loomground-versum` | `main` | `36a414e0374ef8caa08454b5cb711c031634215c` |
+| `loomground-governance` | `loomground-governance-v0.11.0` | `cf09ad8336c0ef47e700952896314472129fa4c7` |
 | `loomground-deontic` |  `deontic-v0.1.4` | `c93f4de657f04546f687966d4978d40e25693c2d` |
-| `loomground-ingest` | `fix/widen-solver-range` | `5921833728bc42bdfd465ac1a8cc413bfc576a8a` |
+| `loomground-ingest` | `fix/widen-solver-range` | `a9a5aeb50fa07ff199a4af7c144da759b8916744` |
 | `loomground-legal` | `main` | `c955033c4c75a5f8fa31c5989b850967da089636` |
 | `loomground-norm` | `main` | `7e97852886fb6721e5f4ba72e868f5c939dcb8b6` |
 | `loomground-factual` | `factual-v0.1.0` | `db60a0592eb7741732944f05279b27def0c9685b` |
