@@ -32,6 +32,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field, asdict
 from enum import Enum
+from pathlib import Path
 from typing import Any, Iterable, Optional
 
 
@@ -255,3 +256,97 @@ def cap_grade(requested: str, ceiling: str) -> str:
     # restrictive), never the old fail-OPEN default of L4 / uncapped (M1).
     ci = _GRADE_IDX.get(ceiling, 0)
     return _GRADES[min(ri, ci)]
+
+
+# ---------------------------------------------------------------------------
+# Witness escape as a tripwire input (detect → respond closure)
+# ---------------------------------------------------------------------------
+#
+# ``witness_escape.record_witness_escape`` writes the "detect" half — one
+# signed event per recorded escape. This section is the "respond" half: it
+# reads those events back as a Breaker metric and arms the SAME flag-style
+# ``Tripwire`` mechanism ``default_tripwires`` and ``oversight_drift.
+# drift_tripwire`` already use. No new state and no new ordering are
+# introduced — a witness escape simply supplies one more ``metrics`` entry to
+# the existing ``Breaker.status`` / ``trip_check`` composition, so QUARANTINED
+# stays exactly as sticky and exactly as human-clear-only as it already was
+# for every other tripwire.
+
+#: The metric name a witness-escape tripwire watches. ``0.0`` / "max" would
+#: also work, but "flag" (like ``attestation_failed`` / ``chain_invalid``)
+#: reads truer: a witness escape either happened or it didn't.
+WITNESS_ESCAPE_METRIC = "witness_escape_detected"
+
+
+def witness_escape_tripwire(name: str = "witness_escape") -> Tripwire:
+    """The tripwire a Breaker arms for a recorded witness escape (an agent's
+    run touched paths outside its authorised folder). Pair it with the
+    metrics from :func:`witness_escape_metrics` — the same
+    ``{"<metric>": True/False}`` shape :func:`default_tripwires` and
+    ``oversight_drift.drift_tripwire`` already produce."""
+    return Tripwire(name, WITNESS_ESCAPE_METRIC, 0.0, "flag")
+
+
+def witness_escape_metrics(
+    folder_context: "str | Path", actor: str, *,
+    since: Optional[float] = None,
+    log_root: "str | Path | None" = None,
+) -> dict[str, Any]:
+    """Breaker-metrics read for the witness-escape tripwire.
+
+    ``True`` iff a witness-escape event for THIS actor was recorded in THIS
+    workspace's mutation log — scoped by construction (a mutation log is one
+    folder's chain, so an escape recorded in a different workspace is never
+    read here) and by the actor filter in
+    ``witness_escape.recent_witness_escapes`` (so an escape recorded for a
+    different actor in the SAME workspace never sets this flag either). With
+    no witness-escape event recorded for this actor/workspace/window, this
+    returns ``False`` — the tripwire that consumes it is then a no-op, same as
+    any other unarmed or clean tripwire (default/empty ⇒ unchanged).
+
+    ``since`` bounds the window (pass a lease's ``granted_at`` to scope to
+    "since the current lease"); ``None`` matches any escape ever recorded for
+    this actor in this workspace.
+    """
+    from .witness_escape import recent_witness_escapes
+    hits = recent_witness_escapes(folder_context, actor, since=since, log_root=log_root)
+    return {WITNESS_ESCAPE_METRIC: bool(hits)}
+
+
+def ensure_witness_escape_armed(breaker: "Breaker") -> "Breaker":
+    """Ensure the witness-escape tripwire is armed on ``breaker`` (idempotent
+    — mirrors ``loop_graph._breaker_with_drift``'s "arm if not already armed"
+    shape). Adds no new tripwire kind beyond the existing flag mechanism."""
+    if any(t.metric == WITNESS_ESCAPE_METRIC for t in breaker.tripwires):
+        return breaker
+    breaker.tripwires.append(witness_escape_tripwire())
+    return breaker
+
+
+def status_after_witness_escape_check(
+    breaker: "Breaker",
+    folder_context: "str | Path",
+    actor: str,
+    *,
+    since: Optional[float] = None,
+    log_root: "str | Path | None" = None,
+    extra_metrics: Optional[dict[str, Any]] = None,
+    now: Optional[float] = None,
+) -> BreakerStatus:
+    """Arm the witness-escape tripwire (if not already) and evaluate
+    ``breaker.status`` with the recorded-escape metric folded in.
+
+    This is the single call that closes detect → respond for a caller: record
+    an escape via ``witness_escape.record_witness_escape``, then ask this for
+    the verdict. ``since`` defaults to ``breaker.lease.granted_at`` — "recent"
+    means "since the current lease/window" — pass an explicit value to widen
+    or narrow it. Scoping (folder × actor) and stickiness (QUARANTINED persists
+    on this ``Breaker`` instance until a human ``clear``s it) both come for
+    free from the composition this reuses; nothing new is invented here.
+    """
+    ensure_witness_escape_armed(breaker)
+    window_since = since if since is not None else breaker.lease.granted_at
+    metrics = dict(extra_metrics or {})
+    metrics.update(witness_escape_metrics(
+        folder_context, actor, since=window_since, log_root=log_root))
+    return breaker.status(metrics=metrics, now=now)
