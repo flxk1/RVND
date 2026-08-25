@@ -41,7 +41,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
-from . import card_store, draft_store, forgotten_subjects
+from . import card_store, draft_store, forgotten_subjects, seal
 from .memory import _pair_from_event, discover_descendants
 from .redaction import replace_ci
 from .mutation_log import (
@@ -60,7 +60,7 @@ def _erase_versum_mirror(
     reason: str,
     actor: str,
     log_root: Path | None,
-) -> list[Exception]:
+) -> tuple[list[Exception], list[str]]:
     """Physically erase the versum mirror of pairs just purged from ``folder``.
 
     After the memory->versum body-drop, a knowledge-channel pair's body
@@ -82,27 +82,57 @@ def _erase_versum_mirror(
     through the A6 known-workspaces allowlist, which would wrongly refuse an
     unregistered descendant mid-purge.
 
-    Returns the exceptions hit (empty on full success). Never raises — one
-    bad folder must not abort the rest of the purge loop — but every
-    exception is returned for the caller to record LOUDLY into the report
-    and the audit-drop log. Nothing is swallowed silently here.
+    ``store.is_dir()`` being false means one of two different things: (a)
+    the folder genuinely has no versum — nothing to erase, a correct silent
+    skip; or (b) the folder is SEALED — its ``.versum`` is packed into the
+    seal blob alongside the log (see ``seal.py``'s ``_FOLDER_MEMORY_SINKS``),
+    not a plaintext dir, so the subject's knowledge body may still exist
+    inside the seal even though nothing is visible here. Skipping (b) the
+    same silent way as (a) would let a GDPR "erase" leave a copy behind and
+    say nothing about it. So a sealed ``fp`` is never treated as "nothing to
+    erase": unpacking/erasing inside the seal needs the controller key (a
+    separate, future capability — not attempted here); instead the folder is
+    recorded as a versum blind spot, the same treatment
+    ``draft_store.scan``/``card_store.scan`` already give sealed drafts/cards
+    (``SweepReport.drafts_sealed`` / ``cards_sealed``) — name it, do not
+    erase it, do not abort the rest of the purge loop.
+
+    Returns ``(errors, sealed_folders)``. ``errors`` are exceptions hit
+    (empty on full success). Never raises — one bad folder must not abort
+    the rest of the purge loop — but every exception is returned for the
+    caller to record LOUDLY into the report and the audit-drop log.
+    ``sealed_folders`` names every ``fp`` whose versum mirror could not be
+    reached because the workspace is sealed. Nothing is swallowed silently
+    here.
     """
     errors: list[Exception] = []
+    sealed_folders: list[str] = []
     if not pair_ids:
-        return errors
+        return errors, sealed_folders
     try:
         from .adapters.versum import erase_record, iter_records
     except Exception as exc:
-        return [exc]
+        return [exc], sealed_folders
     try:
         folders = discover_descendants(folder, log_root=log_root or LOG_ROOT_DEFAULT)
     except Exception as exc:
-        return [exc]
+        return [exc], sealed_folders
     if folder not in folders:
         folders.append(folder)
     for fp in folders:
         store = Path(fp) / ".versum"
         if not store.is_dir():
+            try:
+                is_sealed = seal.is_sealed(fp, log_root=log_root)
+            except Exception as exc:
+                # Can't determine the seal state — fail closed toward
+                # honesty: an unreachable versum of unknown cause is a blind
+                # spot too, not a silent "nothing here".
+                errors.append(exc)
+                sealed_folders.append(fp)
+                continue
+            if is_sealed:
+                sealed_folders.append(fp)
             continue
         try:
             for rec in iter_records(store):
@@ -114,7 +144,7 @@ def _erase_versum_mirror(
                                  actor=actor, reason=reason)
         except Exception as exc:
             errors.append(exc)
-    return errors
+    return errors, sealed_folders
 
 
 # ---------------------------------------------------------------------------
@@ -148,6 +178,11 @@ class SweepReport:
     drafts_sealed:         list[str] = field(default_factory=list)
     #: Same blind spot for saved card files.
     cards_sealed:          list[str] = field(default_factory=list)
+    #: Same blind spot for the knowledge-channel versum mirror: a sealed
+    #: folder's ``.versum`` is packed into the seal blob, not a plaintext
+    #: dir, so it cannot be inspected OR erased here — its content is
+    #: unknown, not clean, and (on ``execute``) not certified erased.
+    versum_sealed:         list[str] = field(default_factory=list)
 
     def total_hits(self) -> int:
         return sum(len(v) for v in self.hits_by_kind.values())
@@ -165,6 +200,7 @@ class SweepReport:
             "estimated_tombstone": dict(self.estimated_tombstone),
             "drafts_sealed":       list(self.drafts_sealed),
             "cards_sealed":        list(self.cards_sealed),
+            "versum_sealed":       list(self.versum_sealed),
             "total_hits":          self.total_hits(),
         }
 
@@ -188,6 +224,13 @@ class ExecutionReport:
     composite_tombstone_id:   str = ""
     forgotten_subject_hash:   str = ""
     cascade_manifest:         dict[str, dict[str, Any]] = field(default_factory=dict)
+    #: Folders whose knowledge-channel versum mirror could not be erased (or
+    #: even inspected) because the workspace is sealed — the execute-side
+    #: mirror of ``sweep.versum_sealed``, so this survives even a caller
+    #: that only reads the top-level ``ExecutionReport``. Never empty-means-
+    #: clean by omission: a sealed folder is always named here, on both a
+    #: dry-run preview and a real execute.
+    versum_sealed:            list[str] = field(default_factory=list)
     decisions_previews_scrubbed: int = 0   # CL4: Privacy Lock previews scrubbed for the subject
     draft_surfaces_redacted:  int = 0      # draft files rewritten clean of the subject
     draft_surfaces_deleted:   int = 0      # unparseable draft files removed
@@ -208,6 +251,7 @@ class ExecutionReport:
             "composite_tombstone_id": self.composite_tombstone_id,
             "forgotten_subject_hash": self.forgotten_subject_hash,
             "cascade_manifest":       dict(self.cascade_manifest),
+            "versum_sealed":          list(self.versum_sealed),
             "decisions_previews_scrubbed": self.decisions_previews_scrubbed,
             "draft_surfaces_redacted": self.draft_surfaces_redacted,
             "draft_surfaces_deleted":  self.draft_surfaces_deleted,
@@ -369,9 +413,11 @@ def sweep(
     plus draft files carrying the subject (drafts are free text beside the
     chain; ``execute`` rewrites them via ``draft_store.redact``) and saved
     card files (JSON under ``<folder>/cards/``; ``execute`` rewrites or
-    deletes them via ``card_store.redact``). A sealed folder's drafts and
-    cards cannot be inspected; ``drafts_sealed`` / ``cards_sealed`` name
-    those folders so the preview never reports an uninspected file as clean.
+    deletes them via ``card_store.redact``). A sealed folder's drafts,
+    cards, AND knowledge-channel versum mirror cannot be inspected;
+    ``drafts_sealed`` / ``cards_sealed`` / ``versum_sealed`` name those
+    folders so the preview never reports an uninspected file — or an
+    unreachable knowledge copy — as clean.
 
     Returns a :class:`SweepReport`; ``execute(..., dry_run=True)`` wraps
     this and adds the would-be tombstone shape.
@@ -425,6 +471,14 @@ def sweep(
         # cannot be certified clean, so execute deletes them). A sealed
         # folder's drafts cannot be inspected — name the blind spot rather
         # than report zero hits as if the drafts were clean.
+        # Versum blind spot: a sealed folder's knowledge-channel mirror is
+        # packed into the same seal blob as its log/drafts/cards (see
+        # ``seal.py``'s ``_FOLDER_MEMORY_SINKS``) — checked directly here
+        # (not inferred from the drafts/cards checks below) so the preview
+        # names the blind spot even for a folder with no draftable surfaces.
+        if seal.is_sealed(folder_str, log_root=log_root):
+            report.versum_sealed.append(folder_str)
+
         drafts = draft_store.scan(folder_str, subject_norm, log_root=log_root)
         if drafts.get("sealed"):
             report.drafts_sealed.append(folder_str)
@@ -743,6 +797,12 @@ def execute(
         dry_run=dry_run,
         sweep=sweep_report,
     )
+    # Carry the sweep's versum blind spots onto the execute-side report too
+    # — before the dry_run early-return, so a preview against a sealed
+    # folder names them without ever attempting (and failing loudly on) a
+    # write. See ``_erase_versum_mirror`` for the physical-erase path,
+    # which folds in any additional sealed descendants it discovers.
+    report.versum_sealed = sorted(set(sweep_report.versum_sealed))
 
     if dry_run:
         return report
@@ -864,7 +924,7 @@ def execute(
         # once per folder rather than per-pid so folder+descendant discovery
         # and the sink scan run once, not once per purged pair.
         if purged_pids_this_folder:
-            versum_errors = _erase_versum_mirror(
+            versum_errors, versum_sealed_here = _erase_versum_mirror(
                 folder, purged_pids_this_folder,
                 physical=True,
                 reason=f"[erase-req:{request_id}] {reason_safe}",
@@ -878,7 +938,15 @@ def execute(
                 from .audit_drop import record as _record_drop
                 _record_drop("erasure.execute:versum_purge", verr,
                              request_id=request_id, log_root=log_root)
-        cascade_manifest[folder] = per_folder
+            for sf in versum_sealed_here:
+                if sf not in report.versum_sealed:
+                    report.versum_sealed.append(sf)
+                cascade_manifest.setdefault(sf, {})["versum_sealed"] = True
+        # merge (not overwrite): a prior iteration may already have marked
+        # this same folder ``versum_sealed`` above (only possible in the
+        # defensive edge case where ``folder`` itself is somehow both
+        # purge-contributing and sealed-detected) — never drop that flag.
+        cascade_manifest.setdefault(folder, {}).update(per_folder)
 
     # The composite's affected_folder_count mirrors the preview: a folder
     # counts when a purge OR a file action (draft/card) touched it.
@@ -1024,6 +1092,7 @@ def execute(
         from .audit_drop import record as _record_drop
         _record_drop("erasure.execute:decisions_scrub", exc, log_root=log_root)
 
+    report.versum_sealed = sorted(set(report.versum_sealed))
     return report
 
 
