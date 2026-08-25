@@ -52,6 +52,71 @@ from .mutation_log import (
 )
 
 
+def _erase_versum_mirror(
+    folder: str,
+    pair_ids: set[str],
+    *,
+    physical: bool,
+    reason: str,
+    actor: str,
+    log_root: Path | None,
+) -> list[Exception]:
+    """Physically erase the versum mirror of pairs just purged from ``folder``.
+
+    After the memory->versum body-drop, a knowledge-channel pair's body
+    (e.g. the default ``document`` channel) lives ONLY in the folder's
+    ``.versum`` sink, never in the log event. ``MutationLog.purge`` only
+    removes the chain event, so without this the versum mirror survives a
+    purge and the memory read union (``WorkspaceMemory.by_id`` / ``search``)
+    resurfaces it as LIVE — an erased subject's knowledge outlives its own
+    erasure.
+
+    Same enumeration + erase primitives as
+    ``WorkspaceMemory._erase_knowledge_from_versum`` (folder + descendants,
+    ``adapters.versum.iter_records`` / ``erase_record``), called directly
+    here rather than via a fresh ``WorkspaceMemory`` instance: this per-folder
+    purge loop already reaches ``folder`` through a raw ``MutationLog`` for
+    the same reason a full ``WorkspaceMemory`` isn't used for the chain purge
+    either — a cascade descendant is not necessarily its own registered
+    workspace, and ``WorkspaceMemory.__init__`` runs its ``folder_context``
+    through the A6 known-workspaces allowlist, which would wrongly refuse an
+    unregistered descendant mid-purge.
+
+    Returns the exceptions hit (empty on full success). Never raises — one
+    bad folder must not abort the rest of the purge loop — but every
+    exception is returned for the caller to record LOUDLY into the report
+    and the audit-drop log. Nothing is swallowed silently here.
+    """
+    errors: list[Exception] = []
+    if not pair_ids:
+        return errors
+    try:
+        from .adapters.versum import erase_record, iter_records
+    except Exception as exc:
+        return [exc]
+    try:
+        folders = discover_descendants(folder, log_root=log_root or LOG_ROOT_DEFAULT)
+    except Exception as exc:
+        return [exc]
+    if folder not in folders:
+        folders.append(folder)
+    for fp in folders:
+        store = Path(fp) / ".versum"
+        if not store.is_dir():
+            continue
+        try:
+            for rec in iter_records(store):
+                props = rec.get("properties") if isinstance(rec, dict) else None
+                body = props.get("record") if isinstance(props, dict) else None
+                nid = rec.get("node_id") if isinstance(rec, dict) else None
+                if nid and isinstance(body, dict) and str(body.get("id")) in pair_ids:
+                    erase_record(store, nid, physical=physical,
+                                 actor=actor, reason=reason)
+        except Exception as exc:
+            errors.append(exc)
+    return errors
+
+
 # ---------------------------------------------------------------------------
 # Reports
 # ---------------------------------------------------------------------------
@@ -727,6 +792,7 @@ def execute(
         # to land in the same log as the events being erased.
         log = MutationLog(folder, log_root=log_root or LOG_ROOT_DEFAULT)
         per_folder = {"purged_pair_count": 0, "purged_event_count": 0, "pairs": []}
+        purged_pids_this_folder: set[str] = set()
         for pid in sorted(pair_ids):
             # We extend the underlying purge call with our request id so
             # the per-pair tombstones can be threaded back to the
@@ -790,6 +856,28 @@ def execute(
             if n:
                 total_purged += int(n)
                 purged_pairs_list.append(pid)
+                purged_pids_this_folder.add(pid)
+
+        # Keep the versum sink consistent with the chain purge above: erase
+        # the knowledge mirror for every pair actually purged in THIS folder
+        # (n>0 only — a no-op purge attempt must not over-erase). Batched
+        # once per folder rather than per-pid so folder+descendant discovery
+        # and the sink scan run once, not once per purged pair.
+        if purged_pids_this_folder:
+            versum_errors = _erase_versum_mirror(
+                folder, purged_pids_this_folder,
+                physical=True,
+                reason=f"[erase-req:{request_id}] {reason_safe}",
+                actor=actor,
+                log_root=log_root,
+            )
+            for verr in versum_errors:
+                per_folder.setdefault("errors", []).append({
+                    "versum_purge": f"{type(verr).__name__}: {verr}"
+                })
+                from .audit_drop import record as _record_drop
+                _record_drop("erasure.execute:versum_purge", verr,
+                             request_id=request_id, log_root=log_root)
         cascade_manifest[folder] = per_folder
 
     # The composite's affected_folder_count mirrors the preview: a folder
