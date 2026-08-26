@@ -183,6 +183,21 @@ def _ensure_salt(folder: str | Path) -> str:
         return _read_or_create_salt(folder)
 
 
+def salt_for(folder: str | Path) -> str:
+    """Public accessor for the folder's forgotten-subject salt.
+
+    Same value :func:`ensure`/:func:`add` use to hash a subject, exposed so
+    a caller that already durably registered a subject via :func:`ensure`
+    (e.g. ``erasure.execute``, or ``pending_erase.arm_marker`` arming a
+    marker for a sealed descendant) can embed the exact ``{salt,
+    subject_hash}`` pair elsewhere without re-deriving or duplicating this
+    module's hashing logic. Creates the salt on first use, same as
+    :func:`ensure` does internally — idempotent, never rotates an existing
+    salt.
+    """
+    return _ensure_salt(folder)
+
+
 def _hash_subject(salt: str, subject: str) -> str:
     """Salted SHA-256 of the lowercase-normalised subject string."""
     normal = subject.strip().lower()
@@ -368,15 +383,44 @@ def list_subjects(folder: str | Path) -> list[dict[str, Any]]:
     return out
 
 
+def _candidate_strings(text: str) -> list[str]:
+    """Candidate substrings tested against a forgotten-subject hash.
+
+    Shared by :func:`check` (the live ingest guard) and
+    ``pending_erase._select_matching_pairs`` (the unseal-time matcher) so
+    the two paths can never quietly diverge in what counts as a match.
+
+    Tokenisation: lowercase Unicode word boundaries. Candidates considered:
+
+      1) every whitespace-collapsed token (single-word subjects);
+      2) the full lowercased text, trimmed and whitespace-collapsed
+         (catches phrase subjects where the input is exactly the subject —
+         common when a tool tries to re-ingest the same source, or when a
+         restored chain event's haystack IS the subject verbatim).
+
+    This is TOKEN / FULL-TEXT match, never substring — a subject embedded
+    mid-sentence or mid-word (e.g. "...contact JaneDoeCase123 for...") is
+    not recalled. Documented trade-off, not a hidden gap: false negatives
+    (paraphrase, embedding) are accepted; false positives are not (every
+    match has a deterministic, re-derivable provenance).
+    """
+    if not text:
+        return []
+    lower = text.strip().lower()
+    tokens = {tok for tok in _TOKEN_RE.findall(lower)}
+    full_norm = " ".join(lower.split())
+    candidates = list(tokens)
+    if full_norm:
+        candidates.append(full_norm)
+    return candidates
+
+
 def check(folder: str | Path, text: str) -> list[str]:
     """Return the list of forgotten-subject hashes that appear in ``text``.
 
-    Tokenisation matches the ``add`` path: lowercase Unicode word
-    boundaries. Multi-word subjects are checked as a substring of the
-    lowercased input (after collapsing internal whitespace) — this trades
-    a bit of recall for not having to maintain a phrase index.
-
-    Returns empty list when the ledger is empty or no matches fire.
+    See :func:`_candidate_strings` for the exact match rule (token /
+    full-text, not substring). Returns empty list when the ledger is empty
+    or no matches fire.
     """
     if not text:
         return []
@@ -384,8 +428,7 @@ def check(folder: str | Path, text: str) -> list[str]:
     if not rows:
         return []
 
-    lower = text.strip().lower()
-    tokens = {tok for tok in _TOKEN_RE.findall(lower)}
+    candidate_strings = _candidate_strings(text)
 
     hits: list[str] = []
     seen: set[str] = set()
@@ -394,15 +437,6 @@ def check(folder: str | Path, text: str) -> list[str]:
     # row's recorded hash. This is O(rows × candidate_substrings) — fine
     # for small ledgers; the typical folder has a handful of forgotten
     # subjects, not thousands.
-    #
-    # Candidates considered:
-    #   1) every whitespace-collapsed token (single-word subjects)
-    #   2) the full lowercased text trimmed (catches phrase subjects
-    #      where the input is exactly the subject — common when a tool
-    #      tries to re-ingest the same source).
-    full_norm = " ".join(lower.split())
-    candidate_strings: list[str] = list(tokens) + [full_norm]
-
     for row in rows:
         h_expected = row.get("subject_hash", "")
         salt = row.get("salt", "")
@@ -415,12 +449,6 @@ def check(folder: str | Path, text: str) -> list[str]:
                 hits.append(h_expected)
                 seen.add(h_expected)
                 break
-            # Also: substring of the normalised full text — supports
-            # multi-word subjects (the salted hash is over the whole
-            # subject string, normalised the same way).
-            if cand == full_norm and len(full_norm) > 0:
-                # already tried this exact candidate above; nothing more
-                pass
     return hits
 
 

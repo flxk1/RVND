@@ -154,3 +154,57 @@ def test_unsealed_folder_with_no_versum_at_all_is_not_flagged_sealed(env, tmp_pa
     )
     assert report.versum_sealed == []
     assert report.sweep.versum_sealed == []
+
+
+def test_queue_if_sealed_closes_the_versum_blind_spot_on_unseal(env, tmp_path, monkeypatch):
+    """The blind spot this file is about (a sealed folder's versum mirror is
+    unreachable at execute time) is CLOSED, not merely named, when
+    WORKSPACE_PENDING_ERASE + queue_if_sealed are both on: a marker is
+    armed instead of the sweep giving up, and once the folder unseals the
+    knowledge body is physically erased -- the same outcome the open-folder
+    control case already gets, just deferred to unseal time.
+
+    Subject is a single TOKEN (not "Jane Doe") deliberately: the unseal-time
+    matcher is token/full-text, not substring (see test_pending_erase.py's
+    recall-gap test) -- a multi-word subject like "Jane Doe" only recalls
+    when it is the WHOLE haystack text, which this test does not construct.
+    """
+    monkeypatch.setenv("WORKSPACE_PENDING_ERASE", "1")
+    from rvnd import seal as seal_mod
+    from rvnd.adapters.versum import iter_records
+    from rvnd.registry import add_known_workspace
+
+    log_root = env["log_root"]
+    folder = tmp_path / "sealed_ws"; folder.mkdir()
+    add_known_workspace(str(folder), log_root=log_root)
+
+    subject = "JaneDoeQueued99"
+    jane_id = "sha256:jane-queued"
+    mem = WorkspaceMemory(str(folder), log_root=str(log_root), actor="t")
+    mem.remember(
+        _pair(jane_id, f"Notes about {subject} (queued)",
+              f"{subject}'s file, sealed then queued for erasure."),
+        channel="document",
+    )
+    assert jane_id in _versum_ids(folder)
+
+    seal_mod.seal_folder(folder, passphrase="pw", log_root=log_root)
+
+    report = erasure.execute(
+        str(folder), subject,
+        legal_basis="art_17_1_a", requester_ref="req:queued-versum",
+        reason=f"erase {subject} per DSAR",
+        log_root=log_root, actor="test", queue_if_sealed=True,
+    )
+    assert report.pending_erase_queued == [str(folder.resolve())]
+    # A marker WAS armed for it -- the versum body is not certified erased
+    # yet (still inside the seal), but it is no longer an unresolved blind
+    # spot either: it is a tracked, signed, pending action.
+    assert report.composite_tombstone_id == ""
+
+    seal_mod.unseal_folder(folder, passphrase="pw", log_root=log_root)
+    assert jane_id not in {
+        str((r.get("properties") or {}).get("record", {}).get("id"))
+        for r in iter_records(folder / ".versum", exclude_erased=False)
+        if isinstance(r, dict)
+    }
