@@ -167,13 +167,21 @@ version = { attr = "rvnd._version.__version__" }
 where = ["server/src"]
 # both: `rvnd` is the package, `workspaces` is the deprecated import shim
 include = ["rvnd*", "workspaces*"]
+# `_quarantine` is retired originals kept only for pre-deletion diffing; its own
+# __init__ + test_consumed_modules.py fence it as dead. Never ship it in the wheel.
+exclude = ["rvnd._quarantine*"]
 
 # Ship non-.py package data explicitly. Do NOT rely on include-package-data / the
 # VCS file-finder: a wheel built without it dropped all jurisdiction packs (verified
 # 2026-06-13). Globs are git-independent, so editable, wheel, and pip-from-git
 # installs all carry the data.
+# The key MUST be the package that OWNS data/ — setuptools resolves these globs
+# relative to that package's dir. It is `rvnd`; the data lives at
+# server/src/rvnd/data/. Keying it to the empty `workspaces` shim (the state after
+# the workspaces->rvnd rename) matches nothing and silently reintroduces the
+# 2026-06-13 regression — editable installs mask it, only a built wheel exposes it.
 [tool.setuptools.package-data]
-workspaces = [
+rvnd = [
     "data/packs/*.json",
     "data/packs/**/*.json",
     "data/eval/contracts/*.json",
