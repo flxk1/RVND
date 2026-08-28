@@ -202,7 +202,7 @@ def _host_id() -> str:
             if pinned:
                 return pinned
     except OSError:
-        pass
+        pass  # unreadable pin (perms/IO) -> fall through and derive fresh below
     h = socket.gethostname() or "unknown-host"
     m = _machine_id() or "no-machine-id"
     hid = hashlib.sha256(f"{h}|{m}".encode("utf-8")).hexdigest()[:12]
