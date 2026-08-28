@@ -279,6 +279,9 @@ def cmd_purge_document(args: argparse.Namespace) -> int:
 def cmd_audit_tail(args: argparse.Namespace) -> int:
     try:
         folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
+    except FolderContextNotAllowed:
+        print(f"error: {_unregistered_folder_message(args.folder)}", file=sys.stderr)
+        return 3
     except NoFolderContextError as e:
         print(f"error: {e}", file=sys.stderr)
         return 3
@@ -463,7 +466,27 @@ def cmd_ingest(args: argparse.Namespace) -> int:
     return 0
 
 def _log_root(args: argparse.Namespace) -> Path:
-    return Path(args.log_root) if args.log_root else LOG_ROOT_DEFAULT
+    # getattr, not args.log_root: a hand-built Namespace (test helpers that
+    # construct one directly rather than through the parser) may not carry
+    # the attribute at all; that must fall back to the default, same as an
+    # explicitly-unset one, not raise.
+    value = getattr(args, "log_root", None)
+    return Path(value) if value else LOG_ROOT_DEFAULT
+
+def _unregistered_folder_message(folder_arg: str) -> str:
+    """User-facing text for ``FolderContextNotAllowed`` (the A6 allowlist).
+
+    The upstream ``loomground-workspace`` package's own exception message names
+    its internal Python function (``add_known_workspace``) as the fix — correct
+    for a library caller, meaningless at a shell prompt. The CLI verb is
+    ``workspaces workspace add`` (aliased to the shorter ``workspaces add``);
+    this is the one place that hint is spelled out for a human running the CLI.
+    """
+    return (
+        f"{folder_arg!r} is not a registered workspace. Register it first with "
+        f"`workspaces workspace add {folder_arg}` "
+        f"(or the shorter `workspaces add {folder_arg}`), then retry."
+    )
 
 def cmd_policy_show(args: argparse.Namespace) -> int:
     try:
@@ -965,6 +988,9 @@ def cmd_status(args: argparse.Namespace) -> int:
     """Folder-aware overview. The 'what's happening here' entry point."""
     try:
         folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
+    except FolderContextNotAllowed:
+        print(f"ERROR: {_unregistered_folder_message(args.folder)}", file=sys.stderr)
+        return 2
     except Exception as e:
         print(f"ERROR: {e}", file=sys.stderr)
         return 2
@@ -2377,6 +2403,9 @@ def cmd_cross_workspace(args: argparse.Namespace) -> int:
     """Governed lateral read from source workspaces into a target workspace."""
     try:
         target = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
+    except FolderContextNotAllowed:
+        print(f"ERROR: {_unregistered_folder_message(args.folder)}", file=sys.stderr)
+        return 2
     except Exception as e:
         print(f"ERROR: {e}", file=sys.stderr)
         return 2
@@ -2460,6 +2489,9 @@ def cmd_ask(args: argparse.Namespace) -> int:
     """One governed chat turn over a workspace — the CLI face of /Workspaces."""
     try:
         folder = resolve_folder_context(args.folder, allow_unscoped=False, log_root=_log_root(args))
+    except FolderContextNotAllowed:
+        print(f"ERROR: {_unregistered_folder_message(args.folder)}", file=sys.stderr)
+        return 2
     except Exception as e:
         print(f"ERROR: {e}", file=sys.stderr)
         return 2
@@ -2820,7 +2852,10 @@ def cmd_init(args: argparse.Namespace) -> int:
     yes = getattr(args, "yes", False)
     dry = getattr(args, "dry_run", False)
     out, inp = sys.stdout, sys.stdin
-    home = LOG_ROOT_DEFAULT.parent          # ~/.workspace
+    # ~/.workspace by default, but honours --log-root / RVND_LOG_ROOT like every
+    # other subcommand (via _log_root(args), pre-resolved in main()) — so an
+    # evaluator can sandbox a trial run instead of writing into a real home.
+    home = _log_root(args).parent
     marker = home / "init.json"
 
     _wsay(out, "RVND init")
@@ -2865,7 +2900,8 @@ def cmd_init(args: argparse.Namespace) -> int:
     _wsay(out, "-" * 52)
     _wsay(out, "RVND governs agent egress without any folder. A workspace is a folder")
     _wsay(out, "you bind it to when you want policy scoped to that folder and its own")
-    _wsay(out, "signed audit chain. You can add one at any time with `workspaces add`.")
+    _wsay(out, "signed audit chain. You can add one at any time with "
+               "`workspaces workspace add <dir>`.")
     want_ws = False if yes else _wask_yn(inp, out, "Set up a default workspaces folder now?", default=False)
     if not want_ws:
         _wsay(out, "  · skipped — RVND enforces globally; no folder was created")
@@ -2962,7 +2998,7 @@ def cmd_init(args: argparse.Namespace) -> int:
             if ws_home is None:
                 raise RuntimeError(
                     "skills are pinned into a workspace folder; add one with "
-                    "`workspaces add <folder>` first")
+                    "`workspaces workspace add <folder>` first")
             _cmd_pin_interactive(Path(ws_home), pin_args)
         except Exception as e:  # noqa: BLE001 — optional; never abort init
             _wsay(out, f"  (skill picker unavailable: {e}; "
@@ -3212,7 +3248,7 @@ def cmd_uninstall(args: argparse.Namespace) -> int:
 _GUIDE_GROUPS: list[tuple[str, list[str]]] = [
     ("Setup & lifecycle",   ["init", "upgrade", "uninstall", "doctor", "status", "keys", "licence", "guide"]),
     ("Backup & recovery",   ["backup", "restore"]),
-    ("Workspaces & memory", ["workspace", "folders", "list", "show", "watch", "ingest"]),
+    ("Workspaces & memory", ["add", "workspace", "folders", "list", "show", "watch", "ingest"]),
     ("Policy & governance", ["policy", "oversight", "discipline", "matrix", "lens",
                              "grounding", "mute", "unmute", "ask", "cross-workspace",
                              "shadow-scan", "tools"]),
@@ -3580,6 +3616,7 @@ _DISPATCH = {
     "erase": cmd_erase,
     "erase-status": cmd_erase_status,
     "workspace": cmd_workspace,
+    "add": _cmd_workspace_add,   # top-level alias for `workspace add` (B7)
     "models": cmd_models,
     "doctor": cmd_doctor,
     "seal": cmd_seal,
