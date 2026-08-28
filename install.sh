@@ -18,7 +18,7 @@ set -euo pipefail
 
 # --- config (override via env) ---------------------------------------------
 RVND_REPO="${RVND_REPO:-https://github.com/flxk1/RVND}"
-RVND_REF="${RVND_REF:-v0.6.9.10}"         # pinned release: includes #120 (packaging fix) + #121 (erasure line). Override for another ref/sha.
+RVND_REF="${RVND_REF:-v0.6.9.11}"         # pinned release: version-matched, includes #120 (packaging) + #121 (erasure). Override for another ref/sha.
 RVND_VENV="${RVND_VENV:-./rvnd-venv}"
 PYTHON="${PYTHON:-}"
 
