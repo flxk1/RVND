@@ -22,7 +22,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  check:
+  pr-authorship-check:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
