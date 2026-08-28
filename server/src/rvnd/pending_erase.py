@@ -259,16 +259,22 @@ def arm_marker(
     if not sealed_path.exists():
         raise PendingEraseError(f"cannot arm a pending-erase marker: {folder} is not sealed")
 
-    subject_hash, _added = forgotten_subjects.ensure(
-        folder, subject_norm, request_id=request_id)
+    # Register the subject in this folder's forgotten-subjects ledger for
+    # its side effects (guards re-ingestion; creates the folder's salt on
+    # first use) — but the ledger's own hash is over the PUNCTUATION-KEPT
+    # subject (``_hash_subject``'s only normalisation is strip+lower), which
+    # is a DIFFERENT canonical form than the tokenised one the unseal-time
+    # matcher re-derives from a haystack. The marker's ``subject_hash`` does
+    # not need to equal the ledger's hash; it only needs to match what
+    # ``_select_matching_pairs`` computes, so it is derived separately below
+    # from the SAME tokenised form as ``subject_token_count`` (one helper,
+    # ``_canonical_subject_tokens``, feeds both — they can never drift
+    # apart from each other or from the matcher's own tokenisation).
+    forgotten_subjects.ensure(folder, subject_norm, request_id=request_id)
     salt = forgotten_subjects.salt_for(folder)
     blob_fingerprint = _sha256_hex(sealed_path.read_bytes())
-    # Same normalisation the unseal-time matcher applies to a haystack
-    # before tokenising (lowercase, then Unicode word-boundary tokens) —
-    # arm and unseal MUST tokenise identically or the n-gram hashes never
-    # line up. See _select_matching_pairs.
-    subject_token_count = max(
-        1, len(forgotten_subjects._TOKEN_RE.findall(subject_norm.strip().lower())))
+    canonical_subject, subject_token_count = _canonical_subject_tokens(subject_norm)
+    subject_hash = forgotten_subjects._hash_subject(salt, canonical_subject)
 
     has_controller = signing.public_controller_key_fingerprint() is not None
 
@@ -335,6 +341,29 @@ def arm_marker(
 def _sha256_hex(data: bytes) -> str:
     import hashlib
     return hashlib.sha256(data).hexdigest()
+
+
+def _canonical_subject_tokens(subject_norm: str) -> tuple[str, int]:
+    """Tokenise ``subject_norm`` with the EXACT tokeniser the unseal-time
+    matcher applies to a haystack (``forgotten_subjects._TOKEN_RE``,
+    lowercased) and return ``(canonical_token_string, token_count)``.
+
+    This is the SINGLE place "subject -> canonical token form" is computed
+    for a marker, so ``subject_hash`` and ``subject_token_count`` can never
+    independently drift from one another or from what
+    ``_select_matching_pairs`` re-derives at unseal. Punctuation (intra-word
+    apostrophes, commas, etc.) is dropped by tokenisation here exactly as it
+    is dropped when the matcher tokenises a restored record's haystack — a
+    subject entered WITH punctuation (``"O'Brien"``, ``"Smith, John"``) must
+    hash to the SAME value the matcher computes from plain prose containing
+    that punctuation-free phrase, or the marker can never be recalled.
+    ``token_count`` is floored at 1 (a subject that tokenises to nothing —
+    e.g. pure punctuation — still needs a window width; the resulting hash
+    of the empty string then matches no real haystack token, so this
+    degrades to safe non-recall rather than any wider match).
+    """
+    tokens = forgotten_subjects._TOKEN_RE.findall(subject_norm.strip().lower())
+    return " ".join(tokens), max(1, len(tokens))
 
 
 # ---------------------------------------------------------------------------
