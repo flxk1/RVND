@@ -75,8 +75,11 @@ and it just confirms the folder is already registered.
 
 ## 4. Take your first governed action
 
-<!-- doctest: skip -->
+Each block below re-runs the idempotent register from step 3 first, so you can
+copy any one on its own:
+
 ```bash
+workspaces add ~/Documents/my-project                                       # idempotent; from step 3
 workspaces ask --folder ~/Documents/my-project "what is this workspace for?"
 ```
 
@@ -101,11 +104,11 @@ semantic pass specifically; the env vars above are the separate `ask`/
 governed-model path).
 
 A second kind of governed action, reading laterally between two workspaces —
-register a second folder first, then:
+the block registers a second folder, then reads across:
 
-<!-- doctest: skip -->
 ```bash
-workspaces add ~/Documents/other-project
+workspaces add ~/Documents/my-project                                       # idempotent; from step 3
+workspaces add ~/Documents/other-project                                    # the second workspace
 workspaces cross-workspace --folder ~/Documents/my-project --source ~/Documents/other-project
 ```
 
@@ -114,16 +117,16 @@ Prints a verdict per source (`permit`/`hold`/`deny`, shown as
 
 ## 5. Read the record back
 
-<!-- doctest: skip -->
 ```bash
+workspaces add ~/Documents/my-project                                       # idempotent; from step 3
 workspaces audit-tail --folder ~/Documents/my-project
 workspaces status --folder ~/Documents/my-project
 ```
 
 `audit-tail` lists recent signed events on that folder's chain;
 `status` adds the folder's policy, pinned skills, and a chain-integrity
-check (`ok=True`/`False`) in one view. Both `ask` and `cross-workspace` from
-step 4 already appear here.
+check (`ok=True`/`False`) in one view. Run these after step 4 and both the
+`ask` and the `cross-workspace` turn show up in the tail.
 
 ## Default enforcement posture — read this before you rely on it
 
