@@ -161,6 +161,11 @@ def test_execute_converges_when_subject_is_a_sentinel_substring(env):
 
 
 def test_execute_on_sealed_workspace_destroys_nothing(env):
+    """Default (gated) behaviour is UNCHANGED: with WORKSPACE_PENDING_ERASE
+    unset — and even with it set but queue_if_sealed left at its False
+    default — execute() against a sealed root still raises SealedWriteError
+    and destroys nothing. The new branch (queue_if_sealed=True, marker-armed
+    instead of raising) is covered separately in test_pending_erase.py."""
     _seed_cards(env)
     seal.seal_folder(env["folder"], passphrase="pw",
                      log_root=env["log_root"])

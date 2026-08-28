@@ -227,7 +227,20 @@ def unseal_folder(
     passphrase: str,
     log_root: str | Path | None = None,
 ) -> dict[str, Any]:
-    """Decrypt a sealed folder's memory and restore the plaintext directory."""
+    """Decrypt a sealed folder's memory and restore the plaintext directory.
+
+    GDPR pending-erasure (``WORKSPACE_PENDING_ERASE=1``, see
+    ``pending_erase.py``): if erasure markers were armed against this folder
+    while it was sealed, they are VERIFIED here — fail-closed — BEFORE any
+    decryption or plaintext write. A forged, moved, or replayed marker
+    aborts the whole unseal (nothing decrypted, nothing restored, nothing
+    deleted, not even the bad marker). Only once the plaintext is safely
+    restored are the verified markers APPLIED (purge + versum erase +
+    draft/card parity + an audit composite on the now-restored log), and
+    only THEN removed from their ledger. With the flag unset, or with no
+    markers armed for this folder, this is a no-op and unseal behaves
+    exactly as it always has.
+    """
     if not passphrase:
         raise SealError("a passphrase is required to unseal")
     log_dir = _resolve_log_dir(folder, log_root)
@@ -240,6 +253,12 @@ def unseal_folder(
         if (Path(folder) / name).exists():
             raise SealError(
                 f"refusing to overwrite existing plaintext at {Path(folder) / name}")
+
+    pending_markers: list[dict[str, Any]] = []
+    from . import pending_erase
+    if pending_erase.feature_enabled():
+        pending_markers = pending_erase.verify_markers_for_unseal(
+            folder, log_dir=log_dir, sealed_path=sealed, log_root=log_root)
 
     envelope = json.loads(sealed.read_text())
     if envelope.get("magic") != _MAGIC:
@@ -275,7 +294,17 @@ def unseal_folder(
             pass
         n += 1
     sealed.unlink()
-    return {"unsealed": True, "files_restored": n}
+    result: dict[str, Any] = {"unsealed": True, "files_restored": n}
+
+    if pending_markers:
+        # Plaintext is now on disk and the seal is gone (is_sealed() is
+        # False): the primitives pending_erase.apply_markers reuses
+        # (MutationLog.purge, draft_store/card_store.redact) work normally.
+        applied = pending_erase.apply_markers(
+            folder, pending_markers, log_root=log_root)
+        result["pending_erase_applied"] = applied
+
+    return result
 
 
 # ---------------------------------------------------------------------------

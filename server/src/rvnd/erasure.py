@@ -41,7 +41,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
-from . import card_store, draft_store, forgotten_subjects
+from . import card_store, draft_store, forgotten_subjects, pending_erase, seal
 from .memory import _pair_from_event, discover_descendants
 from .redaction import replace_ci
 from .mutation_log import (
@@ -50,6 +50,101 @@ from .mutation_log import (
     MutationLog,
     VALID_LEGAL_BASES,
 )
+
+
+def _erase_versum_mirror(
+    folder: str,
+    pair_ids: set[str],
+    *,
+    physical: bool,
+    reason: str,
+    actor: str,
+    log_root: Path | None,
+) -> tuple[list[Exception], list[str]]:
+    """Physically erase the versum mirror of pairs just purged from ``folder``.
+
+    After the memory->versum body-drop, a knowledge-channel pair's body
+    (e.g. the default ``document`` channel) lives ONLY in the folder's
+    ``.versum`` sink, never in the log event. ``MutationLog.purge`` only
+    removes the chain event, so without this the versum mirror survives a
+    purge and the memory read union (``WorkspaceMemory.by_id`` / ``search``)
+    resurfaces it as LIVE — an erased subject's knowledge outlives its own
+    erasure.
+
+    Same enumeration + erase primitives as
+    ``WorkspaceMemory._erase_knowledge_from_versum`` (folder + descendants,
+    ``adapters.versum.iter_records`` / ``erase_record``), called directly
+    here rather than via a fresh ``WorkspaceMemory`` instance: this per-folder
+    purge loop already reaches ``folder`` through a raw ``MutationLog`` for
+    the same reason a full ``WorkspaceMemory`` isn't used for the chain purge
+    either — a cascade descendant is not necessarily its own registered
+    workspace, and ``WorkspaceMemory.__init__`` runs its ``folder_context``
+    through the A6 known-workspaces allowlist, which would wrongly refuse an
+    unregistered descendant mid-purge.
+
+    ``store.is_dir()`` being false means one of two different things: (a)
+    the folder genuinely has no versum — nothing to erase, a correct silent
+    skip; or (b) the folder is SEALED — its ``.versum`` is packed into the
+    seal blob alongside the log (see ``seal.py``'s ``_FOLDER_MEMORY_SINKS``),
+    not a plaintext dir, so the subject's knowledge body may still exist
+    inside the seal even though nothing is visible here. Skipping (b) the
+    same silent way as (a) would let a GDPR "erase" leave a copy behind and
+    say nothing about it. So a sealed ``fp`` is never treated as "nothing to
+    erase": unpacking/erasing inside the seal needs the controller key (a
+    separate, future capability — not attempted here); instead the folder is
+    recorded as a versum blind spot, the same treatment
+    ``draft_store.scan``/``card_store.scan`` already give sealed drafts/cards
+    (``SweepReport.drafts_sealed`` / ``cards_sealed``) — name it, do not
+    erase it, do not abort the rest of the purge loop.
+
+    Returns ``(errors, sealed_folders)``. ``errors`` are exceptions hit
+    (empty on full success). Never raises — one bad folder must not abort
+    the rest of the purge loop — but every exception is returned for the
+    caller to record LOUDLY into the report and the audit-drop log.
+    ``sealed_folders`` names every ``fp`` whose versum mirror could not be
+    reached because the workspace is sealed. Nothing is swallowed silently
+    here.
+    """
+    errors: list[Exception] = []
+    sealed_folders: list[str] = []
+    if not pair_ids:
+        return errors, sealed_folders
+    try:
+        from .adapters.versum import erase_record, iter_records
+    except Exception as exc:
+        return [exc], sealed_folders
+    try:
+        folders = discover_descendants(folder, log_root=log_root or LOG_ROOT_DEFAULT)
+    except Exception as exc:
+        return [exc], sealed_folders
+    if folder not in folders:
+        folders.append(folder)
+    for fp in folders:
+        store = Path(fp) / ".versum"
+        if not store.is_dir():
+            try:
+                is_sealed = seal.is_sealed(fp, log_root=log_root)
+            except Exception as exc:
+                # Can't determine the seal state — fail closed toward
+                # honesty: an unreachable versum of unknown cause is a blind
+                # spot too, not a silent "nothing here".
+                errors.append(exc)
+                sealed_folders.append(fp)
+                continue
+            if is_sealed:
+                sealed_folders.append(fp)
+            continue
+        try:
+            for rec in iter_records(store):
+                props = rec.get("properties") if isinstance(rec, dict) else None
+                body = props.get("record") if isinstance(props, dict) else None
+                nid = rec.get("node_id") if isinstance(rec, dict) else None
+                if nid and isinstance(body, dict) and str(body.get("id")) in pair_ids:
+                    erase_record(store, nid, physical=physical,
+                                 actor=actor, reason=reason)
+        except Exception as exc:
+            errors.append(exc)
+    return errors, sealed_folders
 
 
 # ---------------------------------------------------------------------------
@@ -83,6 +178,19 @@ class SweepReport:
     drafts_sealed:         list[str] = field(default_factory=list)
     #: Same blind spot for saved card files.
     cards_sealed:          list[str] = field(default_factory=list)
+    #: Same blind spot for the knowledge-channel versum mirror: a sealed
+    #: folder's ``.versum`` is packed into the seal blob, not a plaintext
+    #: dir, so it cannot be inspected OR erased here — its content is
+    #: unknown, not clean, and (on ``execute``) not certified erased.
+    versum_sealed:         list[str] = field(default_factory=list)
+    #: Sealed folders in scope that a pending-erasure marker WOULD be (or
+    #: was) armed against — see ``pending_erase.py``. Predictable at sweep
+    #: time (pure discovery, no writes) whenever
+    #: ``WORKSPACE_PENDING_ERASE=1``; empty when the feature is off. On
+    #: ``execute`` this mirrors the folders actually armed this call — see
+    #: ``ExecutionReport.pending_erase_queued`` for the authoritative
+    #: post-write record.
+    pending_erase_queued:  list[str] = field(default_factory=list)
 
     def total_hits(self) -> int:
         return sum(len(v) for v in self.hits_by_kind.values())
@@ -100,6 +208,8 @@ class SweepReport:
             "estimated_tombstone": dict(self.estimated_tombstone),
             "drafts_sealed":       list(self.drafts_sealed),
             "cards_sealed":        list(self.cards_sealed),
+            "versum_sealed":       list(self.versum_sealed),
+            "pending_erase_queued": list(self.pending_erase_queued),
             "total_hits":          self.total_hits(),
         }
 
@@ -123,12 +233,31 @@ class ExecutionReport:
     composite_tombstone_id:   str = ""
     forgotten_subject_hash:   str = ""
     cascade_manifest:         dict[str, dict[str, Any]] = field(default_factory=dict)
+    #: Folders whose knowledge-channel versum mirror could not be erased (or
+    #: even inspected) because the workspace is sealed — the execute-side
+    #: mirror of ``sweep.versum_sealed``, so this survives even a caller
+    #: that only reads the top-level ``ExecutionReport``. Never empty-means-
+    #: clean by omission: a sealed folder is always named here, on both a
+    #: dry-run preview and a real execute.
+    versum_sealed:            list[str] = field(default_factory=list)
     decisions_previews_scrubbed: int = 0   # CL4: Privacy Lock previews scrubbed for the subject
     draft_surfaces_redacted:  int = 0      # draft files rewritten clean of the subject
     draft_surfaces_deleted:   int = 0      # unparseable draft files removed
     card_files_redacted:      int = 0      # card files rewritten clean of the subject
     card_files_deleted:       int = 0      # identity-matching or unreadable card files removed
     replayed_noop:            bool = False # True when a replay of an already-erased subject wrote nothing new
+    #: Sealed folders a pending-erasure marker was actually armed against
+    #: this call (``pending_erase.py``). A sealed folder that could NOT be
+    #: armed (an unexpected error, not "unregistered" or "feature off")
+    #: stays out of this list and is instead named in ``versum_sealed`` —
+    #: never silently dropped. Always empty with ``WORKSPACE_PENDING_ERASE``
+    #: unset (feature off).
+    pending_erase_queued:     list[str] = field(default_factory=list)
+    #: One entry per marker armed this call: ``{folder, marker_id,
+    #: controller_keyid}``. ``controller_keyid`` is ``None`` when the
+    #: marker was armed operator-only (no controller key registered at arm
+    #: time — weaker, L0 tamper-evidence; see ``pending_erase.py``).
+    pending_markers:          list[dict[str, Any]] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -143,12 +272,15 @@ class ExecutionReport:
             "composite_tombstone_id": self.composite_tombstone_id,
             "forgotten_subject_hash": self.forgotten_subject_hash,
             "cascade_manifest":       dict(self.cascade_manifest),
+            "versum_sealed":          list(self.versum_sealed),
             "decisions_previews_scrubbed": self.decisions_previews_scrubbed,
             "draft_surfaces_redacted": self.draft_surfaces_redacted,
             "draft_surfaces_deleted":  self.draft_surfaces_deleted,
             "card_files_redacted":    self.card_files_redacted,
             "card_files_deleted":     self.card_files_deleted,
             "replayed_noop":          self.replayed_noop,
+            "pending_erase_queued":   list(self.pending_erase_queued),
+            "pending_markers":        [dict(m) for m in self.pending_markers],
         }
 
 
@@ -304,9 +436,11 @@ def sweep(
     plus draft files carrying the subject (drafts are free text beside the
     chain; ``execute`` rewrites them via ``draft_store.redact``) and saved
     card files (JSON under ``<folder>/cards/``; ``execute`` rewrites or
-    deletes them via ``card_store.redact``). A sealed folder's drafts and
-    cards cannot be inspected; ``drafts_sealed`` / ``cards_sealed`` name
-    those folders so the preview never reports an uninspected file as clean.
+    deletes them via ``card_store.redact``). A sealed folder's drafts,
+    cards, AND knowledge-channel versum mirror cannot be inspected;
+    ``drafts_sealed`` / ``cards_sealed`` / ``versum_sealed`` name those
+    folders so the preview never reports an uninspected file — or an
+    unreachable knowledge copy — as clean.
 
     Returns a :class:`SweepReport`; ``execute(..., dry_run=True)`` wraps
     this and adds the would-be tombstone shape.
@@ -360,6 +494,14 @@ def sweep(
         # cannot be certified clean, so execute deletes them). A sealed
         # folder's drafts cannot be inspected — name the blind spot rather
         # than report zero hits as if the drafts were clean.
+        # Versum blind spot: a sealed folder's knowledge-channel mirror is
+        # packed into the same seal blob as its log/drafts/cards (see
+        # ``seal.py``'s ``_FOLDER_MEMORY_SINKS``) — checked directly here
+        # (not inferred from the drafts/cards checks below) so the preview
+        # names the blind spot even for a folder with no draftable surfaces.
+        if seal.is_sealed(folder_str, log_root=log_root):
+            report.versum_sealed.append(folder_str)
+
         drafts = draft_store.scan(folder_str, subject_norm, log_root=log_root)
         if drafts.get("sealed"):
             report.drafts_sealed.append(folder_str)
@@ -610,6 +752,7 @@ def execute(
     log_root: Path | None = None,
     actor: str = "user",
     request_id: str | None = None,
+    queue_if_sealed: bool = False,
 ) -> ExecutionReport:
     """Sweep → purge → composite tombstone → forgotten_subjects.
 
@@ -630,6 +773,17 @@ def execute(
         actor:          who's running this (recorded on tombstone).
         request_id:     reuse the id returned by :func:`request`. If None
             and not dry_run, a fresh one is minted.
+        queue_if_sealed: when the TARGET folder itself (``folder_context``)
+            is sealed, the default (False) preserves the pre-existing
+            behaviour — the composite tombstone write raises
+            ``SealedWriteError`` because it is unconditionally written to
+            the target's own log. Pass True (requires
+            ``WORKSPACE_PENDING_ERASE=1``) to instead arm a signed
+            pending-erasure marker for the sealed root and defer the
+            composite record to unseal time (see ``pending_erase.py``).
+            Sealed DESCENDANT folders (under ``cascade=True``) are ALWAYS
+            queued this way when the feature is on, regardless of this
+            flag — only the root's raise-vs-queue choice is gated by it.
 
     Returns:
         :class:`ExecutionReport`.
@@ -678,6 +832,29 @@ def execute(
         dry_run=dry_run,
         sweep=sweep_report,
     )
+    # Carry the sweep's versum blind spots onto the execute-side report too
+    # — before the dry_run early-return, so a preview against a sealed
+    # folder names them without ever attempting (and failing loudly on) a
+    # write. See ``_erase_versum_mirror`` for the physical-erase path,
+    # which folds in any additional sealed descendants it discovers.
+    report.versum_sealed = sorted(set(sweep_report.versum_sealed))
+
+    # Pending-erasure discovery (WORKSPACE_PENDING_ERASE=1 only): pure read
+    # — list_known_workspaces + is_sealed checks, no writes — so it is safe
+    # to run even on a dry_run preview. ``sealed_to_arm`` is the root itself
+    # (only when ``queue_if_sealed``) plus every sealed, REGISTERED
+    # descendant (always, when cascading) — see ``pending_erase.
+    # discover_sealed_in_scope`` for the exact prefix rule and the
+    # documented unregistered-folder blind spot.
+    sealed_to_arm: list[str] = []
+    root_ctx = sweep_report.folder_context
+    if pending_erase.feature_enabled():
+        sealed_in_scope = pending_erase.discover_sealed_in_scope(
+            root_ctx, cascade=cascade, log_root=log_root)
+        sealed_to_arm = [
+            f for f in sealed_in_scope if f != root_ctx or queue_if_sealed
+        ]
+    report.sweep.pending_erase_queued = sorted(sealed_to_arm)
 
     if dry_run:
         return report
@@ -698,6 +875,44 @@ def execute(
         ) from exc
     report.forgotten_subject_hash = subject_hash
     was_already_forgotten = not guard_added
+
+    # 1b) Arm a pending-erasure marker for every in-scope sealed folder
+    # (WORKSPACE_PENDING_ERASE=1 only; ``sealed_to_arm`` is empty otherwise).
+    # Each folder gets its OWN {salt, subject_hash} pair — arm_marker calls
+    # forgotten_subjects.ensure() per folder, not just the root — so a
+    # marker for a descendant is bound to that descendant's own ledger. One
+    # bad folder must not sink the rest of this call: an arm failure is
+    # recorded (audit-dropped + named in versum_sealed, never silently
+    # dropped) and the loop continues.
+    root_marker_armed = False
+    for sealed_folder in sealed_to_arm:
+        try:
+            marker = pending_erase.arm_marker(
+                sealed_folder,
+                subject_norm=subject_norm,
+                request_id=request_id,
+                legal_basis=legal_basis,
+                requester_ref=requester_ref,
+                reason_safe=reason_safe,
+                log_root=log_root,
+            )
+        except Exception as exc:
+            from .audit_drop import record as _record_drop
+            _record_drop("erasure.execute:arm_marker", exc,
+                         request_id=request_id, log_root=log_root)
+            if sealed_folder not in report.versum_sealed:
+                report.versum_sealed.append(sealed_folder)
+            continue
+        report.pending_erase_queued.append(sealed_folder)
+        report.pending_markers.append({
+            "folder":           sealed_folder,
+            "marker_id":        marker["marker_id"],
+            "controller_keyid": marker["controller_keyid"],
+        })
+        if sealed_folder == root_ctx:
+            root_marker_armed = True
+    report.pending_erase_queued = sorted(set(report.pending_erase_queued))
+    report.versum_sealed = sorted(set(report.versum_sealed))
 
     # 2) Per-folder purges. We need a separate WorkspaceMemory per affected
     # folder so we can call purge_pair on the right log. Draft and card
@@ -727,6 +942,7 @@ def execute(
         # to land in the same log as the events being erased.
         log = MutationLog(folder, log_root=log_root or LOG_ROOT_DEFAULT)
         per_folder = {"purged_pair_count": 0, "purged_event_count": 0, "pairs": []}
+        purged_pids_this_folder: set[str] = set()
         for pid in sorted(pair_ids):
             # We extend the underlying purge call with our request id so
             # the per-pair tombstones can be threaded back to the
@@ -790,7 +1006,37 @@ def execute(
             if n:
                 total_purged += int(n)
                 purged_pairs_list.append(pid)
-        cascade_manifest[folder] = per_folder
+                purged_pids_this_folder.add(pid)
+
+        # Keep the versum sink consistent with the chain purge above: erase
+        # the knowledge mirror for every pair actually purged in THIS folder
+        # (n>0 only — a no-op purge attempt must not over-erase). Batched
+        # once per folder rather than per-pid so folder+descendant discovery
+        # and the sink scan run once, not once per purged pair.
+        if purged_pids_this_folder:
+            versum_errors, versum_sealed_here = _erase_versum_mirror(
+                folder, purged_pids_this_folder,
+                physical=True,
+                reason=f"[erase-req:{request_id}] {reason_safe}",
+                actor=actor,
+                log_root=log_root,
+            )
+            for verr in versum_errors:
+                per_folder.setdefault("errors", []).append({
+                    "versum_purge": f"{type(verr).__name__}: {verr}"
+                })
+                from .audit_drop import record as _record_drop
+                _record_drop("erasure.execute:versum_purge", verr,
+                             request_id=request_id, log_root=log_root)
+            for sf in versum_sealed_here:
+                if sf not in report.versum_sealed:
+                    report.versum_sealed.append(sf)
+                cascade_manifest.setdefault(sf, {})["versum_sealed"] = True
+        # merge (not overwrite): a prior iteration may already have marked
+        # this same folder ``versum_sealed`` above (only possible in the
+        # defensive edge case where ``folder`` itself is somehow both
+        # purge-contributing and sealed-detected) — never drop that flag.
+        cascade_manifest.setdefault(folder, {}).update(per_folder)
 
     # The composite's affected_folder_count mirrors the preview: a folder
     # counts when a purge OR a file action (draft/card) touched it.
@@ -869,9 +1115,21 @@ def execute(
     # has effect and takes the normal path.
     had_effect = bool(
         total_purged or drafts_redacted or drafts_deleted
-        or cards_redacted or cards_deleted)
+        or cards_redacted or cards_deleted or report.pending_erase_queued)
 
-    if was_already_forgotten and not had_effect:
+    if root_marker_armed:
+        # The target root itself is sealed and ``queue_if_sealed=True`` armed
+        # a marker for it instead of raising. The composite tombstone is
+        # UNCONDITIONALLY written to the root's own log below — which is
+        # exactly what would raise SealedWriteError here (the root's log
+        # dir does not exist while sealed). Skip it: the equivalent audit
+        # record — extra.kind == "erasure_pending_applied" — is written to
+        # the root's own (now-plaintext) log by ``pending_erase.apply_markers``
+        # once this folder unseals and the marker verifies. Takes priority
+        # over replay-noop detection below: arming a marker is itself new
+        # effect even when the subject was already in the ledger.
+        pass
+    elif was_already_forgotten and not had_effect:
         report.replayed_noop = True
         # The first execute recorded the composite + ledger entry; nothing
         # new happened here. Fall through to the idempotent decisions-store
@@ -936,6 +1194,7 @@ def execute(
         from .audit_drop import record as _record_drop
         _record_drop("erasure.execute:decisions_scrub", exc, log_root=log_root)
 
+    report.versum_sealed = sorted(set(report.versum_sealed))
     return report
 
 
