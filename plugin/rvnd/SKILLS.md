@@ -3,12 +3,24 @@
 
 # Loomground & RVND — skill catalog and install
 
-Two tiers, two marketplaces. **25 skills** total.
+Two tiers, two marketplaces, and **they are not equally reachable.** Read the
+access column before picking an install path.
 
-| tier | marketplace | licence | what it is | count |
-|---|---|---|---|---|
-| **Loomground planes** (free) | `loomground` (`flxk1/loomground-plugins`) | Apache-2.0 | standalone, single-facet authoring skills | 5 plugins · **17 skills** |
-| **RVND server** (commercial) | `rvnd` (`flxk1/RVND`) | AGPL-3.0 | user-action skills that operate the shared graph on a signed engine | 1 plugin · **8 skills** |
+| tier | marketplace | access | licence | what it is | count |
+|---|---|---|---|---|---|
+| **RVND server** | `rvnd` (`flxk1/RVND`) | **public** — anyone can `/plugin marketplace add flxk1/RVND` | AGPL-3.0 (commercial terms for the engine) | user-action skills that operate the shared graph on a signed engine | 1 plugin · **8 skills** |
+| **Loomground planes** | `loomground` (`flxk1/loomground-plugins`) | **author-internal** — this marketplace repo is private; a stranger cannot add it | Apache-2.0 | standalone, single-facet authoring skills | 5 plugins · **17 skills** |
+
+**The public path is the pip engine plus the `rvnd@rvnd` plugin.** Anyone can
+`pip install` RVND (see [docs/getting-started.md](../../docs/getting-started.md))
+and install `rvnd@rvnd` from the public `flxk1/RVND` marketplace — that alone
+runs every RVND skill, falling back to *transparency* mode for the pieces
+that would otherwise delegate to a Loomground plane skill (see "Skills vs the
+engine" below). The `loomground` marketplace's Apache-2.0 licence describes
+what you may do with those skills *if* you have access to them; it does not
+describe who can currently reach the repo that ships them. If you don't have
+access, use RVND standalone — you lose nothing on the enforcement or audit
+path, only the plane skills' own standalone authoring UI.
 
 ---
 
@@ -16,12 +28,17 @@ Two tiers, two marketplaces. **25 skills** total.
 
 **The dependency rule:**
 
-- **Install RVND → you need both.** RVND's skills *delegate* to the free Loomground plane skills they
-  depend on: `loomground-governance`, `loomground-deontic`, `loomground-ingest`. So you install RVND
-  **and** those three (both marketplaces). `loomground-solver` and `loomground-versum` are independent
-  tools RVND does **not** require — add them only if you want them.
-- **Install a single Loomground skill → standalone.** It needs **neither RVND nor any other Loomground
-  skill.** Install just the one; nothing else.
+- **Install RVND alone (public, works for anyone).** `rvnd@rvnd` from the public `flxk1/RVND`
+  marketplace is everything most people need — it runs standalone, in transparency mode, with no
+  dependency on the `loomground` marketplace at all.
+- **Install RVND *with* the plane skills it would otherwise delegate to → needs `loomground` access.**
+  RVND's skills *delegate* to three Loomground plane skills when present: `loomground-governance`,
+  `loomground-deontic`, `loomground-ingest`. Adding those upgrades RVND from transparency to governed
+  mode for the pieces that use them — but the `loomground` marketplace is author-internal, so this path
+  is only open to someone with access to it. `loomground-solver` and `loomground-versum` are independent
+  tools RVND does **not** require either way.
+- **Install a single Loomground skill → standalone, but needs `loomground` access.** It needs neither
+  RVND nor any other Loomground skill — just access to the marketplace that ships it.
 
 **Skills vs the engine — transparency vs governed.** The plugins above install the *skills*; the RVND
 *engine* (`server/install.sh`) is separate. The RVND skills follow a local-first cascade, so they run
@@ -36,7 +53,19 @@ either way — you do **not** install a different skill for each:
 
 Same skills, two runtime outcomes — the cascade picks the mode.
 
-### A · RVND (needs both) — the minimal working stack
+### A · RVND only — public, the path everyone can take
+
+```
+/plugin marketplace add flxk1/RVND
+/plugin install rvnd@rvnd
+```
+
+Runs standalone: transparency mode for the pieces that would otherwise
+delegate to a `loomground` plane skill, governed mode for everything the pip
+engine itself covers once you also run `server/install.sh` (see above). No
+access to the `loomground` marketplace is required for this path.
+
+### B · RVND + the plane skills it delegates to — needs `loomground` access
 
 ```
 /plugin marketplace add flxk1/loomground-plugins
@@ -47,24 +76,29 @@ Same skills, two runtime outcomes — the cascade picks the mode.
 /plugin install loomground-ingest@loomground
 ```
 
-That's everything RVND requires. (Add `loomground-solver@loomground` and/or
-`loomground-versum@loomground` only if you also want those standalone tools — RVND doesn't need them.)
-Or, after the two `marketplace add` lines, run `/plugin` and click-install from the browser.
+Upgrades the three delegating pieces from transparency to governed mode.
+(Add `loomground-solver@loomground` and/or `loomground-versum@loomground`
+only if you also want those standalone tools — RVND doesn't need them.) This
+path is only reachable if you have access to the `loomground` marketplace;
+if `flxk1/loomground-plugins` won't add, stop here and use path A.
 
-### B · A single Loomground skill (standalone — no RVND, no siblings)
+### C · A single Loomground skill (standalone — no RVND, no siblings; needs `loomground` access)
 
 ```
 /plugin marketplace add flxk1/loomground-plugins
 /plugin install loomground-deontic@loomground
 ```
 
-Swap `loomground-deontic` for any of the five free plugins.
+Swap `loomground-deontic` for any of the five plugins in the (author-internal) `loomground` marketplace.
 
-### C · The shared installer (one `settings.json` — the RVND stack)
+### D · The shared installer (one `settings.json` — the RVND stack, needs `loomground` access)
 
 The RVND stack in one paste: registers both marketplaces and enables `rvnd` **plus the three plane
-skills it depends on** — no per-user `/plugin` commands. This is the installer for the RVND audience.
-(A skill-only user doesn't want this; they use path B — one line, one plugin.)
+skills it depends on** — no per-user `/plugin` commands. This is the installer for someone who already
+has `loomground` marketplace access and wants the full governed stack in one paste; without that
+access, use path A instead (drop the `loomground` marketplace entry and the three plane-skill lines
+below). A skill-only user with `loomground` access who doesn't want RVND uses path C — one line, one
+plugin.
 
 ```json
 {
@@ -101,10 +135,11 @@ siblings).
 
 ---
 
-## Catalog — Commercial · `rvnd@rvnd` (8 skills)
+## Catalog — Public · `rvnd@rvnd` (8 skills)
 
-Server skills. They cascade **local-first** — the RVND engine decides, signs, and enforces when
-present; the free plane skills are the fallback the graph-building skills delegate to.
+Server skills, installable by anyone from the public `flxk1/RVND` marketplace. They cascade
+**local-first** — the RVND engine decides, signs, and enforces when present; the (author-internal)
+plane skills below are the fallback the graph-building skills delegate to when reachable.
 
 | skill | the job | reads / writes |
 |---|---|---|
@@ -119,9 +154,11 @@ present; the free plane skills are the fallback the graph-building skills delega
 
 ---
 
-## Catalog — Free · `loomground` (17 skills across 5 plugins)
+## Catalog — Author-internal · `loomground` (17 skills across 5 plugins)
 
-Plane authoring skills. Each is standalone.
+Plane authoring skills, Apache-2.0 licensed but shipped from a marketplace repo
+(`flxk1/loomground-plugins`) that is currently private — not installable by a stranger. Each is
+standalone once you have access.
 
 ### `loomground-governance@loomground` — 1
 - **loomground** — Express an AI-governance requirement as a **verified `.lg` policy-graph patch**
@@ -170,7 +207,8 @@ Plane authoring skills. Each is standalone.
 
 ## How they relate
 
-The free plane skills **author** each facet of the shared graph (governance, deontic, ingest,
-reasoning, knowledge). The commercial RVND skills **operate** that graph against a real signed engine
-— cascade engine-first, delegate to the plane skills as fallback, sign and enforce. That is why RVND
-needs both tiers, while a single plane skill stands alone.
+The plane skills **author** each facet of the shared graph (governance, deontic, ingest, reasoning,
+knowledge). The RVND skills **operate** that graph against a real signed engine — cascade
+engine-first, delegate to the plane skills as fallback when reachable, sign and enforce. RVND runs
+on its own from the public marketplace; the plane skills only add authoring reach for someone who
+also has `loomground` marketplace access.

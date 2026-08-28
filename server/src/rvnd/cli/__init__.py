@@ -180,6 +180,19 @@ def build_parser() -> argparse.ArgumentParser:
     p_guide.add_argument("--json", action="store_true",
                          help="machine-readable grouped output")
 
+    # add — top-level alias for `workspace add` (B7 register verb). A newcomer's
+    # first governed action needs one obvious spelling; this is the short one.
+    # Identical behaviour to `workspaces workspace add`, defined once in
+    # `_cmd_workspace_add` and shared by both dispatch entries — no parallel
+    # registration logic.
+    p_add = sub.add_parser(
+        "add",
+        help="Register a folder as a known workspace (alias for "
+             "`workspace add`; idempotent).",
+    )
+    p_add.add_argument("folder_path", help="Folder to register.")
+    p_add.add_argument("--label", default="", help="Optional label.")
+
     p_upgrade = sub.add_parser("upgrade", help="Safe upgrade: back up, verify audit "
                                               "chains before + after, then stamp the version.")
     p_upgrade.add_argument("--check", action="store_true",

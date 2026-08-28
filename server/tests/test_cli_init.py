@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import io
+from pathlib import Path
 
 import rvnd.cli.impl as impl
 import rvnd.registry as registry
@@ -119,6 +120,30 @@ def test_init_launches_real_model_wizard_when_accepted(monkeypatch, tmp_path):
     assert rc == 0
     assert called.get("ran") is True                 # the BUILT wizard was invoked
     assert "model wizard finished" in out
+
+
+def test_init_honours_explicit_log_root_not_just_the_module_default(monkeypatch, tmp_path):
+    """`workspaces --log-root <dir> init` (equally, RVND_LOG_ROOT) must write
+    under that root, not the real ~/.workspace — the getting-started sandbox
+    path. Deliberately does NOT monkeypatch impl.LOG_ROOT_DEFAULT, so a pass
+    here proves init reads args.log_root, not the hardcoded default."""
+    sandbox_log_root = tmp_path / "sandbox" / "log"
+    calls: dict = {}
+    monkeypatch.setattr(registry, "bootstrap_default_workspace",
+                        lambda **k: calls.update(k) or {"ok": True})
+    monkeypatch.setattr("sys.stdin", io.StringIO(""))
+    out = io.StringIO()
+    monkeypatch.setattr("sys.stdout", out)
+
+    rc = impl.cmd_init(argparse.Namespace(yes=True, dry_run=False,
+                                          log_root=str(sandbox_log_root)))
+
+    assert rc == 0
+    sandbox_home = sandbox_log_root.parent
+    assert (sandbox_home / "init.json").is_file()
+    assert (sandbox_home / "keys").is_dir() and (sandbox_home / "log").is_dir()
+    real_home = str(Path.home() / ".workspace")
+    assert real_home not in out.getvalue()
 
 
 def test_init_pins_skills_via_real_picker_when_accepted(monkeypatch, tmp_path):
