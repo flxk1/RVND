@@ -446,6 +446,108 @@ def test_multiword_subject_ngram_does_not_over_erase(env, tmp_path):
 
 
 # ---------------------------------------------------------------------------
+# 6d) Punctuation-recall fix: a subject entered WITH intra-token/adjacent
+#     punctuation ("O'Brien", "Smith, John") must still be recalled from
+#     plain prose containing that punctuation-free phrase — the marker's
+#     subject_hash is now derived from the SAME tokenised (punctuation-
+#     stripped) canonical form the unseal-time matcher re-derives from a
+#     haystack, not from the punctuation-kept forgotten-subjects ledger
+#     hash. The over-deletion guards from 6b/6c must still hold with a
+#     punctuated subject: no bare-partial-token match, no non-adjacent
+#     match, no unrelated-record match.
+# ---------------------------------------------------------------------------
+
+
+def test_punctuated_subject_apostrophe_is_recalled(env, tmp_path):
+    """"O'Brien" tokenises to ["o", "brien"] (2 tokens) — a 2-token window
+    of plain "O'Brien" prose must be recalled, closing the gap where the
+    marker's subject_hash was computed over the punctuation-KEPT subject
+    while the matcher only ever produces punctuation-stripped windows."""
+    log_root = env["log_root"]
+    folder = tmp_path / "ws"; folder.mkdir()
+    add_known_workspace(str(folder), log_root=log_root)
+
+    subject = "O'Brien"
+    hit_id = "sha256:apos-hit"
+    mem = WorkspaceMemory(str(folder), log_root=str(log_root), actor="t")
+    mem.remember(_pair(hit_id, "case notes",
+                        "I spoke with O'Brien yesterday about the matter."),
+                 channel="document")
+
+    seal.seal_folder(folder, passphrase="pw", log_root=log_root)
+    report = _execute(env, folder, subject, queue_if_sealed=True)
+    assert report.pending_erase_queued == [str(folder.resolve())]
+    seal.unseal_folder(folder, passphrase="pw", log_root=log_root)
+
+    remaining = _chain_pair_ids(folder, log_root)
+    assert hit_id not in remaining, \
+        "a punctuated subject ('O'Brien') must be recalled from plain " \
+        "prose containing the same punctuation-free phrase"
+
+
+def test_punctuated_subject_comma_is_recalled(env, tmp_path):
+    """"Smith, John" tokenises to ["smith", "john"] — a comma-separated
+    subject must still recall a plain 2-token "Smith John" mention."""
+    log_root = env["log_root"]
+    folder = tmp_path / "ws"; folder.mkdir()
+    add_known_workspace(str(folder), log_root=log_root)
+
+    subject = "Smith, John"
+    hit_id = "sha256:comma-hit"
+    mem = WorkspaceMemory(str(folder), log_root=str(log_root), actor="t")
+    mem.remember(_pair(hit_id, "intake",
+                        "Received a file from Smith, John re: the claim."),
+                 channel="document")
+
+    seal.seal_folder(folder, passphrase="pw", log_root=log_root)
+    _execute(env, folder, subject, queue_if_sealed=True)
+    seal.unseal_folder(folder, passphrase="pw", log_root=log_root)
+
+    remaining = _chain_pair_ids(folder, log_root)
+    assert hit_id not in remaining, \
+        "'Smith, John' must be recalled from prose containing 'Smith John'"
+
+
+def test_punctuated_subject_does_not_over_erase(env, tmp_path):
+    """Punctuation-recall must not loosen the CONTIGUOUS-window requirement:
+    a record with only 'Smith' (no 'John'), a record with 'Smith' and
+    'John' separated by unrelated tokens, and an unrelated subject entirely
+    must all survive."""
+    log_root = env["log_root"]
+    folder = tmp_path / "ws"; folder.mkdir()
+    add_known_workspace(str(folder), log_root=log_root)
+
+    subject = "Smith, John"
+    partial_id = "sha256:punct-partial"
+    non_adjacent_id = "sha256:punct-non-adjacent"
+    unrelated_id = "sha256:punct-unrelated"
+
+    mem = WorkspaceMemory(str(folder), log_root=str(log_root), actor="t")
+    mem.remember(_pair(partial_id, "unrelated",
+                        "Smith called about a different matter entirely."),
+                 channel="document")
+    mem.remember(_pair(non_adjacent_id, "unrelated",
+                        "Smith will follow up, and separately John will too."),
+                 channel="document")
+    mem.remember(_pair(unrelated_id, "unrelated",
+                        "Totally unrelated record about Jane Doe's case."),
+                 channel="document")
+
+    seal.seal_folder(folder, passphrase="pw", log_root=log_root)
+    _execute(env, folder, subject, queue_if_sealed=True)
+    seal.unseal_folder(folder, passphrase="pw", log_root=log_root)
+
+    remaining = _chain_pair_ids(folder, log_root)
+    assert partial_id in remaining, \
+        "a bare 'Smith' with no adjacent 'John' must not be erased"
+    assert non_adjacent_id in remaining, \
+        "'Smith ... John' separated by unrelated tokens is NOT the " \
+        "contiguous phrase 'Smith John' and must not be erased"
+    assert unrelated_id in remaining, \
+        "an unrelated subject's record must never be touched"
+
+
+# ---------------------------------------------------------------------------
 # 6c) Marker-spam dedup: a repeated execute() against the same still-sealed
 #     blob for the same subject arms exactly ONE ledger entry.
 # ---------------------------------------------------------------------------
