@@ -164,16 +164,54 @@ def _machine_id() -> str:
     return "no-machine-id"
 
 
-def _host_id() -> str:
-    """12-char hex prefix of ``sha256(hostname + "|" + machine_id)``.
+HOST_ID_ENV = "WORKSPACE_HOST_ID"
+"""Explicit host-identity override. When set, it pins ``host_id`` regardless of the
+machine hostname — the recovery/portability path for issue #122. An operator who moved
+networks (changing ``socket.gethostname()``) can set this to the host_id that signed an
+existing chain to make it verify again."""
 
-    Stable across reboots on a given host. Distinct across hosts that share
-    a homedir (NFS mount, MSP scenario). Short enough to read off a
-    ``workspaces status`` line.
+
+def _host_id_pin_path() -> Path:
+    """Where the resolved host_id is persisted so it never drifts with the hostname."""
+    return _key_root_dir() / "host-id"
+
+
+def _host_id() -> str:
+    """Stable 12-char host identity.
+
+    Resolution order — every branch is stable across reboots AND hostname/network
+    changes:
+      1. ``WORKSPACE_HOST_ID`` env — explicit override (recovery / portability).
+      2. The persisted pin at ``<key-root>/host-id`` — written the first time an id is
+         derived, and read verbatim thereafter.
+      3. Derive ``sha256(hostname + "|" + machine_id)[:12]`` and persist it to (2).
+
+    Before this pin, the function returned (3) directly. That is NOT stable when the OS
+    hostname tracks the network (e.g. macOS with ``HostName`` unset): a chain signed
+    under one hostname then failed verification after the machine moved networks and a
+    different key was loaded — issue #122. Pinning (1)/(2) fixes that; ``machine_id``
+    was already stable, so the hostname was the only moving part.
     """
+    env = os.environ.get(HOST_ID_ENV)
+    if env and env.strip():
+        return env.strip()
+    pin = _host_id_pin_path()
+    try:
+        if pin.is_file():
+            pinned = pin.read_text(encoding="utf-8").strip()
+            if pinned:
+                return pinned
+    except OSError:
+        pass
     h = socket.gethostname() or "unknown-host"
     m = _machine_id() or "no-machine-id"
-    return hashlib.sha256(f"{h}|{m}".encode("utf-8")).hexdigest()[:12]
+    hid = hashlib.sha256(f"{h}|{m}".encode("utf-8")).hexdigest()[:12]
+    try:
+        pin.parent.mkdir(parents=True, exist_ok=True)
+        pin.write_text(hid + "\n", encoding="utf-8")
+    except OSError:
+        pass  # persistence is best-effort; the derived id still holds this run
+    return hid
 
 
 def _key_dir() -> Path:
