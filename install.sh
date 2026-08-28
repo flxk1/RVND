@@ -18,7 +18,7 @@ set -euo pipefail
 
 # --- config (override via env) ---------------------------------------------
 RVND_REPO="${RVND_REPO:-https://github.com/flxk1/RVND}"
-RVND_REF="${RVND_REF:-main}"              # once a release tag includes the packaging fix (#120), pin that tag; @main floats (v0.6.9.9 predates the fix)
+RVND_REF="${RVND_REF:-v0.6.9.10}"         # pinned release: includes #120 (packaging fix) + #121 (erasure line). Override for another ref/sha.
 RVND_VENV="${RVND_VENV:-./rvnd-venv}"
 PYTHON="${PYTHON:-}"
 
@@ -103,8 +103,8 @@ Health check:       $RVND_VENV/bin/workspaces doctor
 Run the MCP server: $RVND_VENV/bin/workspaces-mcp        (drive it from an MCP client)
 CLI help:           $RVND_VENV/bin/workspaces --help
 
-Reproducible pin:   once a release tag includes the packaging fix (#120), set
-                    RVND_REF to it (the v0.6.9.9 tag predates that fix).
+Pinned release:     defaults to v0.6.9.10 (includes the packaging fix #120 and
+                    the erasure line #121). Override RVND_REF for another ref.
 Note: this installs the ENGINE only. The ctrl orchestration plugins are not
 public and are not part of this install.
 EOF
