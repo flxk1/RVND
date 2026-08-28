@@ -23,12 +23,14 @@ in the README).
 Pip-only, no clone — pins to a tag for a reproducible install (drop `@v…`
 for the default branch, at the risk of a moving target):
 
+<!-- doctest: skip -->
 ```bash
 pip install "rvnd @ git+https://github.com/flxk1/RVND@v0.6.9.11"
 ```
 
 Or clone and run the guided installer, which also runs a self-check:
 
+<!-- doctest: skip -->
 ```bash
 git clone https://github.com/flxk1/RVND.git
 cd RVND
@@ -73,6 +75,7 @@ and it just confirms the folder is already registered.
 
 ## 4. Take your first governed action
 
+<!-- doctest: skip -->
 ```bash
 workspaces ask --folder ~/Documents/my-project "what is this workspace for?"
 ```
@@ -85,6 +88,7 @@ That is expected, not a failure** — the governance and the audit append
 still happened; only the completion step had nothing to call. A model is
 optional. If you want one, `ask`'s own error tells you how:
 
+<!-- doctest: skip -->
 ```bash
 workspaces models config --local-url <url> --local-model <id>   # your own local endpoint (BYOK)
 # or set WORKSPACE_LOCAL_LLM_URL / WORKSPACE_LOCAL_LLM_MODEL directly
@@ -99,6 +103,7 @@ governed-model path).
 A second kind of governed action, reading laterally between two workspaces —
 register a second folder first, then:
 
+<!-- doctest: skip -->
 ```bash
 workspaces add ~/Documents/other-project
 workspaces cross-workspace --folder ~/Documents/my-project --source ~/Documents/other-project
@@ -109,6 +114,7 @@ Prints a verdict per source (`permit`/`hold`/`deny`, shown as
 
 ## 5. Read the record back
 
+<!-- doctest: skip -->
 ```bash
 workspaces audit-tail --folder ~/Documents/my-project
 workspaces status --folder ~/Documents/my-project
@@ -157,6 +163,7 @@ directory, the init marker) — nothing above this page's steps 1–5 requires
 running it. To try it without touching your real home, point it at a
 throwaway root the same way every other command respects:
 
+<!-- doctest: skip -->
 ```bash
 workspaces --log-root /tmp/rvnd-sandbox/log init --yes
 # or: RVND_LOG_ROOT=/tmp/rvnd-sandbox/log workspaces init --yes
