@@ -4,9 +4,8 @@
 
 ## Authorship
 
-Copyright in this project is held by its identified human author(s) (flxk1).
-Generative AI tools (including Claude, Anthropic) assisted parts of development;
-they are not authors or copyright holders.
+Copyright in this project is held by its identified human author(s) flxk1.
+Generative AI tools (including Claude, Anthropic) assisted parts of development.
 
 ## License
 

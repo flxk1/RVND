@@ -1,0 +1,68 @@
+# Pre-merge authorship-clean gate. Checks every commit in a pull request's
+# range against the same rule release-tag-integrity.yml and tag-audit.yml
+# apply after the fact: no commit may have Claude or Anthropic as author or
+# committer, and no commit message may carry a `Co-authored-by:` trailer
+# naming either (case-insensitive) — the required attribution body line
+# `Assisted by Claude (Anthropic); not an author or copyright holder.` is
+# fine and must not trip this.
+#
+# Catching this pre-merge is a cheap amend on a still-open PR. Catching it
+# only after the tag is cut is a history rewrite. Intended to become a
+# required status check.
+name: pr-authorship-check
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-authorship-check-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  pr-authorship-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { fetch-depth: 0 }
+
+      - name: authorship-clean check over the PR commit range
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -uo pipefail
+          bad=0
+          commits="$(git rev-list "${BASE_SHA}..${HEAD_SHA}")"
+
+          if [ -z "$commits" ]; then
+            echo "no commits in range ${BASE_SHA}..${HEAD_SHA}; nothing to check"
+            exit 0
+          fi
+
+          for commit in $commits; do
+            author_line="$(git log -1 --format='%an <%ae>' "$commit")"
+            committer_line="$(git log -1 --format='%cn <%ce>' "$commit")"
+
+            if printf '%s\n%s\n' "$author_line" "$committer_line" | grep -qiE 'claude|anthropic'; then
+              echo "::error::commit $commit — author/committer identity names Claude/Anthropic ($author_line / $committer_line)"
+              bad=1
+            fi
+
+            # Match the Co-authored-by trailer specifically (case-insensitive),
+            # never a bare mention of the word — the required attribution body
+            # line "Assisted by Claude (Anthropic); not an author or copyright
+            # holder." must not trip this.
+            if git log -1 --format='%B' "$commit" | grep -qiE '^Co-authored-by:.*(claude|anthropic)'; then
+              echo "::error::commit $commit — Co-authored-by trailer names Claude/Anthropic"
+              bad=1
+            fi
+          done
+
+          if [ "$bad" -eq 0 ]; then
+            echo "authorship-clean: all commits in ${BASE_SHA}..${HEAD_SHA} pass"
+          fi
+          exit "$bad"

@@ -1,0 +1,166 @@
+# Weekly, read-only audit of every `v*` release tag: is it still reachable
+# from `main`, and is its commit authorship-clean (no Claude/Anthropic as
+# author, committer, or `Co-authored-by:` trailer — the required
+# `Assisted by Claude (Anthropic); not an author or copyright holder.` body
+# line is fine and must not trip this)?
+#
+# This job only ever reads git refs and reconciles a single pinned issue. It
+# NEVER force-pushes, deletes, or recreates a tag or ref — a stale or
+# rewritten tag is reported, not touched. A cron misfire (a retried or
+# double-fired scheduled run) cannot loop or compound anything: the only
+# mutation is an idempotent issue update gated on a content hash, so two runs
+# back to back with unchanged findings produce one issue write, not two.
+name: tag-audit
+
+on:
+  schedule:
+    # 05:00 UTC every Monday.
+    - cron: "0 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { fetch-depth: 0 }
+
+      - name: audit every v* tag (reachability + authorship)
+        id: audit
+        run: |
+          set -uo pipefail
+          git fetch origin --tags --quiet || true
+
+          TAGS="$(git tag -l 'v*' | sort -V)"
+          dirty=0
+          : > audit_rows.md
+
+          for tag in $TAGS; do
+            sha="$(git rev-list -n1 "$tag")"
+
+            if git merge-base --is-ancestor "$sha" origin/main 2>/dev/null; then
+              reachable="reachable"
+            else
+              reachable="ORPHANED"
+              dirty=1
+            fi
+
+            author_line="$(git log -1 --format='%an <%ae>' "$sha")"
+            committer_line="$(git log -1 --format='%cn <%ce>' "$sha")"
+            auth_bad=0
+            if printf '%s\n%s\n' "$author_line" "$committer_line" | grep -qiE 'claude|anthropic'; then
+              auth_bad=1
+            fi
+            if git log -1 --format='%B' "$sha" | grep -qiE '^Co-authored-by:.*(claude|anthropic)'; then
+              auth_bad=1
+            fi
+            if [ "$auth_bad" -eq 1 ]; then
+              authorship="DIRTY"
+              dirty=1
+            else
+              authorship="clean"
+            fi
+
+            echo "| \`$tag\` | \`${sha:0:12}\` | $reachable | $authorship |" >> audit_rows.md
+          done
+
+          {
+            echo "| tag | commit | reachability | authorship |"
+            echo "|---|---|---|---|"
+            cat audit_rows.md
+          } > audit_table.md
+
+          echo "dirty=$dirty" >> "$GITHUB_OUTPUT"
+          echo "state_hash=$(sha256sum audit_table.md | awk '{print $1}')" >> "$GITHUB_OUTPUT"
+          cat audit_table.md
+
+      - name: reconcile the pinned audit issue (update only on state transition)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TITLE: "🔒 Release-tag integrity audit"
+          DIRTY: ${{ steps.audit.outputs.dirty }}
+          NEW_HASH: ${{ steps.audit.outputs.state_hash }}
+        run: |
+          set -uo pipefail
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          # gh search is fuzzy; filter to an exact title match so this job
+          # never adopts an unrelated issue that happens to match the terms.
+          EXISTING_JSON="$(gh issue list --state all --search "\"$TITLE\" in:title" --json number,state,title,body --limit 20)"
+          NUMBER="$(python3 -c "
+          import json, os, sys
+          title = os.environ['TITLE']
+          items = json.load(sys.stdin)
+          for it in items:
+              if it['title'] == title:
+                  print(it['number'])
+                  break
+          " <<< "$EXISTING_JSON")"
+
+          STATE=""
+          OLD_HASH=""
+          if [ -n "$NUMBER" ]; then
+            STATE="$(python3 -c "
+          import json, os, sys
+          n = int('$NUMBER')
+          for it in json.load(sys.stdin):
+              if it['number'] == n:
+                  print(it['state'])
+                  break
+          " <<< "$EXISTING_JSON")"
+            OLD_HASH="$(python3 -c "
+          import json, re, sys
+          n = int('$NUMBER')
+          for it in json.load(sys.stdin):
+              if it['number'] == n:
+                  m = re.search(r'state-hash: ([0-9a-f]{8,64})', it['body'] or '')
+                  print(m.group(1) if m else '')
+                  break
+          " <<< "$EXISTING_JSON")"
+          fi
+
+          echo "existing issue: #${NUMBER:-none} state=${STATE:-n/a} old_hash=${OLD_HASH:-n/a} new_hash=$NEW_HASH dirty=$DIRTY"
+
+          {
+            echo "Automated, read-only weekly audit of every \`v*\` release tag:"
+            echo "reachability from \`main\` and authorship-clean status. This issue"
+            echo "is opened or updated only on a state transition — an unchanged"
+            echo "result never re-triggers a comment, whether clean or dirty."
+            echo
+            cat audit_table.md
+            echo
+            echo "Workflow run: $RUN_URL"
+            echo
+            echo "<!-- state-hash: $NEW_HASH -->"
+          } > body.md
+
+          if [ "$DIRTY" = "1" ]; then
+            if [ -z "$NUMBER" ]; then
+              gh issue create --title "$TITLE" --body-file body.md
+              echo "opened new issue"
+            elif [ "$NEW_HASH" = "$OLD_HASH" ] && [ "$STATE" = "OPEN" ]; then
+              echo "no state transition — findings unchanged and issue already open; not posting (avoids noise on an unchanged dirty result)"
+            else
+              if [ "$STATE" = "CLOSED" ]; then
+                gh issue reopen "$NUMBER"
+              fi
+              gh issue edit "$NUMBER" --body-file body.md
+              echo "updated issue #$NUMBER (state transition)"
+            fi
+          else
+            if [ -n "$NUMBER" ] && [ "$STATE" = "OPEN" ]; then
+              gh issue comment "$NUMBER" --body "Resolved: all \`v*\` tags are reachable from \`main\` and authorship-clean as of this run. Run: $RUN_URL"
+              gh issue edit "$NUMBER" --body-file body.md
+              gh issue close "$NUMBER"
+              echo "resolved and closed issue #$NUMBER"
+            else
+              echo "all clean, no open issue to resolve — nothing to do"
+            fi
+          fi
