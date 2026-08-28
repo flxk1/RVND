@@ -1,0 +1,175 @@
+# Gate on the two things a pushed `v*` tag must be true before it gets a
+# published GitHub Release: its version self-report matches the tag, and its
+# commit's authorship is clean (no Claude/Anthropic as author, committer, or
+# `Co-authored-by:` trailer -- the required `Assisted by Claude (Anthropic);
+# not an author or copyright holder.` body line is fine and must not trip
+# this).
+#
+# This workflow cannot un-push a bad tag: once `git push --tags` lands, the
+# tag ref is immutable from here (see docs/releases/RUNBOOK.md for the
+# human-gated, admin-approved procedure to correct one). All the power this
+# workflow has is refusing to attach a Release to a bad tag and failing
+# loudly -- a missing Release plus a red workflow run is the signal that a
+# tag needs the runbook, not a script that tries to fix it unattended.
+name: release-tag-integrity
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  verify-and-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { fetch-depth: 0 }
+
+      # Both checks run unconditionally and record their verdicts as step
+      # outputs; nothing here exits early, so a version mismatch can never
+      # hide an authorship finding (or vice versa) the way an early `exit 1`
+      # would. The job is only failed loudly at the very end, once both
+      # verdicts and the release/issue steps below have had their turn.
+      - name: resolve tag version, file version, and authorship
+        id: gate
+        env:
+          TAG: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -uo pipefail
+
+          TAG_VERSION="${TAG#v}"
+          FILE_VERSION="$(python3 - <<'PY'
+          import re
+          text = open("server/src/rvnd/_version.py", encoding="utf-8").read()
+          m = re.search(r'__version__\s*=\s*["\']([^"\']+)["\']', text)
+          print(m.group(1) if m else "PARSE_ERROR")
+          PY
+          )"
+
+          echo "tag: $TAG"
+          echo "tag version (leading v stripped): $TAG_VERSION"
+          echo "server/src/rvnd/_version.py __version__: $FILE_VERSION"
+
+          if [ "$TAG_VERSION" = "$FILE_VERSION" ]; then
+            version_match=true
+          else
+            version_match=false
+            echo "::error::version mismatch — tag says $TAG_VERSION, _version.py says $FILE_VERSION"
+          fi
+
+          # Evidence-only (not gating): is this commit reachable from main?
+          # fetch-depth 0 on the checkout step above already pulled every
+          # branch and tag, so origin/main is present as a remote ref.
+          if git merge-base --is-ancestor "$SHA" origin/main 2>/dev/null; then
+            reachable=true
+          else
+            reachable=false
+          fi
+          echo "reachable from main: $reachable"
+
+          author_line="$(git log -1 --format='%an <%ae>' "$SHA")"
+          committer_line="$(git log -1 --format='%cn <%ce>' "$SHA")"
+          echo "author: $author_line"
+          echo "committer: $committer_line"
+
+          authorship_clean=true
+          findings=""
+          if printf '%s\n%s\n' "$author_line" "$committer_line" | grep -qiE 'claude|anthropic'; then
+            authorship_clean=false
+            findings="${findings}author/committer identity names Claude/Anthropic. "
+            echo "::error::authorship — author/committer identity names Claude/Anthropic"
+          fi
+          # Match the Co-authored-by trailer specifically (case-insensitive),
+          # never a bare mention of the word — the required attribution body
+          # line "Assisted by Claude (Anthropic); not an author or copyright
+          # holder." must not trip this.
+          if git log -1 --format='%B' "$SHA" | grep -qiE '^Co-authored-by:.*(claude|anthropic)'; then
+            authorship_clean=false
+            findings="${findings}Co-authored-by trailer names Claude/Anthropic. "
+            echo "::error::authorship — Co-authored-by trailer names Claude/Anthropic"
+          fi
+          echo "authorship-clean: $authorship_clean"
+
+          {
+            echo "tag=$TAG"
+            echo "tag_version=$TAG_VERSION"
+            echo "file_version=$FILE_VERSION"
+            echo "version_match=$version_match"
+            echo "reachable=$reachable"
+            echo "authorship_clean=$authorship_clean"
+          } >> "$GITHUB_OUTPUT"
+          printf '%s\n' "$findings" > authorship_findings.txt
+
+      - name: create or refresh the Release (only if both checks passed)
+        if: steps.gate.outputs.version_match == 'true' && steps.gate.outputs.authorship_clean == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.gate.outputs.tag }}
+        run: |
+          set -euo pipefail
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          # Self-disclosing evidence block, prepended to every published
+          # Release so the gate result travels with the artifact instead of
+          # living only in Actions log retention.
+          {
+            echo "## Release-integrity evidence"
+            echo
+            echo "- Tag: \`${{ steps.gate.outputs.tag }}\`"
+            echo "- Resolved \`server/src/rvnd/_version.py\` \`__version__\`: \`${{ steps.gate.outputs.file_version }}\`"
+            echo "- Commit: \`${{ github.sha }}\`"
+            echo "- Reachable from \`main\`: ${{ steps.gate.outputs.reachable }}"
+            echo "- Authorship-clean: PASS"
+            echo "- Workflow run: $RUN_URL"
+            echo
+            echo "---"
+            echo
+          } > evidence.md
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release view "$TAG" --json body -q .body > existing_body.md
+          else
+            gh release create "$TAG" --verify-tag --generate-notes
+            gh release view "$TAG" --json body -q .body > existing_body.md
+          fi
+          cat evidence.md existing_body.md > new_body.md
+          gh release edit "$TAG" --notes-file new_body.md
+
+      - name: best-effort issue on failure
+        if: steps.gate.outputs.version_match != 'true' || steps.gate.outputs.authorship_clean != 'true'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -uo pipefail
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          {
+            echo "Release-tag-integrity failed for tag \`${{ steps.gate.outputs.tag }}\` (commit \`${{ github.sha }}\`)."
+            echo
+            echo "- Tag version (leading v stripped): \`${{ steps.gate.outputs.tag_version }}\`"
+            echo "- server/src/rvnd/_version.py __version__: \`${{ steps.gate.outputs.file_version }}\`"
+            echo "- Version match: ${{ steps.gate.outputs.version_match }}"
+            echo "- Authorship-clean: ${{ steps.gate.outputs.authorship_clean }}"
+            echo "- Findings: $(cat authorship_findings.txt 2>/dev/null || echo none)"
+            echo "- Workflow run: $RUN_URL"
+            echo
+            echo "No GitHub Release was created or updated for this tag. This"
+            echo "workflow cannot remove or move the tag itself — tags are"
+            echo "immutable once pushed. See docs/releases/RUNBOOK.md for the"
+            echo "human-gated procedure to correct a bad tag."
+          } > issue_body.md
+          gh issue create --title "Release integrity failure" --body-file issue_body.md \
+            || echo "best-effort issue creation did not succeed; see this job's log for the full findings"
+
+      - name: fail loudly if either check failed
+        if: steps.gate.outputs.version_match != 'true' || steps.gate.outputs.authorship_clean != 'true'
+        run: |
+          echo "::error::release-tag-integrity FAILED for ${{ steps.gate.outputs.tag }} — version_match=${{ steps.gate.outputs.version_match }} authorship_clean=${{ steps.gate.outputs.authorship_clean }}. No Release was created or updated. See docs/releases/RUNBOOK.md."
+          exit 1
