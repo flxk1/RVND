@@ -47,7 +47,7 @@ bounded subset of the suite.
 - **No `PYTHONPATH` needed after install.** Running raw from the tree with
   `PYTHONPATH=server/src` is only for working in it before installing. Once
   `pip install` has run, `import workspaces` resolves from anywhere.
-- **The first install needs network and `git`.** Five dependencies resolve from
+- **The first install needs network and `git`.** 15 dependencies resolve from
   `git+https://github.com/flxk1/…` at pinned commits (see `pyproject.toml`).
 - **Develop outside iCloud Drive.** `pip install -e .` is unreliable from a
   path under `~/Documents` (iCloud) — the editable link is dropped

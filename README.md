@@ -11,6 +11,10 @@ It runs on your own hardware. Your data, your policies, and your models stay
 local by default; the cloud is opt‑in, and a folder can be sealed off from it
 entirely.
 
+**New here?** [docs/getting-started.md](docs/getting-started.md) is a
+copy-pasteable path from `pip install` to your first governed, audited
+action — register a folder, ask a question, read the verdict back.
+
 ## What it does
 
 Rvnd governs actions that are routed through its MCP server or governed
@@ -57,6 +61,11 @@ those rules satisfy a law, regulation or organisational policy.
   wiring diagram: agents, tasks, the people who sign off, and the boundary, with
   each egress connection coloured by the server's verdict. Users edit the
   relationships on the canvas; enforcement remains in the MCP server.
+
+A **workspace** is a folder RVND scopes policy and a signed audit chain to;
+an action routed through RVND resolves to one of three **verdicts** —
+`permit`, `hold` (a person signs off), or `deny` — every time, recorded either
+way. See [docs/getting-started.md](docs/getting-started.md) for the walkthrough.
 
 ## Built on Loomground
 
@@ -207,7 +216,7 @@ with `.venv/bin/rvnd-hook --uninstall --scope user`.
 **Or step by step.** The following commands clone Rvnd, create an isolated
 virtual environment, install it and start the local Patchbay web application on
 macOS or Linux. Run them from the directory where you want the `RVND` folder to
-be created. They need Python 3.10 or newer and `git` available on the PATH: five
+be created. They need Python 3.10 or newer and `git` available on the PATH: 15
 of Rvnd's runtime dependencies — the Loomground packages — are fetched directly
 from Git rather than from PyPI, so the install step clones them. To check your
 machine has everything first, run `sh scripts/preflight.sh` after cloning.
@@ -223,6 +232,13 @@ The server opens the application in your browser at
 `http://127.0.0.1:8799/` and remains loopback-only. If you already cloned the
 repository, start with `cd` into that existing `RVND` directory and omit the
 `git clone` command.
+
+A local model is optional throughout — RVND governs and audits without one
+(see [docs/getting-started.md](docs/getting-started.md#4-take-your-first-governed-action)) —
+and the default enforcement posture is permissive until you set an autonomy
+grade or a policy; see that page's
+[default enforcement posture](docs/getting-started.md#default-enforcement-posture--read-this-before-you-rely-on-it)
+section before assuming a fresh install blocks anything on its own.
 
 The application is plain HTML and requires no frontend build or desktop shell.
 It binds to the local machine only; it is not a production or multi-user
