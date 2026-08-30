@@ -66,6 +66,14 @@ def register_connection(*, agent: str, transport: str = "stdio",
         "transport": transport,
         "pid": int(pid if pid is not None else os.getpid()),
         "session_id": (sid or "").strip(),
+        # MCP clientInfo{name,version} — the client that handshook this transport
+        # (e.g. "cursor"/"1.4.2"). Purely DESCRIPTIVE ("this client talked to
+        # RVND"); NEVER a human name and NEVER a hierarchy. Empty at connect —
+        # clientInfo is not known until the client initializes, so these are
+        # filled lazily by ``update_client_info`` on the first tool call. Never
+        # fabricated.
+        "client_name": "",
+        "client_version": "",
         "connected_at": float(now if now is not None else time.time()),
     }
     try:
@@ -83,6 +91,39 @@ def deregister_connection(connid: str, *, root: Optional[str] = None) -> None:
         (_agents_dir(root) / f"{connid}.json").unlink(missing_ok=True)
     except Exception:
         pass
+
+
+def update_client_info(connid: str, *, name: str, version: str,
+                       root: Optional[str] = None) -> bool:
+    """Fill in the MCP ``clientInfo{name,version}`` for a connection record.
+
+    ``clientInfo`` is not known at ``register_connection`` time (the client has
+    not initialized yet), so it is captured lazily on the first tool call and
+    written back here. This is purely DESCRIPTIVE presence — which MCP client
+    handshook this transport — NEVER a human name and NEVER a hierarchy.
+
+    Idempotent and non-destructive: only fills when the record's ``client_name``
+    is currently empty, so it writes at most once and NEVER overwrites a value
+    already present. Missing name ⇒ nothing written (fail closed to empty, never
+    fabricated). Best-effort: a registry hiccup must never break serving, so this
+    never raises. Returns True iff it wrote."""
+    nm = (name or "").strip()
+    if not nm:
+        return False               # nothing to record — leave the record empty
+    ver = (version or "").strip()
+    try:
+        f = _agents_dir(root) / f"{connid}.json"
+        if not f.exists():
+            return False
+        rec = json.loads(f.read_text(encoding="utf-8"))
+        if (rec.get("client_name") or "").strip():
+            return False           # already captured — never overwrite
+        rec["client_name"] = nm
+        rec["client_version"] = ver
+        f.write_text(json.dumps(rec), encoding="utf-8")
+        return True
+    except Exception:
+        return False
 
 
 _SID_RE = re.compile(r"CLAUDE_CODE_SESSION_ID=([0-9A-Za-z._-]+)")
