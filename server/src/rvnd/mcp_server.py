@@ -2376,6 +2376,12 @@ def workspace_workflow(op: str, params: dict[str, Any] | None = None) -> dict[st
              "note": "read-only offline re-check of a portable oversight certificate (the oversight-certificate package's DSSE envelope): verifies signature, canonical form, disposition shape and credential-at-decision-time, returning {ok, findings:[{code, detail}]}. Verifies against a supplied PEM public key, else this host's identity key. No folder, no chain, no key generation"},
             {"op": "connected_agents", "required": [], "mutates": False,
              "note": "read-only, SERVER-LEVEL: agents that completed the MCP handshake with this server, independent of any workspace — who is CONNECTED (vs the per-workspace board's who is ADMITTED to act here). Presence, not authority; liveness is the connecting process. No folder."},
+            {"op": "connected_agents_governance", "required": ["folder_context"],
+             "optional": ["chain_limit"], "mutates": False,
+             "note": "read-only join of SERVER-LEVEL presence (connected_agents) to this folder's REAL chain governance, at agent-NAME granularity. Per connection: real connid/agent/transport/pid/connected_at, plus a governance object. attributed=true iff the agent name appears as an actor on the signed chain (>=1 event) — only then are verdict/grade/escalation (from lane_capabilities, strictest-wins) and the actor's chain tail (recent[], event_count, last_event_ts) returned. Unattributed ⇒ honest-neutral (all nulls/empty); no fabricated or fail-closed verdict, and connid/pid never derive governance. Pure projection."},
+            {"op": "session_governance", "required": ["folder_context"],
+             "optional": ["chain_limit"], "mutates": False,
+             "note": "read-only per-SESSION governance sourced from the SIGNED CHAIN (the real per-session identity: the actor the PreToolUse hook records). Returns sessions:[{actor, verdict, grade, escalation (REAL lane disposition via lane_capabilities strictest-wins; fail-closed 'refused' when the actor has no approved lane is a real disposition), event_count, last_event_ts, recent[] (the actor's own chain tail), connected/connid/pid (a live connection joined by session_id==actor, the host session id CLAUDE_CODE_SESSION_ID captured on connect; agent name only as a fallback)}] plus connected_only:[idle presence that has not acted]. The chain IS keyed by the per-session actor, so chain actors are the primary list; a live connection carrying the same session id surfaces as that actor's real presence. Pure projection; no fabrication."},
             {"op": "reasoning_check", "required": ["session_id"],
              "optional": ["claim"],
              "note": "T-cons: solver consistency over the session's recorded claims (session-scoped Versum working memory). With claim {atom, polarity, grounding, ts}: append it to the session's OWN store first (the op's only mutation — no chain append, no lease, no cross-session write), then check; without: pure read. Fail-closed verdict CONSISTENT | INCONSISTENT (clashing atoms carried) | OPEN — ungrounded or uncheckable claims are OPEN, never reported consistent"},
@@ -2555,6 +2561,14 @@ def workspace_workflow(op: str, params: dict[str, Any] | None = None) -> dict[st
             from .connected_agents import list_connected
             agents = list_connected()
             return {"ok": True, "count": len(agents), "agents": agents}
+        if op == "connected_agents_governance":
+            from .governance_live import connected_agents_governance as _cag
+            return _cag(p["folder_context"], log_root=_log_root(),
+                        chain_limit=int(p.get("chain_limit", 10)))
+        if op == "session_governance":
+            from .governance_live import session_governance as _sg
+            return _sg(p["folder_context"], log_root=_log_root(),
+                       chain_limit=int(p.get("chain_limit", 10)))
         if op == "reasoning_check":
             from .reasoning_integrity import Claim, check_session, record_claim
             sid = p["session_id"]
@@ -3245,7 +3259,11 @@ def main():
     from .connected_agents import deregister_connection, register_connection
     _connid = register_connection(
         agent=(_os.environ.get("RVND_AGENT") or _os.environ.get("RVND_AGENT_NAME") or ""),
-        transport="stdio")
+        transport="stdio",
+        # The host session id (this stdio process inherits the client's env) is
+        # the join key to the signed chain — the actor the PreToolUse hook
+        # records IS this same id. Absent when the host sets none; never faked.
+        session_id=(_os.environ.get("CLAUDE_CODE_SESSION_ID") or ""))
     try:
         mcp.run()
     finally:

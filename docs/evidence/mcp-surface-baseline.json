@@ -852,6 +852,9 @@
           "run_id"
         ],
         "connected_agents": [],
+        "connected_agents_governance": [
+          "folder_context"
+        ],
         "connector_list": [
           "folder_context"
         ],
@@ -996,6 +999,9 @@
           "folder_context"
         ],
         "security_dashboard": [
+          "folder_context"
+        ],
+        "session_governance": [
           "folder_context"
         ],
         "take_next": [],

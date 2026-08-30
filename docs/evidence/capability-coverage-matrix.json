@@ -1,6 +1,6 @@
 {
  "schema": "coverage-matrix-1",
- "obligations": 282,
+ "obligations": 285,
  "deferred_leaks": [],
  "rows": [
   {
@@ -1775,6 +1775,14 @@
   },
   {
    "facade": "workspace_workflow",
+   "op": "approval_resolve",
+   "channel": "ui",
+   "valid_ok": false,
+   "invalid_ok": true,
+   "reason": "valid not success: {'error': \"op 'approval_resolve' missing param 'request_id'\"}"
+  },
+  {
+   "facade": "workspace_workflow",
    "op": "authority_revoke",
    "channel": "mcp",
    "valid_ok": true,
@@ -1796,6 +1804,14 @@
    "valid_ok": true,
    "invalid_ok": true,
    "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "connected_agents",
+   "channel": "ui",
+   "valid_ok": true,
+   "invalid_ok": false,
+   "reason": "invalid not refused: {'ok': True, 'count': 0, 'agents': []}"
   },
   {
    "facade": "workspace_workflow",
@@ -1915,7 +1931,7 @@
    "channel": "mcp",
    "valid_ok": true,
    "invalid_ok": false,
-   "reason": "invalid not refused: {'folder_context': '<COVERAGE_WORKSPACE>/ws', 'nodes': [{'id': 'party:svc-bot', 'kind': 'agent', 'agent_uid': 'da4b84aa"
+   "reason": "invalid not refused: {'folder_context': '<COVERAGE_WORKSPACE>/ws', 'nodes': [{'id': 'party:svc-bot', 'kind': 'agent', 'agent_uid': '92c37c03"
   },
   {
    "facade": "workspace_workflow",
@@ -2129,6 +2145,14 @@
    "facade": "workspace_workflow",
    "op": "queue",
    "channel": "mcp",
+   "valid_ok": true,
+   "invalid_ok": true,
+   "reason": ""
+  },
+  {
+   "facade": "workspace_workflow",
+   "op": "session_governance",
+   "channel": "ui",
    "valid_ok": true,
    "invalid_ok": true,
    "reason": ""

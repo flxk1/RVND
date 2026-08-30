@@ -248,6 +248,207 @@ def _reconciliation(folder_context: str,
         return {"status": "unavailable"}
 
 
+def _neutral_governance() -> dict[str, Any]:
+    """The honest-neutral governance object for an UNATTRIBUTED connection — an
+    agent that never appears as an actor on the signed chain. Every dispositive
+    field is null/empty: no verdict is ever fabricated here, and ``_agent_
+    boundary`` is deliberately NOT consulted (its fail-closed ``refused`` default
+    would misread as an earned verdict for an agent that simply has no history)."""
+    return {
+        "attributed": False,
+        "join_key": None,
+        "verdict": None,
+        "grade": None,
+        "escalation": False,
+        "event_count": 0,
+        "last_event_ts": None,
+        "recent": [],
+    }
+
+
+def connected_agents_governance(folder_context: str, *,
+                                log_root: Optional[str] = None,
+                                chain_limit: int = 10,
+                                now: Optional[float] = None) -> dict[str, Any]:
+    """Join REAL server-level presence (connected agents) to REAL folder-chain
+    governance. The join key is the host SESSION ID when the connection carries
+    one (``session_id`` == chain actor, the true per-session identity), and the
+    agent NAME only as a fallback.
+
+    Presence records (connid, agent, session_id, transport, pid, connected_at)
+    come from ``list_connected``. The folder chain is replayed ONCE and its
+    events bucketed by ``evt.actor``. A connection is ``attributed`` iff its
+    join actor (session_id, else agent name) appears as an actor on the chain
+    (>=1 event); only then is the
+    REAL verdict/grade/escalation computed via ``_agent_boundary`` (lane_
+    capabilities, strictest-wins) and the actor's own chain tail returned. An
+    unattributed connection gets the honest-neutral object (all nulls / empty) —
+    never a fabricated or fail-closed verdict. connid/pid never touch the chain
+    and never derive governance. Pure projection: no chain append, no lease."""
+    from .mutation_log import MutationLog
+    from .connected_agents import list_connected
+
+    agents = list_connected()
+
+    # Replay the folder chain ONCE; bucket events by actor (oldest→newest as
+    # appended, so a simple reverse gives newest-first).
+    buckets: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    try:
+        log = MutationLog(folder_context, log_root=_log_root_path(log_root))
+        for idx, evt in enumerate(log.replay()):
+            extra = evt.extra or {}
+            buckets[evt.actor].append({
+                "seq": idx,
+                "event": evt.event,
+                "action": str(extra.get("action") or ""),
+                "kind": str(extra.get("kind") or ""),
+                "audit_id": evt.audit_id,
+                "ts": _iso(evt.ts),
+            })
+    except Exception:  # noqa: BLE001 — an unreadable chain ⇒ nobody attributed
+        buckets = defaultdict(list)
+
+    out: list[dict[str, Any]] = []
+    for rec in agents:
+        agent = str(rec.get("agent") or "")
+        session_id = str(rec.get("session_id") or "").strip()
+        # Prefer the true per-session join key (session_id == chain actor); fall
+        # back to the agent name only when the connection carries no session id.
+        if session_id and buckets.get(session_id):
+            join_actor, join_key = session_id, "session_id"
+        else:
+            join_actor, join_key = agent, "agent"
+        events = buckets.get(join_actor) or []
+        attributed = bool(join_actor) and len(events) > 0
+        if attributed:
+            boundary = _agent_boundary(folder_context, join_actor, log_root)
+            recent = list(reversed(events))[:chain_limit]  # newest first, bounded
+            gov: dict[str, Any] = {
+                "attributed": True,
+                "join_key": join_key,
+                "verdict": boundary.get("verdict"),
+                "grade": boundary.get("grade"),
+                "escalation": bool(boundary.get("escalation")),
+                "event_count": len(events),
+                "last_event_ts": recent[0]["ts"] if recent else None,
+                "recent": recent,
+            }
+        else:
+            gov = _neutral_governance()
+        out.append({
+            "connid": rec.get("connid"),
+            "agent": rec.get("agent"),
+            "session_id": (session_id or None),
+            "transport": rec.get("transport"),
+            "pid": rec.get("pid"),
+            "connected_at": rec.get("connected_at"),
+            "governance": gov,
+        })
+
+    return {
+        "ok": True,
+        "folder_context": folder_context,
+        "count": len(out),
+        "agents": out,
+    }
+
+
+def session_governance(folder_context: str, *,
+                       log_root: Optional[str] = None,
+                       chain_limit: int = 10,
+                       now: Optional[float] = None) -> dict[str, Any]:
+    """Sessions/agents that have ACTED, sourced from the SIGNED CHAIN — the real
+    per-session identity (the actor the PreToolUse hook records IS the session id).
+
+    The chain is keyed by the true per-session actor, and a live connection now
+    carries that same id as ``session_id`` (``CLAUDE_CODE_SESSION_ID``, captured
+    on connect and backfilled from the running process). So we make the CHAIN
+    ACTORS the primary list: each acting actor gets its REAL lane verdict/grade/
+    escalation via ``_agent_boundary`` (lane_capabilities, strictest-wins — the
+    verdict the gate WOULD dispose for this actor; fail-closed 'refused' when the
+    actor has no approved lane is a real, honest disposition, not a fabrication)
+    plus its own recent chain tail. A live connection is cross-referenced to flag
+    connected/connid/pid/session_id, joined by ``session_id == actor`` (agent
+    name only as a fallback) — never fused by a guess. Connections that have not
+    acted are returned separately as idle presence. Pure projection: no chain
+    append, no lease."""
+    from .connected_agents import list_connected
+    from .mutation_log import MutationLog
+
+    buckets: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    try:
+        log = MutationLog(folder_context, log_root=_log_root_path(log_root))
+        for idx, evt in enumerate(log.replay()):
+            extra = evt.extra or {}
+            buckets[evt.actor].append({
+                "seq": idx, "event": evt.event,
+                "action": str(extra.get("action") or ""),
+                "kind": str(extra.get("kind") or ""),
+                "audit_id": evt.audit_id, "ts": _iso(evt.ts),
+            })
+    except Exception:  # noqa: BLE001 — unreadable chain ⇒ no acting sessions
+        buckets = defaultdict(list)
+
+    conns = list_connected()
+    # The honest join key is the HOST SESSION ID: a live connection carries the
+    # same ``session_id`` (``CLAUDE_CODE_SESSION_ID``) that the PreToolUse hook
+    # records as the chain ACTOR. So a connection whose session_id equals an
+    # acting actor IS that session's live presence — its REAL verdict is the
+    # actor's lane disposition, not a fabrication. The agent NAME is kept only as
+    # a secondary fallback (for non-host agents whose name equals their actor).
+    by_session: dict[str, dict[str, Any]] = {}
+    by_agent: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for c in conns:
+        sid = str(c.get("session_id") or "").strip()
+        if sid and sid not in by_session:
+            by_session[sid] = c
+        by_agent[str(c.get("agent") or "")].append(c)
+
+    sessions: list[dict[str, Any]] = []
+    for actor, events in buckets.items():
+        if not actor:
+            continue
+        boundary = _agent_boundary(folder_context, actor, log_root)
+        recent = list(reversed(events))[:chain_limit]  # newest first, bounded
+        # Join by session_id first (the true per-session key), then by agent name.
+        conn = by_session.get(actor) or (by_agent.get(actor) or [None])[0]
+        sessions.append({
+            "actor": actor,
+            "session_id": (str(conn.get("session_id") or "") or None) if conn else None,
+            "verdict": boundary.get("verdict"),      # REAL lane disposition
+            "grade": boundary.get("grade"),
+            "escalation": bool(boundary.get("escalation")),
+            "event_count": len(events),
+            "last_event_ts": recent[0]["ts"] if recent else None,
+            "recent": recent,                        # REAL chain tail for this actor
+            "connected": conn is not None,           # LIVE iff a connection matched
+            "connid": conn.get("connid") if conn else None,
+            "pid": conn.get("pid") if conn else None,
+        })
+    sessions.sort(key=lambda s: s.get("last_event_ts") or "", reverse=True)
+
+    def _acted(c: dict[str, Any]) -> bool:
+        sid = str(c.get("session_id") or "").strip()
+        ag = str(c.get("agent") or "")
+        return bool((sid and buckets.get(sid)) or (ag and buckets.get(ag)))
+
+    idle = [
+        {"connid": c.get("connid"), "agent": c.get("agent"),
+         "transport": c.get("transport"), "pid": c.get("pid"),
+         "session_id": (str(c.get("session_id") or "") or None),
+         "connected_at": c.get("connected_at")}
+        for c in conns if not _acted(c)
+    ]
+
+    return {
+        "ok": True,
+        "folder_context": folder_context,
+        "session_count": len(sessions),
+        "sessions": sessions,
+        "connected_only": idle,
+    }
+
+
 def governance_live(folder_context: str, *, log_root: Optional[str] = None,
                     chain_limit: int = 20,
                     now: Optional[float] = None) -> dict[str, Any]:
