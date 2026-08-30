@@ -1406,6 +1406,19 @@ def workspace_legal(op: str, params: dict[str, Any] | None = None) -> dict[str, 
     return workspace_legal_op(op, params or {})
 
 
+# Declared required params per workspace_folder op — single source of truth for
+# both the help catalogue and the pre-dispatch validation gate below (no
+# divergent second copy: editing this dict changes both at once).
+_WORKSPACE_FOLDER_REQUIRED: dict[str, list[str]] = {
+    "list": ["path"],
+    "create": ["path"],
+    "scan": ["folder_context"],
+    "reextract": ["folder_context"],
+    "write_file": ["folder_context", "relative_path", "content"],
+    "ingest": ["path"],
+}
+
+
 @mcp.tool()
 def workspace_folder(op: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
     """Folder/workspace facade: one tool, six ops (replaces 10 folder tools incl.
@@ -1415,14 +1428,10 @@ def workspace_folder(op: str, params: dict[str, Any] | None = None) -> dict[str,
     """
     p = params or {}
     if op in ("help", "ops", "catalogue"):
-        return {"ops": [
-            {"op": "list", "required": ["path"]},
-            {"op": "create", "required": ["path"]},
-            {"op": "scan", "required": ["folder_context"]},
-            {"op": "reextract", "required": ["folder_context"]},
-            {"op": "write_file", "required": ["folder_context", "relative_path", "content"]},
-            {"op": "ingest", "required": ["path"]},
-        ]}
+        return {"ops": [{"op": k, "required": v} for k, v in _WORKSPACE_FOLDER_REQUIRED.items()]}
+    _missing = _require_op_params(_WORKSPACE_FOLDER_REQUIRED, op, p, facade="workspace_folder")
+    if _missing is not None:
+        return _missing
     try:
         if op == "list":       return folder_list(p["path"])
         if op == "create":     return folder_create(p["path"])
@@ -1431,7 +1440,7 @@ def workspace_folder(op: str, params: dict[str, Any] | None = None) -> dict[str,
         if op == "write_file": return folder_write_file(p["folder_context"], p["relative_path"], p["content"], p.get("actor", ""))
         if op == "ingest":     return folder_ingest(p["path"], p.get("folder_context", ""), p.get("actor", ""))
     except KeyError as e:
-        return {"error": f"op {op!r} missing param {e}"}
+        return {"ok": False, "error": f"op {op!r} missing param {e}"}
     return {"error": f"unknown op {op!r}", "valid_ops": ["list", "create", "scan", "reextract", "write_file", "ingest"]}
 
 
@@ -1474,11 +1483,22 @@ def workspace_mirror(op: str, params: dict[str, Any] | None = None) -> dict[str,
 
 
 def _require_op_params(required_map: dict[str, list[str]], op: str,
-                       params: dict[str, Any]) -> dict[str, Any] | None:
+                       params: dict[str, Any], facade: str = "") -> dict[str, Any] | None:
     """Pre-dispatch MCP input validation: reject a KNOWN op that is missing a
     declared-required param before the handler body runs (no partial execution),
     returning a clean, declared error instead of relying on a KeyError raised
-    mid-handler. Unknown ops fall through to the facade's own unknown-op handling."""
+    mid-handler (or, worse, a silent no-op). Unknown ops fall through to the
+    facade's own unknown-op handling.
+
+    All three ``(op, params)`` facades share FastMCP's tool signature
+    ``(op: str, params: dict|None = None)``: required fields like ``path`` /
+    ``folder_context`` must be nested INSIDE ``params``. A caller that passes
+    them top-level has them dropped as extra fields before the handler runs —
+    so this also names the facade and shows a concrete correctly-nested
+    example, not just "missing param", to steer the caller to the fix.
+    ``facade`` is optional (defaults to "") so existing positional callers
+    (``_require_op_params(required_map, op, params)``) keep working unchanged.
+    """
     if not isinstance(op, str):
         # An unhashable (dict/list) or non-string op would raise on the
         # required_map.get(op) lookup below. Treat any non-string op as
@@ -1488,11 +1508,33 @@ def _require_op_params(required_map: dict[str, list[str]], op: str,
     req = required_map.get(op)
     if req is None:
         return None
-    missing = [k for k in req if params.get(k) in (None, "")]
-    if missing:
-        return {"error": f"op {op!r} missing required param(s): {', '.join(missing)}",
-                "op": op, "required": req}
-    return None
+    try:
+        missing = [k for k in req if params.get(k) in (None, "")]
+    except AttributeError:
+        # params itself is not a dict (e.g. a bare string/list sent where an
+        # object was expected) — every declared-required key is, by
+        # definition, missing.
+        missing = list(req)
+    if not missing:
+        return None
+    name = facade or "this tool"
+    example = ", ".join(f'"{k}": ...' for k in req)
+    hint = (f"parameters must be nested inside `params`, not passed top-level "
+            f"(FastMCP drops unrecognised top-level fields silently) — e.g. "
+            f'{name}(op={op!r}, params={{{example}}})')
+    return {"ok": False,
+            "error": f"op {op!r} missing required param(s): {', '.join(missing)} — {hint}",
+            "op": op, "facade": facade, "missing": missing, "required": req}
+
+
+def _facade_required_from_table(table: dict) -> dict[str, list[str]]:
+    """Op->required-param map for an ``_op_call`` dispatch table, sourced from
+    ``_op_call``'s OWN introspection (its ``help`` branch) rather than a
+    hand-maintained copy — so it can never drift from the real function
+    signatures ``_op_call`` will call. Used to pre-validate before dispatch
+    for facades (e.g. ``workspace_workspace``) that hand their op table
+    straight to ``_op_call`` instead of declaring their own help catalogue."""
+    return {row["op"]: row["required"] for row in _op_call("help", table, {}).get("ops", [])}
 
 
 # Declared required params per workspace_policy op — the enforced input schema. Mirrors
@@ -1566,7 +1608,7 @@ def workspace_policy(op: str, params: dict[str, Any] | None = None) -> dict[str,
              "note": "classify chain actors: registered / builtin / unknown"},
         ]}
     # MCP input schema: reject a known op missing a declared param up front.
-    _missing = _require_op_params(_WORKSPACE_POLICY_REQUIRED, op, p)
+    _missing = _require_op_params(_WORKSPACE_POLICY_REQUIRED, op, p, facade="workspace_policy")
     if _missing is not None:
         return _missing
     try:
@@ -1636,7 +1678,11 @@ def workspace_policy(op: str, params: dict[str, Any] | None = None) -> dict[str,
             if dial == "discipline": return policy_disable_discipline(fc)
             return {"error": f"unknown dial {dial!r}", "dials": ["lock", "oversight", "discipline"]}
     except KeyError as e:
-        return {"error": f"op {op!r} missing param {e}"}
+        # Safety net only: every known op's required params are already
+        # rejected up front by _require_op_params above, so this should be
+        # unreachable for a declared op — kept in case a new op is added
+        # here without a matching _WORKSPACE_POLICY_REQUIRED entry.
+        return {"ok": False, "error": f"op {op!r} missing param {e}"}
     return {"error": f"unknown op {op!r}", "valid_ops": ["snapshot", "enable", "disable", "set_lock_mode", "set_oversight_level"]}
 
 
@@ -3000,7 +3046,13 @@ def workspace_erase(op: str, params: dict[str, Any] | None = None) -> dict[str, 
 @mcp.tool()
 def workspace_workspace(op: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
     """workspace_workspace facade: one tool over 4 operations. workspace_workspace(op="help") lists them."""
-    return _op_call(op, {"add": add_known_workspace, "remove": remove_known_workspace, "list": list_known_workspaces, "bootstrap": bootstrap_default_workspace, "route": route_to_workspace}, params or {})
+    _table = {"add": add_known_workspace, "remove": remove_known_workspace, "list": list_known_workspaces, "bootstrap": bootstrap_default_workspace, "route": route_to_workspace}
+    p = params or {}
+    if op not in ("help", "ops", "catalogue"):
+        _missing = _require_op_params(_facade_required_from_table(_table), op, p, facade="workspace_workspace")
+        if _missing is not None:
+            return _missing
+    return _op_call(op, _table, p)
 
 
 def audit_tail(folder_context: str, limit: int = 30) -> dict[str, Any]:
