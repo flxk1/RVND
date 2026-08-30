@@ -84,6 +84,49 @@ except AttributeError:
     pass
 
 
+# --- Lazy MCP clientInfo capture (FOUNDATION plane) -------------------------
+# This stdio process has exactly ONE connection (its connid, from
+# register_connection in main()). clientInfo{name,version} is sent in the
+# ``initialize`` handshake, which runs AFTER main() registers the connection —
+# so it is NOT available at registration time. We capture it lazily: the first
+# real tool call has a request context, from which we read clientInfo and write
+# it back into THIS process's connection record exactly once. Descriptive
+# presence only ("which client handshook"), never a human name, and fails closed
+# to empty when clientInfo is absent or the context is unavailable.
+_MY_CONNID: Optional[str] = None       # set in main() to this process's connid
+_CLIENT_INFO_CAPTURED = False          # runs its real work at most once/process
+
+
+def _capture_client_info() -> None:
+    """Capture MCP clientInfo{name,version} into this process's connection record,
+    once. Wired at the top of the tool path, so it runs on the first real tool
+    call (when a request context — and thus the client's handshake params — is
+    available). Guards every hop and NEVER raises into the tool path: any failure
+    fails closed (the record stays with empty client fields, never fabricated)."""
+    global _CLIENT_INFO_CAPTURED
+    if _CLIENT_INFO_CAPTURED or not _MY_CONNID:
+        return
+    # Flip the flag first: even if the read below finds no clientInfo, we do not
+    # want to re-walk the context on every subsequent tool call. The write itself
+    # is independently idempotent (update_client_info only fills an empty record).
+    _CLIENT_INFO_CAPTURED = True
+    try:
+        ctx = mcp.get_context()
+        params = ctx.request_context.session.client_params
+        info = getattr(params, "clientInfo", None)
+        name = getattr(info, "name", None)
+        version = getattr(info, "version", None)
+        if not name:
+            return                     # no clientInfo ⇒ leave record empty
+        from .connected_agents import update_client_info
+        update_client_info(_MY_CONNID, name=str(name),
+                           version=str(version or ""))
+    except Exception:
+        # Fail closed: a missing context, absent params, or registry hiccup must
+        # never break serving. The record simply keeps its empty client fields.
+        return
+
+
 @mcp.resource("governance://llms.txt")
 def governance_language() -> str:
     """The governance LANGUAGE the agent is handed at the front door — the
@@ -2320,6 +2363,10 @@ def workspace_workflow(op: str, params: dict[str, Any] | None = None) -> dict[st
     op: define | list | delete | run | enqueue | active | queue | take_next |
         renew_lease | mark_done | mark_failed | inspect_stuck | resume | cancel
     """
+    # Lazily capture this connection's MCP clientInfo on the first real tool call
+    # (context is available now, not at register time). Never raises into the
+    # tool path; idempotent (runs its real work at most once per process).
+    _capture_client_info()
     p = params or {}
     if op in ("help", "ops", "catalogue"):
         _ops = [
@@ -2381,7 +2428,7 @@ def workspace_workflow(op: str, params: dict[str, Any] | None = None) -> dict[st
              "note": "read-only join of SERVER-LEVEL presence (connected_agents) to this folder's REAL chain governance, at agent-NAME granularity. Per connection: real connid/agent/transport/pid/connected_at, plus a governance object. attributed=true iff the agent name appears as an actor on the signed chain (>=1 event) — only then are verdict/grade/escalation (from lane_capabilities, strictest-wins) and the actor's chain tail (recent[], event_count, last_event_ts) returned. Unattributed ⇒ honest-neutral (all nulls/empty); no fabricated or fail-closed verdict, and connid/pid never derive governance. Pure projection."},
             {"op": "session_governance", "required": ["folder_context"],
              "optional": ["chain_limit"], "mutates": False,
-             "note": "read-only per-SESSION governance sourced from the SIGNED CHAIN (the real per-session identity: the actor the PreToolUse hook records). Returns sessions:[{actor, verdict, grade, escalation (REAL lane disposition via lane_capabilities strictest-wins; fail-closed 'refused' when the actor has no approved lane is a real disposition), event_count, last_event_ts, recent[] (the actor's own chain tail), connected/connid/pid (a live connection joined by session_id==actor, the host session id CLAUDE_CODE_SESSION_ID captured on connect; agent name only as a fallback)}] plus connected_only:[idle presence that has not acted]. The chain IS keyed by the per-session actor, so chain actors are the primary list; a live connection carrying the same session id surfaces as that actor's real presence. Pure projection; no fabrication."},
+             "note": "read-only per-SESSION governance sourced from the SIGNED CHAIN (the real per-session identity: the actor the PreToolUse hook records). Returns sessions:[{actor, verdict, grade, escalation (REAL lane disposition via lane_capabilities strictest-wins; fail-closed 'refused' when the actor has no approved lane is a real disposition), event_count, last_event_ts, recent[] (the actor's own chain tail), connected/connid/pid (a live connection joined by session_id==actor, the host session id CLAUDE_CODE_SESSION_ID captured on connect; agent name only as a fallback), client{name,version,tier:'observed'} (the MCP clientInfo the connection handshook, captured lazily on first tool call — DESCRIPTIVE only, never a human name; tier 'observed' says RVND saw it at the transport handshake, NOT chain-proven; None where no connection or no clientInfo), and identity_tier:'witnessed' on the chain actor (the signed-chain identity). Provenance tier travels as a value-level property: witnessed=chain, observed=clientInfo — never fused}] plus connected_only:[idle presence that has not acted, each also carrying its client{name,version,tier:'observed'}]. The chain IS keyed by the per-session actor, so chain actors are the primary list; a live connection carrying the same session id surfaces as that actor's real presence. Pure projection; no fabrication."},
             {"op": "reasoning_check", "required": ["session_id"],
              "optional": ["claim"],
              "note": "T-cons: solver consistency over the session's recorded claims (session-scoped Versum working memory). With claim {atom, polarity, grounding, ts}: append it to the session's OWN store first (the op's only mutation — no chain append, no lease, no cross-session write), then check; without: pure read. Fail-closed verdict CONSISTENT | INCONSISTENT (clashing atoms carried) | OPEN — ungrounded or uncheckable claims are OPEN, never reported consistent"},
@@ -3264,6 +3311,11 @@ def main():
         # the join key to the signed chain — the actor the PreToolUse hook
         # records IS this same id. Absent when the host sets none; never faked.
         session_id=(_os.environ.get("CLAUDE_CODE_SESSION_ID") or ""))
+    # Remember THIS process's connid so the first tool call can capture the MCP
+    # clientInfo lazily (clientInfo is not known here — the client has not
+    # initialized yet; see _capture_client_info).
+    global _MY_CONNID
+    _MY_CONNID = _connid
     try:
         mcp.run()
     finally:

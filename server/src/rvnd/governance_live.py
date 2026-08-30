@@ -353,6 +353,20 @@ def connected_agents_governance(folder_context: str, *,
     }
 
 
+def _client_of(conn: Optional[dict[str, Any]]) -> dict[str, Any]:
+    """The DESCRIPTIVE MCP clientInfo carried by a live connection, tier-flagged.
+
+    ``tier`` is the literal constant ``"observed"``: RVND saw this at the MCP
+    transport handshake (clientInfo in ``initialize``), NOT proven on the signed
+    chain. The tier travels WITH the value, so a gate/authority can always read
+    the provenance off the client object and never mistake it for the witnessed
+    (chain) identity. ``name``/``version`` are None when there is no connection or
+    the connection carried no clientInfo — never fabricated, never a human name."""
+    name = str((conn or {}).get("client_name") or "").strip() or None
+    version = str((conn or {}).get("client_version") or "").strip() or None
+    return {"name": name, "version": version, "tier": "observed"}
+
+
 def session_governance(folder_context: str, *,
                        log_root: Optional[str] = None,
                        chain_limit: int = 10,
@@ -415,6 +429,11 @@ def session_governance(folder_context: str, *,
         sessions.append({
             "actor": actor,
             "session_id": (str(conn.get("session_id") or "") or None) if conn else None,
+            # The chain actor / session id IS the WITNESSED identity: it is proven
+            # on the signed chain (the actor the PreToolUse hook recorded). The
+            # tier travels with the value so a gate can read provenance off it and
+            # never confuse it with the observed (clientInfo) lane.
+            "identity_tier": "witnessed",
             "verdict": boundary.get("verdict"),      # REAL lane disposition
             "grade": boundary.get("grade"),
             "escalation": bool(boundary.get("escalation")),
@@ -424,6 +443,9 @@ def session_governance(folder_context: str, *,
             "connected": conn is not None,           # LIVE iff a connection matched
             "connid": conn.get("connid") if conn else None,
             "pid": conn.get("pid") if conn else None,
+            # DESCRIPTIVE clientInfo from the matched live connection, tier
+            # 'observed' (never witnessed). None where no connection / no clientInfo.
+            "client": _client_of(conn),
         })
     sessions.sort(key=lambda s: s.get("last_event_ts") or "", reverse=True)
 
@@ -436,7 +458,9 @@ def session_governance(folder_context: str, *,
         {"connid": c.get("connid"), "agent": c.get("agent"),
          "transport": c.get("transport"), "pid": c.get("pid"),
          "session_id": (str(c.get("session_id") or "") or None),
-         "connected_at": c.get("connected_at")}
+         "connected_at": c.get("connected_at"),
+         # DESCRIPTIVE clientInfo, tier 'observed'. None where no clientInfo.
+         "client": _client_of(c)}
         for c in conns if not _acted(c)
     ]
 
