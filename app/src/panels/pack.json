@@ -314,6 +314,42 @@
         "label": "Live governance",
         "detail": "live sessions/loops/on-the-fly · lease · decay · one signed chain"
       }
+    },
+    {
+      "id": "mixdesk",
+      "entry": "mixdesk.js",
+      "title": "Mix Desk — live sessions as a mixing desk",
+      "surface": "drawer",
+      "access": "write",
+      "menu": {
+        "section": "pending",
+        "label": "Mix Desk",
+        "detail": "live sessions — monitor & decide · verdict lamps, not scores"
+      }
+    },
+    {
+      "id": "policybench",
+      "entry": "policybench.js",
+      "title": "Policy Bench — author oversight",
+      "surface": "drawer",
+      "access": "write",
+      "menu": {
+        "section": "rules",
+        "label": "Policy Bench",
+        "detail": "set oversight / quorum — a request, never a grant"
+      }
+    },
+    {
+      "id": "taperoom",
+      "entry": "taperoom.js",
+      "title": "Tape Room — the sealed record",
+      "surface": "drawer",
+      "access": "read",
+      "menu": {
+        "section": "record",
+        "label": "Tape Room",
+        "detail": "scrub the signed record · receipts · why & who"
+      }
     }
   ]
 }

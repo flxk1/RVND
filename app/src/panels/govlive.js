@@ -50,6 +50,15 @@ Patchbay.register("govlive", {
         out.innerHTML = '<div class="finding warn"><span class="ttl">Board unavailable</span>' + esc((b && b.error) || "governance_live returned no board") + "</div>";
         return;
       }
+      // Connected-agents presence (server-level, read-only), via the SAME governed
+      // tool() path. The board's sessions[] are admission-minted (governance_open)
+      // only; PreToolUse-monitored agents never mint one, so they surface here as
+      // presence — "connected · monitored", never a verdict. Optional/independent.
+      let ags = [];
+      try {
+        const ar = await tool("workspace_workflow", { op: "connected_agents", params: {} });
+        ags = (ar && ar.agents) || [];
+      } catch (e) { /* presence optional */ }
       const sum = b.summary || {}, bound = b.boundary || {};
       const esca = sum.escalations != null ? sum.escalations : null;
       let h = "";
@@ -60,6 +69,7 @@ Patchbay.register("govlive", {
         '<div style="font-size:9.5px;color:var(--txt-dim);text-transform:uppercase;letter-spacing:.5px">' + label + "</div>" +
         '<div style="font-size:13px;margin-top:2px">' + val + "</div></div>";
       h += '<div class="gl-summary" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:9px">';
+      h += tile("connected", esc(ags.length));
       h += tile("sessions open", esc(sum.sessions_open != null ? sum.sessions_open : "—"));
       h += tile("admitted", esc(sum.admitted != null ? sum.admitted : "—"));
       h += tile("run leases held", esc(sum.run_leases_held != null ? sum.run_leases_held : "—"));
@@ -67,6 +77,73 @@ Patchbay.register("govlive", {
       const unauth = sum.unauthorised_effects != null ? sum.unauthorised_effects : null;
       h += tile("unauthorised", unauth != null ? (unauth > 0 ? '<span style="color:' + VC.reserved + '">' + esc(unauth) + "</span>" : esc(unauth)) : "—", unauth != null && unauth > 0);
       h += "</div>";
+
+      // ── connected agents — SERVER-LEVEL presence (MCP handshake), NOT authority.
+      // Answers "who is connected" (vs the sessions block's "who is admitted to
+      // act"). Monitored agents live here; rendered "connected · monitored", never
+      // a verdict pill — presence is not a grant. ──────────────────────────────
+      h += '<div style="font-size:9.5px;color:var(--txt-dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">connected agents — live presence (' + ags.length + ') · monitored, not admitted</div>';
+      h += '<div class="gl-presence" style="border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:9px">';
+      ags.forEach((a) => {
+        h += '<div class="gl-agent" data-connid="' + escA(a.connid || "") + '" data-pid="' + escA(a.pid != null ? a.pid : "") + '"' +
+          (a.session_id ? ' data-session-id="' + escA(a.session_id) + '"' : "") +
+          ' style="display:flex;gap:8px;align-items:center;padding:4px 9px;border-top:1px solid var(--line);font-size:10px">' +
+          '<span style="color:' + SYS + '">● connected</span>' +
+          '<span style="' + MONO + '">' + esc(String(a.connid || "").slice(0, 8)) + '</span>' +
+          '<span style="flex:1;color:var(--txt-dim)">' + esc(a.agent || "agent") + ' · ' + esc(a.transport || "stdio") +
+          (a.session_id ? ' · sid ' + esc(String(a.session_id).slice(0, 8)) : "") + "</span>" +
+          (a.pid != null ? '<span style="' + MONO + ';color:var(--txt-dim)">pid ' + esc(a.pid) + "</span>" : "") + "</div>";
+      });
+      if (!ags.length) h += '<div style="padding:6px 9px;font-size:10px;color:var(--txt-dim)">no agents connected</div>';
+      h += "</div>";
+
+      // ── acting sessions — SIGNED CHAIN (workspace_workflow op "session_governance").
+      // Unlike the presence block above (who is CONNECTED), these are the real acting
+      // identities sourced from the signed chain: one row per actor, each with its own
+      // REAL lane verdict, grade, event_count and last activity. A session whose verdict
+      // is null/absent renders honest-neutral (no verdict pill), never a fabricated one.
+      // Optional/independent — if the op is absent this section simply does not draw. ──
+      let sgSessions = [];
+      try {
+        const sg = await tool("workspace_workflow", { op: "session_governance", params: { folder_context: ctx.workspace.path, chain_limit: 10 } });
+        if (sg && sg.ok !== false) sgSessions = (sg.sessions) || [];
+      } catch (e) { /* signed-chain sessions optional */ }
+      if (sgSessions.length) {
+        h += '<div style="font-size:9.5px;color:var(--txt-dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">acting sessions — signed chain (' + sgSessions.length + ') · real per-actor verdict</div>';
+        h += '<div class="gl-sessions-chain" style="margin-bottom:9px">';
+        sgSessions.forEach((s) => {
+          // A real, non-null verdict is the honesty gate. verdict null/absent → honest-neutral.
+          const hasV = s.verdict != null && String(s.verdict) !== "";
+          const v = hasV ? String(s.verdict) : null;
+          const r0 = (Array.isArray(s.recent) && s.recent.length) ? s.recent[0] : null;
+          const lastAct = r0 ? (r0.action || r0.event || r0.kind || "activity") : null;
+          h += '<div class="gl-chain-session" data-actor="' + escA(s.actor || "") + '" data-verdict="' + escA(v || "") + '"' +
+            ' style="border:1px solid var(--line);border-left:3px solid ' + (v && VC[v] ? VC[v] : "var(--line)") +
+            ';border-radius:8px;padding:8px 10px;margin-bottom:7px;background:var(--panel-2)">';
+          h += '<div style="display:flex;align-items:center;gap:7px"><b style="' + MONO + ';font-size:11px">' + esc(s.actor || "?") + "</b>" +
+            // ● LIVE = a live connection joined this actor by session_id (real presence); else chain-only.
+            (s.connected
+              ? '<span style="font-size:9.5px;color:' + (s.presence_ambiguous ? VC.reserved : SYS) + '">● live' + (s.presence_ambiguous ? "?" : "") + '</span>'
+              : '<span style="font-size:9.5px;color:var(--txt-dim)">on chain</span>') +
+            '<span style="flex:1"></span>' +
+            (v ? pill(v) : '<span style="font-size:9.5px;color:var(--txt-dim)">monitored · no verdict</span>') + "</div>";
+          const bits = [];
+          if (s.connected && s.connid) bits.push('<span style="' + MONO + '">conn ' + esc(String(s.connid).slice(0, 8)) + "</span>");
+          if (s.connected && s.pid != null) bits.push("pid " + esc(s.pid));
+          if (s.grade != null && String(s.grade) !== "") bits.push("grade " + esc(String(s.grade)));
+          if (s.event_count != null) bits.push(esc(s.event_count) + " event" + (s.event_count === 1 ? "" : "s"));
+          if (lastAct) bits.push("last " + esc(lastAct));
+          if (s.last_event_ts) bits.push(esc(String(s.last_event_ts).slice(0, 19)));
+          if (bits.length) h += '<div style="margin-top:4px;font-size:10px;color:var(--txt-dim)">' + bits.join(" · ") + "</div>";
+          if (s.escalation) h += '<div class="gl-chain-escalation" data-escalation="true" style="margin-top:4px;font-size:10px;color:' + VC.reserved + '">▲ escalation — a human is in this loop</div>';
+          // The live-presence match is a string-equality join on session_id — an
+          // unauthenticated host env var, NOT chain-proven. Surface the collision
+          // so an overseer never trusts one arbitrary conn/pid as "the" process.
+          if (s.presence_ambiguous) h += '<div class="gl-chain-ambiguous" data-ambiguous="true" style="margin-top:4px;font-size:10px;color:' + VC.reserved + '">⚠ presence ambiguous — more than one live connection claims this session id; the conn/pid above is only one. Session id is an unauthenticated host env var, not chain-proven.</div>';
+          h += "</div>";
+        });
+        h += "</div>";
+      }
 
       // ── complete-mediation reconciliation: the authorisation ledger (gate
       // verdicts) vs the effect ledger (observed step outcomes), see
