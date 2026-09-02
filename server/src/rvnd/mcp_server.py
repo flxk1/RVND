@@ -299,6 +299,14 @@ def _log_root():
     return _mcp_serving._log_root()
 
 
+# ADR-0004 op-registry seam. load_registry() assembles once (entry-point
+# discovery, core included); the facade fallthrough and main() both go through it.
+from .ops_seam import ConnectCtx, HostCtx, load_registry
+
+
+def _host_ctx() -> HostCtx:
+    return HostCtx(_log_root)
+
 
 
 
@@ -2373,8 +2381,11 @@ def workspace_workflow(op: str, params: dict[str, Any] | None = None) -> dict[st
     """
     # Lazily capture this connection's MCP clientInfo on the first real tool call
     # (context is available now, not at register time). Never raises into the
-    # tool path; idempotent (runs its real work at most once per process).
-    _capture_client_info()
+    # tool path; idempotent (runs its real work at most once per process). Routed
+    # through the seam's pre_op hooks, scoped to THIS facade only (ADR-0004 §3
+    # parity correction — hoisting to all facades is Phase 1b).
+    for _hook in load_registry().pre_op_for("workspace_workflow"):
+        _hook(_host_ctx())
     p = params or {}
     if op in ("help", "ops", "catalogue"):
         _ops = [
@@ -2429,14 +2440,6 @@ def workspace_workflow(op: str, params: dict[str, Any] | None = None) -> dict[st
             {"op": "oversight_cert_verify", "required": ["envelope"],
              "optional": ["now", "required_basis", "public_key_pem"], "mutates": False,
              "note": "read-only offline re-check of a portable oversight certificate (the oversight-certificate package's DSSE envelope): verifies signature, canonical form, disposition shape and credential-at-decision-time, returning {ok, findings:[{code, detail}]}. Verifies against a supplied PEM public key, else this host's identity key. No folder, no chain, no key generation"},
-            {"op": "connected_agents", "required": [], "mutates": False,
-             "note": "read-only, SERVER-LEVEL: agents that completed the MCP handshake with this server, independent of any workspace — who is CONNECTED (vs the per-workspace board's who is ADMITTED to act here). Presence, not authority; liveness is the connecting process. No folder."},
-            {"op": "connected_agents_governance", "required": ["folder_context"],
-             "optional": ["chain_limit"], "mutates": False,
-             "note": "read-only join of SERVER-LEVEL presence (connected_agents) to this folder's REAL chain governance, per connection. The join actor is the host session_id when the connection carries one (the true per-session key), the agent name only as a fallback. Per connection: real connid/agent/session_id/transport/pid/connected_at, plus a governance object. attributed=true iff that join actor appears as an actor on the signed chain (>=1 event) — only then are verdict/grade/escalation (from lane_capabilities, strictest-wins) and the actor's chain tail (recent[], event_count, last_event_ts) returned, and join_key records which key matched (session_id|agent). Unattributed ⇒ honest-neutral (all nulls/empty); no fabricated or fail-closed verdict, and connid/pid never derive governance. Pure projection."},
-            {"op": "session_governance", "required": ["folder_context"],
-             "optional": ["chain_limit"], "mutates": False,
-             "note": "read-only per-SESSION governance sourced from the SIGNED CHAIN (the real per-session identity: the actor the PreToolUse hook records). Returns sessions:[{actor, verdict, grade, escalation (REAL lane disposition via lane_capabilities strictest-wins; fail-closed 'refused' when the actor has no approved lane is a real disposition), event_count, last_event_ts, recent[] (the actor's own chain tail), connected/connid/pid (a live connection joined by session_id==actor, the host session id CLAUDE_CODE_SESSION_ID captured on connect; agent name only as a fallback), client{name,version,tier:'observed'} (the MCP clientInfo the connection handshook, captured lazily on first tool call — DESCRIPTIVE only, never a human name; tier 'observed' says RVND saw it at the transport handshake, NOT chain-proven; None where no connection or no clientInfo), and identity_tier:'witnessed' on the chain actor (the signed-chain identity). Provenance tier travels as a value-level property: witnessed=chain, observed=clientInfo — never fused}] plus connected_only:[idle presence that has not acted, each also carrying its client{name,version,tier:'observed'}]. The chain IS keyed by the per-session actor, so chain actors are the primary list; a live connection carrying the same session id surfaces as that actor's real presence. Pure projection; no fabrication."},
             {"op": "reasoning_check", "required": ["session_id"],
              "optional": ["claim"],
              "note": "T-cons: solver consistency over the session's recorded claims (session-scoped Versum working memory). With claim {atom, polarity, grounding, ts}: append it to the session's OWN store first (the op's only mutation — no chain append, no lease, no cross-session write), then check; without: pure read. Fail-closed verdict CONSISTENT | INCONSISTENT (clashing atoms carried) | OPEN — ungrounded or uncheckable claims are OPEN, never reported consistent"},
@@ -2469,8 +2472,6 @@ def workspace_workflow(op: str, params: dict[str, Any] | None = None) -> dict[st
              "note": "read-only register/inventory of agents + use-cases (per folder; scope='all' aggregates known folders). Categorical status, never a score; per-folder + all-folders, NOT multi-tenant"},
             {"op": "governance_netlist", "required": ["folder_context"],
              "note": "render the current chain as a v0.5 .lg netlist (the editor's text surface; structure round-trips via patch_apply)"},
-            {"op": "transport_audit", "required": ["folder_context"],
-             "note": "the transport/clock primitive: read-only audit that every run originated from one external trigger (nothing self-starts)"},
             {"op": "connector_register", "required": ["folder_context", "connector_id", "role", "channel"],
              "optional": ["use_cases", "name", "tags", "floor", "group", "credential_ref", "destination_class", "tool_ref", "actor"],
              "note": "register a boundary connector (role: ingress|egress|oversight; channel: email/ticket/message/api/…). `floor` (permit|hold|deny) is the channel's self-governance minimum; `group` is the client/tenant group-bus it belongs to. Both honored strictest-wins in federated_decision. `credential_ref` (egress only) is the track's access binding as a known-scheme REFERENCE (env:/keydir:/oidc:/spiffe:) — never the secret. `destination_class` (egress only, llm|tool_api|message|file) declares which side of the wall the track reaches — the axis the egress board words enforcement by; unset stays undeclared. `tool_ref` ({tool_name, arg_mapping}) binds a federated connector to the host-invocable MCP tool tool_call_plan plans against. Concrete send is a permissioned external action."},
@@ -2529,6 +2530,7 @@ def workspace_workflow(op: str, params: dict[str, Any] | None = None) -> dict[st
              "optional": ["officer_id", "name", "oversees", "control_form", "escalation_party", "policy", "authority", "gate_floor", "grade", "act"],
              "note": "preview a policy-programmed oversight binding: compose its control form with a gate `gate_floor` (strictest-wins, TIGHTEN-ONLY — an officer can never loosen a regulated gate) and, given an `act`, show where a reserved judgment escalates (the officer routes, never auto-decides). The officer is passed in; read-only. Declares, never certifies."},
         ]
+        _ops.extend(load_registry().help_for("workspace_workflow"))
         if not _governance_layer_enabled():
             _ops = [o for o in _ops if o["op"] not in _GOVERNANCE_LAYER_OPS]
         return {"ops": _ops}
@@ -2612,18 +2614,6 @@ def workspace_workflow(op: str, params: dict[str, Any] | None = None) -> dict[st
                 p.get("envelope") or {}, now=_now,
                 required_basis=p.get("required_basis"),
                 public_key_pem=p.get("public_key_pem"))
-        if op == "connected_agents":
-            from .connected_agents import list_connected
-            agents = list_connected()
-            return {"ok": True, "count": len(agents), "agents": agents}
-        if op == "connected_agents_governance":
-            from .governance_live import connected_agents_governance as _cag
-            return _cag(p["folder_context"], log_root=_log_root(),
-                        chain_limit=int(p.get("chain_limit", 10)))
-        if op == "session_governance":
-            from .governance_live import session_governance as _sg
-            return _sg(p["folder_context"], log_root=_log_root(),
-                       chain_limit=int(p.get("chain_limit", 10)))
         if op == "reasoning_check":
             from .reasoning_integrity import Claim, check_session, record_claim
             sid = p["session_id"]
@@ -2680,9 +2670,6 @@ def workspace_workflow(op: str, params: dict[str, Any] | None = None) -> dict[st
         if op == "governance_netlist":
             from .governance_graph import governance_netlist as _gn
             return _gn(p["folder_context"], log_root=_log_root())
-        if op == "transport_audit":
-            from .operations import transport_audit as _ta
-            return _ta(p["folder_context"], log_root=_log_root())
         if op == "connector_register":
             from .connectors import register_connector as _rc
             return _rc(p["folder_context"], connector_id=p["connector_id"],
@@ -2867,6 +2854,11 @@ def workspace_workflow(op: str, params: dict[str, Any] | None = None) -> dict[st
                     now=float(p["now"]), log_root=lr)
             except ValueError as e:
                 return {"error": str(e)}
+        spec = load_registry().lookup("workspace_workflow", op)
+        if spec is not None:
+            for _k in spec.required:
+                p[_k]                    # missing required -> outer "missing param" net
+            return spec.handler(p, _host_ctx())
     except KeyError as e:
         return {"error": f"op {op!r} missing param {e}"}
     return {"error": f"unknown op {op!r}"}
@@ -3311,23 +3303,32 @@ def main():
     # RVND_AGENT); no folder is involved.
     import os as _os
 
-    from .connected_agents import deregister_connection, register_connection
-    _connid = register_connection(
+    # Routed through the seam's on_connect/on_disconnect hooks (ADR-0004 §3): the
+    # engine owns the call sites + the identity primitives, the core bundle owns
+    # the presence store. Behavior is identical to the direct register/deregister
+    # — Phase 1 has a single presence provider, so on_connect/on_disconnect align
+    # positionally and each hook's returned token is its connid.
+    _reg = load_registry()
+    _host = _host_ctx()
+    _ctx = ConnectCtx(
+        connid=None, pid=_os.getpid(),
         agent=(_os.environ.get("RVND_AGENT") or _os.environ.get("RVND_AGENT_NAME") or ""),
         transport="stdio",
         # The host session id (this stdio process inherits the client's env) is
         # the join key to the signed chain — the actor the PreToolUse hook
         # records IS this same id. Absent when the host sets none; never faked.
         session_id=(_os.environ.get("CLAUDE_CODE_SESSION_ID") or ""))
+    _tokens = [hook(_ctx, _host) for hook in _reg.on_connect()]
     # Remember THIS process's connid so the first tool call can capture the MCP
     # clientInfo lazily (clientInfo is not known here — the client has not
     # initialized yet; see _capture_client_info).
     global _MY_CONNID
-    _MY_CONNID = _connid
+    _MY_CONNID = next((t for t in _tokens if t), None)
     try:
         mcp.run()
     finally:
-        deregister_connection(_connid)
+        for hook, token in zip(_reg.on_disconnect(), _tokens):
+            hook(token, _host)
 
 
 if __name__ == "__main__":
