@@ -177,3 +177,17 @@ def test_reconciliation_real_zero_stays_zero(seeded, monkeypatch):
                                          "observed_not_authorised": 0})
     board = governance_live(seeded["folder"], log_root=seeded["lr"])
     assert board["summary"]["unauthorised_effects"] == 0         # a verified zero is 0
+
+
+# ── P5: display-only reason codes distinguishing the three 'refused' causes ──
+
+def test_refused_carries_no_active_lane_reason(seeded):
+    ca.register_connection(agent="claude-code", session_id=_SID)
+    s = session_governance(seeded["folder"], log_root=seeded["lr"])["sessions"][0]
+    assert s["verdict"] == "refused" and s["reason"] == "no_active_lane"
+
+
+def test_connected_agents_governance_also_carries_reason(seeded):
+    ca.register_connection(agent="claude-code", session_id=_SID)
+    gov = connected_agents_governance(seeded["folder"], log_root=seeded["lr"])["agents"][0]["governance"]
+    assert gov["verdict"] == "refused" and gov["reason"] == "no_active_lane"

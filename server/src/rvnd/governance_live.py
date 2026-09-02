@@ -71,10 +71,15 @@ def _agent_boundary(folder_context: str, actor: str,
     try:
         cap = lane_capabilities(folder_context, actor, log_root=log_root)
     except Exception:  # noqa: BLE001 — an unreadable boundary must fail closed
-        return {"verdict": "refused", "grade": None, "escalation": False}
+        # DISPLAY-ONLY reason: the verdict stays fail-closed 'refused'; the reason
+        # only tells an overseer WHY, so "go debug the boundary" is not confused
+        # with "file a lane request". Never changes enforcement.
+        return {"verdict": "refused", "grade": None, "escalation": False,
+                "reason": "boundary_unreadable"}
     caps = cap.get("capabilities") or []
     if not cap.get("ok") or not caps:
-        return {"verdict": "refused", "grade": None, "escalation": False}
+        return {"verdict": "refused", "grade": None, "escalation": False,
+                "reason": "no_active_lane"}
     verdict = "unfired"
     escalation = False
     for entry in caps:
@@ -86,7 +91,11 @@ def _agent_boundary(folder_context: str, actor: str,
             if cell.get("escalation"):
                 escalation = True
     grade = (cap.get("provenance") or {}).get("max_grade")
-    return {"verdict": verdict, "grade": grade, "escalation": escalation}
+    # An earned 'refused' (a real per-action denial from a lane cell) is distinct
+    # from the two fail-closed refusals above; other verdicts carry no reason.
+    reason = "earned_refusal" if verdict == "refused" else None
+    return {"verdict": verdict, "grade": grade, "escalation": escalation,
+            "reason": reason}
 
 
 def _sessions(folder_context: str, log_root: Optional[str], now: float,
@@ -327,6 +336,7 @@ def connected_agents_governance(folder_context: str, *,
                 "attributed": True,
                 "join_key": join_key,
                 "verdict": boundary.get("verdict"),
+                "reason": boundary.get("reason"),   # display-only: why a 'refused'
                 "grade": boundary.get("grade"),
                 "escalation": bool(boundary.get("escalation")),
                 "event_count": len(events),
@@ -443,6 +453,7 @@ def session_governance(folder_context: str, *,
             # never confuse it with the observed (clientInfo) lane.
             "identity_tier": "witnessed",
             "verdict": boundary.get("verdict"),      # REAL lane disposition
+            "reason": boundary.get("reason"),        # display-only: why a 'refused'
             "grade": boundary.get("grade"),
             "escalation": bool(boundary.get("escalation")),
             "event_count": len(events),

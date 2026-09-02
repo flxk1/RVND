@@ -108,6 +108,8 @@ Patchbay.register("govlive", {
         const sg = await tool("workspace_workflow", { op: "session_governance", params: { folder_context: ctx.workspace.path, chain_limit: 10 } });
         if (sg && sg.ok !== false) sgSessions = (sg.sessions) || [];
       } catch (e) { /* signed-chain sessions optional */ }
+      // Human-legible reason for a fail-closed 'refused' (display-only; see governance_live._agent_boundary).
+      const REASON_TEXT = { no_active_lane: "no approved lane — request one", boundary_unreadable: "boundary unreadable — check lane_capabilities", earned_refusal: "earned denial" };
       if (sgSessions.length) {
         h += '<div style="font-size:9.5px;color:var(--txt-dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">acting sessions — signed chain (' + sgSessions.length + ') · real per-actor verdict</div>';
         h += '<div class="gl-sessions-chain" style="margin-bottom:9px">';
@@ -121,6 +123,9 @@ Patchbay.register("govlive", {
             ' style="border:1px solid var(--line);border-left:3px solid ' + (v && VC[v] ? VC[v] : "var(--line)") +
             ';border-radius:8px;padding:8px 10px;margin-bottom:7px;background:var(--panel-2)">';
           h += '<div style="display:flex;align-items:center;gap:7px"><b style="' + MONO + ';font-size:11px">' + esc(s.actor || "?") + "</b>" +
+            // identity tier — witnessed = chain-proven (the actor the PreToolUse hook
+            // recorded on the signed chain), as opposed to the observed clientInfo below.
+            '<span class="gl-tier" data-tier="' + escA(s.identity_tier || "witnessed") + '" title="chain-proven identity (signed chain)" style="font-size:8px;text-transform:uppercase;letter-spacing:.3px;color:var(--txt-dim);border:1px solid var(--line);border-radius:3px;padding:0 3px">' + esc(s.identity_tier || "witnessed") + "</span>" +
             // ● LIVE = a live connection joined this actor by session_id (real presence); else chain-only.
             (s.connected
               ? '<span style="font-size:9.5px;color:' + (s.presence_ambiguous ? VC.reserved : SYS) + '">● live' + (s.presence_ambiguous ? "?" : "") + '</span>'
@@ -131,6 +136,12 @@ Patchbay.register("govlive", {
           if (s.connected && s.connid) bits.push('<span style="' + MONO + '">conn ' + esc(String(s.connid).slice(0, 8)) + "</span>");
           if (s.connected && s.pid != null) bits.push("pid " + esc(s.pid));
           if (s.grade != null && String(s.grade) !== "") bits.push("grade " + esc(String(s.grade)));
+          // DESCRIPTIVE clientInfo — tier 'observed' (seen at the MCP handshake), never
+          // fused with the witnessed chain identity. None when the client disclosed none.
+          if (s.client && s.client.name) bits.push('client ' + esc(s.client.name) + (s.client.version ? " " + esc(s.client.version) : "") + ' <span style="opacity:.6">(' + esc(s.client.tier || "observed") + ")</span>");
+          // Why a 'refused' — display-only, so "file a lane request" isn't confused with
+          // "the boundary is broken". Verdict enforcement is unchanged.
+          if (v === "refused" && s.reason) bits.push('<span style="color:' + (VC.reserved || "var(--txt-dim)") + '">' + esc(REASON_TEXT[s.reason] || s.reason) + "</span>");
           if (s.event_count != null) bits.push(esc(s.event_count) + " event" + (s.event_count === 1 ? "" : "s"));
           if (lastAct) bits.push("last " + esc(lastAct));
           if (s.last_event_ts) bits.push(esc(String(s.last_event_ts).slice(0, 19)));
@@ -143,6 +154,7 @@ Patchbay.register("govlive", {
           h += "</div>";
         });
         h += "</div>";
+        h += '<div class="gl-tier-legend" style="font-size:9px;color:var(--txt-dim);margin:-4px 0 9px">witnessed = chain-proven identity (signed chain) · observed = client seen at the MCP handshake, not chain-proven</div>';
       }
 
       // ── complete-mediation reconciliation: the authorisation ledger (gate
@@ -227,6 +239,21 @@ Patchbay.register("govlive", {
           (n.hash ? '<span style="' + MONO + ';color:var(--txt-dim)">' + esc(String(n.hash).slice(0, 8)) + " ← " + esc(String(n.prev_hash || "").slice(0, 8)) + "</span>" : "") + "</div>";
       });
       if (!(b.chain || []).length) h += '<div style="padding:6px 9px;font-size:10px;color:var(--txt-dim)">no entries</div>';
+      h += "</div>";
+
+      // ── oversight certificates — portable proof-of-oversight persisted beside
+      // the chain (oversight_certs sidecar), each linked to the decision's own
+      // audit event. The evidence a returned human decision carries with it.
+      // Read-only; empty when no human decision has been certified. ───────────
+      h += '<div style="font-size:9.5px;color:var(--txt-dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">oversight certificates (' + (b.certificates || []).length + ') · proof a human decided</div>';
+      h += '<div class="gl-certs" style="border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:9px">';
+      (b.certificates || []).forEach((c) => {
+        const aid = c.audit_id || (c.certificate && c.certificate.audit_id) || "";
+        h += '<div class="gl-cert" data-audit-id="' + escA(aid) + '" style="display:flex;gap:8px;align-items:center;padding:4px 9px;border-top:1px solid var(--line);font-size:10px">' +
+          '<span style="color:' + SYS + '">✓ oversight</span>' +
+          '<span style="flex:1;color:var(--txt-dim)">certifies audit ' + esc(String(aid).slice(0, 12)) + "</span>" + "</div>";
+      });
+      if (!(b.certificates || []).length) h += '<div style="padding:6px 9px;font-size:10px;color:var(--txt-dim)">no oversight certificates yet</div>';
       h += "</div>";
 
       h += '<div class="gl-inspector-slot"></div>';
