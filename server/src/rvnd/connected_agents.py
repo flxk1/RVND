@@ -60,11 +60,19 @@ def register_connection(*, agent: str, transport: str = "stdio",
     connid = secrets.token_hex(8)
     sid = (session_id if session_id is not None
            else os.environ.get("CLAUDE_CODE_SESSION_ID") or "")
+    _pid = int(pid if pid is not None else os.getpid())
     rec = {
         "connid": connid,
         "agent": (agent or "").strip() or "unnamed-agent",
         "transport": transport,
-        "pid": int(pid if pid is not None else os.getpid()),
+        "pid": _pid,
+        # Process start-time, bound at register. A pid alone is forgeable/reusable:
+        # a record can outlive its process and the pid be recycled, or a record be
+        # hand-injected into the registry dir naming a live pid it does not own.
+        # Pinning the start-time means a record is only trusted when its pid is
+        # alive AND that live process's start-time matches — so presence tracks the
+        # real process, not just a number. Empty when the start-time is unreadable.
+        "pid_start": _pid_start(_pid),
         "session_id": (sid or "").strip(),
         # MCP clientInfo{name,version} — the client that handshook this transport
         # (e.g. "cursor"/"1.4.2"). Purely DESCRIPTIVE ("this client talked to
@@ -197,6 +205,38 @@ def _pid_alive(pid: int) -> bool:
         return True          # unknown platform quirk — don't falsely drop a live agent
 
 
+def _pid_start(pid: int) -> str:
+    """The process's start time (``ps -o lstart=``), an opaque string bound at
+    register and re-checked on read. Empty when unreadable. Never raises."""
+    if not pid:
+        return ""
+    try:
+        p = subprocess.run(["ps", "-o", "lstart=", "-p", str(int(pid))],
+                           capture_output=True, text=True, timeout=3.0, check=False)
+        return (p.stdout or "").strip()
+    except Exception:
+        return ""
+
+
+def _pid_alive_matches(pid: int, recorded_start: Optional[str]) -> bool:
+    """A presence record is trusted only when its pid is alive AND, if a start-time
+    was pinned at register, the live process's start-time still matches — so a
+    recycled pid, or a record hand-injected into the registry naming a live pid it
+    never owned, is rejected. Fail-OPEN to liveness alone in the two cases where a
+    mismatch would be a false negative: a pre-upgrade record with no pinned start
+    (backward compatibility), and an unreadable live start-time (e.g. not
+    permitted). Never raises."""
+    if not _pid_alive(pid):
+        return False
+    rs = (recorded_start or "").strip()
+    if not rs:
+        return True          # pre-upgrade record — liveness-only, don't falsely drop
+    live = _pid_start(pid)
+    if not live:
+        return True          # start-time unreadable — don't falsely drop a live agent
+    return live == rs
+
+
 def list_connected(*, now: Optional[float] = None, root: Optional[str] = None,
                    ttl_seconds: float = 86400.0) -> list[dict]:
     """Live connected agents, newest first. Records whose process is gone (a crash
@@ -221,9 +261,9 @@ def list_connected(*, now: Optional[float] = None, root: Optional[str] = None,
             except Exception:
                 continue
             pid = int(rec.get("pid", 0) or 0)
-            if pid and not _pid_alive(pid):
+            if pid and not _pid_alive_matches(pid, rec.get("pid_start")):
                 try:
-                    f.unlink(missing_ok=True)      # self-heal a stale record
+                    f.unlink(missing_ok=True)      # self-heal a stale/pid-recycled record
                 except Exception:
                     pass
                 continue

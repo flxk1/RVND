@@ -108,3 +108,28 @@ def test_update_client_info_empty_name_is_noop(tmp_path):
     cid = ca.register_connection(agent="a", pid=os.getpid(), root=root)
     assert ca.update_client_info(cid, name="", version="9", root=root) is False
     assert ca.list_connected(root=root)[0]["client_name"] == ""
+
+
+# ── P1 hardening: process start-time binding (pid-reuse / injected-record) ──
+import json as _json
+
+def test_pid_start_mismatch_record_is_dropped(tmp_path):
+    root = str(tmp_path / "r")
+    cid = ca.register_connection(agent="a", pid=os.getpid(), root=root)
+    f = ca._agents_dir(root) / f"{cid}.json"
+    rec = _json.loads(f.read_text()); rec["pid_start"] = "Wed Jan  1 00:00:00 2020"
+    f.write_text(_json.dumps(rec))
+    assert ca.list_connected(root=root) == []          # start-time doesn't match live pid
+
+def test_pid_start_match_is_kept(tmp_path):
+    root = str(tmp_path / "r")
+    ca.register_connection(agent="a", pid=os.getpid(), root=root)
+    assert len(ca.list_connected(root=root)) == 1       # real start-time matches → kept
+
+def test_record_without_pid_start_falls_back_to_liveness(tmp_path):
+    root = str(tmp_path / "r")
+    cid = ca.register_connection(agent="a", pid=os.getpid(), root=root)
+    f = ca._agents_dir(root) / f"{cid}.json"
+    rec = _json.loads(f.read_text()); rec.pop("pid_start", None)
+    f.write_text(_json.dumps(rec))
+    assert len(ca.list_connected(root=root)) == 1       # pre-upgrade record: liveness-only
