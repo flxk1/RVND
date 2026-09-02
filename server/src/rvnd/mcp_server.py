@@ -105,22 +105,19 @@ except AttributeError:
 # tool's input schema from the wrapped signature, so a ``*args`` wrapper erases it).
 # Deferred as separately-scoped transport work, not widened here.
 _MY_CONNID: Optional[str] = None       # set in main() to this process's connid
-_CLIENT_INFO_CAPTURED = False          # runs its real work at most once/process
 
 
 def _capture_client_info() -> None:
-    """Capture MCP clientInfo{name,version} into this process's connection record,
-    once. Wired at the top of the tool path, so it runs on the first real tool
-    call (when a request context — and thus the client's handshake params — is
-    available). Guards every hop and NEVER raises into the tool path: any failure
-    fails closed (the record stays with empty client fields, never fabricated)."""
-    global _CLIENT_INFO_CAPTURED
-    if _CLIENT_INFO_CAPTURED or not _MY_CONNID:
+    """Capture MCP clientInfo{name,version} into this process's connection record.
+    Wired at the top of the tool path, so it runs on the first real tool call
+    (when a request context — and thus the client's handshake params — is
+    available). Idempotent by construction: ``update_client_info`` fills the
+    record's client fields only while they are empty, so this writes at most once
+    per process however often it runs. Guards every hop and NEVER raises into the
+    tool path: any failure fails closed (the record stays with empty client
+    fields, never fabricated)."""
+    if not _MY_CONNID:
         return
-    # Flip the flag first: even if the read below finds no clientInfo, we do not
-    # want to re-walk the context on every subsequent tool call. The write itself
-    # is independently idempotent (update_client_info only fills an empty record).
-    _CLIENT_INFO_CAPTURED = True
     try:
         ctx = mcp.get_context()
         params = ctx.request_context.session.client_params

@@ -185,6 +185,8 @@ def backfill_session_ids(*, root: Optional[str] = None) -> int:
                 f.write_text(json.dumps(rec), encoding="utf-8")
                 updated += 1
             except Exception:
+                # best-effort backfill write; a hiccup on one record must not
+                # abort the scan of the rest.
                 pass
     except Exception:
         return updated
@@ -250,6 +252,8 @@ def list_connected(*, now: Optional[float] = None, root: Optional[str] = None,
     try:
         backfill_session_ids(root=root)
     except Exception:
+        # backfill is a best-effort enrichment; never let it break the read-only
+        # projection, which must still return the records it can read.
         pass
     try:
         d = _agents_dir(root)
