@@ -151,6 +151,11 @@ rvnd-hook                 = "rvnd.hook:main"
 workspace                 = "rvnd.cli:main"
 workspace-mcp             = "rvnd.mcp_server:main"
 
+# ADR-0004 op-registry seam. Core dogfoods the same discovery path plugins use;
+# the engine source names no provider, only this pyproject does.
+[project.entry-points."rvnd.ops"]
+core = "rvnd._ops_core:bundle"
+
 # src layout: the import package `workspaces` lives under server/src. An editable install
 # (`pip install -e .`) puts it on the path so `python -m workspaces.mcp_server` runs and
 # `importlib.metadata.version("rvnd")` resolves — what the host-MCP and --version tests require.
