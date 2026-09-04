@@ -27,11 +27,13 @@ CI gates this via the full server suite on every PR.
 
 from __future__ import annotations
 
+import atexit
 import os
 import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import textwrap
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -242,9 +244,70 @@ _ALL_BLOCKS: list[CodeBlock] = _collect_all_blocks()
 # Fixture registry — extend as docs grow
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Repo-bound CLI provisioning
+#
+# The harness shells out to the `workspaces` command, but its job is to verify
+# the shipped docs against THIS checkout — not against whatever `workspaces`
+# sits on the ambient PATH. A stale global install can report the same
+# `--version` string as the source yet expose a different command surface (lack
+# a subcommand the current docs use, or still carry one the source dropped), so
+# trusting PATH silently verifies the wrong code — a false red, or worse a false
+# green. Version parity cannot tell them apart; provenance can.
+#
+# So we do not trust PATH. When the `rvnd` importable in THIS interpreter is the
+# one under REPO_ROOT (CI's editable install, or a PYTHONPATH source layout), we
+# synthesise a throwaway `workspaces` shim that runs `<this interpreter> -m
+# rvnd.cli` — the same entry point as the console script — and put its directory
+# FIRST on every sandbox's PATH, so no ambient binary can shadow the source. If
+# the importable `rvnd` is foreign or absent we cannot vouch for provenance, and
+# CLI-backed blocks skip with a precise reason rather than run an unverified one.
+# ---------------------------------------------------------------------------
+
+def _repo_rvnd() -> Path | None:
+    """The `rvnd` package dir if the one importable here lives under REPO_ROOT,
+    else None (a foreign/stale install, or rvnd not importable in this env)."""
+    try:
+        import rvnd
+    except Exception:
+        return None
+    location = getattr(rvnd, "__file__", None)
+    if not location:
+        return None
+    pkg = Path(location).resolve().parent
+    try:
+        pkg.relative_to(REPO_ROOT)
+    except ValueError:
+        return None
+    return pkg
+
+
+def _provision_repo_cli() -> Path | None:
+    """Create a temp bin/ holding a `workspaces` shim bound to the repo CLI in
+    this interpreter. Returns the bin dir, or None when provenance can't be
+    vouched for (foreign rvnd, no interpreter path, or a non-POSIX host that
+    can't run the shell shim)."""
+    if os.name != "posix" or not sys.executable:
+        return None
+    if _repo_rvnd() is None:
+        return None
+    bin_dir = Path(tempfile.mkdtemp(prefix="rvnd-doctest-cli-"))
+    atexit.register(shutil.rmtree, bin_dir, ignore_errors=True)
+    shim = bin_dir / "workspaces"
+    shim.write_text(f'#!/bin/sh\nexec "{sys.executable}" -m rvnd.cli "$@"\n')
+    shim.chmod(0o755)
+    return bin_dir
+
+
+_CLI_SHIM_DIR: Path | None = _provision_repo_cli()
+
+
 _FIXTURES_AVAILABLE: set[str] = set()
 # Detect environmental fixtures up-front so per-block skip decisions are cheap.
-if shutil.which("workspaces"):
+# `workspaces-cli` is available only when we could bind a shim to THIS checkout's
+# CLI (see _provision_repo_cli) — never on the strength of an ambient
+# `workspaces`, which may be a stale install masquerading as the source.
+if _CLI_SHIM_DIR is not None:
     _FIXTURES_AVAILABLE.add("workspaces-cli")
 if shutil.which("ollama"):
     _FIXTURES_AVAILABLE.add("ollama")
@@ -266,9 +329,17 @@ def _make_sandbox(tmp_path: Path) -> tuple[Path, dict[str, str]]:
     workdir = tmp_path / "sandbox"
     folder = workdir / "test"
     (folder / "Inbox").mkdir(parents=True, exist_ok=True)
+    # Keep the ambient PATH so subprocesses can find sh/bash/python, but put the
+    # repo-bound `workspaces` shim FIRST (when provisioned) so a stale ambient
+    # `workspaces` can never shadow the source under test.
+    ambient_path = os.environ.get("PATH", "")
+    path = (
+        f"{_CLI_SHIM_DIR}{os.pathsep}{ambient_path}"
+        if _CLI_SHIM_DIR is not None
+        else ambient_path
+    )
     env = {
-        # Keep PATH so subprocesses can find sh/bash/python
-        "PATH": os.environ.get("PATH", ""),
+        "PATH": path,
         "HOME": str(workdir),
         "TMPDIR": str(workdir),
         "WORKSPACE_FOLDER_CONTEXT": str(folder),
@@ -416,7 +487,8 @@ def _eval_skip(block: CodeBlock) -> str | None:
         if _starts_daemon:
             return "block starts a long-running process (auto-skip)"
         if re.search(r"\bworkspaces\b", block.body) and "workspaces-cli" not in _FIXTURES_AVAILABLE:
-            return "workspaces CLI not on PATH (install runtime/ to enable)"
+            return ("repo `workspaces` CLI not importable in this interpreter "
+                    "(refusing to bind doc blocks to an ambient install)")
         if re.search(r"\b(ollama|brew|apt|yum|pip install|sudo)\b", block.body):
             return "block performs install-time side effects (auto-skip)"
         # Network-cloning blocks (git clone / huggingface-cli download / wget /
@@ -503,3 +575,52 @@ def test_harness_discovered_blocks() -> None:
         "docs ship runnable fenced blocks but the walker found none — did the "
         "fence regex break, or did all docs get tagged skip?"
     )
+
+
+# ---------------------------------------------------------------------------
+# Provenance: doc blocks must bind to THIS checkout's CLI, never a stale
+# `workspaces` that happens to be on the ambient PATH.
+# ---------------------------------------------------------------------------
+
+def test_cli_blocks_bind_to_repo_source(tmp_path: Path) -> None:
+    """A stale `workspaces` on the ambient PATH must not shadow the source under
+    test. When the repo CLI is provisioned, every sandbox resolves `workspaces`
+    into the repo-bound shim dir (ahead of any ambient install), and that shim
+    runs the repo CLI cleanly.
+
+    Skips when the repo CLI is not importable here (e.g. tests run against an
+    installed package without source) — there is then no source to bind to, and
+    `_eval_skip` already refuses to run CLI blocks rather than trusting an
+    ambient binary."""
+    if _CLI_SHIM_DIR is None:
+        pytest.skip("repo CLI not importable in this interpreter; nothing to bind")
+
+    # The importable rvnd is the one under this checkout.
+    assert _repo_rvnd() is not None
+
+    # Plant a decoy `workspaces` LATER on the ambient PATH; the sandbox must
+    # still resolve to the shim, proving the shim wins regardless of ambient.
+    decoy_dir = tmp_path / "stale-bin"
+    decoy_dir.mkdir()
+    decoy = decoy_dir / "workspaces"
+    decoy.write_text("#!/bin/sh\necho 'stale global' >&2\nexit 2\n")
+    decoy.chmod(0o755)
+
+    _workdir, env = _make_sandbox(tmp_path)
+    env["PATH"] = f"{env['PATH']}{os.pathsep}{decoy_dir}"
+
+    resolved = shutil.which("workspaces", path=env["PATH"])
+    assert resolved is not None
+    assert Path(resolved).resolve().parent == _CLI_SHIM_DIR.resolve(), (
+        f"sandbox bound `workspaces` to {resolved!r}, not the repo shim"
+    )
+
+    # And the shim actually drives the repo CLI to a clean exit.
+    proc = subprocess.run(
+        [str(_CLI_SHIM_DIR / "workspaces"), "--version"],
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "workspaces" in proc.stdout.lower()
