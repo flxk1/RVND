@@ -273,6 +273,14 @@ STRICT_KEY_PINNING_ENV = "WORKSPACE_STRICT_KEY_PINNING"
 #: filesystem adversary who rewrites the log cannot also rewrite the pin. The
 #: pin's guarantee is only as strong as this location's write protection.
 KEY_PIN_DIR_ENV = "WORKSPACE_KEY_PIN_DIR"
+#: Opt-in production hardening. When set, the posture the E3-B notice only WARNS
+#: about — a signing key present but strict pinning off — becomes a hard failure:
+#: chain construction RAISES instead of proceeding with warn-only tamper-evidence.
+#: Opt-in only: unset keeps today's warn-only behaviour, a keyless workspace has
+#: nothing to fail closed, and a workspace already running with strict pinning on
+#: is unaffected. Pair it with STRICT_KEY_PINNING_ENV in a production deployment
+#: so a misconfiguration that drops the floor is refused, not merely logged.
+REQUIRE_STRICT_KEY_PINNING_ENV = "WORKSPACE_REQUIRE_STRICT_PINNING"
 
 VALID_EVENTS = frozenset({
     "ingest",
@@ -345,6 +353,7 @@ __all__ = [
     "ChainVerificationResult",
     "LogEvent",
     "SealedWriteError",
+    "StrictPinningRequiredError",
     "MutationLog",
     "seal",
     "events_from_bytes",
@@ -414,9 +423,36 @@ class SealedWriteError(RuntimeError):
     workspace is read-only (served in memory); unseal it before writing."""
 
 
+class StrictPinningRequiredError(RuntimeError):
+    """Raised at chain construction when WORKSPACE_REQUIRE_STRICT_PINNING=1 but a
+    signing key is present while WORKSPACE_STRICT_KEY_PINNING is off. The
+    deployment opted into fail-closed tamper-evidence and the running
+    configuration does not provide it — the warn-only posture (E3-B) is upgraded
+    to a hard refusal so the misconfiguration cannot ship silently."""
+
+
 # Once-per-process guard for the posture notice below: a one-element list,
 # mutated (never rebound), so the module global is genuinely read + written.
 _STRICT_PIN_POSTURE_CHECKED: list = []
+
+
+def _tamper_evidence_is_fail_closed() -> bool:
+    """Whether the chain's tamper-evidence is fail-closed for THIS process.
+
+    True when strict key pinning is on (the floor is enforced) or when no
+    signing key is present (a keyless chain has nothing to fail closed). False
+    only in the one posture the warn/assert paths care about: a signing key is
+    present AND strict pinning is off — the chain then carries hash-chain
+    protection only, and an all-unsigned or stripped chain still verifies ``ok``.
+    An indeterminate key state (signing layer unavailable) reads as fail-closed
+    so neither the warning nor the assertion fires on it."""
+    if os.environ.get(STRICT_KEY_PINNING_ENV) == "1":
+        return True
+    try:
+        from .signing import public_key_fingerprint
+        return public_key_fingerprint() is None
+    except Exception:
+        return True
 
 
 def _warn_if_tamper_evidence_not_fail_closed() -> None:
@@ -429,13 +465,7 @@ def _warn_if_tamper_evidence_not_fail_closed() -> None:
     if _STRICT_PIN_POSTURE_CHECKED:
         return
     _STRICT_PIN_POSTURE_CHECKED.append(True)
-    if os.environ.get(STRICT_KEY_PINNING_ENV) == "1":
-        return
-    try:
-        from .signing import public_key_fingerprint
-        if public_key_fingerprint() is None:
-            return
-    except Exception:
+    if _tamper_evidence_is_fail_closed():
         return
     _log.warning(
         "mutation_log: a signing key is present but %s is not set — the chain "
@@ -443,6 +473,28 @@ def _warn_if_tamper_evidence_not_fail_closed() -> None:
         "still verifies ok (tamper-evidence not fail-closed). Set %s=1 to fail "
         "closed on an unregistered/unsigned chain.",
         STRICT_KEY_PINNING_ENV, STRICT_KEY_PINNING_ENV)
+
+
+def _assert_strict_pinning_if_required() -> None:
+    """E3-C production posture gate. When ``WORKSPACE_REQUIRE_STRICT_PINNING=1``
+    the warn-only posture — a signing key present while strict pinning is off —
+    is a construction-time failure rather than a notice. Fires on every
+    construction (a fail-closed floor cannot be spent after the first check, so
+    this is deliberately not subject to the once-per-process warn guard). No-op
+    when the flag is unset, when strict pinning is on, or on a keyless workspace.
+
+    Opt-in only: it changes no default. Unset, behaviour is exactly the E3-B
+    warn-only path."""
+    if os.environ.get(REQUIRE_STRICT_KEY_PINNING_ENV) != "1":
+        return
+    if _tamper_evidence_is_fail_closed():
+        return
+    raise StrictPinningRequiredError(
+        f"{REQUIRE_STRICT_KEY_PINNING_ENV}=1 requires fail-closed tamper-evidence, "
+        f"but a signing key is present while {STRICT_KEY_PINNING_ENV} is off — the "
+        f"chain would carry hash-chain protection only (an all-unsigned or stripped "
+        f"chain still verifies ok). Set {STRICT_KEY_PINNING_ENV}=1 to fail closed, or "
+        f"unset {REQUIRE_STRICT_KEY_PINNING_ENV} to fall back to warn-only.")
 
 
 class MutationLog:
@@ -494,6 +546,9 @@ class MutationLog:
         # (append/purge) while sealed.
         if not self._is_sealed():
             self._log_dir.mkdir(parents=True, exist_ok=True)
+        # E3-C: under the opt-in production flag the warn-only posture below is a
+        # hard refusal — fail closed at construction before any event is written.
+        _assert_strict_pinning_if_required()
         _warn_if_tamper_evidence_not_fail_closed()
 
     # ----------------------------------------------------------------------
