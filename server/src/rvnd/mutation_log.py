@@ -414,6 +414,36 @@ class SealedWriteError(RuntimeError):
     workspace is read-only (served in memory); unseal it before writing."""
 
 
+_STRICT_PIN_POSTURE_CHECKED = False
+
+
+def _warn_if_tamper_evidence_not_fail_closed() -> None:
+    """One-time posture notice: if a signing key is present but strict key
+    pinning is off, the chain carries hash-chain protection only — an
+    all-unsigned or all-signatures-stripped chain still verifies ``ok`` (its
+    tamper-evidence is not fail-closed). Emitted at most once per process;
+    silent for a keyless workspace (nothing to fail closed) and when strict
+    pinning is already on."""
+    global _STRICT_PIN_POSTURE_CHECKED
+    if _STRICT_PIN_POSTURE_CHECKED:
+        return
+    _STRICT_PIN_POSTURE_CHECKED = True
+    if os.environ.get(STRICT_KEY_PINNING_ENV) == "1":
+        return
+    try:
+        from .signing import public_key_fingerprint
+        if public_key_fingerprint() is None:
+            return
+    except Exception:
+        return
+    _log.warning(
+        "mutation_log: a signing key is present but %s is not set — the chain "
+        "carries hash-chain protection only; an all-unsigned or stripped chain "
+        "still verifies ok (tamper-evidence not fail-closed). Set %s=1 to fail "
+        "closed on an unregistered/unsigned chain.",
+        STRICT_KEY_PINNING_ENV, STRICT_KEY_PINNING_ENV)
+
+
 class MutationLog:
     """Folder-scoped append-only JSONL log.
 
@@ -463,6 +493,7 @@ class MutationLog:
         # (append/purge) while sealed.
         if not self._is_sealed():
             self._log_dir.mkdir(parents=True, exist_ok=True)
+        _warn_if_tamper_evidence_not_fail_closed()
 
     # ----------------------------------------------------------------------
     # Properties for inspection / tests
