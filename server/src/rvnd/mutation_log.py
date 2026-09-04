@@ -704,10 +704,28 @@ class MutationLog:
                             "signature": "",  # exclude from signed payload
                         })
                         event.signature = sign_bytes(signed)
-                    except Exception:
-                        # Signing failure → empty signature, treated as
-                        # unsigned event on verify (legacy-compatible behaviour).
+                    except Exception as _sign_err:
+                        # Signing failure → empty signature, treated as an
+                        # unsigned event on verify. Keyless workspaces sign
+                        # nothing by design, so that case stays quiet. But if a
+                        # signing key IS present the failure is a real
+                        # tamper-evidence incident, not a keyless no-op — it was
+                        # previously swallowed silently; surface it now.
                         event.signature = ""
+                        try:
+                            from .signing import public_key_fingerprint
+                            _key_present = public_key_fingerprint() is not None
+                        except Exception:
+                            _key_present = False
+                        if _key_present:
+                            _log.warning(
+                                "mutation_log: signing FAILED though a signing "
+                                "key is present (%s); event written UNSIGNED — "
+                                "chain tamper-evidence degraded for this event",
+                                _sign_err)
+                        else:
+                            _log.debug("mutation_log: no signing key; event "
+                                       "written unsigned (%s)", _sign_err)
                 line = event.to_jsonl() + "\n"
                 # B6.1 (0.6.8): disk-full mid-append. Remember the file
                 # size before we write; on ENOSPC truncate back to that

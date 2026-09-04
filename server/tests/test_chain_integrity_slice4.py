@@ -163,6 +163,31 @@ def test_d6_forged_anchor_signature_is_rejected(tmp_path, isolated_keys):
     assert any("anchor" in (b.get("reason") or "") for b in res.broken_links)
 
 
+# ── E2 (punch-list): an append-time signing failure is no longer swallowed ───
+def test_append_signing_failure_with_key_present_is_logged(
+        tmp_path, isolated_keys, monkeypatch, caplog):
+    """A signing failure on append, when a signing key IS present, is surfaced
+    (it was previously swallowed silently): the event is still written unsigned
+    (legacy-compatible), but a WARNING names the degraded tamper-evidence."""
+    import logging
+    import rvnd.signing as signing
+    log = MutationLog(tmp_path / "ws", log_root=tmp_path / "logs")
+
+    def _boom(*a, **k):
+        raise RuntimeError("signing key unreadable")
+    monkeypatch.setattr(signing, "sign_bytes", _boom)
+
+    with caplog.at_level(logging.WARNING, logger="rvnd.mutation_log"):
+        log.append(LogEvent(event="ingest", folder_path=str(tmp_path / "ws"),
+                            pair_id="sha256:pair-x", actor="t", extra={}))
+
+    # event still written, unsigned (legacy-compatible)
+    assert json.loads(log.log_file.read_text().splitlines()[-1])["signature"] == ""
+    # but NOT silent — a warning surfaced the degraded tamper-evidence
+    assert any("signing FAILED" in r.getMessage() and "UNSIGNED" in r.getMessage()
+               for r in caplog.records), [r.getMessage() for r in caplog.records]
+
+
 # ── E3-B (punch-list): posture warning when tamper-evidence isn't fail-closed ─
 def test_strict_pin_off_with_key_present_warns_once(
         tmp_path, isolated_keys, monkeypatch, caplog):
