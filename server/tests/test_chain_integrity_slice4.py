@@ -6,7 +6,13 @@ from __future__ import annotations
 import json
 import pytest
 
-from rvnd.mutation_log import LogEvent, MutationLog, STRICT_KEY_PINNING_ENV
+from rvnd.mutation_log import (
+    LogEvent,
+    MutationLog,
+    REQUIRE_STRICT_KEY_PINNING_ENV,
+    STRICT_KEY_PINNING_ENV,
+    StrictPinningRequiredError,
+)
 from rvnd.loomground_lang import _has_cycle
 
 
@@ -211,3 +217,69 @@ def test_strict_pin_on_is_silent(tmp_path, isolated_keys, monkeypatch, caplog):
     with caplog.at_level(logging.WARNING, logger="rvnd.mutation_log"):
         MutationLog(tmp_path / "ws", log_root=tmp_path / "logs")
     assert not any("fail-closed" in r.getMessage() for r in caplog.records)
+
+
+# ── E3-C (punch-list): opt-in production flag upgrades the warn to a refusal ──
+def test_require_strict_pin_flag_key_present_strict_off_raises(
+        tmp_path, isolated_keys, monkeypatch):
+    """Production flag set + signing key present + strict pinning off → chain
+    construction FAILS CLOSED (raises) instead of merely warning."""
+    monkeypatch.setenv(REQUIRE_STRICT_KEY_PINNING_ENV, "1")
+    monkeypatch.delenv(STRICT_KEY_PINNING_ENV, raising=False)
+    with pytest.raises(StrictPinningRequiredError):
+        MutationLog(tmp_path / "ws", log_root=tmp_path / "logs")
+
+
+def test_require_strict_pin_flag_with_strict_on_is_ok(
+        tmp_path, isolated_keys, monkeypatch):
+    """Production flag set but strict pinning already ON → the floor is enforced,
+    so construction proceeds (no raise) and events append normally."""
+    monkeypatch.setenv(REQUIRE_STRICT_KEY_PINNING_ENV, "1")
+    monkeypatch.setenv(STRICT_KEY_PINNING_ENV, "1")
+    log = MutationLog(tmp_path / "ws", log_root=tmp_path / "logs")
+    log.append(LogEvent(event="ingest", folder_path=str(tmp_path / "ws"),
+                        pair_id="sha256:pair-ok", actor="t", extra={}))
+    # The point is: no raise (reaching here) + the append landed. Not an exact
+    # count — a hardened profile (WORKSPACE_KEY_PINNING) also writes a registration
+    # event, so our event makes the tally 1 or 2; assert it is present, not exact.
+    assert log.count() >= 1
+
+
+def test_require_strict_pin_flag_keyless_is_ok(tmp_path, monkeypatch):
+    """Production flag set but no usable signing key → nothing to fail closed, so
+    construction proceeds (no raise). The signing layer being unavailable reads
+    as fail-closed for this gate."""
+    monkeypatch.setenv(REQUIRE_STRICT_KEY_PINNING_ENV, "1")
+    monkeypatch.delenv(STRICT_KEY_PINNING_ENV, raising=False)
+
+    def _no_key(*a, **k):
+        raise RuntimeError("no signing key available")
+    monkeypatch.setattr("rvnd.signing.public_key_fingerprint", _no_key)
+    MutationLog(tmp_path / "ws", log_root=tmp_path / "logs")
+
+
+def test_require_strict_pin_flag_unset_is_warn_only(
+        tmp_path, isolated_keys, monkeypatch, caplog):
+    """Flag UNSET keeps today's behaviour: no raise, warn-only posture notice."""
+    import logging
+    monkeypatch.delenv(REQUIRE_STRICT_KEY_PINNING_ENV, raising=False)
+    monkeypatch.delenv(STRICT_KEY_PINNING_ENV, raising=False)
+    monkeypatch.setattr("rvnd.mutation_log._STRICT_PIN_POSTURE_CHECKED", [])
+    with caplog.at_level(logging.WARNING, logger="rvnd.mutation_log"):
+        MutationLog(tmp_path / "ws", log_root=tmp_path / "logs")
+    assert any("fail-closed" in r.getMessage() for r in caplog.records)
+
+
+def test_require_strict_pin_flag_raises_on_every_construction(
+        tmp_path, isolated_keys, monkeypatch):
+    """The refusal is a floor, not a once-per-process notice: a second log under
+    the same bad posture must raise again even after the first construction."""
+    monkeypatch.setenv(REQUIRE_STRICT_KEY_PINNING_ENV, "1")
+    monkeypatch.delenv(STRICT_KEY_PINNING_ENV, raising=False)
+    # Pre-consume the once-per-process warn guard: the assertion must not depend
+    # on it.
+    monkeypatch.setattr("rvnd.mutation_log._STRICT_PIN_POSTURE_CHECKED", [True])
+    with pytest.raises(StrictPinningRequiredError):
+        MutationLog(tmp_path / "ws-a", log_root=tmp_path / "logs")
+    with pytest.raises(StrictPinningRequiredError):
+        MutationLog(tmp_path / "ws-b", log_root=tmp_path / "logs")
