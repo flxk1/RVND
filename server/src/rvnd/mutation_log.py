@@ -414,7 +414,9 @@ class SealedWriteError(RuntimeError):
     workspace is read-only (served in memory); unseal it before writing."""
 
 
-_STRICT_PIN_POSTURE_CHECKED = False
+# Once-per-process guard for the posture notice below: a one-element list,
+# mutated (never rebound), so the module global is genuinely read + written.
+_STRICT_PIN_POSTURE_CHECKED: list = []
 
 
 def _warn_if_tamper_evidence_not_fail_closed() -> None:
@@ -424,10 +426,9 @@ def _warn_if_tamper_evidence_not_fail_closed() -> None:
     tamper-evidence is not fail-closed). Emitted at most once per process;
     silent for a keyless workspace (nothing to fail closed) and when strict
     pinning is already on."""
-    global _STRICT_PIN_POSTURE_CHECKED
     if _STRICT_PIN_POSTURE_CHECKED:
         return
-    _STRICT_PIN_POSTURE_CHECKED = True
+    _STRICT_PIN_POSTURE_CHECKED.append(True)
     if os.environ.get(STRICT_KEY_PINNING_ENV) == "1":
         return
     try:
