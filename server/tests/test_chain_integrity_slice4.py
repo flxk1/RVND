@@ -6,7 +6,7 @@ from __future__ import annotations
 import json
 import pytest
 
-from rvnd.mutation_log import LogEvent, MutationLog
+from rvnd.mutation_log import LogEvent, MutationLog, STRICT_KEY_PINNING_ENV
 from rvnd.loomground_lang import _has_cycle
 
 
@@ -169,12 +169,11 @@ def test_strict_pin_off_with_key_present_warns_once(
     """A signing key present but strict pinning OFF → constructing a log emits a
     one-time posture warning that tamper-evidence is not fail-closed."""
     import logging
-    import rvnd.mutation_log as ml
-    monkeypatch.delenv(ml.STRICT_KEY_PINNING_ENV, raising=False)
-    monkeypatch.setattr(ml, "_STRICT_PIN_POSTURE_CHECKED", False)
+    monkeypatch.delenv(STRICT_KEY_PINNING_ENV, raising=False)
+    monkeypatch.setattr("rvnd.mutation_log._STRICT_PIN_POSTURE_CHECKED", False)
     with caplog.at_level(logging.WARNING, logger="rvnd.mutation_log"):
         MutationLog(tmp_path / "ws", log_root=tmp_path / "logs")
-    assert any(ml.STRICT_KEY_PINNING_ENV in r.getMessage()
+    assert any(STRICT_KEY_PINNING_ENV in r.getMessage()
                and "fail-closed" in r.getMessage()
                for r in caplog.records), [r.getMessage() for r in caplog.records]
 
@@ -182,9 +181,8 @@ def test_strict_pin_off_with_key_present_warns_once(
 def test_strict_pin_on_is_silent(tmp_path, isolated_keys, monkeypatch, caplog):
     """Strict pinning ON → the posture warning stays silent (floor is enforced)."""
     import logging
-    import rvnd.mutation_log as ml
-    monkeypatch.setenv(ml.STRICT_KEY_PINNING_ENV, "1")
-    monkeypatch.setattr(ml, "_STRICT_PIN_POSTURE_CHECKED", False)
+    monkeypatch.setenv(STRICT_KEY_PINNING_ENV, "1")
+    monkeypatch.setattr("rvnd.mutation_log._STRICT_PIN_POSTURE_CHECKED", False)
     with caplog.at_level(logging.WARNING, logger="rvnd.mutation_log"):
         MutationLog(tmp_path / "ws", log_root=tmp_path / "logs")
     assert not any("fail-closed" in r.getMessage() for r in caplog.records)
